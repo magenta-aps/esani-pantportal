@@ -1,0 +1,134 @@
+stages:
+  - lint
+  - build
+  - test
+  - release
+  - configure
+  - deploy
+
+include:
+  - project: "labs/salt-automation"
+    file:
+      - "/gitlab-ci-templates/common/rules.v1.yml"
+      - "/gitlab-ci-templates/common/saltbert.v1.yml"
+      - "/gitlab-ci-templates/common/docker-build-meta.v2.yml"
+      - "/gitlab-ci-templates/common/docker-release-meta.v1.yml"
+
+variables:
+  RELEASE_REGISTRY: docker.io
+  RELEASE_REGISTRY_IMAGE: index.docker.io/magentaaps/esani-pantportal
+
+  IMAGE_SHA: ${CI_REGISTRY_IMAGE}/esani-pantportal:${CI_COMMIT_SHA}
+  IMAGE_TAG: magentaaps/esani-pantportal:${CI_COMMIT_TAG}
+
+  VERSION: PIPELINE
+
+# Lint stage
+#############
+.lint-default: &lint-default
+  stage: lint
+  needs: []
+  image: python:3.11
+  
+Lint Python:
+  <<: *lint-default
+  before_script:
+    - pip3 install flake8
+    - pip3 install black==23.1.0
+  script:
+    - flake8 --extend-ignore E226,E203,E501,W503,F821 esani_pantportal/
+    - black --check --diff --exclude=migrations esani_pantportal/
+
+Lint Dockerfiles:
+  <<: *lint-default
+  image: hadolint/hadolint:latest-debian
+  before_script:
+    - apt-get -y update
+    - apt-get -y install --no-install-recommends git
+  script:
+    - git ls-files --exclude='Dockerfile*' --ignored | xargs --max-lines=1 hadolint
+
+Lint REUSE compliance:
+  extends: .lint-default
+  image:
+    name: fsfe/reuse:latest
+    entrypoint: [""]
+  script:
+    - reuse lint
+
+# Build stage
+#############
+
+Build ESANI-Pantportal image:
+  stage: build
+  needs: ["Lint Python", "Lint Dockerfiles", "Lint REUSE compliance"]
+  dependencies: []
+  image:
+    name: gcr.io/kaniko-project/executor:debug-v1.15.0
+    entrypoint: [""]
+  script:
+    # Login to GitLab registry
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor
+      --cache
+      --context=$CI_PROJECT_DIR
+      --dockerfile=$CI_PROJECT_DIR/docker/Dockerfile
+      --destination=${ESANI-PANTPORTAL_IMAGE_SHA}
+
+# Test stage
+#############
+.test-default: &test-default
+  stage: test
+  dependencies: []
+  services:
+    - name: postgres:16
+      alias: pantportal-db
+
+.test-pantportal: &test-pantportal
+  <<: *test-default
+  needs: ["Build ESANI-Pantportal image"]
+  image: ${IMAGE_SHA}
+
+ESANI-Pantportal Unittest:
+  <<: *test-pantportal
+  script:
+    - cd /app
+    - coverage run --source="." --omit=manage.py,project/wsgi.py,*/admin.py manage.py test
+    - coverage report --show-missing --fail-under=75
+    - coverage xml
+  coverage: '/^TOTAL.+?(\d+\%)$/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: /app/coverage.xml
+
+Django check:
+  <<: *test-pantportal
+  script:
+    - cd /app
+    - python3 manage.py check esani_pantportal
+
+# Release stage
+#############
+
+.release:
+  stage: release
+  image: alpine
+  needs: ["ESANI-Pantportal Unittest"]
+  variables:
+    GIT_STRATEGY: none # We do not need the source code
+  dependencies: []
+  before_script:
+    - apk add skopeo
+
+Release ESANI-Pantportal image:
+  extends:
+    - .rules:semver-all
+    - .release
+  script:
+    - skopeo copy
+      --src-creds=${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD}
+      --dest-creds=${RELEASE_REGISTRY_USER}:${RELEASE_REGISTRY_PASSWORD}
+      "docker://${IMAGE_SHA}"
+      "docker://${IMAGE_SHA}"
