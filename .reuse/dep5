@@ -1,0 +1,7 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: ESANI Pantportal
+Upstream-Contact: Magenta ApS <info@magenta.dk>
+
+Files: esani_pantportal/* dev-environment/* docker/* docker-compose.yml README.md .gitignore .gitlab-ci.yml
+Copyright: 2021-2022 Magenta ApS <info@magenta.dk>
+License: MPL-2.0
