@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.translation import gettext as _
 
 
 class Company(models.Model):
@@ -38,7 +39,7 @@ class Company(models.Model):
 
 class PackagingRegistration(models.Model):
     class Meta:
-        ordering = ["registration_nuber"]
+        ordering = ["registration_number"]
 
     registration_number = models.IntegerField(
         verbose_name=_("Afgiftsanmeldelsesnummer"),

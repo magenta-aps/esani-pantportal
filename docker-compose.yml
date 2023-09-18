@@ -1,0 +1,32 @@
+version: "3.8"
+services:
+  pantportal:
+    user: "75130:1000" # Override in docker-compose.override.yml if local user is different
+    container_name: esani_pantportal
+    image: esani-pantportal:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ./dev-environment/esani-pantportal.env
+    volumes:
+      - ./esani_pantportal/:/app
+    depends_on:
+      - pantportal-db
+    environment:
+      - MAKE_MIGRATIONS=true
+      - MIGRATE=true
+    ports:
+      - "8000:8000"
+    command: gunicorn -b 0.0.0.0:7000 project.wsgi:application --reload -w 1 --access-logfile - -    -error-logfile - --capture-output # reload on code changes
+
+  pantportal-db:
+    container_name: pantportal-db
+    image: postgres:16
+    env_file:
+      - ./dev-environment/esani-pantportal.env
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:
