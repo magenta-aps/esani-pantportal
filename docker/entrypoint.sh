@@ -4,14 +4,14 @@ MAKE_MIGRATIONS=${MAKE_MIGRATIONS:=false}
 MIGRATE=${MIGRATE:=false}
 
 if [ "$MAKE_MIGRATIONS" = true ] || [ "$MIGRATE" = true ]; then
-  python manage.py wait_for_db
+  python3 manage.py wait_for_db
   if [ "$MAKE_MIGRATIONS" = true ]; then
     echo 'generating migrations'
-    python manage.py makemigrations
+    python3 manage.py makemigrations
   fi
   if [ "$MIGRATE" = true ]; then
     echo 'running migrations'
-    python manage.py migrate
+    python3 manage.py migrate
   fi
 fi
 exec "$@"

@@ -83,6 +83,17 @@ Build ESANI-Pantportal image:
   services:
     - name: postgres:16
       alias: pantportal-db
+  variables:
+    # Simulate development environment while running tests so we use mockup data
+    DJANGO_SECRET_KEY: e$s6@0(hs5ja79-&!l7vt^onoe4h^*bv_e4hj&wt5^8*&x76-$
+    DJANGO_TIMEZONE: Europe/Copenhagen
+    POSTGRES_USER: pantportal
+    POSTGRES_PASSWORD: pantportal
+    POSTGRES_DB: pantportal
+    POSTGRES_HOST: pantportal-db
+    ENVIRONMENT: development
+    DISABLE_METRICS: 'True'
+    DJANGO_LANGUAGE_COOKIE_DOMAIN: localhost
 
 .test-pantportal: &test-pantportal
   <<: *test-default
