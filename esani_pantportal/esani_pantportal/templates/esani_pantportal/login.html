@@ -1,0 +1,41 @@
+{% extends "esani_pantportal/layout.html" %}
+{% load i18n %}
+{% block content %}
+{% if form.non_field_errors %}
+<div class="row justify-content-md-center">
+    {% for error in form.non_field_errors %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+<div class="justify-content-md-center d-flex align-items-center vh-100">
+<div class="card" style="width: 40rem;">
+    <h5 class="card-header">Log ind</h5>
+    <div class="card-body">
+
+    <form action="" method="POST" class="needs-validation">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                {{form.username}}
+                {% if form.username.errors %}
+                <div class="invalid-feedback">{{ form.username.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-4 mb-3">
+                {{form.password}}
+                {% if form.password.errors %}
+                <div class="invalid-feedback">{{ form.password.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-4 mb-3">
+                <button type="submit" class="btn btn-primary">{% translate 'Login' %}</button>
+            </div>
+        </div>
+        <input type="hidden" name="next" value="{{ next }}">
+    </form>
+    </div>
+</div></div>
+{% endblock %}

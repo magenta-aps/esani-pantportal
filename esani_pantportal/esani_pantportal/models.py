@@ -13,7 +13,7 @@ class Company(models.Model):
         help_text=_("Firmanavn"),
         max_length=255,
     )
-    cvr = models.IntegerField(
+    cvr = models.PositiveIntegerField(
         verbose_name=_("CVR Nummer"),
         help_text=_("CVR Nummer"),
         unique=True,
@@ -23,11 +23,11 @@ class Company(models.Model):
         help_text=_("Firmaets registrerede addresse"),
         max_length=400,
     )
-    phone = models.IntegerField(
+    phone = models.PositiveIntegerField(
         verbose_name=_("Telefonnummer"),
         help_text=_("Firmaets telefonnummer inkl. landekode"),
     )
-    tilladelsesnummer = models.IntegerField(
+    tilladelsesnummer = models.PositiveIntegerField(
         verbose_name=_("Tilladelsesnummer"),
         help_text=_(
             "Firmaets tilladelsesnummer for import af ethanolholdige drikkevarer"
@@ -41,7 +41,7 @@ class PackagingRegistration(models.Model):
     class Meta:
         ordering = ["registration_number"]
 
-    registration_number = models.IntegerField(
+    registration_number = models.PositiveIntegerField(
         verbose_name=_("Afgiftsanmeldelsesnummer"),
         help_text=_("Afgiftsanmeldelsesnummer"),
         unique=True,
@@ -51,7 +51,7 @@ class PackagingRegistration(models.Model):
         on_delete=models.PROTECT,
         related_name="packaging_registration",
     )
-    tax_group = models.IntegerField(
+    tax_group = models.PositiveIntegerField(
         verbose_name=_("Afgiftsgruppe"),
         help_text=_("Afgiftsgruppe"),
     )
@@ -60,7 +60,43 @@ class PackagingRegistration(models.Model):
         help_text=_("Vareart"),
         max_length=200,
     )
-    quantity = models.IntegerField(
+    quantity = models.PositiveIntegerField(
         verbose_name=_("Antal"),
         help_text=_("Styks pant-pligtig emballage importeret"),
+    )
+
+
+class Product(models.Model):
+    class Meta:
+        ordering = ["product_name", "barcode"]
+        permissions = [
+            (
+                "approve_product",
+                "User is allowed to approve products awaiting registration",
+            )
+        ]
+
+    product_name = models.CharField(
+        verbose_name=_("Produktnavn"),
+        help_text=_("Navn på det pågældende produkt"),
+        max_length=200,
+    )
+    barcode = models.PositiveIntegerField(
+        verbose_name=_("Stregkode"),
+        help_text=_("Stregkode for et indmeldt produkt"),
+        unique=True,
+    )
+    tax_group = models.PositiveIntegerField(
+        verbose_name=_("Afgiftsgruppe"),
+        help_text=_("Afgiftsgruppe"),
+    )
+    product_type = models.CharField(
+        verbose_name=_("Vareart"),
+        help_text=_("Vareart"),
+        max_length=200,
+    )
+    approved = models.BooleanField(
+        verbose_name=_("Godkendt"),
+        help_text=_("Produkt godkendt til pantsystemet af en ESANI medarbejder"),
+        default=False,
     )
