@@ -18,7 +18,7 @@ services:
       - MIGRATE=true
     ports:
       - "8000:8000"
-    command: gunicorn -b 0.0.0.0:7000 project.wsgi:application --reload -w 1 --access-logfile - --error-logfile - --capture-output # reload on code changes
+    command: gunicorn -b 0.0.0.0:8000 project.wsgi:application --reload -w 1 --access-logfile - --error-logfile - --capture-output # reload on code changes
 
   pantportal-db:
     container_name: pantportal-db
