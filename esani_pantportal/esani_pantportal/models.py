@@ -27,7 +27,7 @@ class Company(models.Model):
         verbose_name=_("Telefonnummer"),
         help_text=_("Firmaets telefonnummer inkl. landekode"),
     )
-    tilladelsesnummer = models.PositiveIntegerField(
+    permit_number = models.PositiveIntegerField(
         verbose_name=_("Tilladelsesnummer"),
         help_text=_(
             "Firmaets tilladelsesnummer for import af ethanolholdige drikkevarer"
@@ -48,21 +48,21 @@ class PackagingRegistration(models.Model):
     )
     company = models.ForeignKey(
         "Company",
+        verbose_name=_("Firma"),
+        help_text=_("Firma ansvarligt for afgiftsanmeldelsen"),
         on_delete=models.PROTECT,
         related_name="packaging_registration",
-    )
-    tax_group = models.PositiveIntegerField(
-        verbose_name=_("Afgiftsgruppe"),
-        help_text=_("Afgiftsgruppe"),
-    )
-    product_type = models.CharField(
-        verbose_name=_("Vareart"),
-        help_text=_("Vareart"),
-        max_length=200,
     )
     quantity = models.PositiveIntegerField(
         verbose_name=_("Antal"),
         help_text=_("Styks pant-pligtig emballage importeret"),
+    )
+    product = models.ForeignKey(
+        "Product",
+        verbose_name=_("Produkt"),
+        help_text=_("Indmeldte produkt"),
+        on_delete=models.PROTECT,
+        related_name="packaging_registration",
     )
 
 

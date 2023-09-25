@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     "django_extensions",
     "esani_pantportal",
     "common",
+    "ninja_extra",
+    "ninja_jwt",
 ]
 
 MIDDLEWARE = [
