@@ -17,9 +17,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from project.admin import pantadmin
+from project.api import api
 
 urlpatterns = [
     path("admin/", pantadmin.urls),
     path("django-admin/", admin.site.urls),
     path("", include("esani_pantportal.urls")),
+    path("api/", api.urls),
 ]
