@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Magenta 2023
+#
+# SPDX-License-Identifier: MPL-2.0
+
 import orjson
 import base64
 from ninja.renderers import BaseRenderer
