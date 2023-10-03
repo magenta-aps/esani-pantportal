@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+
+# SPDX-FileCopyrightText: 2023 Magenta 2023
+#
+# SPDX-License-Identifier: MPL-2.0
+
 """Django's command-line utility for administrative tasks."""
 import os
 import sys

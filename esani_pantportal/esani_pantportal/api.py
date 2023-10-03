@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Magenta 2023
+#
+# SPDX-License-Identifier: MPL-2.0
+
 from ninja import ModelSchema, FilterSchema, Query
 from ninja_extra import api_controller, route, permissions
 from ninja_extra.schemas import NinjaPaginationResponseSchema
