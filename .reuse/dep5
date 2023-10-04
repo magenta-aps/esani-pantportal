@@ -3,5 +3,5 @@ Upstream-Name: ESANI Pantportal
 Upstream-Contact: Magenta ApS <info@magenta.dk>
 
 Files: esani_pantportal/* dev-environment/* docker/* docker-compose.yml README.md .gitignore .gitlab-ci.yml
-Copyright: 2021-2022 Magenta ApS <info@magenta.dk>
+Copyright: 2023 Magenta ApS <info@magenta.dk>
 License: MPL-2.0
