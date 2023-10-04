@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+#
+# SPDX-License-Identifier: MPL-2.0
+
 FROM python:3.11
 ENV PYTHONUNBUFFERED=1
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
