@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_extensions",
     "esani_pantportal",
-    "common",
     "ninja_extra",
     "ninja_jwt",
 ]

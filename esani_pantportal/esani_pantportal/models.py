@@ -43,20 +43,40 @@ class Company(models.Model):
 
 class PackagingRegistration(models.Model):
     class Meta:
-        ordering = ["registration_number"]
+        ordering = ["date"]
 
     registration_number = models.PositiveIntegerField(
         verbose_name=_("Afgiftsanmeldelsesnummer"),
         help_text=_("Afgiftsanmeldelsesnummer"),
         unique=True,
     )
-    company = models.ForeignKey(
+    registration_company = models.ForeignKey(
         "Company",
-        verbose_name=_("Firma"),
+        verbose_name=_("Anmelder"),
         help_text=_("Firma ansvarligt for afgiftsanmeldelsen"),
         on_delete=models.PROTECT,
-        related_name="packaging_registration",
+        related_name="registered_packaging",
     )
+    recipient_company = models.ForeignKey(
+        "Company",
+        verbose_name=_("Varemodtager"),
+        help_text=_("Firma, som skal modtage varerne og betale pant"),
+        on_delete=models.PROTECT,
+        related_name="received_packaging",
+    )
+    date = models.DateField(
+        _("Dato"),
+        auto_now_add=True,
+        db_index=True,
+    )
+
+
+class ProductLine(models.Model):
+    packaging_registration = models.ForeignKey(
+        PackagingRegistration,
+        on_delete=models.CASCADE,
+    )
+
     quantity = models.PositiveIntegerField(
         verbose_name=_("Antal"),
         help_text=_("Styks pant-pligtig emballage importeret"),
@@ -66,7 +86,7 @@ class PackagingRegistration(models.Model):
         verbose_name=_("Produkt"),
         help_text=_("Indmeldte produkt"),
         on_delete=models.PROTECT,
-        related_name="packaging_registration",
+        related_name="product_line",
     )
 
 
