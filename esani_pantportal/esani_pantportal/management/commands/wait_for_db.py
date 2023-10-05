@@ -2,11 +2,12 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+from time import sleep
+
 from django.core.management.base import BaseCommand
 from django.db import connections
 from django.db.utils import OperationalError
 from psycopg2 import OperationalError as PsycopgOpError
-from time import sleep
 
 
 class Command(BaseCommand):

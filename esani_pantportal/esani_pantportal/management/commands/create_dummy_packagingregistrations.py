@@ -5,7 +5,12 @@
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from esani_pantportal.models import PackagingRegistration, Product, ProductLine, Company
+from esani_pantportal.models import (  # isort: skip
+    Company,
+    PackagingRegistration,
+    Product,
+    ProductLine,
+)
 
 
 class Command(BaseCommand):

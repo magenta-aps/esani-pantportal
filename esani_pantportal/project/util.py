@@ -2,12 +2,13 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-import orjson
 import base64
-from ninja.renderers import BaseRenderer
 from decimal import Decimal
-from typing import Union, Dict, List
+from typing import Dict, List, Union
+
+import orjson
 from django.core.files import File
+from ninja.renderers import BaseRenderer
 
 
 class ORJSONRenderer(BaseRenderer):

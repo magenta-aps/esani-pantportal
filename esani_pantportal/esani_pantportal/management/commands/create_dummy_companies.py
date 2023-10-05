@@ -2,11 +2,11 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+import random
+
 from django.core.management.base import BaseCommand
 
 from esani_pantportal.models import Company
-import random
-
 
 company_names = [
     "Greenland Brewhouse",
