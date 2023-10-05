@@ -1,0 +1,43 @@
+/* Input fields for displaying calculated data */
+input.display,
+input.display:disabled,
+input.display[readonly] {
+    padding-left: 0;
+    padding-right: 0;
+    border-color: transparent;
+    background-color: transparent;
+}
+
+/* Number fields that look like text fields */
+input[type=number].no-buttons::-webkit-outer-spin-button,
+input[type=number].no-buttons::-webkit-inner-spin-button {
+    display: none;
+}
+input[type="number"].no-buttons {
+    -moz-appearance: textfield;
+}
+input[type="number"].no-buttons:hover,
+input[type="number"].no-buttons:focus {
+    -moz-appearance: number-input;
+}
+
+
+ul.errorlist {
+    padding-left: 0;
+}
+ul.errorlist li {
+    list-style-type: none;
+    font-size: 0.8em;
+    color: #dc3545;
+}
+
+
+table.scrollbody thead {
+    display: block;
+}
+table.scrollbody tbody {
+    display: block;
+    height: 500px;       /* Just for the demo          */
+    overflow-y: auto;    /* Trigger vertical scroll    */
+    overflow-x: hidden;  /* Hide the horizontal scroll */
+}

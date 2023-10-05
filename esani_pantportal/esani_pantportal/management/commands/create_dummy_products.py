@@ -15,6 +15,9 @@ class Command(BaseCommand):
         if settings.ENVIRONMENT in ("production", "staging"):
             raise Exception(f"Will not create dummy products in {settings.ENVIRONMENT}")
 
+        if Product.objects.all().count() != 0:
+            return
+
         Product.objects.create(
             product_name="Sofavand",
             barcode=1,

@@ -4,6 +4,19 @@ SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 SPDX-License-Identifier: MPL-2.0
 -->
 
+# Testing
+To run the tests run
+```
+docker exec barcode-scanner bash -c 'coverage run manage.py test ; coverage report --show-missing'
+```
+
+Or
+
+```
+docker exec esani_pantportal bash -c 'coverage run manage.py test ; coverage report --show-missing'
+```
+
+
 # ESANI Pantportal
 
 TODOs:

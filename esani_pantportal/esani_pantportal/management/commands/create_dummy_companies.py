@@ -16,6 +16,9 @@ company_names = [
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        if Company.objects.all().count() != 0:
+            return
+
         for company_name in company_names:
             Company.objects.create(
                 name=company_name,
