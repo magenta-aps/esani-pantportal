@@ -1,0 +1,96 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% extends "barcode_scanner/layout.html" %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+
+{# Docs for bootstrap-table: https://bootstrap-table.com/docs/ #}
+{% block extra_headers %}
+<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.css">
+<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.css">
+
+<style>
+h1 {text-align: center;}
+div {text-align: center;}
+</style>
+
+{% endblock %}
+{% block extra_footers %}
+<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
+<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
+<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/defer-url/bootstrap-table-defer-url.min.js"></script>
+{% endblock %}
+
+{% block content %}
+{{ barcodes|json_script:"barcodes" }}
+<div class="mx-5">
+    <h1>Er der pant på mit produkt?</h1>
+    <div class="row my-1">
+        <div class="col-12"><label class="form-label">{% translate "barcode:" %}</label></div>
+    </div>
+    <div class="row my-1">
+        <div class="col-12">
+            <input type="text" id="barcode" name="barcode"><br><br>
+        </div>
+    </div>
+    <div class="row my-1">
+        <div class="col-12">
+            <button id="submit" type="submit" class="btn btn-primary">{% translate "Slå op i pant database" %}</button>
+        </div>
+    </div>
+    <div id="success" style="display:none">
+        <div class="row my-1">
+            <div class="col-12">
+            {% translate "Der er pant på dette produkt:" %}
+            </div>
+        </div>
+        <div class="row my-1">
+            <div class="col-6">
+            {% translate "Produkt navn:" %}
+            </div>
+            <div class="col-6" id = "product_name"></div>
+        </div>
+        <div class="row my-1">
+            <div class="col-6">
+            {% translate "Produkt type:" %}
+            </div>
+            <div class="col-6" id = "product_type"></div>
+        </div>
+        <div class="row my-1">
+            <div class="col-6">
+            {% translate "Pant (DKK):" %}
+            </div>
+            <div class="col-6" id = "refund_value"></div>
+        </div>
+    </div>
+    <div id="failure" style="display:none">
+        {% translate "Der er ikke pant på dette produkt." %}
+    </div>
+</div>
+
+<script>
+$(function(){
+const barcodes = JSON.parse($("#barcodes").text());
+$("#submit").on("click",function(){
+const barcode = $("#barcode").val();
+if (barcode in barcodes){
+$("#success").show();
+$("#failure").hide();
+product=barcodes[barcode];
+$("#product_name").text(product["product_name"]);
+$("#product_type").text(product["product_type"]);
+$("#refund_value").text(product["refund_value"]);
+}
+else{
+$("#failure").show();
+$("#success").hide();
+}
+});
+});
+</script>
+
+{% endblock %}

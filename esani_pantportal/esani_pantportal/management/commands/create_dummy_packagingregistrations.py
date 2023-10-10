@@ -22,6 +22,8 @@ class Command(BaseCommand):
                 f"Will not create dummy registrations in {settings.ENVIRONMENT}"
             )
 
+        if PackagingRegistration.objects.all().count() != 0:
+            return
         pr = PackagingRegistration.objects.create(
             registration_number=1,
             registration_company=Company.objects.order_by("?").first(),
