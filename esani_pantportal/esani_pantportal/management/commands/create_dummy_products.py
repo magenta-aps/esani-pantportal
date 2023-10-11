@@ -20,21 +20,21 @@ class Command(BaseCommand):
 
         Product.objects.create(
             product_name="Sofavand",
-            barcode=1,
+            barcode="1",
             tax_group=1,
             product_type="Vand",
             approved=True,
         )
         Product.objects.create(
             product_name="Smedeøl",
-            barcode=2,
+            barcode="2",
             tax_group=2,
             product_type="Øl",
             approved=True,
         )
         Product.objects.create(
             product_name="Sovende And",
-            barcode=3,
+            barcode="3",
             tax_group=1,
             product_type="Vand",
             approved=False,

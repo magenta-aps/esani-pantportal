@@ -12,6 +12,7 @@ SPDX-License-Identifier: MPL-2.0
 {% block extra_headers %}
 <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.css">
 <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.css">
+<script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
 h1 {text-align: center;}
@@ -30,67 +31,160 @@ div {text-align: center;}
 <div class="mx-5">
     <h1>Er der pant på mit produkt?</h1>
     <div class="row my-1">
-        <div class="col-12"><label class="form-label">{% translate "barcode:" %}</label></div>
+        <div id="scan_instructions" class="col-12"><label class="form-label">{% translate "Scan produktets stregkode:" %}</label></div>
     </div>
-    <div class="row my-1">
-        <div class="col-12">
-            <input type="text" id="barcode" name="barcode"><br><br>
+    <div class="row my-1 justify-content-center">
+        <div class="col-sm-12 col-md-7 col-lg-4 col-xl-3">
+            <div id="reader" style="display: inline-block; width: 100%"></div>
         </div>
     </div>
     <div class="row my-1">
-        <div class="col-12">
-            <button id="submit" type="submit" class="btn btn-primary">{% translate "Slå op i pant database" %}</button>
+        <div id="manual_instructions" class="col-12"><label class="form-label">{% translate "Eller indtast stregkode her:" %}</label></div>
+    </div>
+    <div id="barcode_search_div" class="row my-1 justify-content-center">
+        <div class="col-sm-12 col-md-7 col-lg-4 col-xl-3">
+            <div class="input-group mb-3">
+                <input type="text" placeholder="0000" id="barcode" name="barcode" class="form-control">
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" id="submit" type="button">{% translate "Søg" %}</button>
+                </div>
+            </div>
         </div>
     </div>
     <div id="success" style="display:none">
+        <div class="row my-1 justify-content-center">
+            <div class="col-sm-12 col-md-7 col-lg-4 col-xl-3">
+                <img src="{% static 'images/success.jpg' %}" style="width: 50%"/>
+            </div>
+        </div>
         <div class="row my-1">
             <div class="col-12">
-            {% translate "Der er pant på dette produkt:" %}
+                {% translate "Der er pant på dette produkt:" %}
             </div>
         </div>
         <div class="row my-1">
-            <div class="col-6">
-            {% translate "Produkt navn:" %}
+            <div class="col-6 text-end">
+                <b>{% translate "Stregkode:" %}</b>
             </div>
-            <div class="col-6" id = "product_name"></div>
+            <div class="col-6 text-start" id="barcode_success"></div>
         </div>
         <div class="row my-1">
-            <div class="col-6">
-            {% translate "Produkt type:" %}
+            <div class="col-6 text-end">
+                <b>{% translate "Pant (DKK):" %}</b>
             </div>
-            <div class="col-6" id = "product_type"></div>
+            <div class="col-6 text-start" id="refund_value"></div>
         </div>
         <div class="row my-1">
-            <div class="col-6">
-            {% translate "Pant (DKK):" %}
+            <div class="col-6 text-end">
+                <b>{% translate "Produkt navn:" %}</b>
             </div>
-            <div class="col-6" id = "refund_value"></div>
+            <div class="col-6 text-start" id="product_name"></div>
+        </div>
+        <div class="row my-1">
+            <div class="col-6 text-end">
+                <b>{% translate "Produkt type:" %}</b>
+            </div>
+            <div class="col-6 text-start" id="product_type"></div>
         </div>
     </div>
     <div id="failure" style="display:none">
-        {% translate "Der er ikke pant på dette produkt." %}
+        <div class="row my-1 justify-content-center">
+            <div class="col-sm-12 col-md-7 col-lg-4 col-xl-3">
+                <img src="{% static 'images/failure.jpg' %}" style="width: 50%"/>
+            </div>
+        </div>
+        <div class="row my-1">
+            <div class="col-12">
+                {% translate "Der er ikke pant på dette produkt:" %}
+            </div>
+        </div>
+        <div class="row my-1">
+            <div class="col-6 text-end">
+                <b>{% translate "Stregkode:" %}</b>
+            </div>
+            <div class="col-6 text-start" id="barcode_failure"></div>
+        </div>
+        <div class="row my-1">
+            <div class="col-6 text-end">
+                <b>{% translate "Pant (DKK):" %}</b>
+            </div>
+            <div class="col-6 text-start">0</div>
+        </div>
+    </div>
+    <div class="row my-1 justify-content-center" style="display:none" id="back_button_div">
+        <div class="col-sm-12 col-md-7 col-lg-4 col-xl-3">
+            <button class="btn btn-outline-dark" style="width:100%" id="back_button" type="button">{% translate "Tilbage" %}</button>
+        </div>
     </div>
 </div>
 
+<!--
+# Scanner documentation:
+https://github.com/mebjas/html5-qrcode
+https://scanapp.org/html5-qrcode-docs/docs/intro
+https://blog.minhazav.dev/research/html5-qrcode
+-->
 <script>
-$(function(){
-const barcodes = JSON.parse($("#barcodes").text());
-$("#submit").on("click",function(){
-const barcode = $("#barcode").val();
-if (barcode in barcodes){
-$("#success").show();
-$("#failure").hide();
-product=barcodes[barcode];
-$("#product_name").text(product["product_name"]);
-$("#product_type").text(product["product_type"]);
-$("#refund_value").text(product["refund_value"]);
+const lookup = function() {
+    const barcode = $("#barcode").val();
+    show_result(barcode);
 }
-else{
-$("#failure").show();
-$("#success").hide();
+
+function hideInputs() {
+    html5QrcodeScanner.clear();
+    $("#scan_instructions").hide();
+    $("#manual_instructions").hide();
+    $("#barcode_search_div").hide();
+    $("#back_button_div").show();
+    }
+
+function showInputs() {
+    html5QrcodeScanner.render(onScanSuccess);
+    $("#scan_instructions").show();
+    $("#manual_instructions").show();
+    $("#barcode_search_div").show();
+    $("#back_button_div").hide();
+    $("#failure").hide();
+    $("#success").hide();
+    }
+
+function show_result(barcode) {
+    const barcodes = JSON.parse($("#barcodes").text());
+    if (barcode in barcodes){
+        $("#success").show();
+        $("#failure").hide();
+        const product=barcodes[barcode];
+        $("#barcode_success").text(barcode);
+        $("#product_name").text(product["product_name"]);
+        $("#product_type").text(product["product_type"]);
+        $("#refund_value").text(product["refund_value"]);
+    } else {
+        $("#failure").show();
+        $("#success").hide();
+        $("#barcode_failure").text(barcode);
+    }
+    hideInputs();
 }
+
+function onScanSuccess(barcode, decodedResult) {
+    show_result(barcode);
+    $("#barcode").val(barcode);
+}
+
+const html5QrcodeScanner = new Html5QrcodeScanner(
+	"reader",
+	 {fps: 60, qrbox: {width: 250, height: 150}}
+);
+html5QrcodeScanner.render(onScanSuccess);
+
+$("#submit").on("click",lookup);
+$("#barcode").on("keypress", function(event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    lookup();
+  }
 });
-});
+$("#back_button").on("click",showInputs);
 </script>
 
 {% endblock %}

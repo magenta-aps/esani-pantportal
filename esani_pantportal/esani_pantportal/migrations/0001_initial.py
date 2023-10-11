@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('product_name', models.CharField(help_text='Navn på det pågældende produkt', max_length=200, verbose_name='Produktnavn')),
-                ('barcode', models.PositiveIntegerField(help_text='Stregkode for et indmeldt produkt', unique=True, verbose_name='Stregkode')),
+                ('barcode', models.CharField(help_text='Stregkode for et indmeldt produkt', unique=True, verbose_name='Stregkode')),
                 ('tax_group', models.PositiveIntegerField(help_text='Afgiftsgruppe', verbose_name='Afgiftsgruppe')),
                 ('product_type', models.CharField(help_text='Vareart', max_length=200, verbose_name='Vareart')),
                 ('approved', models.BooleanField(default=False, help_text='Produkt godkendt til pantsystemet af en ESANI medarbejder', verbose_name='Godkendt')),
