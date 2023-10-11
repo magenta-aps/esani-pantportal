@@ -105,7 +105,7 @@ class Product(models.Model):
         help_text=_("Navn på det pågældende produkt"),
         max_length=200,
     )
-    barcode = models.PositiveIntegerField(
+    barcode = models.CharField(
         verbose_name=_("Stregkode"),
         help_text=_("Stregkode for et indmeldt produkt"),
         unique=True,
