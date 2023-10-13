@@ -2,8 +2,39 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext as _
+
+
+# Custom validators
+def validate_barcode_length(barcode: str):
+    if not len(barcode) in [8, 12, 13]:
+        raise ValidationError(
+            _("%(barcode) skal være 8, 12 eller 13 cifre lang"),
+            params={"barcode": barcode},
+        )
+
+
+def validate_digit(string: str):
+    if not string.isdigit():
+        raise ValidationError(
+            _("%(string) må kun bestå af tal"),
+            params={"string": "string"},
+        )
+
+
+PRODUCT_MATERIAL_CHOICES = [
+    ("P", "PET"),
+    ("A", "Aluminium"),
+    ("S", "Stål"),
+    ("G", "Glas"),
+]
+
+PRODUCT_SHAPE_CHOICES = [
+    ("F", "Flaske"),
+    ("A", "Anden"),
+]
 
 
 class Company(models.Model):
@@ -109,6 +140,12 @@ class Product(models.Model):
         verbose_name=_("Stregkode"),
         help_text=_("Stregkode for et indmeldt produkt"),
         unique=True,
+        validators=[validate_barcode_length, validate_digit],
+    )
+    refund_value = models.PositiveIntegerField(
+        verbose_name=_("Pantværdi"),
+        help_text=_("Pantværdi, angivet i eurocent (100=1Euro, 25=0.25Euro)"),
+        default=0,
     )
     tax_group = models.PositiveIntegerField(
         verbose_name=_("Afgiftsgruppe"),
@@ -123,4 +160,34 @@ class Product(models.Model):
         verbose_name=_("Godkendt"),
         help_text=_("Produkt godkendt til pantsystemet af en ESANI medarbejder"),
         default=False,
+    )
+    # The following should possibly be kept in a separate model
+    material_type = models.CharField(
+        verbose_name=_("Materialetype"),
+        help_text=_("Materialetype"),
+        choices=PRODUCT_MATERIAL_CHOICES,
+    )
+    height = models.PositiveIntegerField(
+        verbose_name=_("Højde"),
+        help_text=_("Emballagens højde i Millimeter"),
+    )
+    diameter = models.PositiveIntegerField(
+        verbose_name=_("Diameter"),
+        help_text=_("Emballagens diameter i Millimeter"),
+    )
+    weight = models.PositiveIntegerField(
+        verbose_name=_("Vægt"),
+        help_text=_("Tør/tom vægt af emballagen i Gram"),
+    )
+    capacity = models.PositiveIntegerField(
+        verbose_name=_("Volumenkapacitet"),
+        help_text=_("Emballagens tiltænkte volumen i Milliliter"),
+    )
+    shape = models.CharField(
+        verbose_name=_("Form"),
+        help_text=(
+            'Kategori for emballagens form. Flasker er "Bottles", andre ting er '
+            + '"Other"'
+        ),
+        choices=PRODUCT_SHAPE_CHOICES,
     )

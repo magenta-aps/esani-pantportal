@@ -2,10 +2,16 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+import random
+
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from esani_pantportal.models import Product
+from esani_pantportal.models import (  # isort: skip
+    PRODUCT_MATERIAL_CHOICES,
+    PRODUCT_SHAPE_CHOICES,
+    Product,
+)
 
 
 class Command(BaseCommand):
@@ -18,24 +24,35 @@ class Command(BaseCommand):
         if Product.objects.all().count() != 0:
             return
 
-        Product.objects.create(
-            product_name="Sofavand",
-            barcode="1",
-            tax_group=1,
-            product_type="Vand",
-            approved=True,
-        )
-        Product.objects.create(
-            product_name="Smedeøl",
-            barcode="2",
-            tax_group=2,
-            product_type="Øl",
-            approved=True,
-        )
-        Product.objects.create(
-            product_name="Sovende And",
-            barcode="3",
-            tax_group=1,
-            product_type="Vand",
-            approved=False,
-        )
+        vowels = "aeiouyæøå"
+        consonants = "bcdfghjklmnpqrstvwxz"
+
+        for i in range(100):
+            barcode = ""
+            for i in range(random.choice([8, 12, 13])):
+                barcode += str(random.randint(0, 9))
+
+            product_type = random.choice(["Øl", "Vand", "Juice", "Smoothie", "Saft"])
+
+            product_name = "".join(
+                [
+                    random.choice(vowels),
+                    random.choice(consonants) * 2,
+                    random.choice(vowels),
+                    product_type,
+                ]
+            )
+
+            Product.objects.create(
+                product_name=product_name,
+                barcode=barcode,
+                tax_group=random.randint(1, 100),
+                product_type=product_type,
+                approved=random.choice([True, False]),
+                material_type=random.choice(PRODUCT_MATERIAL_CHOICES)[0],
+                height=random.randint(10, 100),
+                diameter=random.randint(10, 100),
+                weight=random.randint(100, 1000),
+                capacity=random.randint(100, 1000),
+                shape=random.choice(PRODUCT_SHAPE_CHOICES)[0],
+            )
