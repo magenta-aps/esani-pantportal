@@ -166,22 +166,27 @@ class Product(models.Model):
         verbose_name=_("Materialetype"),
         help_text=_("Materialetype"),
         choices=PRODUCT_MATERIAL_CHOICES,
+        default="P",
     )
     height = models.PositiveIntegerField(
         verbose_name=_("Højde"),
         help_text=_("Emballagens højde i Millimeter"),
+        default=0,
     )
     diameter = models.PositiveIntegerField(
         verbose_name=_("Diameter"),
         help_text=_("Emballagens diameter i Millimeter"),
+        default=0,
     )
     weight = models.PositiveIntegerField(
         verbose_name=_("Vægt"),
         help_text=_("Tør/tom vægt af emballagen i Gram"),
+        default=0,
     )
     capacity = models.PositiveIntegerField(
         verbose_name=_("Volumenkapacitet"),
         help_text=_("Emballagens tiltænkte volumen i Milliliter"),
+        default=0,
     )
     shape = models.CharField(
         verbose_name=_("Form"),
@@ -190,4 +195,5 @@ class Product(models.Model):
             + '"Other"'
         ),
         choices=PRODUCT_SHAPE_CHOICES,
+        default="B",
     )
