@@ -29,24 +29,26 @@ div {text-align: center;}
 {% block content %}
 {{ barcodes|json_script:"barcodes" }}
 <div class="mx-5">
-    <h1>Er der pant på mit produkt?</h1>
-    <div class="row my-1">
-        <div id="scan_instructions" class="col-12"><label class="form-label">{% translate "Scan produktets stregkode:" %}</label></div>
-    </div>
-    <div class="row my-1 justify-content-center">
-        <div class="col-sm-12 col-md-7 col-lg-4 col-xl-3">
-            <div id="reader" style="display: inline-block; width: 100%"></div>
+    <h1>{% translate "Er der pant på mit produkt?" %}</h1>
+    <div id="scanner">
+        <div class="row my-1">
+            <div class="col-12"><label class="form-label">{% translate "Scan produktets stregkode:" %}</label></div>
         </div>
-    </div>
-    <div class="row my-1">
-        <div id="manual_instructions" class="col-12"><label class="form-label">{% translate "Eller indtast stregkode her:" %}</label></div>
-    </div>
-    <div id="barcode_search_div" class="row my-1 justify-content-center">
-        <div class="col-sm-12 col-md-7 col-lg-4 col-xl-3">
-            <div class="input-group mb-3">
-                <input type="text" placeholder="0000" id="barcode" name="barcode" class="form-control">
-                <div class="input-group-append">
-                    <button class="btn btn-outline-secondary" id="submit" type="button">{% translate "Søg" %}</button>
+        <div class="row my-1 justify-content-center">
+            <div class="col-sm-12 col-md-7 col-lg-4 col-xl-3">
+                <div id="reader" style="display: inline-block; width: 100%"></div>
+            </div>
+        </div>
+        <div class="row my-1">
+            <div class="col-12"><label class="form-label">{% translate "Eller indtast stregkode her:" %}</label></div>
+        </div>
+        <div class="row my-1 justify-content-center">
+            <div class="col-sm-12 col-md-7 col-lg-4 col-xl-3">
+                <div class="input-group mb-3">
+                    <input type="text" placeholder="0000" id="barcode" name="barcode" class="form-control">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" id="submit" type="button">{% translate "Søg" %}</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -59,7 +61,7 @@ div {text-align: center;}
         </div>
         <div class="row my-1">
             <div class="col-12">
-                {% translate "Der er pant på dette produkt:" %}
+                {% translate "Der er pant på dette produkt." %}
             </div>
         </div>
         <div class="row my-1">
@@ -95,7 +97,7 @@ div {text-align: center;}
         </div>
         <div class="row my-1">
             <div class="col-12">
-                {% translate "Der er ikke pant på dette produkt:" %}
+                {% translate "Der er ikke pant på dette produkt." %}
             </div>
         </div>
         <div class="row my-1">
@@ -111,9 +113,70 @@ div {text-align: center;}
             <div class="col-6 text-start">0</div>
         </div>
     </div>
+    <div id="results_div" style="display:none">
+        <div class="row my-1 justify-content-center">
+            <div class="col-12">
+            {% translate "Det totale beløb er:" %}
+            </div>
+        </div>
+        <div class="row my-1 justify-content-center">
+            <div class="col-12">
+                <h1 class="display-1" style="font-weight: 800">
+                    <div id="total_pant_header">0</div>
+                </h1>
+            </div>
+        </div>
+        <div class="row my-1 justify-content-center">
+            <div class="col-sm-12 col-md-7 col-lg-4 col-xl-3">
+                <button class="btn btn-outline-dark" style="width:100%" id="more_products_button" type="button">{% translate "Scan flere produkter" %}</button>
+            </div>
+        </div>
+        <div class="row my-1 justify-content-center">
+            <div class="col-sm-12 col-md-7 col-lg-4 col-xl-3">
+                <button class="btn btn-outline-dark" style="width:100%" id="reset_button" type="button">{% translate "Nulstil" %}</button>
+            </div>
+        </div>
+        <div class="row my-1 justify-content-center" id="show_details_button_div">
+            <div class="col-sm-12 col-md-7 col-lg-4 col-xl-3">
+                <button class="btn btn-outline-dark" style="width:100%" id="show_details_button" type="button">{% translate "Vis detaljer" %}</button>
+            </div>
+        </div>
+        <div class="row my-1 justify-content-center" id="hide_details_button_div">
+            <div class="col-sm-12 col-md-7 col-lg-4 col-xl-3">
+                <button class="btn btn-outline-dark" style="width:100%" id="hide_details_button" type="button">{% translate "Gem detaljer" %}</button>
+            </div>
+        </div>
+        <div class="row my-1 justify-content-center">
+            <div class="col-sm-12 col-md-7 col-lg-4 col-xl-3 table-responsive">
+                <table id="resultsTable" class="table" style="display:none">
+                    <thead>
+                        <tr>
+                            <th>{% translate "Stregkode" %}</th>
+                            <th>{% translate "Pant (DKK)" %}</th>
+                            <th>{% translate "Produkt navn" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td><b>{% translate "Total: " %}</b></td>
+                            <td><b> <div id="total_pant">0</div></b></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
     <div class="row my-1 justify-content-center" style="display:none" id="back_button_div">
         <div class="col-sm-12 col-md-7 col-lg-4 col-xl-3">
-            <button class="btn btn-outline-dark" style="width:100%" id="back_button" type="button">{% translate "Tilbage" %}</button>
+            <button class="btn btn-outline-dark" style="width:100%" id="back_button" type="button">{% translate "Scan næste produkt" %}</button>
+        </div>
+    </div>
+    <div class="row my-1 justify-content-center" style="display:none" id="show_total_button_div">
+        <div class="col-sm-12 col-md-7 col-lg-4 col-xl-3">
+            <button class="btn btn-outline-dark" style="width:100%" id="show_total_button" type="button">{% translate "Vis total" %}</button>
         </div>
     </div>
 </div>
@@ -127,48 +190,106 @@ https://blog.minhazav.dev/research/html5-qrcode
 <script>
 const lookup = function() {
     const barcode = $("#barcode").val();
-    show_result(barcode);
+    process_barcode(barcode);
 }
 
-function hideInputs() {
+var total_pant = 0;
+
+function showDetails() {
+    $("#resultsTable").show();
+    $("#show_details_button_div").hide();
+    $("#hide_details_button_div").show();
+}
+
+function hideDetails() {
+    $("#resultsTable").hide();
+    $("#show_details_button_div").show();
+    $("#hide_details_button_div").hide();
+}
+
+function showResult() {
     html5QrcodeScanner.clear();
-    $("#scan_instructions").hide();
-    $("#manual_instructions").hide();
-    $("#barcode_search_div").hide();
+    $("#scanner").hide();
     $("#back_button_div").show();
+    $("#results_div").hide();
     }
 
-function showInputs() {
+function showScanner() {
+    $("#scanner").show();
     html5QrcodeScanner.render(onScanSuccess);
-    $("#scan_instructions").show();
-    $("#manual_instructions").show();
-    $("#barcode_search_div").show();
     $("#back_button_div").hide();
     $("#failure").hide();
     $("#success").hide();
+    $("#results_div").hide();
+    $("#barcode").val("");
+    $("#show_total_button_div").hide();
     }
 
-function show_result(barcode) {
+function reset() {
+    showScanner();
+    total_pant = 0;
+    $("#resultsTable > tbody").empty();
+}
+
+function showTotal() {
+    $("#failure").hide();
+    $("#success").hide();
+    $("#results_div").show();
+    $("#show_total_button_div").hide();
+    $("#back_button_div").hide();
+    $("#hide_details_button_div").hide();
+}
+
+
+function process_barcode(barcode) {
+    showResult();
     const barcodes = JSON.parse($("#barcodes").text());
     if (barcode in barcodes){
         $("#success").show();
         $("#failure").hide();
-        const product=barcodes[barcode];
-        $("#barcode_success").text(barcode);
-        $("#product_name").text(product["product_name"]);
-        $("#product_type").text(product["product_type"]);
-        $("#refund_value").text(product["refund_value"]);
     } else {
         $("#failure").show();
         $("#success").hide();
-        $("#barcode_failure").text(barcode);
     }
-    hideInputs();
+
+    if (barcode in barcodes){
+        const product = barcodes[barcode];
+        var pant = product["refund_value"];
+        var product_name = product["product_name"];
+        var product_type = product["product_type"];
+    } else {
+        var pant = 0;
+        var product_name = "-";
+        var product_type = "-";
+    }
+
+
+    $("#barcode_success").text(barcode);
+    $("#product_name").text(product_name);
+    $("#product_type").text(product_type);
+    $("#refund_value").text(pant);
+    $("#barcode_failure").text(barcode);
+
+    var markup = "<tr><td>" + barcode + "</td><td>"
+                            + pant + "</td><td>"
+                            + product_name + "</td></tr>";
+
+    $("#resultsTable > tbody").append(markup);
+    var number_of_rows = $("#resultsTable > tbody > tr").length;
+
+    total_pant = total_pant + pant;
+    $("#total_pant").text(total_pant);
+    $("#total_pant_header").text(total_pant + " kr.");
+
+    if (number_of_rows > 1) {
+        $("#show_total_button_div").show();
+    } else {
+        $("#show_total_button_div").hide();
+    }
 }
 
 function onScanSuccess(barcode, decodedResult) {
-    show_result(barcode);
-    $("#barcode").val(barcode);
+    process_barcode(barcode);
 }
 
 const html5QrcodeScanner = new Html5QrcodeScanner(
@@ -184,7 +305,12 @@ $("#barcode").on("keypress", function(event) {
     lookup();
   }
 });
-$("#back_button").on("click",showInputs);
+$("#back_button").on("click",showScanner);
+$("#more_products_button").on("click",showScanner);
+$("#reset_button").on("click",reset);
+$("#show_total_button").on("click",showTotal);
+$("#show_details_button").on("click",showDetails);
+$("#hide_details_button").on("click",hideDetails);
 </script>
 
 {% endblock %}
