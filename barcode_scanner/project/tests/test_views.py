@@ -5,8 +5,9 @@
 # SPDX-License-Identifier: MPL-2.0
 
 
-from django.test import TestCase
 from unittest import mock
+
+from django.test import TestCase
 
 
 class RestClientMock:

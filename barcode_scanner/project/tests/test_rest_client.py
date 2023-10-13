@@ -4,9 +4,11 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-from django.test import TestCase
-from barcode_scanner.rest import RestClient
 from unittest import mock
+
+from django.test import TestCase
+
+from barcode_scanner.rest import RestClient
 
 
 # This method will be used by the mock to replace requests.get

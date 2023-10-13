@@ -1,0 +1,25 @@
+{% extends 'ui/layout.html' %}
+{% load i18n %}
+{% block header %}
+{% endblock %}
+{% block content %}
+<div class="justify-content-md-center d-flex align-items-center vh-100">
+    <div class="card" style="width: 40rem;">
+        <h5 class="card-header">{{ header }}</h5>
+        <div class="card-body">
+            <p>
+                {{ body }}
+            </p>
+            <p>
+            <a class="btn btn-primary" href="javascript:history.back()">{% translate 'Tilbage' %}</a>
+            {% if logout %}
+                <a href="{% url 'django_mitid_auth:logout' %}" class="btn btn-primary">{% translate 'Log ud' %}</a>
+            {% endif %}
+            {% if login %}
+                <a href="{% url 'django_mitid_auth:login' %}" class="btn btn-primary">{% translate 'Log ind' %}</a>
+            {% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

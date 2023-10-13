@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 from django.urls import path
+
 from barcode_scanner.views import BarcodeCheckView
 
 urlpatterns = [
