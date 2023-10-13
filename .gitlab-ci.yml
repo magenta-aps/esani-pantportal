@@ -43,6 +43,10 @@ Lint Python:
     - flake8 --extend-ignore E226,E203,E501,W503 esani_pantportal/
     - black --check --diff --exclude=migrations esani_pantportal/
     - isort -c --diff --skip migrations esani_pantportal/
+    - flake8 --extend-ignore E226,E203,E501,W503 barcode_scanner/
+    - black --check --diff --exclude=migrations barcode_scanner/
+    - isort -c --diff --skip migrations barcode_scanner/
+
 
 Lint Dockerfiles:
   <<: *lint-default
