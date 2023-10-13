@@ -4,8 +4,9 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-from barcode_scanner.rest import RestClient
 from django.views.generic import TemplateView
+
+from barcode_scanner.rest import RestClient
 
 
 class BarcodeCheckView(TemplateView):

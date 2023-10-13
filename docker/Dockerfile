@@ -5,17 +5,22 @@
 FROM python:3.11
 ENV PYTHONUNBUFFERED=1
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN mkdir /app \
-  && groupadd -g 75050 -r pantportal \
-  && groupadd -g 75100 -r certificate_exporter \
-  && useradd -u 75130 --no-log-init -r -g pantportal -G certificate_exporter pantportal
-COPY esani_pantportal/requirements.txt /app/requirements.txt
-RUN pip3 install --no-cache-dir -r /app/requirements.txt
+RUN mkdir /app && \
+mkdir -p /var/cache/pant && \
+groupadd -g 75050 -r pantportal && \
+groupadd -g 75100 -r certificate_exporter && \
+useradd -u 75130 --no-log-init -r -g pantportal -G certificate_exporter pantportal && \
+chown pantportal:pantportal /var/cache/pant && \
+chmod a+w /var/cache/pant
+
 # hadolint ignore=DL3008
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends gettext python3-distutils graphviz \
+  && apt-get install -y --no-install-recommends gettext python3-distutils graphviz libxmlsec1-dev xmlsec1 \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
+
+COPY esani_pantportal/requirements.txt /app/requirements.txt
+RUN pip3 install --no-cache-dir -r /app/requirements.txt
 
 USER pantportal
 COPY ./docker/entrypoint.sh /entrypoint.sh

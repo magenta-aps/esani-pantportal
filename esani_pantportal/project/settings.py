@@ -15,8 +15,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
-from distutils.util import strtobool
 from pathlib import Path
+
+from project.util import strtobool
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -47,12 +48,14 @@ INSTALLED_APPS = [
     "esani_pantportal",
     "ninja_extra",
     "ninja_jwt",
+    "django_mitid_auth",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "django_mitid_auth.middleware.LoginManager",
     # "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -90,6 +93,13 @@ DATABASES = {
         "USER": os.environ["POSTGRES_USER"],
         "PASSWORD": os.environ["POSTGRES_PASSWORD"],
         "HOST": os.environ["POSTGRES_HOST"],
+    },
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "default_cache",
     },
 }
 
@@ -136,3 +146,5 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
+
+from .login_settings import *  # noqa

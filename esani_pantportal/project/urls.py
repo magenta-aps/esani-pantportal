@@ -18,6 +18,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 from project.admin import pantadmin
@@ -28,4 +29,5 @@ urlpatterns = [
     path("django-admin/", admin.site.urls),
     path("", include("esani_pantportal.urls")),
     path("api/", api.urls),
+    path("", include("django_mitid_auth.urls", namespace=settings.LOGIN_NAMESPACE)),
 ]
