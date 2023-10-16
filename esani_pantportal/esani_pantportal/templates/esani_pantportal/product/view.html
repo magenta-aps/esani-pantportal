@@ -1,0 +1,96 @@
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+
+{% block content %}
+<form action="" method="post">
+    {% csrf_token %}
+    <div class="mx-5">
+        <h1>{% translate "Produktdetaljer" %}</h1>
+
+        <div class="row">
+            <div class="col-6">
+                <h2>Pant</h2>
+                <table class="table table-bordered">
+                    <tbody>
+                    <tr>
+                        <th class="col-6">{{object|verbose_name:"product_name"}}</th>
+                        <td class="col-6">{{object.product_name}}</td>
+                    </tr>
+                    <tr>
+                        <th>{{object|verbose_name:"barcode"}}</th>
+                        <td>{{object.barcode}}</td>
+                    </tr>
+                    <tr>
+                        <th>{{object|verbose_name:"refund_value"}}</th>
+                        <td>{{object.refund_value}} øre</td>
+                    </tr>
+                    <tr>
+                        <th>{{object|verbose_name:"tax_group"}}</th>
+                        <td>{{object.tax_group}}</td>
+                    </tr>
+                    <tr>
+                        <th>{{object|verbose_name:"product_type"}}</th>
+                        <td>{{object.product_type}}</td>
+                    </tr>
+                    <tr>
+                        <th>{{object|verbose_name:"approved"}}</th>
+                        <td>{{object.approved|yesno}}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="col-6">
+                <h2>Materiale</h2>
+                <table class="table table-bordered">
+                    <tbody>
+                    <tr>
+                        <th class="col-6">{{object|verbose_name:"material_type"}}</th>
+                        <td class="col-6">{{object.get_material_type_display}}</td>
+                    </tr>
+                    <tr>
+                        <th>{{object|verbose_name:"height"}}</th>
+                        <td>{{object.height}} mm</td>
+                    </tr>
+                    <tr>
+                        <th>{{object|verbose_name:"diameter"}}</th>
+                        <td>{{object.diameter}} mm</td>
+                    </tr>
+                    <tr>
+                        <th>{{object|verbose_name:"weight"}}</th>
+                        <td>{{object.weight}} g</td>
+                    </tr>
+                    <tr>
+                        <th>{{object|verbose_name:"capacity"}}</th>
+                        <td>{{object.capacity}} ml</td>
+                    </tr>
+                    <tr>
+                        <th>{{object|verbose_name:"shape"}}</th>
+                        <td>{{object.get_shape_display}}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        {% if not object.approved %}
+        <div class="card col-md-6 offset-md-3">
+            <div class="card-body">
+                <h5 class="cart-title">Godkend</h5>
+                <p class="card-text">
+                    Inden godkendelse skal det sikres at:
+                </p>
+                <ul>
+                    <li>Navn og stregkode på produktet er korrekt</li>
+                    <li>At emballagen er pantbelagt</li>
+                </ul>
+                <button type="submit" name="{{form.approved.name}}" value="1" class="btn btn-success">Godkend</button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</form>
+{% endblock %}
