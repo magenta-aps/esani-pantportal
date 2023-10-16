@@ -21,7 +21,11 @@ SPDX-License-Identifier: MPL-2.0
 <body>
 {% block header %}
 <header>
-    <h1>ESANI Pantportal</h1>
+    <nav class="nav flex-column flex-sm-row p-1">
+        <a class="p-2 text-muted " href="{% url 'product_register' %}">Registrer nyt produkt</a>
+        <a class="p-2 text-muted" href="{% url 'product_list' %}">Produktliste</a>
+    </nav>
+    <hr class="p-0 m-0"/>
 </header>
 {% endblock %}
 {% block content %}
