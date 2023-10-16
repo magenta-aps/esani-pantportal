@@ -24,24 +24,6 @@ services:
     network_mode: "host"  # Kun nødvendig i dev-environment for at få test-idp til at fungere
     command: gunicorn -b 0.0.0.0:8000 project.wsgi:application --reload -w 1 --access-logfile - --error-logfile - --capture-output # reload on code changes
 
-  barcode-scanner:
-    user: "75060:1000" # Override in docker-compose.override.yml if local user is different
-    container_name: barcode-scanner
-    image: barcode-scanner:latest
-    build:
-      context: .
-      dockerfile: docker/Dockerfile_barcode_scanner
-    env_file:
-      - ./dev-environment/barcode-scanner.env
-    volumes:
-      - ./barcode_scanner/:/app
-    depends_on:
-      - pantportal-db
-    environment:
-      - TEST=false
-    network_mode: "host"  # Kun nødvendig i dev-environment for at få test-idp til at fungere
-    command: gunicorn -b 0.0.0.0:7000 project.wsgi:application --reload -w 1 --access-logfile - --error-logfile - --capture-output # reload on code changes
-
   pantportal-db:
     container_name: pantportal-db
     image: postgres:16

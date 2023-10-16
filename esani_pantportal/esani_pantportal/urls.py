@@ -13,8 +13,11 @@ from esani_pantportal.views import (  # isort: skip
 )
 
 
+app_name = "esani_pantportal"
+
+
 urlpatterns = [
-    path("", RedirectView.as_view(url=reverse_lazy("product_list"))),
+    path("", RedirectView.as_view(url=reverse_lazy("pant:product_list"))),
     path("nyt_produkt/", ProductRegisterView.as_view(), name="product_register"),
     path(
         "nyt_produkt/success",

@@ -3,30 +3,27 @@ SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 
 SPDX-License-Identifier: MPL-2.0
 -->
-{% extends "barcode_scanner/layout.html" %}
 {% load static %}
 {% load i18n %}
 {% load l10n %}
+<!doctype html>
+<html lang="da">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{% static 'bootstrap/bootstrap.min.css' %}" >
+    <link rel="stylesheet" href="{% static 'barcode_scanner/css/style.css' %}" >
+    <script src="{% static 'jquery/jquery-3.5.1.min.js' %}"></script>
+    <script src="{% static 'bootstrap/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <title>ESANI Pant</title>
+    <style>
+        h1 {text-align: center;}
+        div {text-align: center;}
+    </style>
+</head>
+<body>
 
-{# Docs for bootstrap-table: https://bootstrap-table.com/docs/ #}
-{% block extra_headers %}
-<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.css">
-<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.css">
-<script src="https://unpkg.com/html5-qrcode"></script>
-
-<style>
-h1 {text-align: center;}
-div {text-align: center;}
-</style>
-
-{% endblock %}
-{% block extra_footers %}
-<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
-<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
-<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/defer-url/bootstrap-table-defer-url.min.js"></script>
-{% endblock %}
-
-{% block content %}
 {{ barcodes|json_script:"barcodes" }}
 <div class="mx-5">
     <h1>{% translate "Er der pant på mit produkt?" %}</h1>
@@ -244,25 +241,20 @@ function showTotal() {
 function process_barcode(barcode) {
     showResult();
     const barcodes = JSON.parse($("#barcodes").text());
-    if (barcode in barcodes){
-        $("#success").show();
-        $("#failure").hide();
-    } else {
-        $("#failure").show();
-        $("#success").hide();
-    }
 
+    const found = (barcode in barcodes);
+    $("#success").toggle(found);
+    $("#failure").toggle(!found);
+
+    let pant = 0;
+    let product_name = "-";
+    let product_type = "-";
     if (barcode in barcodes){
         const product = barcodes[barcode];
-        var pant = product["refund_value"] / 100;
-        var product_name = product["product_name"];
-        var product_type = product["product_type"];
-    } else {
-        var pant = 0;
-        var product_name = "-";
-        var product_type = "-";
+        pant = product["refund_value"];
+        product_name = product["product_name"];
+        product_type = product["product_type"];
     }
-
 
     $("#barcode_success").text(barcode);
     $("#product_name").text(product_name);
@@ -270,9 +262,9 @@ function process_barcode(barcode) {
     $("#refund_value").text(pant);
     $("#barcode_failure").text(barcode);
 
-    var markup = "<tr><td>" + barcode + "</td><td>"
-                            + pant + "</td><td>"
-                            + product_name + "</td></tr>";
+    var markup = "<tr><td>" + barcode + "</td>" +
+                     "<td>" + pant + "</td>" +
+                     "<td>" + product_name + "</td></tr>";
 
     $("#resultsTable > tbody").append(markup);
     var number_of_rows = $("#resultsTable > tbody > tr").length;
@@ -312,5 +304,3 @@ $("#show_total_button").on("click",showTotal);
 $("#show_details_button").on("click",showDetails);
 $("#hide_details_button").on("click",hideDetails);
 </script>
-
-{% endblock %}

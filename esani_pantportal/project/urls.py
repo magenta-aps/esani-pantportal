@@ -28,11 +28,11 @@ from project.api import api
 urlpatterns = [
     path("admin/", pantadmin.urls),
     path("django-admin/", admin.site.urls),
-    path("", include("esani_pantportal.urls")),
+    path("", include("esani_pantportal.urls", namespace="pant")),
+    path("barcode/", include("barcode_scanner.urls", namespace="barcode")),
     path("api/", api.urls),
     path("", include("django_mitid_auth.urls", namespace=settings.LOGIN_NAMESPACE)),
 ]
-
 
 if settings.DEBUG:
     urlpatterns += staticfiles_urlpatterns()

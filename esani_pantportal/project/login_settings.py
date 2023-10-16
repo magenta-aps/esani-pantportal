@@ -15,14 +15,15 @@ LOGIN_NAMESPACE = "login"
 
 # Session keys to delete on logout
 LOGIN_SESSION_KEYS = ["user", "access_token", "refresh_token"]
-LOGIN_TIMEOUT_URL = reverse_lazy("login-timeout")
-LOGIN_REPEATED_URL = reverse_lazy("login-repeat")
+LOGIN_TIMEOUT_URL = reverse_lazy("pant:login-timeout")
+LOGIN_REPEATED_URL = reverse_lazy("pant:login-repeat")
 LOGIN_WHITELISTED_URLS = [
     "/favicon.ico",
     LOGIN_URL,
     "/_ht/",
     LOGIN_TIMEOUT_URL,
     LOGIN_REPEATED_URL,
+    reverse_lazy("barcode:scan"),
 ]
 MITID_TEST_ENABLED = bool(strtobool(os.environ.get("MITID_TEST_ENABLED", "False")))
 SESSION_EXPIRE_SECONDS = int(os.environ.get("SESSION_EXPIRE_SECONDS") or 1800)

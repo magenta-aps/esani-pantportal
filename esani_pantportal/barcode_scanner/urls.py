@@ -4,10 +4,11 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+from barcode_scanner.views import BarcodeCheckView
 from django.urls import path
 
-from barcode_scanner.views import BarcodeCheckView
+app_name = "barcode_scanner"
 
 urlpatterns = [
-    path("scan_barcode", BarcodeCheckView.as_view(), name="scan_barcode"),
+    path("scan/", BarcodeCheckView.as_view(), name="scan"),
 ]
