@@ -18,9 +18,9 @@ app_name = "esani_pantportal"
 
 urlpatterns = [
     path("", RedirectView.as_view(url=reverse_lazy("pant:product_list"))),
-    path("nyt_produkt/", ProductRegisterView.as_view(), name="product_register"),
+    path("produkt/opret", ProductRegisterView.as_view(), name="product_register"),
     path(
-        "nyt_produkt/success",
+        "produkt/opret/success",
         TemplateView.as_view(template_name="esani_pantportal/product/success.html"),
         name="product_register_success",
     ),
