@@ -19,12 +19,14 @@ class RestClientMock:
                 "product_type": "coke",
                 "tax_group": 2,
                 "barcode": 100,
+                "refund_value": 200,
             },
             200: {
                 "product_name": "test_item2",
                 "product_type": "cola",
                 "tax_group": 3,
                 "barcode": 200,
+                "refund_value": 200,
             },
         }
 
@@ -42,5 +44,5 @@ class BarcodeScannerTestCase(TestCase):
         self.assertEquals(barcodes[100]["product_name"], "test_item1")
         self.assertEquals(barcodes[200]["product_name"], "test_item2")
 
-        self.assertEquals(barcodes[100]["refund_value"], 2)
-        self.assertEquals(barcodes[200]["refund_value"], 2)
+        self.assertEquals(barcodes[100]["refund_value"], 200)
+        self.assertEquals(barcodes[200]["refund_value"], 200)

@@ -254,7 +254,7 @@ function process_barcode(barcode) {
 
     if (barcode in barcodes){
         const product = barcodes[barcode];
-        var pant = product["refund_value"];
+        var pant = product["refund_value"] / 100;
         var product_name = product["product_name"];
         var product_type = product["product_type"];
     } else {
