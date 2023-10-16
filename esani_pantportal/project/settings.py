@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_extensions",
     "esani_pantportal",
+    "barcode_scanner",
     "ninja_extra",
     "ninja_jwt",
     "django_mitid_auth",
@@ -63,6 +64,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "project.urls"
+APPEND_SLASH = True
 
 TEMPLATES = [
     {

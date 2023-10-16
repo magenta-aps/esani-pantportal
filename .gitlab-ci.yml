@@ -21,9 +21,6 @@ variables:
   IMAGE_SHA: ${CI_REGISTRY_IMAGE}/esani-pantportal:${CI_COMMIT_SHA}
   IMAGE_TAG: magentaaps/esani-pantportal:${CI_COMMIT_TAG}
 
-  BARCODE_SCANNER_IMAGE_SHA: ${CI_REGISTRY_IMAGE}/barcode-scanner:${CI_COMMIT_SHA}
-  BARCODE_SCANNER_IMAGE_TAG: magentaaps/barcode-scanner:${CI_COMMIT_TAG}
-
   VERSION: PIPELINE
 
 # Lint stage
@@ -43,9 +40,6 @@ Lint Python:
     - flake8 --extend-ignore E226,E203,E501,W503 esani_pantportal/
     - black --check --diff --exclude=migrations esani_pantportal/
     - isort -c --diff --skip migrations esani_pantportal/
-    - flake8 --extend-ignore E226,E203,E501,W503 barcode_scanner/
-    - black --check --diff --exclude=migrations barcode_scanner/
-    - isort -c --diff --skip migrations barcode_scanner/
 
 
 Lint Dockerfiles:
@@ -84,24 +78,6 @@ Build ESANI-Pantportal image:
       --dockerfile=$CI_PROJECT_DIR/docker/Dockerfile
       --destination=${IMAGE_SHA}
 
-
-Build Barcode-scanner image:
-  stage: build
-  needs: ["Lint Python", "Lint Dockerfiles", "Lint REUSE compliance"]
-  dependencies: []
-  image:
-    name: gcr.io/kaniko-project/executor:v1.15.0-debug
-    entrypoint: [""]
-  script:
-    # Login to GitLab registry
-    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
-    - /kaniko/executor
-      --cache
-      --context=$CI_PROJECT_DIR
-      --dockerfile=$CI_PROJECT_DIR/docker/Dockerfile_barcode_scanner
-      --destination=${BARCODE_SCANNER_IMAGE_SHA}
-
-
 # Test stage
 #############
 .test-default: &test-default
@@ -129,11 +105,6 @@ Build Barcode-scanner image:
   needs: ["Build ESANI-Pantportal image"]
   image: ${IMAGE_SHA}
 
-.test-barcode-scanner: &test-barcode-scanner
-  <<: *test-default
-  needs: ["Build Barcode-scanner image"]
-  image: ${BARCODE_SCANNER_IMAGE_SHA}
-
 
 Pantportal test:
   <<: *test-pantportal
@@ -141,20 +112,6 @@ Pantportal test:
     - cd /app
     - coverage run manage.py test
     - coverage report --show-missing --fail-under=75
-    - coverage xml
-  coverage: '/^TOTAL.+?(\d+\%)$/'
-  artifacts:
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: /app/coverage.xml
-
-Scanner test:
-  <<: *test-barcode-scanner
-  script:
-    - cd /app
-    - coverage run manage.py test
-    - coverage report --show-missing --fail-under=100
     - coverage xml
   coverage: '/^TOTAL.+?(\d+\%)$/'
   artifacts:

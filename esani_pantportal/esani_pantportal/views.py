@@ -20,7 +20,7 @@ class ProductRegisterView(CreateView):
     template_name = "esani_pantportal/product/form.html"
 
     def get_success_url(self):
-        return reverse("product_register_success")
+        return reverse("pant:product_register_success")
 
 
 class ProductListView(ListView):
