@@ -1,0 +1,97 @@
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+
+{# Docs for bootstrap-table: https://bootstrap-table.com/docs/ #}
+{% block extra_headers %}
+<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.css">
+<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.css">
+{% endblock %}
+
+{% block content %}
+
+<div class="mx-5">
+
+    <div class="row">
+        <div class="col-6">
+            <h1>{% translate "Produktliste" %}</h1>
+        </div>
+        <div class="col-6 clearfix">
+            <div class="float-end pagination">
+                <ul class="pagination">
+
+                    {% if page_obj.has_previous %}
+                    <li class="page-item page-pre">
+                        <a class="page-link" aria-label="Første side" href="?page=1">&laquo;</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" aria-label="Forrige side"
+                           href="?page={{ page_obj.previous_page_number }}">‹</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item page-pre disabled">
+                        <span class="page-link" aria-label="Første side">&laquo;</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link" aria-label="Forrige side">‹</span>
+                    </li>
+                    {% endif %}
+
+                    <li class="page-item">
+                <span class="page-link" aria-label="Side {{ page_obj.number }} af {{ page_obj.paginator.num_pages }}">
+                    {% blocktranslate with page=page_obj.number num_pages=page_obj.paginator.num_pages %}
+                    Side {{ page }} af {{ num_pages }}
+                    {% endblocktranslate %}
+                </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" aria-label="Næste side" href="?page={{ page_obj.next_page_number }}">›</a>
+                    </li>
+                    <li class="page-item page-next">
+                        <a class="page-link" aria-label="Sidste side" href="?page={{ page_obj.paginator.num_pages }}">&raquo;</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link text-disabled" aria-label="Næste side">›</span>
+                    </li>
+                    <li class="page-item page-next disabled">
+                        <span class="page-link text-disabled" aria-label="Sidste side">&raquo;</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <table id="table" class="table table-bordered"
+           data-toggle="table"
+           data-sticky-header="true"
+           data-classes="table"
+           data-data-field="items"
+           data-sortable="false"
+           data-remember-order="true">
+        <thead>
+        <tr>
+            <th data-sortable="true" data-field="product_name" class="col-3">Produktnavn</th>
+            <th data-sortable="true" data-field="barcode" class="col-3">Stregkode</th>
+            <th data-sortable="true" data-field="approved" class="col-3">Godkendt</th>
+            <th data-field="actions" class="col-3">Handlinger</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in object_list %}
+        <tr>
+            <td>{{item.product_name}}</td>
+            <td>{{item.barcode}}</td>
+            <td>{{item.approved|yesno|capfirst}}</td>
+            <td></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
