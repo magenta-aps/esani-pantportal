@@ -20,8 +20,4 @@ class BarcodeCheckView(TemplateView):
         context_data = super().get_context_data(**kwargs)
         context_data["barcodes"] = self.rest_client.all_products
 
-        # TODO: Remove me when "refund_value" comes from API
-        for product in context_data["barcodes"].values():
-            product["refund_value"] = 2
-
         return context_data

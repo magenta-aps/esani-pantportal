@@ -39,6 +39,7 @@ class Command(BaseCommand):
                     random.choice(vowels),
                     random.choice(consonants) * 2,
                     random.choice(vowels),
+                    "-",
                     product_type,
                 ]
             )
