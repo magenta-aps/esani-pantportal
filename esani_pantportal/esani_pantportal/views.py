@@ -4,7 +4,7 @@
 
 from django.contrib.auth.views import LoginView
 from django.urls import reverse
-from django.views.generic import CreateView, ListView
+from django.views.generic import CreateView, ListView, UpdateView
 
 from esani_pantportal.forms import ProductRegisterForm
 from esani_pantportal.models import Product
@@ -27,3 +27,12 @@ class ProductListView(ListView):
     model = Product
     template_name = "esani_pantportal/product/list.html"
     paginate_by = 20
+
+
+class ProductDetailView(UpdateView):
+    model = Product
+    template_name = "esani_pantportal/product/view.html"
+    fields = ("approved",)
+
+    def get_success_url(self):
+        return self.request.GET.get("back", reverse("product_list"))
