@@ -87,7 +87,7 @@
             <td>{{item.product_name}}</td>
             <td>{{item.barcode}}</td>
             <td>{{item.approved|yesno|capfirst}}</td>
-            <td><a href="{% url 'product_view' item.id %}?back={{request.get_full_path}}" class="btn btn-sm btn-primary">Vis</a></td>
+            <td><a href="{% url 'pant:product_view' item.id %}?back={{request.get_full_path}}" class="btn btn-sm btn-primary">Vis</a></td>
         </tr>
         {% endfor %}
         </tbody>
