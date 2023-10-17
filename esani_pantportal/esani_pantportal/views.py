@@ -35,4 +35,4 @@ class ProductDetailView(UpdateView):
     fields = ("approved",)
 
     def get_success_url(self):
-        return self.request.GET.get("back", reverse("product_list"))
+        return self.request.GET.get("back", reverse("pant:product_list"))
