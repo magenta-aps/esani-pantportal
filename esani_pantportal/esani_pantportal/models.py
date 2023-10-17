@@ -10,18 +10,12 @@ from django.utils.translation import gettext as _
 # Custom validators
 def validate_barcode_length(barcode: str):
     if not len(barcode) in [8, 12, 13]:
-        raise ValidationError(
-            _("%(barcode) skal være 8, 12 eller 13 cifre lang"),
-            params={"barcode": barcode},
-        )
+        raise ValidationError(_("Stregkoden skal være 8, 12 eller 13 cifre lang"))
 
 
 def validate_digit(string: str):
     if not string.isdigit():
-        raise ValidationError(
-            _("%(string) må kun bestå af tal"),
-            params={"string": "string"},
-        )
+        raise ValidationError(_("Stregkoden må kun bestå af tal"))
 
 
 PRODUCT_MATERIAL_CHOICES = [
