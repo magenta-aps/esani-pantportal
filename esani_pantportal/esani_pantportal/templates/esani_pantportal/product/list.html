@@ -9,6 +9,12 @@
 <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.css">
 {% endblock %}
 
+{% block extra_footers %}
+<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
+<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
+<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/defer-url/bootstrap-table-defer-url.min.js"></script>
+{% endblock %}
+
 {% block content %}
 
 <div class="mx-5">
@@ -17,62 +23,45 @@
         <div class="col-6">
             <h1>{% translate "Produktliste" %}</h1>
         </div>
-        <div class="col-6 clearfix">
-            <div class="float-end pagination">
-                <ul class="pagination">
-
-                    {% if page_obj.has_previous %}
-                    <li class="page-item page-pre">
-                        <a class="page-link" aria-label="Første side" href="?page=1">&laquo;</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" aria-label="Forrige side"
-                           href="?page={{ page_obj.previous_page_number }}">‹</a>
-                    </li>
-                    {% else %}
-                    <li class="page-item page-pre disabled">
-                        <span class="page-link" aria-label="Første side">&laquo;</span>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link" aria-label="Forrige side">‹</span>
-                    </li>
-                    {% endif %}
-
-                    <li class="page-item">
-                <span class="page-link" aria-label="Side {{ page_obj.number }} af {{ page_obj.paginator.num_pages }}">
-                    {% blocktranslate with page=page_obj.number num_pages=page_obj.paginator.num_pages %}
-                    Side {{ page }} af {{ num_pages }}
-                    {% endblocktranslate %}
-                </span>
-                    </li>
-
-                    {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" aria-label="Næste side" href="?page={{ page_obj.next_page_number }}">›</a>
-                    </li>
-                    <li class="page-item page-next">
-                        <a class="page-link" aria-label="Sidste side" href="?page={{ page_obj.paginator.num_pages }}">&raquo;</a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link text-disabled" aria-label="Næste side">›</span>
-                    </li>
-                    <li class="page-item page-next disabled">
-                        <span class="page-link text-disabled" aria-label="Sidste side">&raquo;</span>
-                    </li>
-                    {% endif %}
-                </ul>
-            </div>
-        </div>
     </div>
+
+    <form method="get">
+        <div class="row">
+            <div class="col-2">Navn</div>
+            <div class="col-4">{{form.product_name}}</div>
+        </div>
+        <div class="row">
+            <div class="col-2">Stregkode</div>
+            <div class="col-4">{{form.barcode}}</div>
+        </div>
+        <div class="row">
+            <div class="col-2">Godkendt</div>
+            <div class="col-4">{{form.approved}}</div>
+        </div>
+        <div class="row">
+            <div class="col-6 clearfix"><button type="submit" class="btn btn-primary float-end">Søg</button></div>
+        </div>
+    </form>
 
     <table id="table" class="table table-bordered table-striped"
            data-toggle="table"
            data-sticky-header="true"
            data-classes="table"
            data-data-field="items"
-           data-sortable="false"
-           data-remember-order="true">
+           data-sortable="true"
+           data-pagination="true"
+           data-pagination-parts="['pageList']"
+           data-page-number="{{search_data.page_number}}"
+           data-page-size="{{search_data.limit}}"
+           data-side-pagination="server"
+           data-pagination-loop="false"
+           data-defer-url="{% url 'pant:product_list' %}?json=1"
+           data-query-params="queryParams"
+           data-row-style="rowStyle"
+           data-total-rows="{{total}}"
+           data-silent-sort="true" {# vil vi vise en loading-boks? #}
+           data-remember-order="true"
+    >
         <thead>
         <tr>
             <th data-sortable="true" data-field="product_name" class="col-3">Produktnavn</th>
@@ -82,16 +71,35 @@
         </tr>
         </thead>
         <tbody>
-        {% for item in object_list %}
+        {% for item in items %}
         <tr>
             <td>{{item.product_name}}</td>
             <td>{{item.barcode}}</td>
             <td>{{item.approved|yesno|capfirst}}</td>
-            <td><a href="{% url 'pant:product_view' item.id %}?back={{request.get_full_path}}" class="btn btn-sm btn-primary">Vis</a></td>
+            <td>
+                {% include actions_template with item=item %}
+            </td>
         </tr>
         {% endfor %}
         </tbody>
     </table>
 </div>
+
+{{search_data|json_script:"search_data"}}
+
+<script>
+    function queryParams(params){  // Kaldes af bootstrap-table fordi vi peger på den med data-query-params
+        if (params["offset"] < 0) {
+            params["offset"] = 0;
+        }
+        const search_data = JSON.parse($("#search_data").text());
+        for (let key in search_data) {
+            if (key !== "offset" && key !== "limit") {
+                params[key] = search_data[key];
+            }
+        }
+        return params;
+    }
+</script>
 
 {% endblock %}

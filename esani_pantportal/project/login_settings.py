@@ -12,6 +12,8 @@ LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"  # Where to go after logout
 LOGIN_URL = "/login/"
 LOGIN_NAMESPACE = "login"
+DEFAULT_CVR = "12345678"
+DEFAULT_CPR = "1234567890"
 
 # Session keys to delete on logout
 LOGIN_SESSION_KEYS = ["user", "access_token", "refresh_token"]
