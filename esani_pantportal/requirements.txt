@@ -12,3 +12,4 @@ six==1.16.0
 django_mitid_auth @ git+https://github.com/magenta-aps/gl-django-login.git@1.1.7
 pysaml2==7.4.2
 xmltodict==0.13.0
+beautifulsoup4==4.12.2

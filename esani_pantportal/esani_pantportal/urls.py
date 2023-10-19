@@ -7,9 +7,9 @@ from django.views.generic import RedirectView, TemplateView
 from django_mitid_auth.saml.views import AccessDeniedView
 
 from esani_pantportal.views import (  # isort: skip
-    ProductListView,
     ProductRegisterView,
     ProductDetailView,
+    ProductSearchView,
 )
 
 
@@ -24,7 +24,7 @@ urlpatterns = [
         TemplateView.as_view(template_name="esani_pantportal/product/success.html"),
         name="product_register_success",
     ),
-    path("produkt/", ProductListView.as_view(), name="product_list"),
+    path("produkt/", ProductSearchView.as_view(), name="product_list"),
     path("produkt/<int:pk>", ProductDetailView.as_view(), name="product_view"),
     path(
         "error/login-timeout/",
