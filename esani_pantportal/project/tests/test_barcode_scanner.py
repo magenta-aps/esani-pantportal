@@ -12,8 +12,6 @@ class BarcodeScannerTestCase(TestCase):
     def test_call_view_load(self):
         Product.objects.create(
             product_name="test_item1",
-            product_type="coke",
-            tax_group=2,
             barcode=100,
             refund_value=200,
             material_type="P",
@@ -26,8 +24,6 @@ class BarcodeScannerTestCase(TestCase):
 
         Product.objects.create(
             product_name="test_item2",
-            product_type="coke",
-            tax_group=2,
             barcode=200,
             refund_value=200,
             material_type="P",

@@ -18,16 +18,12 @@ class ApprovedProductsOut(ModelSchema):
         model_fields = [
             "product_name",
             "barcode",
-            "tax_group",
-            "product_type",
         ]
 
 
 class ApprovedProductsFilterSchema(FilterSchema):
     product_name: Optional[str]
     barcode: Optional[int]
-    tax_group: Optional[int]
-    product_type: Optional[str]
 
 
 @api_controller(
@@ -50,6 +46,6 @@ class ApprovedProductsAPI:
         order: str = None,
     ):
         qs = filters.filter(Product.objects.filter(approved=True))
-        qs.order_by("tax_group", "product_name", "barcode")
+        qs.order_by("product_name", "barcode")
 
         return list(qs)

@@ -141,15 +141,6 @@ class Product(models.Model):
         help_text=_("Pantværdi, angivet i øre (100=1DKK, 25=0.25DKK)"),
         default=200,  # 2kr.
     )
-    tax_group = models.PositiveIntegerField(
-        verbose_name=_("Afgiftsgruppe"),
-        help_text=_("Afgiftsgruppe"),
-    )
-    product_type = models.CharField(
-        verbose_name=_("Vareart"),
-        help_text=_("Vareart"),
-        max_length=200,
-    )
     approved = models.BooleanField(
         verbose_name=_("Godkendt"),
         help_text=_("Produkt godkendt til pantsystemet af en ESANI medarbejder"),
