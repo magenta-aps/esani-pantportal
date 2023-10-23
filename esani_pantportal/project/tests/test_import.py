@@ -319,3 +319,25 @@ class TemplateViewTests(TestCase):
         df = pd.read_excel(response.content, dtype={"Stregkode [str]": str})
 
         self.assertEqualDf(df, default_dataframe())
+
+
+class TestProductRegisterView(TestCase):
+    def test_view(self):
+        url = reverse("pant:product_register") + "?login_bypass=1"
+
+        data = {
+            "product_name": "foo",
+            "barcode": "12341234",
+            "tax_group": 1,
+            "product_type": "Øl",
+            "material_type": "P",
+            "height": 100,
+            "diameter": 200,
+            "weight": 100,
+            "capacity": 100,
+            "shape": "F",
+        }
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertRedirects(response, reverse("pant:product_register_success"))
