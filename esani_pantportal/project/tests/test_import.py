@@ -4,8 +4,10 @@
 
 import io
 from http import HTTPStatus
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
@@ -18,6 +20,9 @@ from esani_pantportal.models import (  # isort: skip
     PRODUCT_SHAPE_CHOICES,
     Product,
 )
+
+
+ProductMock = MagicMock()
 
 
 class MultipleProductRegisterFormTests(TestCase):
@@ -242,25 +247,30 @@ class MultipleProductRegisterFormTests(TestCase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.context_data["success_count"], len(df))
 
-    def test_view_with_failures(self):
+    @patch("esani_pantportal.views.Product")
+    def test_view_with_failures(self, ProductMock):
+        # Simulate that someone implements a new condition, which rejects all products
+        # with a height over 100 mm. But forgets to update the corresponding form
+        # methods.
+        def init(*args, **kwargs):
+            if kwargs["height"] > 100:
+                raise ValidationError({"height": "products over 100 mm are evil."})
+            else:
+                return MagicMock()
+
+        ProductMock.side_effect = init
+
         df = default_dataframe()
-        df.loc[0, "Stregkode [str]"] = "foo"
+        df["Højde [mm]"] = [200, 100, 100, 100]
 
         file = self.make_excel_file_dict(df)
         url = reverse("pant:multiple_product_register") + "?login_bypass=1"
-
         data = self.defaults
         data["file"] = file["file"]
         response = self.client.post(url, data=data)
 
-        form = response.context_data["form"]
-        view = response.context_data["view"]
-        form.df = df
-
-        response = view.form_valid(form)
-
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertEqual(response.context_data["success_count"], len(df) - 1)
+        self.assertEqual(response.context_data["failure_count"], 1)
 
     def test_view_with_existing_barcodes(self):
         df = default_dataframe()
