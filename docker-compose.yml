@@ -21,6 +21,7 @@ services:
     environment:
       - MAKE_MIGRATIONS=true
       - MIGRATE=true
+      - TEST=false
     network_mode: "host"  # Kun nødvendig i dev-environment for at få test-idp til at fungere
     command: gunicorn -b 0.0.0.0:8000 project.wsgi:application --reload -w 1 --access-logfile - --error-logfile - --capture-output # reload on code changes
 

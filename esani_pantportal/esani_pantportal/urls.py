@@ -10,6 +10,9 @@ from esani_pantportal.views import (  # isort: skip
     ProductRegisterView,
     ProductDetailView,
     ProductSearchView,
+    MultipleProductRegisterView,
+    ExcelTemplateView,
+    CsvTemplateView,
 )
 
 
@@ -39,5 +42,20 @@ urlpatterns = [
             template_name="esani_pantportal/error/login_repeat.html"
         ),
         name="login-repeat",
+    ),
+    path(
+        "produkt/opret/multiple",
+        MultipleProductRegisterView.as_view(),
+        name="multiple_product_register",
+    ),
+    path(
+        "produkt/opret/multiple/excel_sample",
+        ExcelTemplateView.as_view(),
+        name="example_excel",
+    ),
+    path(
+        "produkt/opret/multiple/csv_sample",
+        CsvTemplateView.as_view(),
+        name="example_csv",
     ),
 ]

@@ -2,19 +2,36 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 from functools import cached_property
+from io import BytesIO
 from math import ceil
 from typing import Any, Dict
 
+import pandas as pd
 from django.contrib.auth.views import LoginView
+from django.core.exceptions import ValidationError
 from django.forms import model_to_dict
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.template import loader
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import CreateView, FormView, ListView, UpdateView
 
-from esani_pantportal.forms import ProductFilterForm, ProductRegisterForm
 from esani_pantportal.models import Product
+from esani_pantportal.util import default_dataframe
+
+from django.views.generic import (  # isort: skip
+    CreateView,
+    FormView,
+    ListView,
+    UpdateView,
+    View,
+)
+
+
+from esani_pantportal.forms import (  # isort: skip
+    MultipleProductRegisterForm,
+    ProductRegisterForm,
+    ProductFilterForm,
+)
 
 
 class PantportalLoginView(LoginView):
@@ -159,3 +176,77 @@ class ProductDetailView(UpdateView):
 
     def get_success_url(self):
         return self.request.GET.get("back", reverse("pant:product_list"))
+
+
+class MultipleProductRegisterView(FormView):
+    template_name = "esani_pantportal/product/import.html"
+    form_class = MultipleProductRegisterForm
+
+    def form_valid(self, form):
+        products = form.df.rename(form.rename_dict, axis=1).to_dict(orient="records")
+        existing_barcodes = Product.objects.values_list("barcode", flat=True).distinct()
+        failures = []
+        success_count = 0
+        existing_products_count = 0
+        products_to_save = []
+        for product_dict in products:
+            barcode = product_dict["barcode"]
+            product_name = product_dict["product_name"]
+            if barcode in existing_barcodes:
+                existing_products_count += 1
+                continue
+            try:
+                product_dict["approved"] = False
+                product = Product(**product_dict)
+                product.full_clean()
+                products_to_save.append(product)
+                success_count += 1
+            except ValidationError as e:
+                failures.append({product_name: e.message_dict})
+
+        context = self.get_context_data(form=form)
+        failure_count = len(failures)
+        context["failures"] = failures
+        context["success_count"] = success_count
+        context["failure_count"] = failure_count
+        context["existing_products_count"] = existing_products_count
+        context["total_count"] = failure_count + success_count + existing_products_count
+        context["filename"] = form.filename
+
+        for product in products_to_save:
+            product.save()
+
+        return self.render_to_response(context=context)
+
+
+class ExcelTemplateView(View):
+    def get(self, request, *args, **kwargs):
+        with BytesIO() as b:
+            df = default_dataframe()
+            sheet_name = "Ark1"
+
+            writer = pd.ExcelWriter(b, engine="xlsxwriter")
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+            for col_idx in range(len(df.columns)):
+                writer.sheets[sheet_name].set_column(col_idx, col_idx, 18)
+            writer.close()
+
+            filename = "template.xlsx"
+            response = HttpResponse(
+                b.getvalue(),
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+            response["Content-Disposition"] = "attachment; filename=%s" % filename
+            return response
+
+
+class CsvTemplateView(View):
+    def get(self, request, *args, **kwargs):
+        df = default_dataframe()
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = "attachment; filename=template.csv"
+
+        df.to_csv(path_or_buf=response, sep=";", index=False)
+        return response
