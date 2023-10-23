@@ -22,7 +22,15 @@ SPDX-License-Identifier: MPL-2.0
 {% block header %}
 <header>
     <nav class="nav flex-column flex-sm-row p-1">
-        <a class="p-2 text-muted " href="{% url 'pant:product_register' %}">Registrer nyt produkt</a>
+        <div class="dropdown p-2">
+        <a class="text-muted dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Registrér produkt
+        </a>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'pant:product_register' %}">Registrér et enkelt produkt</a></li>
+            <li><a class="dropdown-item" href="{% url 'pant:multiple_product_register' %}">Importér regneark</a></li>
+        </ul>
+        </div>
         <a class="p-2 text-muted" href="{% url 'pant:product_list' %}">Produktliste</a>
     </nav>
     <hr class="p-0 m-0"/>

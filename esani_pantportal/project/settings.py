@@ -160,3 +160,17 @@ ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
 
 
 from .login_settings import *  # noqa
+
+DEFAULT_CSV_HEADER_DICT = {
+    "product_name": "Produktnavn [str]",
+    "barcode": "Stregkode [str]",
+    "refund_value": "Pantværdi [øre]",
+    "tax_group": "Afgiftsgruppe [int]",
+    "product_type": "Vareart [str]",
+    "material_type": "Materialetype [str]",
+    "height": "Højde [mm]",
+    "diameter": "Diameter [mm]",
+    "weight": "Vægt [g]",
+    "capacity": "Volumenkapacitet [ml]",
+    "shape": "Form [str]",
+}

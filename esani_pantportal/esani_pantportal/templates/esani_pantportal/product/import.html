@@ -1,0 +1,293 @@
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+
+
+{% block content %}
+<div class="mx-5">
+    <h1>{% translate "Registrer nye produkter" %}</h1>
+    <form method="post" action="{% url 'pant:multiple_product_register' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-2">
+                {{form.file.label}}
+            </div>
+            <div class="col-10">
+                {{form.file}}
+                {{form.file.errors}}
+            </div>
+        </div>
+        <div class="row" id="sep_row">
+            <div class="col-2">
+                {{form.sep.label}}
+            </div>
+            <div class="col-10">
+                {{form.sep}}
+                {{form.sep.errors}}
+            </div>
+        </div>
+        <div class="row" id="sheet_name_row">
+            <div class="col-2">
+                {{form.sheet_name.label}}
+            </div>
+            <div class="col-10">
+                {{form.sheet_name}}
+                {{form.sheet_name.errors}}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-2">
+                {{form.barcode_col.label}}
+            </div>
+            <div class="col-4">
+                {{form.barcode_col}}
+                {{form.barcode_col.errors}}
+            </div>
+            <div class="col-2">
+                {{form.product_name_col.label}}
+            </div>
+            <div class="col-4">
+                {{form.product_name_col}}
+                {{form.product_name_col.errors}}
+            </div>
+        </div>
+
+
+        <div class="row">
+            <div class="col-2">
+                {{form.refund_value_col.label}}
+            </div>
+            <div class="col-4">
+                {{form.refund_value_col}}
+                {{form.refund_value_col.errors}}
+            </div>
+            <div class="col-2">
+                {{form.tax_group_col.label}}
+            </div>
+            <div class="col-4">
+                {{form.tax_group_col}}
+                {{form.tax_group_col.errors}}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-2">
+                {{form.product_type_col.label}}
+            </div>
+            <div class="col-4">
+                {{form.product_type_col}}
+                {{form.product_type_col.errors}}
+            </div>
+            <div class="col-2">
+                {{form.material_type_col.label}}
+            </div>
+            <div class="col-4">
+                {{form.material_type_col}}
+                {{form.material_type_col.errors}}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-2">
+                {{form.height_col.label}}
+            </div>
+            <div class="col-4">
+                {{form.height_col}}
+                {{form.height_col.errors}}
+            </div>
+            <div class="col-2">
+                {{form.diameter_col.label}}
+            </div>
+            <div class="col-4">
+                {{form.diameter_col}}
+                {{form.diameter_col.errors}}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-2">
+                {{form.weight_col.label}}
+            </div>
+            <div class="col-4">
+                {{form.weight_col}}
+                {{form.weight_col.errors}}
+            </div>
+            <div class="col-2">
+                {{form.capacity_col.label}}
+            </div>
+            <div class="col-4">
+                {{form.capacity_col}}
+                {{form.capacity_col.errors}}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-2">
+                {{form.shape_col.label}}
+            </div>
+            <div class="col-4">
+                {{form.shape_col}}
+                {{form.shape_col.errors}}
+            </div>
+        </div>
+        <div class="clearfix">
+            <button type="submit" class="btn btn-success float-end">Importer</button>
+            <button class="btn btn-primary float-start" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                Hjælp
+            </button>
+        </div>
+    </form>
+    <div class="collapse" id="collapseExample">
+      <div class="card card-body">
+          <div class="clearfix">
+          <ul>
+          <li>
+          {% translate "Data filen skal have en header i første række." %}
+          </li>
+          <li>
+          {% translate "Hver efterfølgende række skal indeholde data tilhørende et enkelt produkt." %}
+          </li>
+          <li>
+          {% translate "Headeren skal indeholde de kolonner som er indikeret i formularen." %}
+          </li>
+          <li>
+          {% translate "Understøttede formater er:" %} {{ form.valid_extensions_str }}.
+          </li>
+          <li>
+          {% translate "Gyldige materialetyper er:" %} {{ form.valid_materials }}.
+          </li>
+          <li>
+          {% translate "Gyldige formtyper er:" %} {{ form.valid_shapes }}.
+          </li>
+          <li>
+          {% translate "Alle tal i data filen skal være heltal. " %}
+          </li>
+          <li>
+          {% translate "Alle stregkoder skal være unikke." %}
+          </li>
+          </ul>
+              <a href="{% url 'pant:example_csv' %}" class="btn btn-sm btn-primary">
+                 {% translate "Download eksempel csv-fil" %}
+              </a>
+              <a href="{% url 'pant:example_excel' %}" class="btn btn-sm btn-primary">
+                 {% translate "Download eksempel excel-fil" %}
+              </a>
+          </div>
+      </div>
+    </div>
+
+    {% if total_count > 0 %}
+    <h2>{% translate "Resultater" %}</h2>
+    <div class="row">
+        <div class="col-2">
+            {% translate "Filnavn:" %}
+        </div>
+        <div class="col-10">
+            <i>{{ filename }}</i>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-2">
+            {% translate "Antal produkter i data fil:" %}
+        </div>
+        <div class="col-10">
+            {{ total_count }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-2">
+            {% translate "Produkter som allerede er registreret:" %}
+        </div>
+        <div class="col-10">
+            {{ existing_products_count }}/{{ total_count }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-2">
+            {% translate "Produkter importeret:" %}
+        </div>
+        <div class="col-10">
+            {{ success_count }}/{{ total_count }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-2">
+            {% translate "Fejl:" %}
+        </div>
+        <div class="col-10">
+            {{ failure_count }}/{{ total_count }}
+        </div>
+    </div>
+
+    {% if failure_count > 0 %}
+    <br>
+    <br>
+    <h4>{% translate "Fejloversigt" %}</h4>
+
+    <table class="table table-bordered table-striped" id ="failures_table">
+        <thead>
+        <tr>
+            <th class="col-1">{% translate "Produktnavn" %}</th>
+            <th class="col-1">{% translate "Felt" %}</th>
+            <th class="col-10">{% translate "Detaljer" %}</th>
+        </tr>
+        </thead>
+        {% for failure in failures %}
+            {% for product, details in failure.items %}
+                {% for field, errors in details.items %}
+                    {% for error in errors %}
+                        <tr>
+                            <td>{{ product }}</td>
+                            <td>{{ field }}</td>
+                            <td>{{ error }}</td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            {% endfor %}
+        {% endfor %}
+    </table>
+    {% endif %}
+    {% endif %}
+
+
+</div>
+
+<script>
+    // Toggle CSV or Excel input fields based on supplied file format
+    function toggle_csv_excel_inputs() {
+        const filename = $(this).val().toLowerCase();
+        if (filename.endsWith(".xls") || filename.endsWith(".xlsx")) {
+            $("#sep_row").hide();
+            $("#sheet_name_row").show();
+        }
+
+        if (filename.endsWith(".csv") || filename.endsWith(".txt")) {
+            $("#sep_row").show();
+            $("#sheet_name_row").hide();
+        }
+    }
+
+    // Functions that run on startup
+    $(document).ready(function() {
+        $("#id_file").change(toggle_csv_excel_inputs);
+    });
+
+    $(function() {
+        // Filefield
+        // ---------
+        const fileUpdate = function () {
+            // Validate file size
+            if (this.files.length) {
+                const maxsize = this.getAttribute("max_size");
+                const filesize = this.files[0].size;
+                if (maxsize && filesize > maxsize) {
+                    this.setCustomValidity(this.getAttribute("data-validity-sizeoverflow"));
+                } else {
+                    this.setCustomValidity("");
+                }
+            }
+        };
+        const fileInputs = $("input[type=file]");
+        fileInputs.change(fileUpdate);
+        fileInputs.each(fileUpdate);
+    });
+</script>
+{% endblock %}
