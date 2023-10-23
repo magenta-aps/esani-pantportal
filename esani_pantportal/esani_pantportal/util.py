@@ -49,8 +49,6 @@ def default_dataframe():
         df.loc[i, defaults["product_name"]] = f"Produkt {i}"
         df.loc[i, defaults["barcode"]] = f"0000000{i}"
         df.loc[i, defaults["refund_value"]] = 200
-        df.loc[i, defaults["tax_group"]] = 2
-        df.loc[i, defaults["product_type"]] = "Øl"
         df.loc[i, defaults["material_type"]] = next(material_types)
         df.loc[i, defaults["height"]] = 150
         df.loc[i, defaults["diameter"]] = 20

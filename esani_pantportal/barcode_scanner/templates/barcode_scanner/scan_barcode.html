@@ -79,12 +79,6 @@ SPDX-License-Identifier: MPL-2.0
             </div>
             <div class="col-6 text-start" id="product_name"></div>
         </div>
-        <div class="row my-1">
-            <div class="col-6 text-end">
-                <b>{% translate "Produkt type:" %}</b>
-            </div>
-            <div class="col-6 text-start" id="product_type"></div>
-        </div>
     </div>
     <div id="failure" style="display:none">
         <div class="row my-1 justify-content-center">
@@ -248,17 +242,14 @@ function process_barcode(barcode) {
 
     let pant = 0;
     let product_name = "-";
-    let product_type = "-";
     if (barcode in barcodes){
         const product = barcodes[barcode];
         pant = product["refund_value"] /100;
         product_name = product["product_name"];
-        product_type = product["product_type"];
     }
 
     $("#barcode_success").text(barcode);
     $("#product_name").text(product_name);
-    $("#product_type").text(product_type);
     $("#refund_value").text(pant);
     $("#barcode_failure").text(barcode);
 

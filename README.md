@@ -31,6 +31,4 @@ Firmaoplysninger Modtager:
   - Tilladelsesnummer (IntegerField)
 
 Produktoplysninger:
-  - Afgiftsgruppe (Vareart) (CharacterField)
-  - Vareart (CharacterField)
   - Antal (IntegerField)

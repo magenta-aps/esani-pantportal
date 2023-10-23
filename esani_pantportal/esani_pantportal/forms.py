@@ -30,8 +30,6 @@ class ProductRegisterForm(forms.ModelForm, BootstrapForm):
         fields = (
             "product_name",
             "barcode",
-            "tax_group",
-            "product_type",
             "material_type",
             "height",
             "diameter",
@@ -97,14 +95,6 @@ class MultipleProductRegisterForm(BootstrapForm):
     refund_value_col = forms.CharField(
         initial=defaults["refund_value"],
         label=_("Pantværdi-kolonnenavn"),
-    )
-    tax_group_col = forms.CharField(
-        initial=defaults["tax_group"],
-        label=_("Afgiftsgruppe-kolonnenavn"),
-    )
-    product_type_col = forms.CharField(
-        initial=defaults["product_type"],
-        label=_("Vareart-kolonnenavn"),
     )
     material_type_col = forms.CharField(
         initial=defaults["material_type"],
@@ -309,20 +299,6 @@ class MultipleProductRegisterForm(BootstrapForm):
         column_exists = self.validate_that_column_exists(col_name)
         if column_exists:
             self.validate_positive_integer(col_name)
-        return col_name
-
-    def clean_tax_group_col(self):
-        col_name = self.cleaned_data["tax_group_col"]
-        self.rename_dict[col_name] = "tax_group"
-        column_exists = self.validate_that_column_exists(col_name)
-        if column_exists:
-            self.validate_positive_integer(col_name)
-        return col_name
-
-    def clean_product_type_col(self):
-        col_name = self.cleaned_data["product_type_col"]
-        self.rename_dict[col_name] = "product_type"
-        self.validate_that_column_exists(col_name)
         return col_name
 
     def clean_material_type_col(self):

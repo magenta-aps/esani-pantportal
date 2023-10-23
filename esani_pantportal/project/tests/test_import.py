@@ -34,8 +34,6 @@ class MultipleProductRegisterFormTests(TestCase):
             "product_name_col": "Produktnavn [str]",
             "barcode_col": "Stregkode [str]",
             "refund_value_col": "Pantværdi [øre]",
-            "tax_group_col": "Afgiftsgruppe [int]",
-            "product_type_col": "Vareart [str]",
             "material_type_col": "Materialetype [str]",
             "height_col": "Højde [mm]",
             "diameter_col": "Diameter [mm]",
@@ -283,8 +281,6 @@ class MultipleProductRegisterFormTests(TestCase):
         Product.objects.create(
             barcode=df.loc[0, "Stregkode [str]"],
             product_name="foo",
-            tax_group=1,
-            product_type="root beer",
             approved=False,
             material_type=PRODUCT_MATERIAL_CHOICES[0][0],
             height=1,

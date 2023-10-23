@@ -47,8 +47,6 @@ class Command(BaseCommand):
             Product.objects.create(
                 product_name=product_name,
                 barcode=barcode,
-                tax_group=random.randint(1, 100),
-                product_type=product_type,
                 approved=random.choice([True, False]),
                 material_type=random.choice(PRODUCT_MATERIAL_CHOICES)[0],
                 height=random.randint(10, 100),
