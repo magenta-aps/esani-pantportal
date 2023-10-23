@@ -175,7 +175,7 @@ class ProductDetailView(UpdateView):
     fields = ("approved",)
 
     def get_success_url(self):
-        return self.request.GET.get("back", reverse("pant:product_list"))
+        return reverse("pant:product_list")
 
 
 class MultipleProductRegisterView(FormView):
