@@ -233,6 +233,7 @@ class ProductListFormValidTest(TestCase):
             weight=20,
             capacity=500,
             shape="F",
+            id=1,
         )
         self.prod2 = Product.objects.create(
             product_name="prod2",
@@ -245,6 +246,7 @@ class ProductListFormValidTest(TestCase):
             weight=20,
             capacity=500,
             shape="F",
+            id=2,
         )
 
     def test_form_valid(self):
