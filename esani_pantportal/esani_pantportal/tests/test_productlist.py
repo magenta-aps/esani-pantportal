@@ -383,7 +383,7 @@ class ProductListGuiTest(TestCase):
             {
                 "Produktnavn": item["product_name"],
                 "Stregkode": item["barcode"],
-                "Godkendt": "Ja" if item["approved"] else "Nej",
+                "Godkendt": item["approved"],
                 "Handlinger": "Vis",
             }
             for item in data["items"]
@@ -394,7 +394,7 @@ class ProductListGuiTest(TestCase):
             {
                 "Produktnavn": "prod1",
                 "Stregkode": "0010",
-                "Godkendt": "Ja",
+                "Godkendt": "Nej",
                 "Handlinger": "Vis",
             },
             {
@@ -438,7 +438,7 @@ class ProductListGuiTest(TestCase):
             {
                 "Produktnavn": "prod1",
                 "Stregkode": "0010",
-                "Godkendt": "Ja",
+                "Godkendt": "Nej",
                 "Handlinger": "Vis",
             },
         ]
