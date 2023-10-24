@@ -48,7 +48,7 @@ class Command(BaseCommand):
                 product_name=product_name,
                 barcode=barcode,
                 approved=random.choice([True, False]),
-                material_type=random.choice(PRODUCT_MATERIAL_CHOICES)[0],
+                material=random.choice(PRODUCT_MATERIAL_CHOICES)[0],
                 height=random.randint(10, 100),
                 diameter=random.randint(10, 100),
                 weight=random.randint(100, 1000),

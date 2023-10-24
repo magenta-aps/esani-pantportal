@@ -30,7 +30,7 @@ class ProductRegisterForm(forms.ModelForm, BootstrapForm):
         fields = (
             "product_name",
             "barcode",
-            "material_type",
+            "material",
             "height",
             "diameter",
             "weight",
@@ -96,9 +96,9 @@ class MultipleProductRegisterForm(BootstrapForm):
         initial=defaults["refund_value"],
         label=_("Pantværdi-kolonnenavn"),
     )
-    material_type_col = forms.CharField(
-        initial=defaults["material_type"],
-        label=_("Materialetype-kolonnenavn"),
+    material_col = forms.CharField(
+        initial=defaults["material"],
+        label=_("Materiale-kolonnenavn"),
     )
     height_col = forms.CharField(
         initial=defaults["height"],
@@ -114,7 +114,7 @@ class MultipleProductRegisterForm(BootstrapForm):
     )
     capacity_col = forms.CharField(
         initial=defaults["capacity"],
-        label=_("Volumenkapacitet-kolonnenavn"),
+        label=_("Volumen-kolonnenavn"),
     )
     shape_col = forms.CharField(
         initial=defaults["shape"],
@@ -301,9 +301,9 @@ class MultipleProductRegisterForm(BootstrapForm):
             self.validate_positive_integer(col_name)
         return col_name
 
-    def clean_material_type_col(self):
-        col_name = self.cleaned_data["material_type_col"]
-        self.rename_dict[col_name] = "material_type"
+    def clean_material_col(self):
+        col_name = self.cleaned_data["material_col"]
+        self.rename_dict[col_name] = "material"
         column_exists = self.validate_that_column_exists(col_name)
         if column_exists:
             self.validate_column_contents(col_name, PRODUCT_MATERIAL_CHOICES)

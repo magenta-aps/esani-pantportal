@@ -63,11 +63,11 @@
                 {{form.refund_value_col.errors}}
             </div>
             <div class="col-2">
-                {{form.material_type_col.label}}
+                {{form.material_col.label}}
             </div>
             <div class="col-4">
-                {{form.material_type_col}}
-                {{form.material_type_col.errors}}
+                {{form.material_col}}
+                {{form.material_col.errors}}
             </div>
         </div>
         <div class="row">
@@ -135,7 +135,7 @@
           {% translate "Understøttede formater er:" %} {{ form.valid_extensions_str }}.
           </li>
           <li>
-          {% translate "Gyldige materialetyper er:" %} {{ form.valid_materials }}.
+          {% translate "Gyldige materialer er:" %} {{ form.valid_materials }}.
           </li>
           <li>
           {% translate "Gyldige formtyper er:" %} {{ form.valid_shapes }}.

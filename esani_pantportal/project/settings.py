@@ -165,10 +165,10 @@ DEFAULT_CSV_HEADER_DICT = {
     "product_name": "Produktnavn [str]",
     "barcode": "Stregkode [str]",
     "refund_value": "Pantværdi [øre]",
-    "material_type": "Materialetype [str]",
+    "material": "Materiale [str]",
     "height": "Højde [mm]",
     "diameter": "Diameter [mm]",
     "weight": "Vægt [g]",
-    "capacity": "Volumenkapacitet [ml]",
+    "capacity": "Volumen [ml]",
     "shape": "Form [str]",
 }

@@ -34,11 +34,11 @@ class MultipleProductRegisterFormTests(TestCase):
             "product_name_col": "Produktnavn [str]",
             "barcode_col": "Stregkode [str]",
             "refund_value_col": "Pantværdi [øre]",
-            "material_type_col": "Materialetype [str]",
+            "material_col": "Materiale [str]",
             "height_col": "Højde [mm]",
             "diameter_col": "Diameter [mm]",
             "weight_col": "Vægt [g]",
-            "capacity_col": "Volumenkapacitet [ml]",
+            "capacity_col": "Volumen [ml]",
             "shape_col": "Form [str]",
         }
 
@@ -181,7 +181,7 @@ class MultipleProductRegisterFormTests(TestCase):
 
     def test_import_csv_negative_value_in_integer_fields(self):
         df = default_dataframe()
-        df.loc[0, "Volumenkapacitet [ml]"] = -4
+        df.loc[0, "Volumen [ml]"] = -4
         file = self.make_csv_file_dict(df)
 
         form = MultipleProductRegisterForm(self.defaults, file)
@@ -192,7 +192,7 @@ class MultipleProductRegisterFormTests(TestCase):
 
     def test_import_csv_strings_in_integer_fields(self):
         df = default_dataframe()
-        df.loc[0, "Volumenkapacitet [ml]"] = "foo"
+        df.loc[0, "Volumen [ml]"] = "foo"
         file = self.make_csv_file_dict(df)
 
         form = MultipleProductRegisterForm(self.defaults, file)
@@ -203,7 +203,7 @@ class MultipleProductRegisterFormTests(TestCase):
 
     def test_import_csv_decimals_in_integer_fields(self):
         df = default_dataframe()
-        df.loc[0, "Volumenkapacitet [ml]"] = 2.4
+        df.loc[0, "Volumen [ml]"] = 2.4
         file = self.make_csv_file_dict(df)
 
         form = MultipleProductRegisterForm(self.defaults, file)
@@ -214,7 +214,7 @@ class MultipleProductRegisterFormTests(TestCase):
 
     def test_import_csv_empty_integer_field(self):
         df = default_dataframe()
-        df.loc[0, "Volumenkapacitet [ml]"] = None
+        df.loc[0, "Volumen [ml]"] = None
         file = self.make_csv_file_dict(df)
 
         form = MultipleProductRegisterForm(self.defaults, file)
@@ -225,7 +225,7 @@ class MultipleProductRegisterFormTests(TestCase):
 
     def test_import_csv_exceeds_max_size(self):
         df = default_dataframe()
-        df.loc[0, "Volumenkapacitet [ml]"] = 2.4
+        df.loc[0, "Volumen [ml]"] = 2.4
         file = self.make_csv_file_dict(df)
         file["file"].size = 100000000000000000000
 
@@ -282,7 +282,7 @@ class MultipleProductRegisterFormTests(TestCase):
             barcode=df.loc[0, "Stregkode [str]"],
             product_name="foo",
             approved=False,
-            material_type=PRODUCT_MATERIAL_CHOICES[0][0],
+            material=PRODUCT_MATERIAL_CHOICES[0][0],
             height=1,
             diameter=1,
             weight=1,
@@ -330,7 +330,7 @@ class TestProductRegisterView(TestCase):
             "barcode": "12341234",
             "tax_group": 1,
             "product_type": "Øl",
-            "material_type": "P",
+            "material": "P",
             "height": 100,
             "diameter": 200,
             "weight": 100,
