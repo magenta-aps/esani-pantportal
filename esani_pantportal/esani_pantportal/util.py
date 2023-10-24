@@ -42,14 +42,14 @@ def default_dataframe():
     defaults = settings.DEFAULT_CSV_HEADER_DICT
     df = pd.DataFrame(columns=defaults.values())
 
-    material_types = iter([p[0] for p in PRODUCT_MATERIAL_CHOICES])
+    materials = iter([p[0] for p in PRODUCT_MATERIAL_CHOICES])
     shapes = iter([p[0] for p in PRODUCT_SHAPE_CHOICES] * 2)
 
     for i in range(4):
         df.loc[i, defaults["product_name"]] = f"Produkt {i}"
         df.loc[i, defaults["barcode"]] = f"0000000{i}"
         df.loc[i, defaults["refund_value"]] = 200
-        df.loc[i, defaults["material_type"]] = next(material_types)
+        df.loc[i, defaults["material"]] = next(materials)
         df.loc[i, defaults["height"]] = 150
         df.loc[i, defaults["diameter"]] = 20
         df.loc[i, defaults["weight"]] = 200

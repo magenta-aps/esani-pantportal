@@ -8,24 +8,76 @@
 
 <div class="mx-5">
     <h1>{% translate "Registrer nyt produkt" %}</h1>
-    <form method="POST">
+    <form method="POST" class="row g-3">
         {% csrf_token %}
-        <div class="form-row">
-            {% for field in form %}
-            <div class="col form-group">
-                <label class="" id="{{field.id_for_label}}">{{field.label}}:</label>
-                {{field}}
-            </div>
-            {% endfor %}
-        </div>
-        {{ form.errors }}
-        <div class="form-row mt-5">
-            <div class="col">
-                <input class="btn btn-success float-right" type="submit" value="{% translate 'Opret' %}"/>
-            </div>
-        </div>
+    <div class="col-6">
+      <label for="{{form.product_name.id_for_label}}">{{form.product_name.label}}</label>
+      {{form.product_name}}
+      <div class="form-text">
+          {{form.product_name.help_text}}
+          {{form.product_name.errors}}
+      </div>
+    </div>
+    <div class="col-6">
+      <label for="{{form.barcode.id_for_label}}">{{form.barcode.label}}</label>
+      {{form.barcode}}
+      <div class="form-text">
+          {{form.barcode.help_text}}
+          {{form.barcode.errors}}
+      </div>
+    </div>
+
+    <div class="col-6">
+      <label for="{{form.material.id_for_label}}">{{form.material.label}}</label>
+      {{form.material}}
+      <div class="form-text">
+          {{form.material.errors}}
+      </div>
+    </div>
+    <div class="col-6">
+      <label for="{{form.shape.id_for_label}}">{{form.shape.label}}</label>
+      {{form.shape}}
+      <div class="form-text">
+          {{form.shape.errors}}
+      </div>
+    </div>
+
+    <div class="col-3">
+      <label for="{{form.height.id_for_label}}">{{form.height.label}}</label>
+      {{form.height}}
+      <div class="form-text">
+          {{form.height.help_text}}
+          {{form.height.errors}}
+      </div>
+    </div>
+    <div class="col-3">
+      <label for="{{form.diameter.id_for_label}}">{{form.diameter.label}}</label>
+      {{form.diameter}}
+      <div class="form-text">
+          {{form.diameter.help_text}}
+          {{form.diameter.errors}}
+      </div>
+    </div>
+    <div class="col-3">
+      <label for="{{form.capacity.id_for_label}}">{{form.capacity.label}}</label>
+      {{form.capacity}}
+      <div class="form-text">
+          {{form.capacity.help_text}}
+          {{form.capacity.errors}}
+      </div>
+    </div>
+    <div class="col-3">
+      <label for="{{form.weight.id_for_label}}">{{form.weight.label}}</label>
+      {{form.weight}}
+      <div class="form-text">
+          {{form.weight.help_text}}
+          {{form.weight.errors}}
+      </div>
+    </div>
+    
+    <div class="col-12">
+        <input class="btn btn-success float-right my-2" type="submit" value="{% translate 'Opret' %}"/>
+    </div>
     </form>
-
 </div>
-
 {% endblock %}

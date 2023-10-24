@@ -146,33 +146,29 @@ class Product(models.Model):
         help_text=_("Produkt godkendt til pantsystemet af en ESANI medarbejder"),
         default=False,
     )
-    # The following should possibly be kept in a separate model
-    material_type = models.CharField(
-        verbose_name=_("Materialetype"),
-        help_text=_("Materialetype"),
+    material = models.CharField(
+        verbose_name=_("Materiale"),
+        help_text=_("Kategori for emballagens materiale."),
         choices=PRODUCT_MATERIAL_CHOICES,
     )
     height = models.PositiveIntegerField(
         verbose_name=_("Højde"),
-        help_text=_("Emballagens højde i Millimeter"),
+        help_text=_("Emballagens højde i millimeter"),
     )
     diameter = models.PositiveIntegerField(
         verbose_name=_("Diameter"),
-        help_text=_("Emballagens diameter i Millimeter"),
+        help_text=_("Emballagens diameter i millimeter"),
     )
     weight = models.PositiveIntegerField(
         verbose_name=_("Vægt"),
-        help_text=_("Tør/tom vægt af emballagen i Gram"),
+        help_text=_("Tør/tom vægt af emballagen i gram"),
     )
     capacity = models.PositiveIntegerField(
-        verbose_name=_("Volumenkapacitet"),
-        help_text=_("Emballagens tiltænkte volumen i Milliliter"),
+        verbose_name=_("Volumen"),
+        help_text=_("Emballagens volumen i milliliter"),
     )
     shape = models.CharField(
         verbose_name=_("Form"),
-        help_text=(
-            'Kategori for emballagens form. Flasker er "Bottles", andre ting er '
-            + '"Other"'
-        ),
+        help_text=_("Kategori for emballagens form."),
         choices=PRODUCT_SHAPE_CHOICES,
     )
