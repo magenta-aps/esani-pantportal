@@ -3,7 +3,9 @@ from django.forms import model_to_dict
 from django.test import TestCase
 from django.urls import reverse
 
-from esani_pantportal.models import Product
+from esani_pantportal.models import TAX_GROUP_CHOICES, Product
+
+tax_group_dict = dict(TAX_GROUP_CHOICES)
 
 
 class ProductViewGuiTest(TestCase):
@@ -19,6 +21,7 @@ class ProductViewGuiTest(TestCase):
             weight=20,
             capacity=500,
             shape="F",
+            tax_group=13,
         )
         self.prod2 = Product.objects.create(
             product_name="prod2",
@@ -31,6 +34,7 @@ class ProductViewGuiTest(TestCase):
             weight=20,
             capacity=500,
             shape="F",
+            tax_group=13,
         )
 
     @staticmethod
@@ -60,6 +64,7 @@ class ProductViewGuiTest(TestCase):
                     "Stregkode": "0010",
                     "Pantværdi": "3 øre",
                     "Godkendt": "nej",
+                    "Afgiftsgruppe": f"13 ({tax_group_dict[13]})",
                 },
                 {
                     "Materiale": "Aluminium",
@@ -86,6 +91,7 @@ class ProductViewGuiTest(TestCase):
                     "Stregkode": "0010",
                     "Pantværdi": "3 øre",
                     "Godkendt": "nej",
+                    "Afgiftsgruppe": f"13 ({tax_group_dict[13]})",
                 },
                 {
                     "Materiale": "Aluminium",

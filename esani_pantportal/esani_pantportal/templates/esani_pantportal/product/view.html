@@ -30,6 +30,10 @@
                         <th>{{object|verbose_name:"approved"}}</th>
                         <td>{{object.approved|yesno}}</td>
                     </tr>
+                    <tr>
+                        <th>{{object|verbose_name:"tax_group"}}</th>
+                        <td>{{object.tax_group}} ({{ tax_groups|get_item:object.tax_group }})</td>
+                    </tr>
                     </tbody>
                 </table>
             </div>

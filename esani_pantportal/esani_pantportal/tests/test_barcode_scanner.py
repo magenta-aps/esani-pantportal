@@ -20,6 +20,7 @@ class BarcodeScannerTestCase(TestCase):
             weight=50,
             capacity=20,
             shape="F",
+            tax_group=13,
         )
 
         Product.objects.create(
@@ -32,6 +33,7 @@ class BarcodeScannerTestCase(TestCase):
             weight=50,
             capacity=20,
             shape="F",
+            tax_group=13,
         )
 
         response = self.client.get("/barcode/scan/")

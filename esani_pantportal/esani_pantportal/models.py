@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+import pandas as pd
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext as _
@@ -29,6 +30,12 @@ PRODUCT_SHAPE_CHOICES = [
     ("F", "Flaske"),
     ("A", "Anden"),
 ]
+
+TAX_GROUP_CHOICES = list(
+    pd.read_csv(
+        "esani_pantportal/static/data/tax_groups.csv", sep=";", index_col=0
+    ).itertuples(index=True, name=None)
+)
 
 
 class Company(models.Model):
@@ -171,4 +178,9 @@ class Product(models.Model):
         verbose_name=_("Form"),
         help_text=_("Kategori for emballagens form."),
         choices=PRODUCT_SHAPE_CHOICES,
+    )
+    tax_group = models.PositiveIntegerField(
+        verbose_name=_("Afgiftsgruppe"),
+        help_text=_("Afgiftsgruppe til toldbehandlings-system"),
+        choices=TAX_GROUP_CHOICES,
     )

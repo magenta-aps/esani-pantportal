@@ -18,6 +18,7 @@ from esani_pantportal.util import default_dataframe
 from esani_pantportal.models import (  # isort: skip
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
+    TAX_GROUP_CHOICES,
     Product,
 )
 
@@ -40,6 +41,7 @@ class MultipleProductRegisterFormTests(TestCase):
             "weight_col": "Vægt [g]",
             "capacity_col": "Volumen [ml]",
             "shape_col": "Form [str]",
+            "tax_group_col": "Afgiftsgruppe [#]",
         }
 
     def make_excel_file_dict(self, df):
@@ -223,6 +225,17 @@ class MultipleProductRegisterFormTests(TestCase):
         self.assertEquals(len(form.errors), 1)
         self.assertIn("capacity_col", form.errors)
 
+    def test_import_csv_non_existing_tax_group(self):
+        df = default_dataframe()
+        df.loc[0, "Afgiftsgruppe [#]"] = 1000000000
+        file = self.make_csv_file_dict(df)
+
+        form = MultipleProductRegisterForm(self.defaults, file)
+
+        self.assertEquals(form.is_valid(), False)
+        self.assertEquals(len(form.errors), 1)
+        self.assertIn("tax_group_col", form.errors)
+
     def test_import_csv_exceeds_max_size(self):
         df = default_dataframe()
         df.loc[0, "Volumen [ml]"] = 2.4
@@ -288,6 +301,7 @@ class MultipleProductRegisterFormTests(TestCase):
             weight=1,
             capacity=1,
             shape=PRODUCT_SHAPE_CHOICES[0][0],
+            tax_group=TAX_GROUP_CHOICES[0][0],
         )
 
         response = self.client.post(url, data=data)
@@ -328,7 +342,6 @@ class TestProductRegisterView(TestCase):
         data = {
             "product_name": "foo",
             "barcode": "12341234",
-            "tax_group": 1,
             "product_type": "Øl",
             "material": "P",
             "height": 100,
@@ -336,8 +349,18 @@ class TestProductRegisterView(TestCase):
             "weight": 100,
             "capacity": 100,
             "shape": "F",
+            "tax_group": 13,
         }
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertRedirects(response, reverse("pant:product_register_success"))
+
+
+class TestTaxGroupView(TestCase):
+    def test_view(self):
+        url = reverse("pant:tax_groups") + "?login_bypass=1"
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(TAX_GROUP_CHOICES, response.context["tax_group_choices"])

@@ -1,0 +1,27 @@
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+
+
+{% block content %}
+<div class="mx-5">
+    <h1>{% translate "Gyldige Afgiftsgrupper" %}</h1>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">{% translate "Afgiftsgruppe" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for choice in tax_group_choices %}
+            <tr>
+                <th scope="row">{{choice.0}}</th>
+                <td>{{choice.1}}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
