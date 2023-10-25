@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MPL-2.0
 from functools import cached_property
 from io import BytesIO
-from math import ceil
 from typing import Any, Dict
 
 import pandas as pd
@@ -25,8 +24,6 @@ from django.views.generic import (  # isort: skip
     UpdateView,
     View,
 )
-
-
 from esani_pantportal.forms import (  # isort: skip
     MultipleProductRegisterForm,
     ProductRegisterForm,
@@ -81,9 +78,8 @@ class ProductSearchView(FormView, ListView):
             search_data["offset"] = 0
         if search_data["limit"] < 1:
             search_data["limit"] = 1
-        search_data["page_number"] = ceil(
-            (search_data["offset"] + 1) / search_data["limit"]
-        )
+        # // = Python floor division
+        search_data["page_number"] = (search_data["offset"] // search_data["limit"]) + 1
         return search_data
 
     def get_queryset(self):
