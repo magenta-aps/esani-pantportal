@@ -14,7 +14,7 @@ from django.template import loader
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
-from esani_pantportal.models import Product
+from esani_pantportal.models import TAX_GROUP_CHOICES, Product
 from esani_pantportal.util import default_dataframe
 
 from django.views.generic import (  # isort: skip
@@ -23,6 +23,7 @@ from django.views.generic import (  # isort: skip
     ListView,
     UpdateView,
     View,
+    TemplateView,
 )
 from esani_pantportal.forms import (  # isort: skip
     MultipleProductRegisterForm,
@@ -170,6 +171,11 @@ class ProductDetailView(UpdateView):
     template_name = "esani_pantportal/product/view.html"
     fields = ("approved",)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["tax_groups"] = dict(TAX_GROUP_CHOICES)
+        return context
+
     def get_success_url(self):
         return reverse("pant:product_list")
 
@@ -246,3 +252,12 @@ class CsvTemplateView(View):
 
         df.to_csv(path_or_buf=response, sep=";", index=False)
         return response
+
+
+class TaxGroupView(TemplateView):
+    template_name = "esani_pantportal/product/tax_groups.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["tax_group_choices"] = TAX_GROUP_CHOICES
+        return context

@@ -58,6 +58,7 @@ class ProductListGetQuerysetTest(TestCase):
             weight=20,
             capacity=500,
             shape="F",
+            tax_group=13,
         )
         self.prod2 = Product.objects.create(
             product_name="prod2",
@@ -70,6 +71,7 @@ class ProductListGetQuerysetTest(TestCase):
             weight=20,
             capacity=500,
             shape="F",
+            tax_group=13,
         )
 
     def test_get_queryset_normal(self):
@@ -234,6 +236,7 @@ class ProductListFormValidTest(TestCase):
             capacity=500,
             shape="F",
             id=1,
+            tax_group=13,
         )
         self.prod2 = Product.objects.create(
             product_name="prod2",
@@ -247,6 +250,7 @@ class ProductListFormValidTest(TestCase):
             capacity=500,
             shape="F",
             id=2,
+            tax_group=13,
         )
 
     def test_form_valid(self):
@@ -279,6 +283,7 @@ class ProductListFormValidTest(TestCase):
                         "refund_value": 3,
                         "shape": "F",
                         "weight": 20,
+                        "tax_group": 13,
                     },
                     {
                         "actions": '<a href="/produkt/2?back=" class="btn btn-sm '
@@ -294,6 +299,7 @@ class ProductListFormValidTest(TestCase):
                         "refund_value": 3,
                         "shape": "F",
                         "weight": 20,
+                        "tax_group": 13,
                     },
                 ],
                 "total": 2,
@@ -333,6 +339,7 @@ class ProductListFormValidTest(TestCase):
                         "refund_value": 3,
                         "shape": "F",
                         "weight": 20,
+                        "tax_group": 13,
                     }
                 ],
                 "total": 1,
@@ -353,6 +360,7 @@ class ProductListGuiTest(TestCase):
             weight=20,
             capacity=500,
             shape="F",
+            tax_group=13,
         )
         self.prod2 = Product.objects.create(
             product_name="prod2",
@@ -365,6 +373,7 @@ class ProductListGuiTest(TestCase):
             weight=20,
             capacity=500,
             shape="F",
+            tax_group=13,
         )
 
     @staticmethod

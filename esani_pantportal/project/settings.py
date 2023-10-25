@@ -171,4 +171,5 @@ DEFAULT_CSV_HEADER_DICT = {
     "weight": "Vægt [g]",
     "capacity": "Volumen [ml]",
     "shape": "Form [str]",
+    "tax_group": "Afgiftsgruppe [#]",
 }

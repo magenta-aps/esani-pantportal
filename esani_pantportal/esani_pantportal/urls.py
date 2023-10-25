@@ -13,6 +13,7 @@ from esani_pantportal.views import (  # isort: skip
     MultipleProductRegisterView,
     ExcelTemplateView,
     CsvTemplateView,
+    TaxGroupView,
 )
 
 
@@ -57,5 +58,10 @@ urlpatterns = [
         "produkt/opret/multiple/csv_sample",
         CsvTemplateView.as_view(),
         name="example_csv",
+    ),
+    path(
+        "produkt/tax_groups",
+        TaxGroupView.as_view(),
+        name="tax_groups",
     ),
 ]
