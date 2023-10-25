@@ -11,6 +11,7 @@ from esani_pantportal.util import (  # isort: skip
     join_strings_human_readable,
     make_valid_choices_str,
     default_dataframe,
+    remove_parameter_from_url,
 )
 
 
@@ -53,3 +54,18 @@ class UtilTest(TestCase):
         choices = [(1, "foo"), (2, "mucki"), (3, "bar")]
         string = make_valid_choices_str(choices)
         self.assertEqual(string, "'1' (foo), '2' (mucki) og '3' (bar)")
+
+    def test_remove_parameter_from_url(self):
+        url = "http://foo.com/?foo=2&bar=4"
+        self.assertEqual(remove_parameter_from_url(url, "foo"), "http://foo.com/?bar=4")
+        self.assertEqual(remove_parameter_from_url(url, "bar"), "http://foo.com/?foo=2")
+
+        url = "http://foo.com/"
+        self.assertEqual(remove_parameter_from_url(url, "foo"), "http://foo.com/")
+
+        url = "http://foo.com/?foo=2"
+        self.assertEqual(remove_parameter_from_url(url, "fod"), "http://foo.com/?foo=2")
+
+        url = "relative_url/?foo=2&bar=4"
+        self.assertEqual(remove_parameter_from_url(url, "foo"), "relative_url/?bar=4")
+        self.assertEqual(remove_parameter_from_url(url, "bar"), "relative_url/?foo=2")

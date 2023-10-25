@@ -4,6 +4,7 @@
 from functools import cached_property
 from io import BytesIO
 from typing import Any, Dict
+from urllib.parse import unquote
 
 import pandas as pd
 from django.contrib.auth.views import LoginView
@@ -15,7 +16,7 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from esani_pantportal.models import TAX_GROUP_CHOICES, Product
-from esani_pantportal.util import default_dataframe
+from esani_pantportal.util import default_dataframe, remove_parameter_from_url
 
 from django.views.generic import (  # isort: skip
     CreateView,
@@ -177,7 +178,8 @@ class ProductDetailView(UpdateView):
         return context
 
     def get_success_url(self):
-        return reverse("pant:product_list")
+        back_url = unquote(self.request.GET.get("back"))
+        return remove_parameter_from_url(back_url, "json")
 
 
 class MultipleProductRegisterView(FormView):

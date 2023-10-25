@@ -111,7 +111,7 @@ class ProductViewGuiTest(TestCase):
         )
         self.assertFalse(self.prod1.approved)
         response = self.client.post(
-            reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
+            reverse("pant:product_view", kwargs={"pk": self.prod1.pk}) + "?back=foo",
             {"approved": "1"},
         )
         self.assertEquals(response.status_code, 302)
@@ -128,7 +128,9 @@ class ProductViewGuiTest(TestCase):
             if field == "approved":
                 continue
             self.client.post(
-                reverse("pant:product_view", kwargs={"pk": self.prod1.pk}), {field: "1"}
+                reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
+                + "?back=foo",
+                {field: "1"},
             )
             self.prod1.refresh_from_db()
             self.assertDictEqual(model_to_dict(self.prod1), original)
