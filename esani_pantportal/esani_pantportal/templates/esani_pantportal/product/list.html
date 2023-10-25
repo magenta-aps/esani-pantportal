@@ -92,9 +92,11 @@
         if (params["offset"] < 0) {
             params["offset"] = 0;
         }
+        // Bootstrap takes care of these parameters for us.
+        const keys_to_ignore = ["limit", "offset", "search", "sort", "order"];
         const search_data = JSON.parse($("#search_data").text());
         for (let key in search_data) {
-            if (key !== "offset" && key !== "limit") {
+            if (keys_to_ignore.includes(key) == false) {
                 params[key] = search_data[key];
             }
         }

@@ -1,3 +1,5 @@
+from urllib.parse import quote
+
 from django.template.defaultfilters import register
 
 
@@ -9,3 +11,8 @@ def verbose_name(item, field):
 @register.filter
 def get_item(dictionary, key):
     return dictionary.get(key)
+
+
+@register.filter
+def quote_url(url):
+    return quote(url)

@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: MPL-2.0
 
 
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+
 import pandas as pd
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -78,3 +80,14 @@ def make_valid_choices_str(choices):
     takes a  'choices' tuple and returns a human-readable string
     """
     return join_strings_human_readable([f"'{c[0]}' ({c[1]})" for c in choices])
+
+
+def remove_parameter_from_url(url, key_to_remove):
+    """
+    Remove a parameter from an URL.
+    """
+    u = urlparse(url)
+    query = parse_qs(u.query, keep_blank_values=True)
+    query.pop(key_to_remove, None)
+    u = u._replace(query=urlencode(query, True))
+    return urlunparse(u)
