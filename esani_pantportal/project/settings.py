@@ -173,3 +173,10 @@ DEFAULT_CSV_HEADER_DICT = {
     "shape": "Form [str]",
     "tax_group": "Afgiftsgruppe [#]",
 }
+
+QR_URL_PREFIX = "http://pant.gl?QR="
+QR_ID_LENGTH = 9  # Length of QR ID part, default 9 (one BILLION different codes)
+QR_HASH_LENGTH = 8  # Length of QR control code, default 8
+
+QR_SERIES_SMALL_BAGS = (0, "Små sække")
+QR_SERIES_LARGE_BAGS = (1, "Store sække")
