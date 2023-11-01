@@ -9,5 +9,4 @@ omit =
     */tests.py
     */__init__.py
     */migrations/*
-    */management/*
     */tests/*

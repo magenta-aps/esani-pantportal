@@ -34,6 +34,30 @@ services:
       - postgres-data:/var/lib/postgresql/data
     network_mode: "host"  # Kun nødvendig i dev-environment for at få test-idp til at fungere
 
+  pantportal-cron:
+    user: "1000:1000"  # Override in docker-compose.override.yml if your local user is different
+    container_name: pantportal-cron
+    image: esani-pantportal:latest
+    network_mode: "host"
+    depends_on:
+      - pantportal-db
+    env_file:
+      - ./dev-environment/esani-pantportal.env
+    volumes:
+      - ./esani_pantportal/:/app
+      - ./data/product_lists:/srv/media/product_lists
+      - ./dev-environment/crontab:/crontab
+    entrypoint: [ ]
+    command: [ "supercronic", "/crontab" ]
+
+  pantportal-sftp:
+    image: atmoz/sftp
+    volumes:
+        - ./data/product_lists:/home/sftp_tomra/product_lists
+        - ./dev-environment/users.conf:/etc/sftp/users.conf
+    ports:
+        - "2222:22"
+
   pantportal-test-idp:
     user: "1000:1000"  # Override in docker-compose.override.yml if your local user is different
     image: kenchan0130/simplesamlphp
