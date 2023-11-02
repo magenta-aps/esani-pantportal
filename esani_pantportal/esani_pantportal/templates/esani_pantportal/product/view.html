@@ -34,6 +34,10 @@
                         <th>{{object|verbose_name:"tax_group"}}</th>
                         <td>{{object.tax_group}} ({{ tax_groups|get_item:object.tax_group }})</td>
                     </tr>
+                    <tr>
+                        <th>{{object|verbose_name:"danish"}}</th>
+                        <td>{{object.get_danish_display}}</td>
+                    </tr>
                     </tbody>
                 </table>
             </div>

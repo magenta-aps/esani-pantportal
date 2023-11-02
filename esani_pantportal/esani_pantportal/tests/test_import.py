@@ -42,6 +42,7 @@ class MultipleProductRegisterFormTests(TestCase):
             "capacity_col": "Volumen [ml]",
             "shape_col": "Form [str]",
             "tax_group_col": "Afgiftsgruppe [#]",
+            "danish_col": "Dansk pant [str]",
         }
 
     def make_excel_file_dict(self, df):
@@ -350,6 +351,7 @@ class TestProductRegisterView(TestCase):
             "capacity": 100,
             "shape": "F",
             "tax_group": 13,
+            "danish": "U",
         }
         response = self.client.post(url, data)
 

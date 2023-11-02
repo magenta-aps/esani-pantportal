@@ -36,6 +36,13 @@ PRODUCT_SHAPE_CHOICES = [
     ("A", "Anden"),
 ]
 
+DANISH_PANT_CHOICES = [
+    ("J", "Ja"),
+    ("N", "Nej"),
+    ("U", "Ukendt"),
+]
+
+
 TAX_GROUP_CHOICES = list(
     pd.read_csv(
         "esani_pantportal/static/data/tax_groups.csv", sep=";", index_col=0
@@ -188,6 +195,12 @@ class Product(models.Model):
         verbose_name=_("Afgiftsgruppe"),
         help_text=_("Afgiftsgruppe til toldbehandlings-system"),
         choices=TAX_GROUP_CHOICES,
+    )
+    danish = models.CharField(
+        verbose_name=_("Dansk pant"),
+        help_text=_("Der er Dansk pant på dette produkt"),
+        default="U",
+        choices=DANISH_PANT_CHOICES,
     )
 
 

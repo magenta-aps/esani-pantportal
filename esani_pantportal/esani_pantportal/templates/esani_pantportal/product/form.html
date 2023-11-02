@@ -84,6 +84,14 @@
       </div>
     </div>
 
+    <div class="col-3">
+      <label for="{{form.danish.id_for_label}}">{{form.danish.label}}</label>
+      {{form.danish}}
+      <div class="form-text">
+          {{form.danish.errors}}
+      </div>
+    </div>
+
     <div class="col-12">
         <input class="btn btn-success float-right my-2" type="submit" value="{% translate 'Opret' %}"/>
     </div>

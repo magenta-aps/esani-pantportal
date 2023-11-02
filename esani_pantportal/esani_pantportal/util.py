@@ -14,6 +14,7 @@ from esani_pantportal.models import (  # isort: skip
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
     TAX_GROUP_CHOICES,
+    DANISH_PANT_CHOICES,
 )
 
 
@@ -48,6 +49,7 @@ def default_dataframe():
     materials = iter([p[0] for p in PRODUCT_MATERIAL_CHOICES])
     shapes = iter([p[0] for p in PRODUCT_SHAPE_CHOICES] * 2)
     tax_groups = iter([p[0] for p in TAX_GROUP_CHOICES])
+    danish = iter([p[0] for p in DANISH_PANT_CHOICES] * 2)
 
     for i in range(4):
         df.loc[i, defaults["product_name"]] = f"Produkt {i}"
@@ -60,6 +62,7 @@ def default_dataframe():
         df.loc[i, defaults["capacity"]] = 33
         df.loc[i, defaults["shape"]] = next(shapes)
         df.loc[i, defaults["tax_group"]] = next(tax_groups)
+        df.loc[i, defaults["danish"]] = next(danish)
     return df
 
 

@@ -284,6 +284,7 @@ class ProductListFormValidTest(TestCase):
                         "shape": "F",
                         "weight": 20,
                         "tax_group": 13,
+                        "danish": "U",
                     },
                     {
                         "actions": '<a href="/produkt/2?back=" class="btn btn-sm '
@@ -300,6 +301,7 @@ class ProductListFormValidTest(TestCase):
                         "shape": "F",
                         "weight": 20,
                         "tax_group": 13,
+                        "danish": "U",
                     },
                 ],
                 "total": 2,
@@ -340,6 +342,7 @@ class ProductListFormValidTest(TestCase):
                         "shape": "F",
                         "weight": 20,
                         "tax_group": 13,
+                        "danish": "U",
                     }
                 ],
                 "total": 1,

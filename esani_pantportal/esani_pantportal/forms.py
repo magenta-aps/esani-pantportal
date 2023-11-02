@@ -22,6 +22,7 @@ from esani_pantportal.models import (  # isort: skip
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
     TAX_GROUP_CHOICES,
+    DANISH_PANT_CHOICES,
     validate_digit,
     validate_barcode_length,
 )
@@ -40,6 +41,7 @@ class ProductRegisterForm(forms.ModelForm, BootstrapForm):
             "capacity",
             "shape",
             "tax_group",
+            "danish",
         )
 
 
@@ -128,6 +130,10 @@ class MultipleProductRegisterForm(BootstrapForm):
         initial=defaults["tax_group"],
         label=_("Afgiftsgruppe-kolonnenavn"),
     )
+    danish_col = forms.CharField(
+        initial=defaults["danish"],
+        label=_("Dansk pant-kolonnenavn"),
+    )
 
     def __init__(self, *args, **kwargs):
         self.filename = None
@@ -140,6 +146,7 @@ class MultipleProductRegisterForm(BootstrapForm):
         )
         self.valid_materials = make_valid_choices_str(PRODUCT_MATERIAL_CHOICES)
         self.valid_shapes = make_valid_choices_str(PRODUCT_SHAPE_CHOICES)
+        self.valid_danish_strings = make_valid_choices_str(DANISH_PANT_CHOICES)
         self.tax_groups_link = mark_safe(
             f'<a href="{reverse("pant:tax_groups")}" target="_blank">'
             + _("her")
@@ -383,3 +390,10 @@ class MultipleProductRegisterForm(BootstrapForm):
                 ),
             )
         return col_name
+
+    def clean_danish_col(self):
+        col_name = self.cleaned_data["danish_col"]
+        self.rename_dict[col_name] = "danish"
+        column_exists = self.validate_that_column_exists(col_name)
+        if column_exists:
+            self.validate_column_contents(col_name, DANISH_PANT_CHOICES)
