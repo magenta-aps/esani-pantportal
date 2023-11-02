@@ -172,6 +172,7 @@ DEFAULT_CSV_HEADER_DICT = {
     "capacity": "Volumen [ml]",
     "shape": "Form [str]",
     "tax_group": "Afgiftsgruppe [#]",
+    "danish": "Dansk pant [str]",
 }
 
 QR_URL_PREFIX = "http://pant.gl?QR="

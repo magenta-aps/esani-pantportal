@@ -22,6 +22,7 @@ class ProductViewGuiTest(TestCase):
             capacity=500,
             shape="F",
             tax_group=13,
+            danish="J",
         )
         self.prod2 = Product.objects.create(
             product_name="prod2",
@@ -65,6 +66,7 @@ class ProductViewGuiTest(TestCase):
                     "Pantværdi": "3 øre",
                     "Godkendt": "nej",
                     "Afgiftsgruppe": f"13 ({tax_group_dict[13]})",
+                    "Dansk Pant": "Ja",
                 },
                 {
                     "Materiale": "Aluminium",
@@ -92,6 +94,7 @@ class ProductViewGuiTest(TestCase):
                     "Pantværdi": "3 øre",
                     "Godkendt": "nej",
                     "Afgiftsgruppe": f"13 ({tax_group_dict[13]})",
+                    "Dansk Pant": "Ja",
                 },
                 {
                     "Materiale": "Aluminium",
