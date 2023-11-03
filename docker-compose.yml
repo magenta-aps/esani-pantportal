@@ -5,7 +5,7 @@
 version: "3.8"
 services:
   pantportal:
-    user: "75130:1000" # Override in docker-compose.override.yml if local user is different
+    user: "1000:1000" # Override in docker-compose.override.yml if local user is different
     container_name: esani_pantportal
     image: esani-pantportal:latest
     build:
@@ -16,6 +16,7 @@ services:
     volumes:
       - ./esani_pantportal/:/app
       - ./dev-environment/cert:/ssl:ro
+      - ./data/qr_codes:/srv/media/qr_codes
     depends_on:
       - pantportal-db
     environment:
