@@ -2,6 +2,7 @@
 {% load static %}
 {% load i18n %}
 {% load l10n %}
+{% load bootstrap_icons %}
 
 {% block content %}
 <form action="" method="post">
@@ -14,83 +15,96 @@
                 <h2>Pant</h2>
                 <table class="table table-bordered">
                     <tbody>
-                    <tr>
-                        <th class="col-6">{{object|verbose_name:"product_name"}}</th>
-                        <td class="col-6">{{object.product_name}}</td>
-                    </tr>
-                    <tr>
-                        <th>{{object|verbose_name:"barcode"}}</th>
-                        <td>{{object.barcode}}</td>
-                    </tr>
-                    <tr>
-                        <th>{{object|verbose_name:"refund_value"}}</th>
-                        <td>{{object.refund_value}} øre</td>
-                    </tr>
+                    {% include "./edit_field.html" with field_name="product_name" field=form.product_name %}
+                    {% include "./edit_field.html" with field_name="barcode" field=form.barcode %}
+                    {% include "./edit_field.html" with field_name="refund_value" field=form.refund_value unit="øre"%}
                     <tr>
                         <th>{{object|verbose_name:"approved"}}</th>
                         <td>{{object.approved|yesno}}</td>
                     </tr>
-                    <tr>
-                        <th>{{object|verbose_name:"tax_group"}}</th>
-                        <td>{{object.tax_group}} ({{ tax_groups|get_item:object.tax_group }})</td>
-                    </tr>
-                    <tr>
-                        <th>{{object|verbose_name:"danish"}}</th>
-                        <td>{{object.get_danish_display}}</td>
-                    </tr>
+                    {% include "./edit_field.html" with field_name="tax_group" field=form.tax_group unit=object.tax_group|parenthesized %}
+                    {% include "./edit_field.html" with field_name="danish" field=form.danish %}
                     </tbody>
                 </table>
             </div>
-
             <div class="col-6">
                 <h2>Materiale</h2>
                 <table class="table table-bordered">
                     <tbody>
-                    <tr>
-                        <th class="col-6">{{object|verbose_name:"material"}}</th>
-                        <td class="col-6">{{object.get_material_display}}</td>
-                    </tr>
-                    <tr>
-                        <th>{{object|verbose_name:"height"}}</th>
-                        <td>{{object.height}} mm</td>
-                    </tr>
-                    <tr>
-                        <th>{{object|verbose_name:"diameter"}}</th>
-                        <td>{{object.diameter}} mm</td>
-                    </tr>
-                    <tr>
-                        <th>{{object|verbose_name:"weight"}}</th>
-                        <td>{{object.weight}} g</td>
-                    </tr>
-                    <tr>
-                        <th>{{object|verbose_name:"capacity"}}</th>
-                        <td>{{object.capacity}} ml</td>
-                    </tr>
-                    <tr>
-                        <th>{{object|verbose_name:"shape"}}</th>
-                        <td>{{object.get_shape_display}}</td>
-                    </tr>
+                    {% include "./edit_field.html" with field_name="material" field=form.material %}
+                    {% include "./edit_field.html" with field_name="height" field=form.height unit="mm" %}
+                    {% include "./edit_field.html" with field_name="diameter" field=form.diameter unit="mm" %}
+                    {% include "./edit_field.html" with field_name="weight" field=form.weight unit="g" %}
+                    {% include "./edit_field.html" with field_name="capacity" field=form.capacity unit="ml" %}
+                    {% include "./edit_field.html" with field_name="shape" field=form.shape %}
                     </tbody>
                 </table>
             </div>
-
         </div>
-
         {% if not object.approved %}
-        <div class="card col-md-6 offset-md-3">
-            <div class="card-body">
-                <h5 class="cart-title">Godkend</h5>
-                <p class="card-text">
-                    Inden godkendelse skal det sikres at:
-                </p>
-                <ul>
-                    <li>Navn og stregkode på produktet er korrekt</li>
-                    <li>At emballagen er pantbelagt</li>
-                </ul>
-                <button type="submit" name="{{form.approved.name}}" value="1" class="btn btn-success">Godkend</button>
+        <div class="row">
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="cart-title">Rediger</h5>
+                        <p class="card-text">
+                            Rediger et produkt ved at:
+
+                            <ul>
+                                <li>Rette de ønskede felter (ved brug af {% bs_icon "pencil-square" color="blue" %} knapper) </li>
+                                <li>Klik "Opdatér"</li>
+                            </ul>
+
+                        </p>
+                        <button id="update_button" type="submit" class="btn btn-primary disabled">Opdatér</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="cart-title">Godkend</h5>
+                        <p class="card-text">
+                            Inden godkendelse skal det sikres at:
+                        </p>
+                        <ul>
+                            <li>Navn og stregkode på produktet er korrekt</li>
+                            <li>At emballagen er pantbelagt</li>
+                        </ul>
+                        <button id="approve_button" type="submit" name="{{form.approved.name}}" value="1" class="btn btn-success">Godkend</button>
+                    </div>
+                </div>
             </div>
         </div>
         {% endif %}
     </div>
 </form>
+
+{{ form_fields_to_show|json_script:"form_fields_to_show" }}
+{{ form_fields|json_script:"form_fields" }}
+
+<script>
+function switch_input_mode(field_name){
+    $("#edit_"+field_name+"_div").show();
+    $("#show_"+field_name+"_div").hide();
+    $("#approve_button").addClass("disabled");
+    $("#update_button").removeClass("disabled");
+};
+
+function show_form_field(){
+    var field_name = this.id.replace("edit_","").replace("_button","");
+    switch_input_mode(field_name);
+};
+
+$(function() {
+    var form_fields_to_show = JSON.parse($("#form_fields_to_show").text());
+    var form_fields = JSON.parse($("#form_fields").text());
+    for (let field_name of form_fields_to_show){
+        switch_input_mode(field_name);
+    }
+    for (let field_name of form_fields){
+        $("#edit_"+field_name+"_button").on("click",show_form_field);
+    }
+});
+</script>
 {% endblock %}

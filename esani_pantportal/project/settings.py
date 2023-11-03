@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "ninja_extra",
     "ninja_jwt",
     "django_mitid_auth",
+    "django_bootstrap_icons",
 ]
 
 MIDDLEWARE = [
