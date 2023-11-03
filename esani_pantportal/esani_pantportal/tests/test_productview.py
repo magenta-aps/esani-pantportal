@@ -12,7 +12,7 @@ class ProductViewGuiTest(TestCase):
     def setUp(self) -> None:
         self.prod1 = Product.objects.create(
             product_name="prod1",
-            barcode="0010",
+            barcode="00101122",
             refund_value=3,
             approved=False,
             material="A",
@@ -26,7 +26,7 @@ class ProductViewGuiTest(TestCase):
         )
         self.prod2 = Product.objects.create(
             product_name="prod2",
-            barcode="0002",
+            barcode="00020002",
             refund_value=3,
             approved=True,
             material="A",
@@ -42,16 +42,18 @@ class ProductViewGuiTest(TestCase):
     def get_html_data(html):
         soup = BeautifulSoup(html, "html.parser")
         output = []
+
+        def key(row):
+            return row.find("th").text
+
+        def value(row):
+            return row.find("td").text.strip().split("\n")[0].strip()
+
         for table in soup.find_all("table"):
-            output.append(
-                {
-                    row.find("th").text: row.find("td").text
-                    for row in table.tbody.find_all("tr")
-                }
-            )
+            output.append({key(row): value(row) for row in table.tbody.find_all("tr")})
         return output
 
-    def test_render1(self):
+    def test_render(self):
         response = self.client.get(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
             + "?login_bypass=1"
@@ -62,10 +64,10 @@ class ProductViewGuiTest(TestCase):
             [
                 {
                     "Produktnavn": "prod1",
-                    "Stregkode": "0010",
+                    "Stregkode": "00101122",
                     "Pantværdi": "3 øre",
                     "Godkendt": "nej",
-                    "Afgiftsgruppe": f"13 ({tax_group_dict[13]})",
+                    "Afgiftsgruppe": f"{tax_group_dict[13]} (13)",
                     "Dansk Pant": "Ja",
                 },
                 {
@@ -79,61 +81,87 @@ class ProductViewGuiTest(TestCase):
             ],
         )
 
-    def test_render2(self):
-        response = self.client.get(
-            reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
-            + "?login_bypass=1"
-        )
-        data = self.get_html_data(response.content)
-        self.assertEquals(
-            data,
-            [
-                {
-                    "Produktnavn": "prod1",
-                    "Stregkode": "0010",
-                    "Pantværdi": "3 øre",
-                    "Godkendt": "nej",
-                    "Afgiftsgruppe": f"13 ({tax_group_dict[13]})",
-                    "Dansk Pant": "Ja",
-                },
-                {
-                    "Materiale": "Aluminium",
-                    "Højde": "100 mm",
-                    "Diameter": "60 mm",
-                    "Vægt": "20 g",
-                    "Volumen": "500 ml",
-                    "Form": "Flaske",
-                },
-            ],
-        )
+    @staticmethod
+    def make_form_data(form):
+        form_data = {}
+        for field_name, field in form.fields.items():
+            form_data[field_name] = form.get_initial_for_field(field, field_name)
+
+        return form_data
 
     def test_approve(self):
-        self.client.get(
+        response = self.client.get(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
             + "?login_bypass=1"
         )
+
+        form = response.context_data["form"]
+
+        form_data = self.make_form_data(form)
+        form_data["approved"] = True
         self.assertFalse(self.prod1.approved)
         response = self.client.post(
-            reverse("pant:product_view", kwargs={"pk": self.prod1.pk}) + "?back=foo",
-            {"approved": "1"},
+            reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
+            form_data,
         )
+
         self.assertEquals(response.status_code, 302)
         self.prod1.refresh_from_db()
         self.assertTrue(self.prod1.approved)
+        self.assertRedirects(response, reverse("pant:product_list"))
 
-    def test_others_fail(self):
-        self.client.get(
+        response = self.client.post(
+            reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
+            + "?back=/produkt/%3Fproduct_name%3Dprod1",
+            form_data,
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("pant:product_list") + "?product_name=prod1",
+        )
+
+    def test_edit(self):
+        response = self.client.get(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
             + "?login_bypass=1"
         )
+
+        form = response.context_data["form"]
+
+        form_data = self.make_form_data(form)
+        form_data["weight"] = 1223
+
+        response = self.client.post(
+            reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
+            form_data,
+        )
+
+        self.assertEquals(response.status_code, 302)
+        self.prod1.refresh_from_db()
+        self.assertEqual(self.prod1.weight, 1223)
+        self.assertRedirects(
+            response, reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
+        )
+
+    def test_others_fail(self):
+        response = self.client.get(
+            reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
+            + "?login_bypass=1"
+        )
+
+        form = response.context_data["form"]
         original = model_to_dict(self.prod1)
         for field in original.keys():
-            if field == "approved":
+            if field in form.fields:
                 continue
+
+            form_data = self.make_form_data(form)
+            form_data[field] = "1"
             self.client.post(
                 reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
                 + "?back=foo",
-                {field: "1"},
+                form_data,
             )
             self.prod1.refresh_from_db()
             self.assertDictEqual(model_to_dict(self.prod1), original)

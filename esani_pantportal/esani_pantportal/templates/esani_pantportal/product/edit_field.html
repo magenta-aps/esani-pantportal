@@ -1,0 +1,19 @@
+{% load bootstrap_icons %}
+
+<tr>
+    <th class="col-6">{{object|verbose_name:field_name}}</th>
+    <td class="col-6">
+        <div id="show_{{field_name}}_div">
+            {{ object|get_display_name:field_name }} {{unit}}
+            {% if not object.approved %}
+            <a style="display:inline-block" class="icon-link" id="edit_{{field_name}}_button">
+                {% bs_icon "pencil-square" %}
+            </a>
+            {% endif %}
+        </div>
+        <div id="edit_{{field_name}}_div" style="display:none" class="row mx-0">
+            {{ field }}
+            {{ field.errors }}
+        </div>
+    </td>
+</tr>

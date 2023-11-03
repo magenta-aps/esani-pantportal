@@ -170,16 +170,47 @@ class ProductSearchView(FormView, ListView):
 class ProductDetailView(UpdateView):
     model = Product
     template_name = "esani_pantportal/product/view.html"
-    fields = ("approved",)
+    fields = (
+        "approved",
+        "product_name",
+        "barcode",
+        "refund_value",
+        "tax_group",
+        "danish",
+        "material",
+        "height",
+        "diameter",
+        "weight",
+        "capacity",
+        "shape",
+    )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["tax_groups"] = dict(TAX_GROUP_CHOICES)
+        context["form_fields"] = self.fields
         return context
 
+    def form_invalid(self, form):
+        """
+        If the form is invalid, leave all input fields open.
+        This indicates that nothing was edited
+        """
+        context = self.get_context_data(form=form)
+        context["form_fields_to_show"] = form.changed_data
+        return self.render_to_response(context)
+
     def get_success_url(self):
-        back_url = unquote(self.request.GET.get("back"))
-        return remove_parameter_from_url(back_url, "json")
+        back_url = unquote(self.request.GET.get("back", ""))
+
+        approved = self.get_object().approved
+        if approved:
+            if back_url:
+                return remove_parameter_from_url(back_url, "json")
+            else:
+                return reverse("pant:product_list")
+        else:
+            return self.request.get_full_path()
 
 
 class MultipleProductRegisterView(FormView):
