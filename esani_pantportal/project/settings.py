@@ -179,5 +179,8 @@ QR_URL_PREFIX = "http://pant.gl?QR="
 QR_ID_LENGTH = 9  # Length of QR ID part, default 9 (one BILLION different codes)
 QR_HASH_LENGTH = 8  # Length of QR control code, default 8
 
-QR_SERIES_SMALL_BAGS = (0, "Små sække")
-QR_SERIES_LARGE_BAGS = (1, "Store sække")
+QR_GENERATOR_SERIES = {
+    "small": {"name": "Små sække", "prefix": 0},
+    "large": {"name": "Store sække", "prefix": 1},
+}
+QR_OUTPUT_DIR = "/srv/media/qr_codes"

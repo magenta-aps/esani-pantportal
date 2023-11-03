@@ -2,3 +2,4 @@ docker-compose.override.yml
 **/__pycache__
 **/.coverage
 **_product_list.csv
+**/qr_codes/*.csv
