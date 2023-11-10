@@ -5,3 +5,7 @@ Upstream-Contact: Magenta ApS <info@magenta.dk>
 Files: barcode_scanner/* esani_pantportal/* dev-environment/* docker/* docker-compose.yml README.md .gitignore .gitlab-ci.yml .pre-commit-config.yaml
 Copyright: 2023 Magenta ApS <info@magenta.dk>
 License: MPL-2.0
+
+Files: docs/*
+Copyright: 2023 Magenta ApS <info@magenta.dk>
+License: CC-BY-SA-4.0
