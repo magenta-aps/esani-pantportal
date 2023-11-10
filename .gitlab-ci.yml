@@ -149,4 +149,4 @@ Release ESANI-Pantportal image:
       --src-creds=${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD}
       --dest-creds=${RELEASE_REGISTRY_USER}:${RELEASE_REGISTRY_PASSWORD}
       "docker://${IMAGE_SHA}"
-      "docker://${IMAGE_SHA}"
+      "docker://${IMAGE_TAG}"
