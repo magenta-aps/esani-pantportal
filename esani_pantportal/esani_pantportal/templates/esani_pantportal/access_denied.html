@@ -1,0 +1,28 @@
+{% extends "esani_pantportal/layout.html" %}
+{% load i18n %}
+{% block content %}
+<div class="justify-content-md-center d-flex align-items-center vh-100">
+    <div class="card" style="width: 40rem;">
+        <h5 class="card-header">{% translate 'Ingen adgang' %}</h5>
+        <div class="card-body">
+            <p>
+            {% translate 'Du har ikke adgang til at se denne side.' %}
+            </p><p>
+            <a class="btn btn-primary" href="javascript:history.back()">{% translate 'Tilbage' %}</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% if missing_groups %}
+<!--
+Manglende grupper (en af følgende):
+{{missing_groups|join:", "}}
+-->
+{% endif %}
+{% if missing_permissions %}
+<!--
+Manglende permissions (alle følgende):
+{{missing_permissions|join:", "}}
+-->
+{% endif %}
+{% endblock %}

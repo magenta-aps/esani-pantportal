@@ -51,13 +51,15 @@ INSTALLED_APPS = [
     "ninja_jwt",
     "django_mitid_auth",
     "django_bootstrap_icons",
+    "phonenumber_field",
+    "betterforms",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django_mitid_auth.middleware.LoginManager",
+    # "django_mitid_auth.middleware.LoginManager",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -124,6 +126,7 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+AUTH_USER_MODEL = "esani_pantportal.CompanyUser"
 
 
 # Internationalization
@@ -161,6 +164,8 @@ ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
 
 
 from .login_settings import *  # noqa
+
+LOGIN_URL = "/login"
 
 DEFAULT_CSV_HEADER_DICT = {
     "product_name": "Produktnavn [str]",

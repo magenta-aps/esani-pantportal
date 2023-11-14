@@ -7,7 +7,8 @@ from typing import Any, Dict
 from urllib.parse import unquote
 
 import pandas as pd
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import ValidationError
 from django.forms import model_to_dict
 from django.http import HttpResponse, JsonResponse
@@ -15,8 +16,16 @@ from django.template import loader
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
-from esani_pantportal.models import TAX_GROUP_CHOICES, Product
 from esani_pantportal.util import default_dataframe, remove_parameter_from_url
+from esani_pantportal.view_mixins import PermissionRequiredMixin
+
+from esani_pantportal.models import (  # isort: skip
+    TAX_GROUP_CHOICES,
+    CompanyUser,
+    Product,
+    Branch,
+    Company,
+)
 
 from django.views.generic import (  # isort: skip
     CreateView,
@@ -30,6 +39,7 @@ from esani_pantportal.forms import (  # isort: skip
     MultipleProductRegisterForm,
     ProductRegisterForm,
     ProductFilterForm,
+    UserRegisterMultiForm,
 )
 
 
@@ -37,16 +47,47 @@ class PantportalLoginView(LoginView):
     template_name = "esani_pantportal/login.html"
 
 
-class ProductRegisterView(CreateView):
+class PantportalLogoutView(LogoutView):
+    template_name = "esani_pantportal/login.html"
+
+
+class ProductRegisterView(LoginRequiredMixin, CreateView):
     model = Product
     form_class = ProductRegisterForm
     template_name = "esani_pantportal/product/form.html"
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.created_by = self.request.user
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse("pant:product_register_success")
 
 
-class ProductSearchView(FormView, ListView):
+class UserRegisterView(CreateView):
+    model = CompanyUser
+    form_class = UserRegisterMultiForm
+    template_name = "esani_pantportal/user/form.html"
+
+    def get_context_data(self, *args, **kwargs):
+        context_data = super().get_context_data(*args, **kwargs)
+
+        # dict of companies and which shops they own
+        branch_dict = {}
+        for company in Company.objects.all():
+            branches = Branch.objects.filter(company__pk=company.pk)
+            branch_dict[company.pk] = [b.pk for b in branches]
+
+        context_data["branch_dict"] = branch_dict
+
+        return context_data
+
+    def get_success_url(self):
+        return reverse("pant:login")
+
+
+class ProductSearchView(LoginRequiredMixin, FormView, ListView):
     template_name = "esani_pantportal/product/list.html"
     actions_template = "esani_pantportal/product/actions.html"
     model = Product
@@ -167,7 +208,7 @@ class ProductSearchView(FormView, ListView):
         return value
 
 
-class ProductDetailView(UpdateView):
+class ProductDetailView(PermissionRequiredMixin, UpdateView):
     model = Product
     template_name = "esani_pantportal/product/view.html"
     fields = (
@@ -184,12 +225,30 @@ class ProductDetailView(UpdateView):
         "capacity",
         "shape",
     )
+    required_permissions = ["esani_pantportal.change_product"]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["tax_groups"] = dict(TAX_GROUP_CHOICES)
         context["form_fields"] = self.fields
+
+        if self.can_approve:
+            context["can_approve"] = True
+            context["can_edit"] = True
+        else:
+            context["can_approve"] = False
+            context["can_edit"] = self.get_object().created_by == self.request.user
         return context
+
+    def form_valid(self, form):
+        if not self.can_approve:
+            approved = self.get_object().approved
+            if approved:
+                return self.access_denied
+            if self.get_object().created_by != self.request.user:
+                return self.access_denied
+
+        return self.check_permissions() or super().form_valid(form)
 
     def form_invalid(self, form):
         """
@@ -213,7 +272,7 @@ class ProductDetailView(UpdateView):
             return self.request.get_full_path()
 
 
-class MultipleProductRegisterView(FormView):
+class MultipleProductRegisterView(LoginRequiredMixin, FormView):
     template_name = "esani_pantportal/product/import.html"
     form_class = MultipleProductRegisterForm
 
@@ -233,6 +292,7 @@ class MultipleProductRegisterView(FormView):
             try:
                 product_dict["approved"] = False
                 product = Product(**product_dict)
+                product.created_by = self.request.user
                 product.full_clean()
                 products_to_save.append(product)
                 success_count += 1
@@ -254,7 +314,7 @@ class MultipleProductRegisterView(FormView):
         return self.render_to_response(context=context)
 
 
-class ExcelTemplateView(View):
+class ExcelTemplateView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         with BytesIO() as b:
             df = default_dataframe()
@@ -276,7 +336,7 @@ class ExcelTemplateView(View):
             return response
 
 
-class CsvTemplateView(View):
+class CsvTemplateView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         df = default_dataframe()
 
@@ -287,7 +347,7 @@ class CsvTemplateView(View):
         return response
 
 
-class TaxGroupView(TemplateView):
+class TaxGroupView(LoginRequiredMixin, TemplateView):
     template_name = "esani_pantportal/product/tax_groups.html"
 
     def get_context_data(self, **kwargs):

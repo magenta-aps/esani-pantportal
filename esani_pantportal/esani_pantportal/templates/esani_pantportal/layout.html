@@ -32,7 +32,13 @@ SPDX-License-Identifier: MPL-2.0
         </ul>
         </div>
         <a class="p-2 text-muted" href="{% url 'pant:product_list' %}">Produktliste</a>
+        <span class="p-2 ms-auto">
+            {{user.first_name}} {{user.last_name}} - {{user.branch.name}}
+        </span>
+        <a href="{% url 'pant:logout' %}" class="m-1 btn btn-sm btn-primary" id="logout-link">{% translate "Log ud" %}</a>
     </nav>
+
+
     <hr class="p-0 m-0"/>
 </header>
 {% endblock %}
@@ -40,5 +46,11 @@ SPDX-License-Identifier: MPL-2.0
 {% endblock %}
 {% block extra_footers %}
 {% endblock %}
+
+<script>
+    $("#logout-link").on('click', function () {
+        return confirm("{% translate 'Er du sikker på at du vil logge ud?' %}");
+    });
+</script>
 </body>
 </html>

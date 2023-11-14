@@ -14,6 +14,9 @@ from esani_pantportal.views import (  # isort: skip
     ExcelTemplateView,
     CsvTemplateView,
     TaxGroupView,
+    PantportalLoginView,
+    PantportalLogoutView,
+    UserRegisterView,
 )
 
 
@@ -22,7 +25,10 @@ app_name = "esani_pantportal"
 
 urlpatterns = [
     path("", RedirectView.as_view(url=reverse_lazy("pant:product_list"))),
+    path("login", PantportalLoginView.as_view(), name="login"),
+    path("logout", PantportalLogoutView.as_view(), name="logout"),
     path("produkt/opret", ProductRegisterView.as_view(), name="product_register"),
+    path("bruger/opret", UserRegisterView.as_view(), name="user_register"),
     path(
         "produkt/opret/success",
         TemplateView.as_view(template_name="esani_pantportal/product/success.html"),

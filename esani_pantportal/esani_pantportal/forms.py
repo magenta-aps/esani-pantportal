@@ -1,9 +1,13 @@
 import os
 
 import pandas as pd
+from betterforms.multiform import MultiModelForm
 from django import forms
 from django.conf import settings
+from django.contrib.auth.models import Group
+from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.core.validators import EMPTY_VALUES
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
@@ -17,6 +21,7 @@ from esani_pantportal.util import (  # isort: skip
     join_strings_human_readable,
 )
 
+
 from esani_pantportal.models import (  # isort: skip
     Product,
     PRODUCT_MATERIAL_CHOICES,
@@ -25,6 +30,9 @@ from esani_pantportal.models import (  # isort: skip
     DANISH_PANT_CHOICES,
     validate_digit,
     validate_barcode_length,
+    CompanyUser,
+    Branch,
+    Company,
 )
 
 
@@ -43,6 +51,181 @@ class ProductRegisterForm(forms.ModelForm, BootstrapForm):
             "tax_group",
             "danish",
         )
+
+
+class UserRegisterForm(forms.ModelForm, BootstrapForm):
+    class Meta:
+        model = CompanyUser
+        fields = (
+            "username",
+            "password",
+            "password2",
+            "phone",
+            "first_name",
+            "last_name",
+            "email",
+            "branch",
+        )
+        widgets = {
+            "password": forms.PasswordInput(),
+            "password2": forms.PasswordInput(),
+        }
+
+    password2 = forms.CharField(
+        widget=forms.PasswordInput(),
+        label=_("Gentag Adgangskode"),
+    )
+
+    def clean_password(self):
+        password = self.cleaned_data["password"]
+        validate_password(password)
+        return password
+
+    def clean_password2(self):
+        data = self.cleaned_data
+        password = data.get("password", "")
+        password2 = data.pop("password2")
+
+        if password and password != password2:
+            raise forms.ValidationError(_("Adgangskoder er ikke ens"))
+        return password2
+
+
+class BranchRegisterForm(forms.ModelForm, BootstrapForm):
+    class Meta:
+        model = Branch
+        fields = (
+            "name",
+            "address",
+            "postal_code",
+            "city",
+            "phone",
+            "location_id",
+            "customer_id",
+            "company",
+        )
+
+
+class CompanyRegisterForm(forms.ModelForm, BootstrapForm):
+    class Meta:
+        model = Company
+        fields = (
+            "name",
+            "address",
+            "postal_code",
+            "city",
+            "phone",
+            "cvr",
+            "permit_number",
+        )
+
+
+class UserRegisterMultiForm(MultiModelForm, BootstrapForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # If the branch form is filled out we don't need this field
+        self.forms["user"].fields["branch"].required = False
+
+        # Dict with default values for required fields
+        self.required = {"branch": {}, "company": {}}
+
+        # If the branch is selected from the dropdown, we don't need the branch form
+        for field_name in self.forms["branch"].fields.keys():
+            self.required["branch"][field_name] = (
+                self.forms["branch"].fields[field_name].required
+            )
+            self.forms["branch"].fields[field_name].required = False
+
+        # If the company is selected from the dropdown, we don't need the company form
+        for field_name in self.forms["company"].fields.keys():
+            self.required["company"][field_name] = (
+                self.forms["company"].fields[field_name].required
+            )
+            self.forms["company"].fields[field_name].required = False
+
+        self.parent_form_dict = {"branch": "user", "company": "branch"}
+
+    form_classes = {
+        "user": UserRegisterForm,
+        "branch": BranchRegisterForm,
+        "company": CompanyRegisterForm,
+    }
+
+    def check_subform(self, form_name, allowed_empty_keys=[]):
+        # Check a sub-form for empty keys
+        form = self.forms[form_name]
+        for key, value in self.cleaned_data.get(form_name, {}).items():
+            if key in allowed_empty_keys:
+                continue
+            elif not self.required[form_name][key]:
+                continue
+            elif value in EMPTY_VALUES:
+                form._errors[key] = form.error_class([_("Dette felt må ikke være tom")])
+
+        # If any of the fields are empty (or something else is wrong):
+        if not form.is_valid():
+            parent_form = self.forms[self.parent_form_dict[form_name]]
+
+            # If there are errors in the branch-form:
+            # Demand that the branch is selected from the dropdown in the user-form.
+
+            # If there are errors in the company-form:
+            # Demand that the company is selected from the dropdown in the branch-form.
+            parent_form._errors[form_name] = parent_form.error_class(
+                [_("Dette felt må ikke være tom")]
+            )
+            self.add_crossform_error("empty value check failed")
+
+    def clean(self):
+        branch_from_list = self.cleaned_data.get("user", {}).get("branch", "")
+        company_from_list = self.cleaned_data.get("branch", {}).get("company", "")
+
+        user_form_valid = self.forms["user"].is_valid()
+        branch_form_valid = self.forms["branch"].is_valid()
+
+        if user_form_valid and not branch_from_list:
+            # If the branch is not picked from the list we should not allow
+            # fields to be empty in the branch-form
+            self.check_subform("branch", allowed_empty_keys=["company"])
+
+            if branch_form_valid and not company_from_list:
+                # If the company is not picked from the list we should not
+                # allow fields to be empty in the company-form
+                self.check_subform("company")
+
+        return self.cleaned_data
+
+    def save(self, commit=True):
+        objects = super().save(commit=False)
+
+        company_from_list = self.cleaned_data["branch"]["company"]
+        branch_from_list = self.cleaned_data["user"]["branch"]
+
+        if branch_from_list:
+            branch = branch_from_list
+        else:
+            branch = objects["branch"]
+
+            if company_from_list:
+                company = company_from_list
+            else:
+                company = objects["company"]
+                if commit:
+                    company.save()
+
+            branch.company = company
+            if commit:
+                branch.save()
+
+        user = objects["user"]
+        user.branch = branch
+
+        user.set_password(self.cleaned_data["user"]["password"])
+        if commit:
+            user.save()
+        user.groups.add(Group.objects.get(name="CompanyUsers"))
+        return user
 
 
 class SortPaginateForm(forms.Form):
