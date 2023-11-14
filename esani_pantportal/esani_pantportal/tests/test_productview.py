@@ -12,7 +12,7 @@ tax_group_dict = dict(TAX_GROUP_CHOICES)
 
 class ProductViewGuiTest(LoginMixin, TestCase):
     def setUp(self) -> None:
-        company_user = self.login("CompanyUsers")
+        company_user = self.login("CompanyAdmins")
         admin_user = self.login("EsaniAdmins")
         self.prod1 = Product.objects.create(
             product_name="prod1",
@@ -103,7 +103,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         )
 
     def test_render_company_user(self):
-        self.login("CompanyUsers")
+        self.login("CompanyAdmins")
         response = self.client.get(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
             + "?login_bypass=1"
@@ -181,7 +181,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         form_data["approved"] = True
 
         # Test that company-users cannot approve products
-        self.login("CompanyUsers")
+        self.login("CompanyAdmins")
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
             form_data,
@@ -206,7 +206,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
 
     def test_edit_forbidden(self):
         # A company user should not be able to edit products
-        self.login("CompanyUsers")
+        self.login("CompanyAdmins")
         form_data = self.get_form_data()
         form_data["weight"] = 1223
 

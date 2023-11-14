@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
-
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Group
@@ -16,6 +14,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if settings.ENVIRONMENT in ("production", "staging"):
             raise Exception(f"Will not create dummy users in {settings.ENVIRONMENT}")
+        company_admin_group = Group.objects.get(name="CompanyAdmins")
         company_user_group = Group.objects.get(name="CompanyUsers")
         esani_user_group = Group.objects.get(name="EsaniAdmins")
 
@@ -44,12 +43,26 @@ class Command(BaseCommand):
 
         company_user, created = CompanyUser.objects.update_or_create(
             defaults={
+                "first_name": "Rip",
+                "last_name": "And",
+                "email": "rip.and@brugseni.dk",
+                "password": make_password("rip"),
+                "is_active": True,
+                "is_staff": False,
+                "is_superuser": False,
+                "branch": brugseni_natalie,
+                "phone": "+299 36 35 03",
+            },
+            username="rip",
+        )
+        company_user.groups.add(company_user_group)
+
+        company_admin, created = CompanyUser.objects.update_or_create(
+            defaults={
                 "first_name": "Anders",
                 "last_name": "And",
                 "email": "anders.and@brugseni.dk",
-                "password": make_password(
-                    os.environ.get("INDBERETTER_PASSWORD", "anders")
-                ),
+                "password": make_password("anders"),
                 "is_active": True,
                 "is_staff": False,
                 "is_superuser": False,
@@ -58,16 +71,14 @@ class Command(BaseCommand):
             },
             username="anders",
         )
-        company_user.groups.add(company_user_group)
+        company_admin.groups.add(company_admin_group)
 
         esani_user, created = CompanyUser.objects.update_or_create(
             defaults={
                 "first_name": "ESANI",
                 "last_name": "Admin",
                 "email": "admin@esani.dk",
-                "password": make_password(
-                    os.environ.get("INDBERETTER_PASSWORD", "admin")
-                ),
+                "password": make_password("admin"),
                 "is_active": True,
                 "is_staff": False,
                 "is_superuser": False,

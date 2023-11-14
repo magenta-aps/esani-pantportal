@@ -51,12 +51,19 @@ class PantportalLogoutView(LogoutView):
     template_name = "esani_pantportal/login.html"
 
 
-class ProductRegisterView(LoginRequiredMixin, CreateView):
+class ProductRegisterView(PermissionRequiredMixin, CreateView):
     model = Product
     form_class = ProductRegisterForm
     template_name = "esani_pantportal/product/form.html"
+    required_permissions = ["esani_pantportal.add_product"]
+
+    def get(self, request, *args, **kwargs):
+        return self.check_permissions() or super().get(request, *args, **kwargs)
 
     def form_valid(self, form):
+        access_denied = self.check_permissions()
+        if access_denied:
+            return access_denied
         self.object = form.save(commit=False)
         self.object.created_by = self.request.user
         return super().form_valid(form)
@@ -237,7 +244,10 @@ class ProductDetailView(PermissionRequiredMixin, UpdateView):
             context["can_edit"] = True
         else:
             context["can_approve"] = False
-            context["can_edit"] = self.get_object().created_by == self.request.user
+            context["can_edit"] = (
+                self.get_object().created_by == self.request.user
+                and self.has_permissions
+            )
         return context
 
     def form_valid(self, form):
@@ -272,11 +282,19 @@ class ProductDetailView(PermissionRequiredMixin, UpdateView):
             return self.request.get_full_path()
 
 
-class MultipleProductRegisterView(LoginRequiredMixin, FormView):
+class MultipleProductRegisterView(PermissionRequiredMixin, FormView):
     template_name = "esani_pantportal/product/import.html"
     form_class = MultipleProductRegisterForm
+    required_permissions = ["esani_pantportal.add_product"]
+
+    def get(self, request, *args, **kwargs):
+        return self.check_permissions() or super().get(request, *args, **kwargs)
 
     def form_valid(self, form):
+        access_denied = self.check_permissions()
+        if access_denied:
+            return access_denied
+
         products = form.df.rename(form.rename_dict, axis=1).to_dict(orient="records")
         existing_barcodes = Product.objects.values_list("barcode", flat=True).distinct()
         failures = []

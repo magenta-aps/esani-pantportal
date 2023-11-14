@@ -33,3 +33,8 @@ def get_display_name(obj, attr):
 @register.filter
 def parenthesized(string):
     return f"({string})"
+
+
+@register.filter(name="has_group")
+def has_group(user, group_name):
+    return user.groups.filter(name=group_name).exists()
