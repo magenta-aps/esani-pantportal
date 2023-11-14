@@ -250,7 +250,7 @@ class MultipleProductRegisterFormTests(LoginMixin, TestCase):
         self.assertEquals(len(form.errors), 1)
         self.assertIn("file", form.errors)
 
-    def test_view(self):
+    def test_view_post(self):
         self.login()
         df = default_dataframe()
         file = self.make_excel_file_dict(df)
@@ -260,6 +260,28 @@ class MultipleProductRegisterFormTests(LoginMixin, TestCase):
         response = self.client.post(url, data=data)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.context_data["success_count"], len(df))
+
+    def test_view_get(self):
+        self.login("CompanyAdmins")
+        url = reverse("pant:multiple_product_register")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_view_post_access_denied(self):
+        self.login("CompanyUsers")
+        df = default_dataframe()
+        file = self.make_excel_file_dict(df)
+        url = reverse("pant:multiple_product_register") + "?login_bypass=1"
+        data = self.defaults
+        data["file"] = file["file"]
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_view_get_access_denied(self):
+        self.login("CompanyUsers")
+        url = reverse("pant:multiple_product_register")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
     @patch("esani_pantportal.views.Product")
     def test_view_with_failures(self, ProductMock):
@@ -380,3 +402,48 @@ class TestTaxGroupView(LoginMixin, TestCase):
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(TAX_GROUP_CHOICES, response.context["tax_group_choices"])
+
+
+class SingleProductRegisterFormTests(LoginMixin, TestCase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.defaults = {
+            "product_name": "new_product",
+            "barcode": "11221122",
+            "refund_value": 200,
+            "material": "P",
+            "height": 200,
+            "diameter": 100,
+            "weight": 300,
+            "capacity": 400,
+            "shape": "F",
+            "tax_group": 12,
+            "danish": "J",
+        }
+
+    def test_view_get(self):
+        self.login("CompanyAdmins")
+        url = reverse("pant:product_register")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_view_get_access_denied(self):
+        self.login("CompanyUsers")
+        url = reverse("pant:product_register")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_view_post(self):
+        self.login()
+        url = reverse("pant:product_register")
+        response = self.client.post(url, data=self.defaults)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+        product_qs = Product.objects.filter(product_name="new_product")
+        self.assertGreater(len(product_qs), 0)
+
+    def test_view_post_access_denied(self):
+        self.login("CompanyUsers")
+        url = reverse("pant:product_register")
+        response = self.client.post(url, data=self.defaults)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)

@@ -224,7 +224,7 @@ class UserRegisterMultiForm(MultiModelForm, BootstrapForm):
         user.set_password(self.cleaned_data["user"]["password"])
         if commit:
             user.save()
-        user.groups.add(Group.objects.get(name="CompanyUsers"))
+        user.groups.add(Group.objects.get(name="CompanyAdmins"))
         return user
 
 

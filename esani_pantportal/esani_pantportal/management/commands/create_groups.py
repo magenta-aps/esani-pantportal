@@ -17,7 +17,11 @@ class Command(BaseCommand):
             name="CompanyUsers",
         )
 
-        esani_users, _ = Group.objects.update_or_create(
+        company_admins, _ = Group.objects.update_or_create(
+            name="CompanyAdmins",
+        )
+
+        esani_admins, _ = Group.objects.update_or_create(
             name="EsaniAdmins",
         )
 
@@ -29,6 +33,18 @@ class Command(BaseCommand):
             ("view", product_model),
             ("add", product_model),
             ("change", product_model),
+            # Ingen delete
+        ):
+            company_admins.permissions.add(
+                Permission.objects.get(
+                    codename=f"{action}_{model.name}", content_type=model
+                )
+            )
+
+        for action, model in (
+            ("view", product_model),
+            # Ingen add
+            # Ingen change
             # Ingen delete
         ):
             company_users.permissions.add(
@@ -43,7 +59,7 @@ class Command(BaseCommand):
             ("change", product_model),
             # Ingen delete
         ):
-            esani_users.permissions.add(
+            esani_admins.permissions.add(
                 Permission.objects.get(
                     codename=f"{action}_{model.name}", content_type=model
                 )
