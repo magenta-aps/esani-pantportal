@@ -170,14 +170,12 @@ LOGIN_URL = "/login"
 DEFAULT_CSV_HEADER_DICT = {
     "product_name": "Produktnavn [str]",
     "barcode": "Stregkode [str]",
-    "refund_value": "Pantværdi [øre]",
     "material": "Materiale [str]",
     "height": "Højde [mm]",
     "diameter": "Diameter [mm]",
     "weight": "Vægt [g]",
     "capacity": "Volumen [ml]",
     "shape": "Form [str]",
-    "tax_group": "Afgiftsgruppe [#]",
     "danish": "Dansk pant [str]",
 }
 
@@ -190,3 +188,5 @@ QR_GENERATOR_SERIES = {
     "large": {"name": "Store sække", "prefix": 1},
 }
 QR_OUTPUT_DIR = "/srv/media/qr_codes"
+
+DEFAULT_REFUND_VALUE = 200

@@ -17,12 +17,10 @@
                     <tbody>
                     {% include "./edit_field.html" with field_name="product_name" field=form.product_name %}
                     {% include "./edit_field.html" with field_name="barcode" field=form.barcode %}
-                    {% include "./edit_field.html" with field_name="refund_value" field=form.refund_value unit="øre"%}
                     <tr>
                         <th>{{object|verbose_name:"approved"}}</th>
                         <td>{{object.approved|yesno}}</td>
                     </tr>
-                    {% include "./edit_field.html" with field_name="tax_group" field=form.tax_group unit=object.tax_group|parenthesized %}
                     {% include "./edit_field.html" with field_name="danish" field=form.danish %}
                     {% if can_approve %}
                     <tr>

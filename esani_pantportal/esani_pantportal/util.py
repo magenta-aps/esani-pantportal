@@ -54,14 +54,12 @@ def default_dataframe():
     for i in range(4):
         df.loc[i, defaults["product_name"]] = f"Produkt {i}"
         df.loc[i, defaults["barcode"]] = f"0000000{i}"
-        df.loc[i, defaults["refund_value"]] = 200
         df.loc[i, defaults["material"]] = next(materials)
         df.loc[i, defaults["height"]] = 150
         df.loc[i, defaults["diameter"]] = 20
         df.loc[i, defaults["weight"]] = 200
         df.loc[i, defaults["capacity"]] = 33
         df.loc[i, defaults["shape"]] = next(shapes)
-        df.loc[i, defaults["tax_group"]] = next(tax_groups)
         df.loc[i, defaults["danish"]] = next(danish)
     return df
 

@@ -285,7 +285,7 @@ class Product(models.Model):
     refund_value = models.PositiveIntegerField(
         verbose_name=_("Pantværdi"),
         help_text=_("Pantværdi, angivet i øre (100=1DKK, 25=0.25DKK)"),
-        default=200,  # 2kr.
+        default=settings.DEFAULT_REFUND_VALUE,  # 2kr.
     )
     approved = models.BooleanField(
         verbose_name=_("Godkendt"),

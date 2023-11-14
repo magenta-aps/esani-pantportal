@@ -222,8 +222,6 @@ class ProductDetailView(PermissionRequiredMixin, UpdateView):
         "approved",
         "product_name",
         "barcode",
-        "refund_value",
-        "tax_group",
         "danish",
         "material",
         "height",

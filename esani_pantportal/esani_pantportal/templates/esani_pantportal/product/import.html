@@ -54,13 +54,6 @@
         </div>
         <div class="row">
             <div class="col-2">
-                {{form.refund_value_col.label}}
-            </div>
-            <div class="col-4">
-                {{form.refund_value_col}}
-                {{form.refund_value_col.errors}}
-            </div>
-            <div class="col-2">
                 {{form.material_col.label}}
             </div>
             <div class="col-4">
@@ -107,13 +100,6 @@
             <div class="col-4">
                 {{form.shape_col}}
                 {{form.shape_col.errors}}
-            </div>
-            <div class="col-2">
-                {{form.tax_group_col.label}}
-            </div>
-            <div class="col-4">
-                {{form.tax_group_col}}
-                {{form.tax_group_col.errors}}
             </div>
         </div>
         <div class="row">
@@ -162,9 +148,6 @@
           </li>
           <li>
           {% translate "Alle stregkoder skal være unikke." %}
-          </li>
-          <li>
-          {% translate "Gyldige afgiftsgrupper er defineret" %} {{ form.tax_groups_link }}.
           </li>
           </ul>
               <a href="{% url 'pant:example_csv' %}" class="btn btn-sm btn-primary">
