@@ -9,6 +9,8 @@ from esani_pantportal.forms import ProductFilterForm
 from esani_pantportal.models import Product
 from esani_pantportal.views import ProductSearchView
 
+from .conftest import LoginMixin
+
 
 class ProductListSearchDataTest(TestCase):
     def test_search_data_pagination_int(self):
@@ -45,7 +47,7 @@ class ProductListSearchDataTest(TestCase):
         self.assertEquals(data["page_number"], 1)
 
 
-class ProductListGetQuerysetTest(TestCase):
+class ProductListGetQuerysetTest(LoginMixin, TestCase):
     def setUp(self) -> None:
         self.prod1 = Product.objects.create(
             product_name="prod1",
@@ -222,8 +224,9 @@ class ProductListGetQuerysetTest(TestCase):
         self.assertEquals(self.prod2, qs[1])
 
 
-class ProductListFormValidTest(TestCase):
+class ProductListFormValidTest(LoginMixin, TestCase):
     def setUp(self) -> None:
+        self.user = self.login()
         self.prod1 = Product.objects.create(
             product_name="prod1",
             barcode="0010",
@@ -237,6 +240,7 @@ class ProductListFormValidTest(TestCase):
             shape="F",
             id=1,
             tax_group=13,
+            created_by=self.user,
         )
         self.prod2 = Product.objects.create(
             product_name="prod2",
@@ -251,6 +255,7 @@ class ProductListFormValidTest(TestCase):
             shape="F",
             id=2,
             tax_group=13,
+            created_by=self.user,
         )
 
     def test_form_valid(self):
@@ -285,6 +290,7 @@ class ProductListFormValidTest(TestCase):
                         "weight": 20,
                         "tax_group": 13,
                         "danish": "U",
+                        "created_by": self.user.pk,
                     },
                     {
                         "actions": '<a href="/produkt/2?back=" class="btn btn-sm '
@@ -302,6 +308,7 @@ class ProductListFormValidTest(TestCase):
                         "weight": 20,
                         "tax_group": 13,
                         "danish": "U",
+                        "created_by": self.user.pk,
                     },
                 ],
                 "total": 2,
@@ -343,6 +350,7 @@ class ProductListFormValidTest(TestCase):
                         "weight": 20,
                         "tax_group": 13,
                         "danish": "U",
+                        "created_by": self.user.pk,
                     }
                 ],
                 "total": 1,
@@ -350,8 +358,9 @@ class ProductListFormValidTest(TestCase):
         )
 
 
-class ProductListGuiTest(TestCase):
+class ProductListGuiTest(LoginMixin, TestCase):
     def setUp(self) -> None:
+        self.login()
         self.prod1 = Product.objects.create(
             product_name="prod1",
             barcode="0010",

@@ -1,5 +1,7 @@
 {% extends "esani_pantportal/layout.html" %}
 {% load i18n %}
+{% block header %}
+{% endblock %}
 {% block content %}
 {% if form.non_field_errors %}
 <div class="row justify-content-md-center">
@@ -17,25 +19,33 @@
 
     <form action="" method="POST" class="needs-validation">
         {% csrf_token %}
-        <div class="row">
-            <div class="col-md-4 mb-3">
+        <div class="row my-1">
+            <div class="col-4">
+                Username:
+            </div>
+            <div class="col-8">
                 {{form.username}}
-                {% if form.username.errors %}
-                <div class="invalid-feedback">{{ form.username.errors }}</div>
-                {% endif %}
+                {{ form.username.errors }}
             </div>
-            <div class="col-md-4 mb-3">
+        </div>
+        <div class="row my-1">
+            <div class="col-4">
+                Password:
+            </div>
+            <div class="col-8">
                 {{form.password}}
-                {% if form.password.errors %}
-                <div class="invalid-feedback">{{ form.password.errors }}</div>
-                {% endif %}
+                {{form.password.errors}}
             </div>
-            <div class="col-md-4 mb-3">
-                <button type="submit" class="btn btn-primary">{% translate 'Login' %}</button>
+        </div>
+        <div class="row my-1">
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary float-end">{% translate 'Login' %}</button>
             </div>
+            <a href="{% url 'pant:user_register' %}?show_branch=0&show_company=0">{% translate "Ny bruger" %}</a>
         </div>
         <input type="hidden" name="next" value="{{ next }}">
     </form>
     </div>
-</div></div>
+</div>
+</div>
 {% endblock %}

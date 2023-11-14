@@ -24,6 +24,8 @@ class Command(BaseCommand):
                 name=company_name,
                 cvr=company_names.index(company_name),
                 address="Væskevej " + str(company_names.index(company_name)),
-                phone=random.randint(100000, 999999),
+                city="Nuuk",
+                postal_code="1234",
+                phone="+299 36 35 " + str(random.randint(10, 99)),
                 permit_number=company_names.index(company_name),
             )

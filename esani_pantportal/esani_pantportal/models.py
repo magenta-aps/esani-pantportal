@@ -8,9 +8,11 @@ import string
 
 import pandas as pd
 from django.conf import settings
+from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.utils.translation import gettext as _
+from phonenumber_field.modelfields import PhoneNumberField
 
 
 # Custom validators
@@ -43,6 +45,15 @@ DANISH_PANT_CHOICES = [
 ]
 
 
+REFUND_METHOD_CHOICES = [
+    ("K", "Flaskeautomat m/komprimator"),
+    ("S", "Flaskeautomat m/sikkerhedscontainer"),
+    ("SK", "Flaskeautomat m/komprimator m/sikkerhedscontainer"),
+    ("S", "Sække"),
+    ("M", "Manuel sortering"),
+    ("A", "Anden"),
+]
+
 TAX_GROUP_CHOICES = list(
     pd.read_csv(
         "esani_pantportal/static/data/tax_groups.csv", sep=";", index_col=0
@@ -67,21 +78,129 @@ class Company(models.Model):
         unique=True,
     )
     address = models.CharField(
-        verbose_name=_("Addresse"),
-        help_text=_("Firmaets registrerede addresse"),
+        verbose_name=_("Adresse"),
+        help_text=_("Firmaets registrerede adresse"),
         max_length=400,
     )
-    phone = models.PositiveIntegerField(
+
+    postal_code = models.CharField(
+        verbose_name=_("Postnummer"),
+        help_text=_("Firmaets registrerede postnummer"),
+        max_length=10,
+    )
+
+    city = models.CharField(
+        verbose_name=_("By"),
+        help_text=_("Firmaets registrerede bynavn"),
+        max_length=255,
+    )
+
+    phone = PhoneNumberField(
         verbose_name=_("Telefonnummer"),
         help_text=_("Firmaets telefonnummer inkl. landekode"),
     )
     permit_number = models.PositiveIntegerField(
         verbose_name=_("Tilladelsesnummer"),
         help_text=_(
-            "Firmaets tilladelsesnummer for import af ethanolholdige drikkevarer"
+            "Firmaets tilladelsesnummer for import "
+            "af ethanolholdige drikkevarer (valgfri)"
         ),
         null=True,
         blank=True,
+    )
+
+    def __str__(self):
+        name = self.name
+        cvr = self.cvr
+        return f"{name} - cvr:{cvr}"
+
+
+class Branch(models.Model):
+    company = models.ForeignKey(
+        "Company",
+        verbose_name=_("Virksomhed"),
+        help_text=_("Virksomhed som denne butik tilhører"),
+        on_delete=models.PROTECT,
+        related_name="company",
+    )
+
+    name = models.CharField(
+        verbose_name=_("Butiksnavn"),
+        help_text=_("Butiksnavn"),
+        max_length=255,
+    )
+
+    address = models.CharField(
+        verbose_name=_("Adresse"),
+        help_text=_("Butikkens registrerede adresse"),
+        max_length=255,
+    )
+
+    postal_code = models.CharField(
+        verbose_name=_("Postnummer"),
+        help_text=_("Butikkens registrerede postnummer"),
+        max_length=10,
+    )
+
+    city = models.CharField(
+        verbose_name=_("By"),
+        help_text=_("Butikkens registrerede bynavn"),
+        max_length=255,
+    )
+
+    phone = PhoneNumberField(
+        verbose_name=_("Telefonnummer"),
+        help_text=_("Butikkens telefonnummer inkl. landekode"),
+    )
+
+    location_id = models.PositiveIntegerField(
+        verbose_name=_("LokationsID"),
+        help_text=_("Butikkens lokation ID"),
+    )
+
+    customer_id = models.PositiveIntegerField(
+        verbose_name=_("Kundenummer"),
+        help_text=_("Butikkens kundenummer hos Tomra (valgfri)"),
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        name = self.name
+        company = self.company
+        return f"{name} - {company}"
+
+
+class RefundMethod(models.Model):
+    # Note: Compensation seems to be dependent on the kind of machine a branch has.
+    # See
+    # https://danskretursystem.dk/app/uploads/2023/05/Haandteringsgodtgoerelse_2023.pdf
+    # For a possible (future?) scenario.
+    compensation = models.PositiveIntegerField(
+        verbose_name=_("Håndterings-godtgørelse"),
+        help_text=_("Håndterings-godtgørelse, angivet i øre (100=1DKK, 25=0.25DKK)"),
+        default=0,
+    )
+
+    serial_number = models.CharField(
+        verbose_name=_("Serienummer"),
+        help_text=_("Maskinens serienummer"),
+        null=True,
+        blank=True,
+    )
+
+    method = models.CharField(
+        verbose_name=_("Pantmetode"),
+        help_text=_("Måden at pant bliver registreret på"),
+        choices=REFUND_METHOD_CHOICES,
+    )
+
+    branch = models.ForeignKey(
+        "Branch",
+        verbose_name=_("Butik"),
+        help_text=_("Butik hvor denne maskine står"),
+        on_delete=models.PROTECT,
+        related_name="butik",
     )
 
 
@@ -143,6 +262,14 @@ class Product(models.Model):
                 "User is allowed to approve products awaiting registration",
             )
         ]
+
+    created_by = models.ForeignKey(
+        "CompanyUser",
+        related_name="products",
+        on_delete=models.SET_NULL,  # Vi kan slette brugere og beholde deres anmeldelser
+        null=True,
+        verbose_name=_("Oprettet af"),
+    )
 
     product_name = models.CharField(
         verbose_name=_("Produktnavn"),
@@ -328,3 +455,21 @@ class QRCodeInterval(models.Model):
         start = self.start
         end = self.start + self.increment
         return f"{gen_name}[{start}:{end}] - {self.salt}"
+
+
+class CompanyUser(AbstractUser):
+    # Note: ESANI users do not need to belong to a branch
+    branch = models.ForeignKey(
+        "Branch",
+        verbose_name=_("Butik"),
+        help_text=_("Butik hvor denne bruger arbejder"),
+        on_delete=models.PROTECT,
+        related_name="arbejdssted",
+        null=True,
+        blank=True,
+    )
+
+    phone = PhoneNumberField(
+        verbose_name=_("Telefonnummer"),
+        help_text=_("Brugerens telefonnummer inkl. landekode"),
+    )

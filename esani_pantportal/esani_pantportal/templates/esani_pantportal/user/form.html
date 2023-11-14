@@ -1,0 +1,395 @@
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+{% block header %}
+{% endblock %}
+
+
+{% block content %}
+
+<div class="mx-5">
+    <h1 class="mt-5 mb-4">{% translate "Registrer ny bruger" %}</h1>
+    <form method="POST" class="row g-3">
+        {% csrf_token %}
+    <div class="input-group">
+        <div class="col-6">
+          <label for="{{form.user.username.id_for_label}}">{{form.user.username.label}}</label>
+          {{form.user.username}}
+          <div class="form-text">
+              {{form.user.username.errors}}
+          </div>
+        </div>
+
+        <div class="col-6">
+          <label for="{{form.user.password.id_for_label}}">{{form.user.password.label}}</label>
+          {{form.user.password}}
+          <div class="form-text">
+              {{form.user.password.errors}}
+          </div>
+        </div>
+    
+        <div class="col-6">
+          <label for="{{form.user.phone.id_for_label}}">{{form.user.phone.label}}</label>
+          {{form.user.phone}}
+          <div class="form-text">
+              {{form.user.phone.errors}}
+          </div>
+        </div>
+    
+        <div class="col-6">
+          <label for="{{form.user.password2.id_for_label}}">{{form.user.password2.label}}</label>
+          {{form.user.password2}}
+          <div class="form-text">
+              {{form.user.password2.errors}}
+          </div>
+        </div>
+    
+        <div class="col-6">
+          <label for="{{form.user.first_name.id_for_label}}">{{form.user.first_name.label}}</label>
+          {{form.user.first_name}}
+          <div class="form-text">
+              {{form.user.first_name.errors}}
+          </div>
+        </div>
+    
+    
+        <div class="col-6">
+          <label for="{{form.last_name.id_for_label}}">{{form.user.last_name.label}}</label>
+          {{form.user.last_name}}
+          <div class="form-text">
+              {{form.user.last_name.errors}}
+          </div>
+        </div>
+    
+    
+        <div class="col-6">
+          <label for="{{form.user.email.id_for_label}}">{{form.user.email.label}}</label>
+          {{form.user.email}}
+          <div class="form-text">
+              {{form.user.email.errors}}
+          </div>
+        </div>
+
+
+        <div class="col-12 my-4">
+            <h4>{% translate "Virksomhed" %}</h4>
+        </div>
+
+        <div class="col-12"  id="company_dropdown">
+          <label for="{{form.branch.company.id_for_label}}">
+              {{form.branch.company.label}} <a id="show_company_form" href="#">{% translate "Virksomhed er ikke i listen" %}</a>
+          </label>
+          {{form.branch.company}}
+          <div class="form-text">
+              {{form.branch.company.errors}}
+          </div>
+        </div>
+
+        <div class="input-group  my-0" id="company_form" style="display:none" >
+            <div class="col-6">
+              <label for="{{form.company.name.id_for_label}}">
+                  {{form.company.name.label}} <a id="show_company_dropdown" href="#">{% translate "Tilbage til listen" %}</a>
+              </label>
+              {{form.company.name}}
+              <div class="form-text">
+                  {{form.company.name.errors}}
+              </div>
+            </div>
+        
+            <div class="col-6">
+              <label for="{{form.company.address.id_for_label}}">{{form.company.address.label}}</label>
+              {{form.company.address}}
+              <div class="form-text">
+                  {{form.company.address.errors}}
+              </div>
+            </div>
+
+            <div class="col-6">
+              <label for="{{form.company.postal_code.id_for_label}}">{{form.company.postal_code.label}}</label>
+              {{form.company.postal_code}}
+              <div class="form-text">
+                  {{form.company.postal_code.errors}}
+              </div>
+            </div>
+
+
+            <div class="col-6">
+              <label for="{{form.company.city.id_for_label}}">{{form.company.city.label}}</label>
+              {{form.company.city}}
+              <div class="form-text">
+                  {{form.company.city.errors}}
+              </div>
+            </div>
+
+
+            <div class="col-6">
+              <label for="{{form.company.phone.id_for_label}}">{{form.company.phone.label}}</label>
+              {{form.company.phone}}
+              <div class="form-text">
+                  {{form.company.phone.errors}}
+              </div>
+            </div>
+            <div class="col-6">
+              <label for="{{form.company.cvr.id_for_label}}">{{form.company.cvr.label}}</label>
+              {{form.company.cvr}}
+              <div class="form-text">
+                  {{form.company.cvr.errors}}
+              </div>
+            </div>
+            <div class="col-6">
+              <label for="{{form.company.permit_number.id_for_label}}">{{form.company.permit_number.label}}</label>
+              {{form.company.permit_number}}
+              <div class="form-text">
+                  {{form.company.permit_number.errors}}
+                  {{form.company.permit_number.help_text}}
+              </div>
+            </div>
+        </div>
+
+
+        <div class="col-12 my-4"  style="display:none" id="branch_header">
+            <h4>{% translate "Butik" %}</h4>
+        </div>
+    
+        <div class="col-12"  id="branch_dropdown" style="display:none">
+          <label for="{{form.user.branch.id_for_label}}">
+              {{form.user.branch.label}} <a id="show_branch_form" href="#">{% translate "Butik er ikke i listen" %}</a>
+          </label>
+          {{form.user.branch}}
+          <div class="form-text">
+              {{form.user.branch.errors}}
+          </div>
+        </div>
+    </div>
+
+    <div class="input-group my-0" id="branch_form" style="display:none">
+        <div class="col-6">
+          <label for="{{form.branch.name.id_for_label}}">
+              {{form.branch.name.label}} <a id="show_branch_dropdown" href="#">{% translate "Tilbage til listen" %}</a>
+          </label>
+          {{form.branch.name}}
+          <div class="form-text">
+              {{form.branch.name.errors}}
+          </div>
+        </div>
+    
+        <div class="col-6">
+          <label for="{{form.branch.address.id_for_label}}">{{form.branch.address.label}}</label>
+          {{form.branch.address}}
+          <div class="form-text">
+              {{form.branch.address.errors}}
+          </div>
+        </div>
+
+        <div class="col-6">
+          <label for="{{form.branch.postal_code.id_for_label}}">{{form.branch.postal_code.label}}</label>
+          {{form.branch.postal_code}}
+          <div class="form-text">
+              {{form.branch.postal_code.errors}}
+          </div>
+        </div>
+
+        <div class="col-6">
+          <label for="{{form.branch.city.id_for_label}}">{{form.branch.city.label}}</label>
+          {{form.branch.city}}
+          <div class="form-text">
+              {{form.branch.city.errors}}
+          </div>
+        </div>
+
+        <div class="col-6">
+          <label for="{{form.branch.phone.id_for_label}}">{{form.branch.phone.label}}</label>
+          {{form.branch.phone}}
+          <div class="form-text">
+              {{form.branch.phone.errors}}
+          </div>
+        </div>
+    
+        <div class="col-6">
+          <label for="{{form.branch.location_id.id_for_label}}">{{form.branch.location_id.label}}</label>
+          {{form.branch.location_id}}
+          <div class="form-text">
+              {{form.branch.location_id.errors}}
+              {{form.branch.location_id.help_text}}
+          </div>
+        </div>
+
+        <div class="col-6">
+          <label for="{{form.branch.customer_id.id_for_label}}">{{form.branch.customer_id.label}}</label>
+          {{form.branch.customer_id}}
+          <div class="form-text">
+              {{form.branch.customer_id.errors}}
+              {{form.branch.customer_id.help_text}}
+          </div>
+        </div>
+
+    </div>
+    <div class="col-12">
+        <input class="btn btn-success float-right my-2 ms-0" type="submit" value="{% translate 'Opret' %}"/>
+        <a href="{% url 'pant:login' %}" class="btn btn-secondary my-2 mx-1" role="button">{% translate 'Tilbage' %}</a>
+    </div>
+    </form>
+</div>
+
+{{ branch_dict|json_script:"branch_dict" }}
+
+<script>
+function updateQueryString(key, value) {
+    if (history.pushState) {
+        let searchParams = new URLSearchParams(window.location.search);
+        searchParams.set(key, value);
+        let newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?' + searchParams.toString();
+        window.history.pushState({path: newurl}, '', newurl);
+    }
+}
+
+var getUrlParameter = function getUrlParameter(sParam) {
+    var sPageURL = window.location.search.substring(1),
+        sURLVariables = sPageURL.split('&'),
+        sParameterName,
+        i;
+
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
+
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+        }
+    }
+    return false;
+};
+
+function hide_branch_dropdown_options(){
+    $("#id_user-branch").children("option").not(":first").hide();
+}
+
+function reset_company_dropdown() {
+    $("#id_branch-company option[value='']").prop("selected", "selected");
+    reset_branch_dropdown();
+    hide_branch_dropdown_options();
+}
+
+function reset_branch_dropdown() {
+    $("#id_user-branch option[value='']").prop("selected", "selected");
+}
+
+function hide_company_dropdown(){
+   $("#company_dropdown").hide();
+   reset_company_dropdown();
+}
+
+function hide_branch_dropdown(){
+    $("#branch_dropdown").hide();
+    reset_branch_dropdown();
+}
+
+function show_company_dropdown(){
+    $("#company_dropdown").show();
+}
+
+function show_branch_dropdown(){
+    $("#branch_header").show();
+    $("#branch_dropdown").show();
+}
+
+function show_company_form() {
+    $("#company_form").show();
+    updateQueryString("show_company","1");
+    show_branch_form();
+}
+
+function show_branch_form() {
+    $("#branch_header").show();
+    $("#branch_form").show();
+    updateQueryString("show_branch","1");
+
+    // If there are no branches to choose from, hide the option to show the dropdown
+    company_id = $("#id_branch-company").val();
+    const branches = get_branch_ids(company_id);
+
+    if (branches.length === 0) {
+        $("#show_branch_dropdown").hide();
+    } else {
+        $("#show_branch_dropdown").show();
+    }
+}
+
+function hide_company_form() {
+    $("#company_form").hide();
+    $("#branch_header").hide();
+    updateQueryString("show_company","0");
+    hide_branch_form();
+    hide_branch_dropdown();
+}
+
+function hide_branch_form() {
+    $("#branch_form").hide();
+    updateQueryString("show_branch","0");
+}
+
+$("#show_branch_dropdown").click(function() {
+    hide_branch_form();
+    show_branch_dropdown();
+});
+$("#show_branch_form").click(function() {
+    show_branch_form();
+    hide_branch_dropdown();
+});
+$("#show_company_dropdown").click(function() {
+    hide_company_form();
+    show_company_dropdown();
+});
+$("#show_company_form").click(function() {
+    show_company_form();
+    hide_company_dropdown();
+});
+
+var show_company = getUrlParameter("show_company");
+var show_branch = getUrlParameter("show_branch");
+
+if (show_branch == "1"){
+    show_branch_form();
+    hide_branch_dropdown();
+}
+
+if (show_company == "1"){
+    show_company_form();
+    hide_company_dropdown();
+}
+
+hide_branch_dropdown_options();
+
+function get_branch_ids(company_id) {
+  if (company_id === ""){
+      return $([]);
+  }
+  const branch_dict = JSON.parse($("#branch_dict").text());
+  const branches_in_this_company = branch_dict[company_id];
+  return branches_in_this_company;
+}
+
+
+$("#id_branch-company").change(function(){
+  company_id = $(this).val();
+  const branches_to_show_in_dropdown = get_branch_ids(company_id);
+
+  reset_branch_dropdown();
+  hide_branch_dropdown_options();
+
+  $.each(branches_to_show_in_dropdown, function( index, value ) {
+      $("#id_user-branch").children("option[value^=" + value + "]").show();
+  });
+
+  if (branches_to_show_in_dropdown.length === 0) {
+    show_branch_form();
+    hide_branch_dropdown();
+  } else {
+    hide_branch_form();
+    show_branch_dropdown();
+}
+
+});
+
+</script>
+{% endblock %}

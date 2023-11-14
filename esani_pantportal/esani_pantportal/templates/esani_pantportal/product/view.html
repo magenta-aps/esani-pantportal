@@ -24,6 +24,12 @@
                     </tr>
                     {% include "./edit_field.html" with field_name="tax_group" field=form.tax_group unit=object.tax_group|parenthesized %}
                     {% include "./edit_field.html" with field_name="danish" field=form.danish %}
+                    {% if can_approve %}
+                    <tr>
+                        <th>{{object|verbose_name:"created_by"}}</th>
+                        <td>{{object.created_by.username}} (<a href="mailto:{{object.created_by.email}}">{{object.created_by.email}}</a>)</td>
+                    </tr>
+                    {% endif %}
                     </tbody>
                 </table>
             </div>
@@ -43,6 +49,7 @@
         </div>
         {% if not object.approved %}
         <div class="row">
+            {% if can_edit %}
             <div class="col-6">
                 <div class="card">
                     <div class="card-body">
@@ -60,6 +67,8 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
+            {% if can_approve %}
             <div class="col-6">
                 <div class="card">
                     <div class="card-body">
@@ -78,6 +87,7 @@
         </div>
         {% endif %}
     </div>
+    {% endif %}
 </form>
 
 {{ form_fields_to_show|json_script:"form_fields_to_show" }}

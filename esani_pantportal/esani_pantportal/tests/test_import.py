@@ -15,6 +15,8 @@ from django.urls import reverse
 from esani_pantportal.forms import MultipleProductRegisterForm
 from esani_pantportal.util import default_dataframe
 
+from .conftest import LoginMixin
+
 from esani_pantportal.models import (  # isort: skip
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
@@ -22,11 +24,10 @@ from esani_pantportal.models import (  # isort: skip
     Product,
 )
 
-
 ProductMock = MagicMock()
 
 
-class MultipleProductRegisterFormTests(TestCase):
+class MultipleProductRegisterFormTests(LoginMixin, TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.defaults = {
@@ -250,6 +251,7 @@ class MultipleProductRegisterFormTests(TestCase):
         self.assertIn("file", form.errors)
 
     def test_view(self):
+        self.login()
         df = default_dataframe()
         file = self.make_excel_file_dict(df)
         url = reverse("pant:multiple_product_register") + "?login_bypass=1"
@@ -261,6 +263,8 @@ class MultipleProductRegisterFormTests(TestCase):
 
     @patch("esani_pantportal.views.Product")
     def test_view_with_failures(self, ProductMock):
+        self.login()
+
         # Simulate that someone implements a new condition, which rejects all products
         # with a height over 100 mm. But forgets to update the corresponding form
         # methods.
@@ -285,6 +289,7 @@ class MultipleProductRegisterFormTests(TestCase):
         self.assertEqual(response.context_data["failure_count"], 1)
 
     def test_view_with_existing_barcodes(self):
+        self.login()
         df = default_dataframe()
         file = self.make_excel_file_dict(df)
         url = reverse("pant:multiple_product_register") + "?login_bypass=1"
@@ -312,7 +317,10 @@ class MultipleProductRegisterFormTests(TestCase):
         self.assertEqual(response.context_data["existing_products_count"], 1)
 
 
-class TemplateViewTests(TestCase):
+class TemplateViewTests(LoginMixin, TestCase):
+    def setUp(self) -> None:
+        self.login()
+
     def assertEqualDf(self, df1, df2):
         for row in df1.index:
             for col in df1.columns:
@@ -336,7 +344,10 @@ class TemplateViewTests(TestCase):
         self.assertEqualDf(df, default_dataframe())
 
 
-class TestProductRegisterView(TestCase):
+class TestProductRegisterView(LoginMixin, TestCase):
+    def setUp(self) -> None:
+        self.login()
+
     def test_view(self):
         url = reverse("pant:product_register") + "?login_bypass=1"
 
@@ -359,7 +370,10 @@ class TestProductRegisterView(TestCase):
         self.assertRedirects(response, reverse("pant:product_register_success"))
 
 
-class TestTaxGroupView(TestCase):
+class TestTaxGroupView(LoginMixin, TestCase):
+    def setUp(self) -> None:
+        self.login()
+
     def test_view(self):
         url = reverse("pant:tax_groups") + "?login_bypass=1"
         response = self.client.get(url)
