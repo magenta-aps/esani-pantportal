@@ -9,13 +9,13 @@
 {% block content %}
 
 <div class="mx-5">
-    <h1 class="mt-5 mb-4">{% translate "Registrer ny bruger" %}</h1>
+    <h1 class="mt-5 mb-4">{% translate "Registrer ny butiksadministrator" %}</h1>
     <form method="POST" class="row g-3">
         {% csrf_token %}
     <div class="input-group">
         <div class="col-6">
           <label for="{{form.user.username.id_for_label}}">{{form.user.username.label}}</label>
-          {{form.user.username}}
+          {{form.user.username|tabindex:1}}
           <div class="form-text">
               {{form.user.username.errors}}
           </div>
@@ -23,7 +23,7 @@
 
         <div class="col-6">
           <label for="{{form.user.password.id_for_label}}">{{form.user.password.label}}</label>
-          {{form.user.password}}
+          {{form.user.password|tabindex:3}}
           <div class="form-text">
               {{form.user.password.errors}}
           </div>
@@ -31,7 +31,7 @@
     
         <div class="col-6">
           <label for="{{form.user.phone.id_for_label}}">{{form.user.phone.label}}</label>
-          {{form.user.phone}}
+          {{form.user.phone|tabindex:2}}
           <div class="form-text">
               {{form.user.phone.errors}}
           </div>
@@ -39,7 +39,7 @@
     
         <div class="col-6">
           <label for="{{form.user.password2.id_for_label}}">{{form.user.password2.label}}</label>
-          {{form.user.password2}}
+          {{form.user.password2|tabindex:3}}
           <div class="form-text">
               {{form.user.password2.errors}}
           </div>
@@ -223,8 +223,16 @@
               {{form.branch.customer_id.help_text}}
           </div>
         </div>
-
     </div>
+
+    <div class="form-text">
+        <ul class="errorlist h4">
+        {% for error in form.crossform_errors %}
+            <li>{{error}}</li>
+        {% endfor %}
+        </ul>
+    </div>
+
     <div class="col-12">
         <input class="btn btn-success float-right my-2 ms-0" type="submit" value="{% translate 'Opret' %}"/>
         <a href="{% url 'pant:login' %}" class="btn btn-secondary my-2 mx-1" role="button">{% translate 'Tilbage' %}</a>

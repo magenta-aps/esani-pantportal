@@ -38,3 +38,12 @@ def parenthesized(string):
 @register.filter(name="has_group")
 def has_group(user, group_name):
     return user.groups.filter(name=group_name).exists()
+
+
+@register.filter
+def tabindex(value, index):
+    """
+    Add a tabindex attribute to the widget for a bound field.
+    """
+    value.field.widget.attrs["tabindex"] = index
+    return value

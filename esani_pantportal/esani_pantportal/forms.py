@@ -149,6 +149,13 @@ class UserRegisterMultiForm(MultiModelForm, BootstrapForm):
         "company": CompanyRegisterForm,
     }
 
+    @staticmethod
+    def has_admin_users(branch):
+        users = CompanyUser.objects.filter(
+            branch__pk=branch.pk, groups__name="CompanyAdmins"
+        )
+        return True if users else False
+
     def check_subform(self, form_name, allowed_empty_keys=[]):
         # Check a sub-form for empty keys
         form = self.forms[form_name]
@@ -172,11 +179,23 @@ class UserRegisterMultiForm(MultiModelForm, BootstrapForm):
             parent_form._errors[form_name] = parent_form.error_class(
                 [_("Dette felt må ikke være tom")]
             )
-            self.add_crossform_error("empty value check failed")
+            self.add_crossform_error(
+                _("'{form_name}' formular indeholder tomme felter").format(
+                    form_name=form_name
+                )
+            )
 
     def clean(self):
         branch_from_list = self.cleaned_data.get("user", {}).get("branch", "")
         company_from_list = self.cleaned_data.get("branch", {}).get("company", "")
+
+        if branch_from_list and self.has_admin_users(branch_from_list):
+            self.add_crossform_error(
+                _(
+                    "Denne butik har allerede en admin bruger. "
+                    "Bed venligst din admin om at oprette dig."
+                )
+            )
 
         user_form_valid = self.forms["user"].is_valid()
         branch_form_valid = self.forms["branch"].is_valid()

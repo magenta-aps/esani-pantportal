@@ -73,6 +73,22 @@ class Command(BaseCommand):
         )
         company_admin.groups.add(company_admin_group)
 
+        company_admin, created = CompanyUser.objects.update_or_create(
+            defaults={
+                "first_name": "Andersine",
+                "last_name": "And",
+                "email": "Andersine.and@brugseni.dk",
+                "password": make_password("andersine"),
+                "is_active": True,
+                "is_staff": False,
+                "is_superuser": False,
+                "branch": brugseni_natalie,
+                "phone": "+299 36 35 03",
+            },
+            username="andersine",
+        )
+        company_admin.groups.add(company_admin_group)
+
         esani_user, created = CompanyUser.objects.update_or_create(
             defaults={
                 "first_name": "ESANI",

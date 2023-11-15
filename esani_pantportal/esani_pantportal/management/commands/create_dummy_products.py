@@ -11,6 +11,7 @@ from esani_pantportal.models import (  # isort: skip
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
     Product,
+    CompanyUser,
 )
 
 
@@ -26,6 +27,7 @@ class Command(BaseCommand):
 
         vowels = "aeiouyæøå"
         consonants = "bcdfghjklmnpqrstvwxz"
+        user = CompanyUser.objects.get(username="admin")
 
         for i in range(100):
             barcode = ""
@@ -54,4 +56,5 @@ class Command(BaseCommand):
                 weight=random.randint(100, 1000),
                 capacity=random.randint(100, 1000),
                 shape=random.choice(PRODUCT_SHAPE_CHOICES)[0],
+                created_by=user,
             )
