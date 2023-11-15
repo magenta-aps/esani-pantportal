@@ -39,4 +39,4 @@ VOLUME /srv/media
 ENTRYPOINT ["/entrypoint.sh"]
 WORKDIR /app
 VOLUME  /var/cache/pant
-CMD ["gunicorn", "-b", "0.0.0.0:8000", "project.wsgi:application", "-w 4", "--timeout 120", "--error-logfile", "-", "--capture-output"]
+CMD ["gunicorn", "-b", "0.0.0.0:8000", "project.wsgi:application", "-w 4", "--timeout", "120", "--error-logfile", "-", "--capture-output"]
