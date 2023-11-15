@@ -30,9 +30,9 @@ fi
 if [ "$DUMMYDATA" = true ]; then
     echo 'Creating dummy data'
     python3 manage.py create_dummy_companies
+    python3 manage.py create_dummy_users
     python3 manage.py create_dummy_products
     python3 manage.py create_dummy_packagingregistrations
-    python3 manage.py create_dummy_users
 fi
 
 python manage.py createcachetable

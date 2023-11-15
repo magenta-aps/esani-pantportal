@@ -230,6 +230,12 @@ class ProductDetailView(PermissionRequiredMixin, UpdateView):
     )
     required_permissions = ["esani_pantportal.change_product"]
 
+    @property
+    def same_branch(self):
+        author_branch = getattr(self.get_object().created_by, "branch", None)
+        user_branch = self.request.user.branch
+        return author_branch == user_branch
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["form_fields"] = self.fields
@@ -239,10 +245,7 @@ class ProductDetailView(PermissionRequiredMixin, UpdateView):
             context["can_edit"] = True
         else:
             context["can_approve"] = False
-            context["can_edit"] = (
-                self.get_object().created_by == self.request.user
-                and self.has_permissions
-            )
+            context["can_edit"] = self.same_branch and self.has_permissions
         return context
 
     def form_valid(self, form):
@@ -250,7 +253,7 @@ class ProductDetailView(PermissionRequiredMixin, UpdateView):
             approved = self.get_object().approved
             if approved:
                 return self.access_denied
-            if self.get_object().created_by != self.request.user:
+            if not self.same_branch:
                 return self.access_denied
 
         return self.check_permissions() or super().form_valid(form)

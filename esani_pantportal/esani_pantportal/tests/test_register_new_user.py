@@ -2,12 +2,13 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 
 from esani_pantportal.forms import UserRegisterMultiForm
-from esani_pantportal.models import Branch, Company
+from esani_pantportal.models import Branch, Company, CompanyUser
 
 
 class RegisterNewUserFormTest(TestCase):
@@ -43,7 +44,15 @@ class RegisterNewUserFormTest(TestCase):
             location_id=3,
         )
 
+        cls.company_admin = CompanyUser.objects.create_user(
+            username="company_admin",
+            password="12345",
+            email="test@test.com",
+            branch=cls.existing_branch2,
+        )
+
         call_command("create_groups")
+        cls.company_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
 
     @staticmethod
     def make_user_data(include_branch_data=True, include_company_data=True):
@@ -119,6 +128,20 @@ class RegisterNewUserFormTest(TestCase):
         user = form.save()
         self.assertEquals(user.branch.company, self.existing_company)
         self.assertEquals(user.branch, self.existing_branch)
+
+    def test_branch_already_has_admin_user(self):
+        user_data = self.make_user_data(
+            include_branch_data=False, include_company_data=False
+        )
+
+        user_data["branch-company"] = self.existing_company.pk
+        user_data["user-branch"] = self.existing_branch2.pk
+
+        form = UserRegisterMultiForm(user_data)
+        self.assertEquals(form.is_valid(), False)
+        self.assertIn(
+            "Denne butik har allerede en admin bruger", str(form.crossform_errors)
+        )
 
     def test_no_company_selected(self):
         user_data = self.make_user_data(include_company_data=False)

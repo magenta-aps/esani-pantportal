@@ -1,17 +1,85 @@
+from http import HTTPStatus
+
 from bs4 import BeautifulSoup
+from django.contrib.auth.models import Group
+from django.core.management import call_command
 from django.forms import model_to_dict
 from django.test import TestCase
 from django.urls import reverse
 
-from esani_pantportal.models import Product
-
 from .conftest import LoginMixin
+
+from esani_pantportal.models import (  # isort: skip
+    Branch,
+    Company,
+    CompanyUser,
+    Product,
+)
 
 
 class ProductViewGuiTest(LoginMixin, TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = Company.objects.create(
+            name="existing company",
+            cvr=12312345,
+            address="foo",
+            postal_code="123",
+            city="test city",
+            phone="+4544457845",
+            permit_number=2,
+        )
+        cls.branch = Branch.objects.create(
+            company=cls.company,
+            name="existing branch",
+            address="food",
+            postal_code="12311",
+            city="test town",
+            phone="+4542457845",
+            location_id=2,
+        )
+        cls.branch2 = Branch.objects.create(
+            company=cls.company,
+            name="existing branch2",
+            address="food",
+            postal_code="12311",
+            city="test town",
+            phone="+4542457845",
+            location_id=2,
+        )
+        cls.admin_user = CompanyUser.objects.create_user(
+            username="testuser_EsaniAdmins",
+            password="12345",
+            email="test@test.com",
+            branch=None,
+        )
+        cls.company_user = CompanyUser.objects.create_user(
+            username="company_user",
+            password="12345",
+            email="test@test.com",
+            branch=cls.branch,
+        )
+        cls.another_company_user = CompanyUser.objects.create_user(
+            username="favorite_colleague",
+            password="12345",
+            email="test@test.com",
+            branch=cls.branch,
+        )
+        cls.company_user_from_other_branch = CompanyUser.objects.create_user(
+            username="rival_colleague",
+            password="12345",
+            email="test@test.com",
+            branch=cls.branch2,
+        )
+        call_command("create_groups")
+        company_admin_group = Group.objects.get(name="CompanyAdmins")
+        esani_admin_group = Group.objects.get(name="EsaniAdmins")
+        cls.admin_user.groups.add(esani_admin_group)
+        cls.company_user.groups.add(company_admin_group)
+        cls.another_company_user.groups.add(company_admin_group)
+        cls.company_user_from_other_branch.groups.add(company_admin_group)
+
     def setUp(self) -> None:
-        company_user = self.login("CompanyAdmins")
-        admin_user = self.login("EsaniAdmins")
         self.prod1 = Product.objects.create(
             product_name="prod1",
             barcode="00101122",
@@ -24,7 +92,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
             danish="J",
-            created_by=admin_user,
+            created_by=self.admin_user,
         )
         self.prod2 = Product.objects.create(
             product_name="prod2",
@@ -37,7 +105,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            created_by=company_user,
+            created_by=self.company_user,
         )
         self.prod3 = Product.objects.create(
             product_name="prod3",
@@ -50,7 +118,33 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            created_by=company_user,
+            created_by=self.company_user,
+        )
+        self.prod4 = Product.objects.create(
+            product_name="prod4",
+            barcode="00020004",
+            refund_value=3,
+            approved=False,
+            material="A",
+            height=100,
+            diameter=60,
+            weight=20,
+            capacity=500,
+            shape="F",
+            created_by=self.another_company_user,
+        )
+        self.prod5 = Product.objects.create(
+            product_name="prod5",
+            barcode="00020005",
+            refund_value=3,
+            approved=False,
+            material="A",
+            height=100,
+            diameter=60,
+            weight=20,
+            capacity=500,
+            shape="F",
+            created_by=self.company_user_from_other_branch,
         )
 
     @staticmethod
@@ -69,6 +163,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         return output
 
     def test_render_esani_admin(self):
+        self.login()
         response = self.client.get(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
             + "?login_bypass=1"
@@ -143,6 +238,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         return form_data
 
     def test_approve(self):
+        self.login()
         form_data = self.get_form_data()
         form_data["approved"] = True
         self.assertFalse(self.prod1.approved)
@@ -151,7 +247,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             form_data,
         )
 
-        self.assertEquals(response.status_code, 302)
+        self.assertEquals(response.status_code, HTTPStatus.FOUND)
         self.prod1.refresh_from_db()
         self.assertTrue(self.prod1.approved)
         self.assertRedirects(response, reverse("pant:product_list"))
@@ -168,18 +264,19 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         )
 
     def test_approve_forbidden(self):
+        self.client.login(username="company_user", password="12345")
         form_data = self.get_form_data()
         form_data["approved"] = True
 
         # Test that company-users cannot approve products
-        self.login("CompanyAdmins")
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
             form_data,
         )
-        self.assertEquals(response.status_code, 403)
+        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
 
     def test_edit(self):
+        self.login()
         form_data = self.get_form_data()
         form_data["weight"] = 1223
 
@@ -188,7 +285,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             form_data,
         )
 
-        self.assertEquals(response.status_code, 302)
+        self.assertEquals(response.status_code, HTTPStatus.FOUND)
         self.prod1.refresh_from_db()
         self.assertEqual(self.prod1.weight, 1223)
         self.assertRedirects(
@@ -197,7 +294,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
 
     def test_edit_forbidden(self):
         # A company user should not be able to edit products
-        self.login("CompanyAdmins")
+        self.client.login(username="company_user", password="12345")
         form_data = self.get_form_data()
         form_data["weight"] = 1223
 
@@ -206,7 +303,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             form_data,
         )
 
-        self.assertEquals(response.status_code, 403)
+        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
 
         # Unless he created the product that he is trying to edit.
         form_data = self.get_form_data(self.prod2.pk)
@@ -217,7 +314,29 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             form_data,
         )
 
-        self.assertEquals(response.status_code, 302)
+        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+
+        # Or if the product was created by a colleague
+        form_data = self.get_form_data(self.prod4.pk)
+        form_data["weight"] = 1223
+
+        response = self.client.post(
+            reverse("pant:product_view", kwargs={"pk": self.prod4.pk}),
+            form_data,
+        )
+
+        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+
+        # But not if it was created by a colleague from another company
+        form_data = self.get_form_data(self.prod5.pk)
+        form_data["weight"] = 1223
+
+        response = self.client.post(
+            reverse("pant:product_view", kwargs={"pk": self.prod5.pk}),
+            form_data,
+        )
+
+        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
 
         # If the product that he is trying to edit is already approved, he should not
         # be allowed to edit it.
@@ -229,9 +348,10 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             form_data,
         )
 
-        self.assertEquals(response.status_code, 403)
+        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
 
     def test_edit_form_invalid(self):
+        self.login()
         form_data = self.get_form_data()
         form_data["weight"] = "one_hundred_and_eighty"
 
@@ -240,12 +360,13 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             form_data,
         )
 
-        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.status_code, HTTPStatus.OK)
         context_data = response.context_data
         fields_to_show = context_data["form_fields_to_show"]
         self.assertIn("weight", fields_to_show)
 
     def test_others_fail(self):
+        self.login()
         response = self.client.get(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
             + "?login_bypass=1"
