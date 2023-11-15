@@ -20,7 +20,6 @@ from esani_pantportal.util import default_dataframe, remove_parameter_from_url
 from esani_pantportal.view_mixins import PermissionRequiredMixin
 
 from esani_pantportal.models import (  # isort: skip
-    TAX_GROUP_CHOICES,
     CompanyUser,
     Product,
     Branch,
@@ -33,7 +32,6 @@ from django.views.generic import (  # isort: skip
     ListView,
     UpdateView,
     View,
-    TemplateView,
 )
 from esani_pantportal.forms import (  # isort: skip
     MultipleProductRegisterForm,
@@ -222,8 +220,6 @@ class ProductDetailView(PermissionRequiredMixin, UpdateView):
         "approved",
         "product_name",
         "barcode",
-        "refund_value",
-        "tax_group",
         "danish",
         "material",
         "height",
@@ -236,7 +232,6 @@ class ProductDetailView(PermissionRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["tax_groups"] = dict(TAX_GROUP_CHOICES)
         context["form_fields"] = self.fields
 
         if self.can_approve:
@@ -363,12 +358,3 @@ class CsvTemplateView(LoginRequiredMixin, View):
 
         df.to_csv(path_or_buf=response, sep=";", index=False)
         return response
-
-
-class TaxGroupView(LoginRequiredMixin, TemplateView):
-    template_name = "esani_pantportal/product/tax_groups.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["tax_group_choices"] = TAX_GROUP_CHOICES
-        return context

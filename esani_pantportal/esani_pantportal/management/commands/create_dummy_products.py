@@ -10,7 +10,6 @@ from django.core.management.base import BaseCommand
 from esani_pantportal.models import (  # isort: skip
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
-    TAX_GROUP_CHOICES,
     Product,
 )
 
@@ -55,5 +54,4 @@ class Command(BaseCommand):
                 weight=random.randint(100, 1000),
                 capacity=random.randint(100, 1000),
                 shape=random.choice(PRODUCT_SHAPE_CHOICES)[0],
-                tax_group=random.choice(TAX_GROUP_CHOICES)[0],
             )

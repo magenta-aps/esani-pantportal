@@ -20,7 +20,6 @@ from .conftest import LoginMixin
 from esani_pantportal.models import (  # isort: skip
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
-    TAX_GROUP_CHOICES,
     Product,
 )
 
@@ -42,7 +41,6 @@ class MultipleProductRegisterFormTests(LoginMixin, TestCase):
             "weight_col": "Vægt [g]",
             "capacity_col": "Volumen [ml]",
             "shape_col": "Form [str]",
-            "tax_group_col": "Afgiftsgruppe [#]",
             "danish_col": "Dansk pant [str]",
         }
 
@@ -227,17 +225,6 @@ class MultipleProductRegisterFormTests(LoginMixin, TestCase):
         self.assertEquals(len(form.errors), 1)
         self.assertIn("capacity_col", form.errors)
 
-    def test_import_csv_non_existing_tax_group(self):
-        df = default_dataframe()
-        df.loc[0, "Afgiftsgruppe [#]"] = 1000000000
-        file = self.make_csv_file_dict(df)
-
-        form = MultipleProductRegisterForm(self.defaults, file)
-
-        self.assertEquals(form.is_valid(), False)
-        self.assertEquals(len(form.errors), 1)
-        self.assertIn("tax_group_col", form.errors)
-
     def test_import_csv_exceeds_max_size(self):
         df = default_dataframe()
         df.loc[0, "Volumen [ml]"] = 2.4
@@ -329,7 +316,6 @@ class MultipleProductRegisterFormTests(LoginMixin, TestCase):
             weight=1,
             capacity=1,
             shape=PRODUCT_SHAPE_CHOICES[0][0],
-            tax_group=TAX_GROUP_CHOICES[0][0],
         )
 
         response = self.client.post(url, data=data)
@@ -383,25 +369,12 @@ class TestProductRegisterView(LoginMixin, TestCase):
             "weight": 100,
             "capacity": 100,
             "shape": "F",
-            "tax_group": 13,
             "danish": "U",
         }
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertRedirects(response, reverse("pant:product_register_success"))
-
-
-class TestTaxGroupView(LoginMixin, TestCase):
-    def setUp(self) -> None:
-        self.login()
-
-    def test_view(self):
-        url = reverse("pant:tax_groups") + "?login_bypass=1"
-        response = self.client.get(url)
-
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertEqual(TAX_GROUP_CHOICES, response.context["tax_group_choices"])
 
 
 class SingleProductRegisterFormTests(LoginMixin, TestCase):
@@ -417,7 +390,6 @@ class SingleProductRegisterFormTests(LoginMixin, TestCase):
             "weight": 300,
             "capacity": 400,
             "shape": "F",
-            "tax_group": 12,
             "danish": "J",
         }
 

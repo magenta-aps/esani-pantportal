@@ -8,7 +8,6 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import EMPTY_VALUES
-from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 
@@ -26,7 +25,6 @@ from esani_pantportal.models import (  # isort: skip
     Product,
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
-    TAX_GROUP_CHOICES,
     DANISH_PANT_CHOICES,
     validate_digit,
     validate_barcode_length,
@@ -48,7 +46,6 @@ class ProductRegisterForm(forms.ModelForm, BootstrapForm):
             "weight",
             "capacity",
             "shape",
-            "tax_group",
             "danish",
         )
 
@@ -281,10 +278,6 @@ class MultipleProductRegisterForm(BootstrapForm):
         initial=defaults["product_name"],
         label=_("Produktnavn-kolonnenavn"),
     )
-    refund_value_col = forms.CharField(
-        initial=defaults["refund_value"],
-        label=_("Pantværdi-kolonnenavn"),
-    )
     material_col = forms.CharField(
         initial=defaults["material"],
         label=_("Materiale-kolonnenavn"),
@@ -309,10 +302,6 @@ class MultipleProductRegisterForm(BootstrapForm):
         initial=defaults["shape"],
         label=_("Form-kolonnenavn"),
     )
-    tax_group_col = forms.CharField(
-        initial=defaults["tax_group"],
-        label=_("Afgiftsgruppe-kolonnenavn"),
-    )
     danish_col = forms.CharField(
         initial=defaults["danish"],
         label=_("Dansk pant-kolonnenavn"),
@@ -330,11 +319,6 @@ class MultipleProductRegisterForm(BootstrapForm):
         self.valid_materials = make_valid_choices_str(PRODUCT_MATERIAL_CHOICES)
         self.valid_shapes = make_valid_choices_str(PRODUCT_SHAPE_CHOICES)
         self.valid_danish_strings = make_valid_choices_str(DANISH_PANT_CHOICES)
-        self.tax_groups_link = mark_safe(
-            f'<a href="{reverse("pant:tax_groups")}" target="_blank">'
-            + _("her")
-            + "</a>"
-        )
 
         super().__init__(*args, **kwargs)
 
@@ -504,14 +488,6 @@ class MultipleProductRegisterForm(BootstrapForm):
             self.validate_uniqueness(col_name)
         return col_name
 
-    def clean_refund_value_col(self):
-        col_name = self.cleaned_data["refund_value_col"]
-        self.rename_dict[col_name] = "refund_value"
-        column_exists = self.validate_that_column_exists(col_name)
-        if column_exists:
-            self.validate_positive_integer(col_name)
-        return col_name
-
     def clean_material_col(self):
         col_name = self.cleaned_data["material_col"]
         self.rename_dict[col_name] = "material"
@@ -558,20 +534,6 @@ class MultipleProductRegisterForm(BootstrapForm):
         column_exists = self.validate_that_column_exists(col_name)
         if column_exists:
             self.validate_column_contents(col_name, PRODUCT_SHAPE_CHOICES)
-        return col_name
-
-    def clean_tax_group_col(self):
-        col_name = self.cleaned_data["tax_group_col"]
-        self.rename_dict[col_name] = "tax_group"
-        column_exists = self.validate_that_column_exists(col_name)
-        if column_exists:
-            self.validate_column_contents(
-                col_name,
-                TAX_GROUP_CHOICES,
-                error_message=_("Gyldige afgiftsgrupper er defineret {her}.").format(
-                    her=self.tax_groups_link
-                ),
-            )
         return col_name
 
     def clean_danish_col(self):

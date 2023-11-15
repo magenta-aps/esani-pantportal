@@ -35,7 +35,7 @@ class UtilTest(TestCase):
         df = default_dataframe()
 
         self.assertEqual(df.shape[0], 4)
-        self.assertEqual(df.shape[1], 11)
+        self.assertEqual(df.shape[1], 9)
 
     def test_join_strings_human_readable(self):
         string = join_strings_human_readable(["foo", "bar"])

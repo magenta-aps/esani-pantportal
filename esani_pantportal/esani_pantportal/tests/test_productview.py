@@ -3,11 +3,9 @@ from django.forms import model_to_dict
 from django.test import TestCase
 from django.urls import reverse
 
-from esani_pantportal.models import TAX_GROUP_CHOICES, Product
+from esani_pantportal.models import Product
 
 from .conftest import LoginMixin
-
-tax_group_dict = dict(TAX_GROUP_CHOICES)
 
 
 class ProductViewGuiTest(LoginMixin, TestCase):
@@ -25,7 +23,6 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            tax_group=13,
             danish="J",
             created_by=admin_user,
         )
@@ -40,7 +37,6 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            tax_group=13,
             created_by=company_user,
         )
         self.prod3 = Product.objects.create(
@@ -54,7 +50,6 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            tax_group=13,
             created_by=company_user,
         )
 
@@ -85,9 +80,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
                 {
                     "Produktnavn": "prod1",
                     "Stregkode": "00101122",
-                    "Pantværdi": "3 øre",
                     "Godkendt": "nej",
-                    "Afgiftsgruppe": f"{tax_group_dict[13]} (13)",
                     "Dansk Pant": "Ja",
                     "Oprettet Af": "testuser_EsaniAdmins (test@test.com)",
                 },
@@ -115,9 +108,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
                 {
                     "Produktnavn": "prod1",
                     "Stregkode": "00101122",
-                    "Pantværdi": "3 øre",
                     "Godkendt": "nej",
-                    "Afgiftsgruppe": f"{tax_group_dict[13]} (13)",
                     "Dansk Pant": "Ja",
                 },
                 {
