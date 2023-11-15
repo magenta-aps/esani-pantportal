@@ -6,7 +6,6 @@ import hashlib
 import random
 import string
 
-import pandas as pd
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
@@ -53,12 +52,6 @@ REFUND_METHOD_CHOICES = [
     ("M", "Manuel sortering"),
     ("A", "Anden"),
 ]
-
-TAX_GROUP_CHOICES = list(
-    pd.read_csv(
-        "esani_pantportal/static/data/tax_groups.csv", sep=";", index_col=0
-    ).itertuples(index=True, name=None)
-)
 
 
 class Company(models.Model):
@@ -285,7 +278,7 @@ class Product(models.Model):
     refund_value = models.PositiveIntegerField(
         verbose_name=_("Pantværdi"),
         help_text=_("Pantværdi, angivet i øre (100=1DKK, 25=0.25DKK)"),
-        default=200,  # 2kr.
+        default=settings.DEFAULT_REFUND_VALUE,  # 2kr.
     )
     approved = models.BooleanField(
         verbose_name=_("Godkendt"),
@@ -317,11 +310,6 @@ class Product(models.Model):
         verbose_name=_("Form"),
         help_text=_("Kategori for emballagens form."),
         choices=PRODUCT_SHAPE_CHOICES,
-    )
-    tax_group = models.PositiveIntegerField(
-        verbose_name=_("Afgiftsgruppe"),
-        help_text=_("Afgiftsgruppe til toldbehandlings-system"),
-        choices=TAX_GROUP_CHOICES,
     )
     danish = models.CharField(
         verbose_name=_("Dansk pant"),

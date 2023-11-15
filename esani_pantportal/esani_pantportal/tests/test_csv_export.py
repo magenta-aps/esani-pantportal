@@ -36,7 +36,6 @@ class ExportProductsToCSVTests(TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            tax_group=13,
         )
         self.prod2 = Product.objects.create(
             product_name="prod2",
@@ -49,7 +48,6 @@ class ExportProductsToCSVTests(TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            tax_group=13,
         )
 
         self.prod3 = Product.objects.create(
@@ -63,7 +61,6 @@ class ExportProductsToCSVTests(TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            tax_group=13,
         )
 
         for file in os.listdir("."):

@@ -60,7 +60,6 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            tax_group=13,
         )
         self.prod2 = Product.objects.create(
             product_name="prod2",
@@ -73,7 +72,6 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            tax_group=13,
         )
 
     def test_get_queryset_normal(self):
@@ -239,7 +237,6 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
             id=1,
-            tax_group=13,
             created_by=self.user,
         )
         self.prod2 = Product.objects.create(
@@ -254,7 +251,6 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
             id=2,
-            tax_group=13,
             created_by=self.user,
         )
 
@@ -288,7 +284,6 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "refund_value": 3,
                         "shape": "F",
                         "weight": 20,
-                        "tax_group": 13,
                         "danish": "U",
                         "created_by": self.user.pk,
                     },
@@ -306,7 +301,6 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "refund_value": 3,
                         "shape": "F",
                         "weight": 20,
-                        "tax_group": 13,
                         "danish": "U",
                         "created_by": self.user.pk,
                     },
@@ -348,7 +342,6 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "refund_value": 3,
                         "shape": "F",
                         "weight": 20,
-                        "tax_group": 13,
                         "danish": "U",
                         "created_by": self.user.pk,
                     }
@@ -372,7 +365,6 @@ class ProductListGuiTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            tax_group=13,
         )
         self.prod2 = Product.objects.create(
             product_name="prod2",
@@ -385,7 +377,6 @@ class ProductListGuiTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            tax_group=13,
         )
 
     @staticmethod
