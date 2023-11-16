@@ -13,6 +13,7 @@ include:
       - "/gitlab-ci-templates/common/saltbert.v1.yml"
       - "/gitlab-ci-templates/common/docker-build-meta.v2.yml"
       - "/gitlab-ci-templates/common/docker-release-meta.v1.yml"
+      - "/gitlab-ci-templates/common/config-updater-meta.v1.yml"
 
 variables:
   RELEASE_REGISTRY: docker.io
@@ -150,3 +151,53 @@ Release ESANI-Pantportal image:
       --dest-creds=${RELEASE_REGISTRY_USER}:${RELEASE_REGISTRY_PASSWORD}
       "docker://${IMAGE_SHA}"
       "docker://${IMAGE_TAG}"
+
+# Configure stage
+#################
+
+Configure Test:
+  stage: configure
+  extends:
+    - .rules:semver-all
+    - .config:endpoint-with-tag
+  needs: ["Release ESANI-Pantportal image"]
+  variables:
+    ENDPOINT: esani_pantportal/salt/update-test
+
+Configure Prod:
+  stage: configure
+  extends:
+    - .rules:semver-all
+    - .config:endpoint-with-tag
+  needs: ["Release ESANI-Pantportal image"]
+  variables:
+    ENDPOINT: esani_pantportal/salt/update-prod
+
+# Deploy stage
+##############
+
+Deploy to Staging:
+  stage: deploy
+  extends:
+    - .rules:semver-all
+    - .saltbert
+  needs: ["Configure Test"]
+  variables:
+    SALTBERT_ORCHESTRATION: groenland.esani_pantportal.service-test
+    SALTBERT_URL: https://saltmaster.groenland.magentahosted.dk
+  environment:
+    name: test
+    url: "https://test.pant.gl"
+
+Deploy to Prod:
+  stage: deploy
+  extends:
+    - .rules:semver-all
+    - .saltbert
+  needs: ["Configure Prod"]
+  variables:
+    SALTBERT_ORCHESTRATION: groenland.esani_pantportal.service-prod
+    SALTBERT_URL: https://saltmaster.groenland.magentahosted.dk
+  environment:
+    name: production
+    url: "https://pant.gl"
