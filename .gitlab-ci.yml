@@ -185,6 +185,7 @@ Deploy to Staging:
   variables:
     SALTBERT_ORCHESTRATION: groenland.esani_pantportal.service-test
     SALTBERT_URL: https://saltmaster.groenland.magentahosted.dk
+  when: manual
   environment:
     name: test
     url: "https://test.pant.gl"
@@ -198,6 +199,7 @@ Deploy to Prod:
   variables:
     SALTBERT_ORCHESTRATION: groenland.esani_pantportal.service-prod
     SALTBERT_URL: https://saltmaster.groenland.magentahosted.dk
+  when: manual
   environment:
     name: production
     url: "https://pant.gl"
