@@ -105,7 +105,7 @@ class Company(models.Model):
     def __str__(self):
         name = self.name
         cvr = self.cvr
-        return f"{name} - cvr:{cvr}"
+        return f"{name} - cvr: {cvr}"
 
 
 class Branch(models.Model):
@@ -446,6 +446,11 @@ class QRCodeInterval(models.Model):
 
 
 class CompanyUser(AbstractUser):
+    class Meta:
+        verbose_name = _("companyuser")
+        verbose_name_plural = _("companyusers")
+        abstract = False
+
     # Note: ESANI users do not need to belong to a branch
     branch = models.ForeignKey(
         "Branch",

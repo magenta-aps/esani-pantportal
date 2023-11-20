@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 
-from esani_pantportal.models import Product
+from esani_pantportal.models import CompanyUser, Product
 
 
 class Command(BaseCommand):
@@ -28,11 +28,18 @@ class Command(BaseCommand):
         product_model = ContentType.objects.get_for_model(
             Product, for_concrete_model=False
         )
+        user_model = ContentType.objects.get_for_model(
+            CompanyUser, for_concrete_model=False
+        )
 
         for action, model in (
             ("view", product_model),
             ("add", product_model),
             ("change", product_model),
+            # Ingen delete
+            ("view", user_model),
+            ("add", user_model),
+            ("change", user_model),
             # Ingen delete
         ):
             company_admins.permissions.add(
@@ -46,6 +53,10 @@ class Command(BaseCommand):
             # Ingen add
             # Ingen change
             # Ingen delete
+            ("view", user_model),
+            # Ingen delete
+            # Ingen change
+            # Ingen delete
         ):
             company_users.permissions.add(
                 Permission.objects.get(
@@ -57,6 +68,10 @@ class Command(BaseCommand):
             ("view", product_model),
             ("add", product_model),
             ("change", product_model),
+            # Ingen delete
+            ("view", user_model),
+            ("add", user_model),
+            ("change", user_model),
             # Ingen delete
         ):
             esani_admins.permissions.add(

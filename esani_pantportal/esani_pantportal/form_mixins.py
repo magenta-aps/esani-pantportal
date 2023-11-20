@@ -5,7 +5,7 @@ import re
 
 from django import forms
 from django.core.files import File
-from django.forms import FileField
+from django.forms import CheckboxInput, FileField
 from django.utils.translation import gettext_lazy as _
 from humanize import naturalsize
 
@@ -27,8 +27,11 @@ class BootstrapForm(forms.Form):
 
     def set_field_classes(self, name, field, check_for_errors=False):
         classes = self.split_class(field.widget.attrs.get("class"))
-        classes.append("mr-2")
-        classes.append("form-control")
+        if type(field.widget) is CheckboxInput:
+            classes.append("form-check-input")
+        else:
+            classes.append("mr-2")
+            classes.append("form-control")
         if isinstance(field.widget, forms.Select):
             classes.append("form-select")
 
