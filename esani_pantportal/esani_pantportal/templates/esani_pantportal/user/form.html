@@ -15,31 +15,32 @@
     <div class="input-group">
         <div class="col-6">
           <label for="{{form.user.username.id_for_label}}">{{form.user.username.label}}</label>
-          {{form.user.username|tabindex:1}}
+          {{form.user.username}}
           <div class="form-text">
               {{form.user.username.errors}}
           </div>
         </div>
 
         <div class="col-6">
-          <label for="{{form.user.password.id_for_label}}">{{form.user.password.label}}</label>
-          {{form.user.password|tabindex:3}}
-          <div class="form-text">
-              {{form.user.password.errors}}
-          </div>
-        </div>
-    
-        <div class="col-6">
           <label for="{{form.user.phone.id_for_label}}">{{form.user.phone.label}}</label>
-          {{form.user.phone|tabindex:2}}
+          {{form.user.phone}}
           <div class="form-text">
               {{form.user.phone.errors}}
           </div>
         </div>
-    
+
+
+        <div class="col-6">
+          <label for="{{form.user.password.id_for_label}}">{{form.user.password.label}}</label>
+          {{form.user.password}}
+          <div class="form-text">
+              {{form.user.password.errors}}
+          </div>
+        </div>
+
         <div class="col-6">
           <label for="{{form.user.password2.id_for_label}}">{{form.user.password2.label}}</label>
-          {{form.user.password2|tabindex:3}}
+          {{form.user.password2}}
           <div class="form-text">
               {{form.user.password2.errors}}
           </div>
