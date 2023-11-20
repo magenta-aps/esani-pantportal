@@ -16,6 +16,7 @@ from esani_pantportal.views import (  # isort: skip
     PantportalLoginView,
     PantportalLogoutView,
     UserRegisterView,
+    CompanyAdminUserRegisterView,
 )
 
 
@@ -29,9 +30,19 @@ urlpatterns = [
     path("produkt/opret", ProductRegisterView.as_view(), name="product_register"),
     path("bruger/opret", UserRegisterView.as_view(), name="user_register"),
     path(
+        "bruger/opret_af_admin",
+        CompanyAdminUserRegisterView.as_view(),
+        name="user_register_by_company_admin",
+    ),
+    path(
         "produkt/opret/success",
         TemplateView.as_view(template_name="esani_pantportal/product/success.html"),
         name="product_register_success",
+    ),
+    path(
+        "bruger/opret_af_admin/success",
+        TemplateView.as_view(template_name="esani_pantportal/user/success.html"),
+        name="user_register_success",
     ),
     path("produkt/", ProductSearchView.as_view(), name="product_list"),
     path("produkt/<int:pk>", ProductDetailView.as_view(), name="product_view"),

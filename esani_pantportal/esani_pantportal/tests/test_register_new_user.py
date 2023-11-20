@@ -2,13 +2,19 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+from http import HTTPStatus
+
 from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 
-from esani_pantportal.forms import UserRegisterMultiForm
 from esani_pantportal.models import Branch, Company, CompanyUser
+
+from esani_pantportal.forms import (  # isort: skip
+    CompanyAdminUserRegisterForm,
+    UserRegisterMultiForm,
+)
 
 
 class RegisterNewUserFormTest(TestCase):
@@ -227,3 +233,133 @@ class RegisterNewUserFormTest(TestCase):
         user_data = self.make_user_data()
         response = self.client.post(url, data=user_data)
         self.assertEqual(response.status_code, 302)
+
+
+class RegisterNewUserCompanyAdminFormTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = Company.objects.create(
+            name="existing company",
+            cvr=12312345,
+            address="foo",
+            postal_code="123",
+            city="test city",
+            phone="+4544457845",
+            permit_number=2,
+        )
+
+        cls.branch = Branch.objects.create(
+            company=cls.company,
+            name="existing branch",
+            address="food",
+            postal_code="12311",
+            city="test town",
+            phone="+4542457845",
+            location_id=2,
+        )
+
+        cls.company_admin = CompanyUser.objects.create_user(
+            username="company_admin",
+            password="12345",
+            email="test@test.com",
+            branch=cls.branch,
+        )
+        cls.company_user = CompanyUser.objects.create_user(
+            username="company_user",
+            password="12345",
+            email="test@test.com",
+            branch=cls.branch,
+        )
+        cls.esani_admin = CompanyUser.objects.create_user(
+            username="esani_admin",
+            password="12345",
+            email="test@test.com",
+        )
+
+        call_command("create_groups")
+        cls.company_user.groups.add(Group.objects.get(name="CompanyUsers"))
+        cls.company_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
+        cls.esani_admin.groups.add(Group.objects.get(name="EsaniAdmins"))
+
+    def setUp(self):
+        self.user_data = {
+            "username": "john_doe",
+            "password": "strong_password123",
+            "password2": "strong_password123",
+            "phone": "+4530214811",
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john@darkweb.com",
+            "admin": True,
+        }
+
+    def test_get_view_company_admin(self):
+        self.client.login(username="company_admin", password="12345")
+        url = reverse("pant:user_register_by_company_admin")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_get_view_esani_admin(self):
+        # ESANI admins should not be able to use the company-admin form
+        self.client.login(username="esani_admin", password="12345")
+        url = reverse("pant:user_register_by_company_admin")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_get_view_company_user(self):
+        self.client.login(username="company_user", password="12345")
+        url = reverse("pant:user_register_by_company_admin")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_post_view_company_admin_create_admin(self):
+        self.client.login(username="company_admin", password="12345")
+        url = reverse("pant:user_register_by_company_admin")
+        response = self.client.post(url, self.user_data, follow=True)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+        user = CompanyUser.objects.get(username="john_doe")
+        user_groups = user.groups.all()
+
+        self.assertEqual(len(user_groups), 1)
+        self.assertEqual(user_groups[0].name, "CompanyAdmins")
+        self.assertTemplateUsed(response, "esani_pantportal/user/success.html")
+
+    def test_post_view_company_admin_create_bottle_boy(self):
+        self.client.login(username="company_admin", password="12345")
+        url = reverse("pant:user_register_by_company_admin")
+        self.user_data["admin"] = False
+        response = self.client.post(url, self.user_data, follow=True)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+        user = CompanyUser.objects.get(username="john_doe")
+        user_groups = user.groups.all()
+
+        self.assertEqual(len(user_groups), 1)
+        self.assertEqual(user_groups[0].name, "CompanyUsers")
+        self.assertTemplateUsed(response, "esani_pantportal/user/success.html")
+
+    def test_post_view_esani_admin(self):
+        # ESANI admins should not be able to use the company-admin form
+        self.client.login(username="esani_admin", password="12345")
+        url = reverse("pant:user_register_by_company_admin")
+        response = self.client.post(url, self.user_data)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_post_view_company_user(self):
+        # ESANI admins should not be able to use the company-admin form
+        self.client.login(username="company_user", password="12345")
+        url = reverse("pant:user_register_by_company_admin")
+        response = self.client.post(url, self.user_data)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_passwords_too_short(self):
+        self.user_data["password"] = "badpw"
+        self.user_data["password2"] = "badpw"
+        form = CompanyAdminUserRegisterForm(self.user_data)
+        self.assertEquals(form.is_valid(), False)
+
+        self.assertEqual(
+            form.errors["password"],
+            ["Denne adgangskode er for kort. Den skal indeholde mindst 8 tegn."],
+        )

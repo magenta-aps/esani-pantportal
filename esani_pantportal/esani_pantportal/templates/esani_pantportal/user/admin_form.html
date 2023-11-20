@@ -1,0 +1,88 @@
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+
+
+{% block content %}
+
+<div class="mx-5">
+    <h1>{% translate "Registrer ny bruger" %}</h1>
+    <form method="POST" class="row g-3">
+        {% csrf_token %}
+    <div class="col-6">
+      <label for="{{form.username.id_for_label}}">{{form.username.label}}</label>
+      {{form.username}}
+      <div class="form-text">
+          {{form.username.errors}}
+      </div>
+    </div>
+
+    <div class="col-6">
+      <label for="{{form.phone.id_for_label}}">{{form.phone.label}}</label>
+      {{form.phone}}
+      <div class="form-text">
+          {{form.phone.errors}}
+      </div>
+    </div>
+
+    <div class="col-6">
+      <label for="{{form.password.id_for_label}}">{{form.password.label}}</label>
+      {{form.password}}
+      <div class="form-text">
+          {{form.password.errors}}
+      </div>
+    </div>
+
+    <div class="col-6">
+      <label for="{{form.password2.id_for_label}}">{{form.password2.label}}</label>
+      {{form.password2}}
+      <div class="form-text">
+          {{form.password2.errors}}
+      </div>
+    </div>
+
+    <div class="col-6">
+      <label for="{{form.first_name.id_for_label}}">{{form.first_name.label}}</label>
+      {{form.first_name}}
+      <div class="form-text">
+          {{form.first_name.errors}}
+      </div>
+    </div>
+
+    <div class="col-6">
+      <label for="{{form.last_name.id_for_label}}">{{form.last_name.label}}</label>
+      {{form.last_name}}
+      <div class="form-text">
+          {{form.last_name.errors}}
+      </div>
+    </div>
+
+    <div class="col-6">
+      <label for="{{form.email.id_for_label}}">{{form.email.label}}</label>
+      {{form.email}}
+      <div class="form-text">
+          {{form.email.errors}}
+      </div>
+    </div>
+
+    <div class="col-6">
+      <label>{% translate 'Butik' %} </label>
+      <input type="text" disabled class="mr-2 form-control" value="{{branch}}">
+    </div>
+
+    <div class="col-6">
+      <label for="{{form.admin.id_for_label}}">{{form.admin.label}}</label>
+      {{form.admin}}
+      <div class="form-text">
+          {{form.admin.errors}}
+          {{form.admin.help_text}}
+      </div>
+    </div>
+
+    <div class="col-12">
+        <input tabindex="5" class="btn btn-success float-right my-2" type="submit" value="{% translate 'Opret' %}"/>
+    </div>
+    </form>
+</div>
+{% endblock %}

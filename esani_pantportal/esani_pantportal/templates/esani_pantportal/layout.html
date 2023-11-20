@@ -22,7 +22,7 @@ SPDX-License-Identifier: MPL-2.0
 {% block header %}
 <header>
     <nav class="nav flex-column flex-sm-row p-1">
-        {% if user|has_group:"EsaniAdmins" or user|has_group:"CompanyAdmins"   %}
+        {% if user|has_group:"EsaniAdmins" or user|has_group:"CompanyAdmins" %}
         <div class="dropdown p-2">
         <a class="text-muted dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             Registrér produkt
@@ -32,6 +32,9 @@ SPDX-License-Identifier: MPL-2.0
             <li><a class="dropdown-item" href="{% url 'pant:multiple_product_register' %}">Importér regneark</a></li>
         </ul>
         </div>
+        {% endif %}
+        {% if user|has_group:"CompanyAdmins" %}
+        <a class="p-2 text-muted" href="{% url 'pant:user_register_by_company_admin' %}">Registrér bruger</a>
         {% endif %}
         <a class="p-2 text-muted" href="{% url 'pant:product_list' %}">Produktliste</a>
         <span class="p-2 ms-auto">

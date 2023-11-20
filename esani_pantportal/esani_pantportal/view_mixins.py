@@ -10,6 +10,9 @@ class PermissionRequiredMixin(LoginRequiredMixin):
     # Liste af permissions påkræves for adgang
     required_permissions: Iterable[str] = ()
 
+    def get(self, request, *args, **kwargs):
+        return self.check_permissions() or super().get(request, *args, **kwargs)
+
     @property
     def access_denied(self):
         user_permissions = set(self.request.user.get_all_permissions())
@@ -38,7 +41,14 @@ class PermissionRequiredMixin(LoginRequiredMixin):
 
         required_permissions = set(self.required_permissions)
         user_permissions = set(user.get_all_permissions())
-        return required_permissions.issubset(user_permissions)
+
+        required_groups = set(getattr(self, "required_groups", []))
+        user_groups = set([g.name for g in user.groups.all()])
+
+        permissions_ok = required_permissions.issubset(user_permissions)
+        groups_ok = required_groups.issubset(user_groups)
+
+        return permissions_ok and groups_ok
 
     @property
     def can_approve(self) -> bool:

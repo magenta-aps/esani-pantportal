@@ -88,6 +88,35 @@ class UserRegisterForm(forms.ModelForm, BootstrapForm):
         return password2
 
 
+class CompanyAdminUserRegisterForm(UserRegisterForm):
+    class Meta:
+        model = CompanyUser
+        fields = (
+            "username",
+            "password",
+            "password2",
+            "phone",
+            "first_name",
+            "last_name",
+            "email",
+            "admin",
+        )
+        widgets = {
+            "password": forms.PasswordInput(),
+            "password2": forms.PasswordInput(),
+        }
+
+    admin = forms.BooleanField(
+        required=False,
+        initial=False,
+        label=_("Admin rettigheder"),
+        help_text=_(
+            "Brugere med admin rettigheder kan blandt andet oprette andre brugere, "
+            "registrere produkter og ændre produkter."
+        ),
+    )
+
+
 class BranchRegisterForm(forms.ModelForm, BootstrapForm):
     class Meta:
         model = Branch

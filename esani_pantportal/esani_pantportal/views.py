@@ -8,6 +8,7 @@ from urllib.parse import unquote
 
 import pandas as pd
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import Group
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import ValidationError
 from django.forms import model_to_dict
@@ -38,6 +39,7 @@ from esani_pantportal.forms import (  # isort: skip
     ProductRegisterForm,
     ProductFilterForm,
     UserRegisterMultiForm,
+    CompanyAdminUserRegisterForm,
 )
 
 
@@ -55,9 +57,6 @@ class ProductRegisterView(PermissionRequiredMixin, CreateView):
     template_name = "esani_pantportal/product/form.html"
     required_permissions = ["esani_pantportal.add_product"]
 
-    def get(self, request, *args, **kwargs):
-        return self.check_permissions() or super().get(request, *args, **kwargs)
-
     def form_valid(self, form):
         access_denied = self.check_permissions()
         if access_denied:
@@ -68,6 +67,39 @@ class ProductRegisterView(PermissionRequiredMixin, CreateView):
 
     def get_success_url(self):
         return reverse("pant:product_register_success")
+
+
+class CompanyAdminUserRegisterView(PermissionRequiredMixin, CreateView):
+    model = CompanyUser
+    form_class = CompanyAdminUserRegisterForm
+    template_name = "esani_pantportal/user/admin_form.html"
+    required_permissions = ["esani_pantportal.add_companyuser"]
+    required_groups = ["CompanyAdmins"]
+
+    def get_success_url(self):
+        return reverse("pant:user_register_success")
+
+    def get_context_data(self, *args, **kwargs):
+        context_data = super().get_context_data(*args, **kwargs)
+        context_data["branch"] = str(self.request.user.branch)
+        return context_data
+
+    def form_valid(self, form):
+        access_denied = self.check_permissions()
+        if access_denied:
+            return access_denied
+        self.object = form.save(commit=False)
+
+        # The branch is the same as the branch of the admin who creates the user
+        self.object.branch = self.request.user.branch
+        self.object.set_password(form.cleaned_data["password"])
+        self.object.save()
+        if form.cleaned_data["admin"]:
+            self.object.groups.add(Group.objects.get(name="CompanyAdmins"))
+        else:
+            self.object.groups.add(Group.objects.get(name="CompanyUsers"))
+
+        return super().form_valid(form)
 
 
 class UserRegisterView(CreateView):
@@ -284,9 +316,6 @@ class MultipleProductRegisterView(PermissionRequiredMixin, FormView):
     template_name = "esani_pantportal/product/import.html"
     form_class = MultipleProductRegisterForm
     required_permissions = ["esani_pantportal.add_product"]
-
-    def get(self, request, *args, **kwargs):
-        return self.check_permissions() or super().get(request, *args, **kwargs)
 
     def form_valid(self, form):
         access_denied = self.check_permissions()
