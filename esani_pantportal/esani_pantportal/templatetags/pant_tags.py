@@ -42,3 +42,8 @@ def user_type(user_type_id):
 @register.filter
 def is_user_object(obj):
     return True if obj._meta.verbose_name.endswith("user") else False
+
+
+@register.filter
+def yesno(boolean):
+    return _("Ja") if boolean else _("Nej")

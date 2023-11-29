@@ -184,7 +184,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
                 {
                     "Produktnavn": "prod1",
                     "Stregkode": "00101122",
-                    "Godkendt": "nej",
+                    "Godkendt": "Nej",
                     "Dansk Pant": "Ja",
                     "Oprettet Af": "esani_admin (test@test.com)",
                 },
@@ -212,7 +212,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
                 {
                     "Produktnavn": "prod1",
                     "Stregkode": "00101122",
-                    "Godkendt": "nej",
+                    "Godkendt": "Nej",
                     "Dansk Pant": "Ja",
                 },
                 {

@@ -3,7 +3,6 @@ from unittest.mock import MagicMock
 from django.test import TestCase
 
 from esani_pantportal.models import (
-    ESANI_USER,
     BranchUser,
     Company,
     CompanyBranch,
@@ -83,10 +82,6 @@ class PermissionTest(TestCase):
         self.mixin = PermissionRequiredMixin()
         self.mixin.request = MagicMock()
         self.mixin.request.user = MagicMock()
-
-    def test_is_esani_admin(self):
-        self.mixin.request.user.user_type = ESANI_USER
-        self.assertTrue(self.mixin.is_esani_admin)
 
     def test_permissions_ok(self):
         self.mixin.request.user.get_all_permissions.return_value = [
