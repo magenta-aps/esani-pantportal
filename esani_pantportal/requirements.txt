@@ -19,3 +19,4 @@ openpyxl==3.0.10
 xlsxwriter==3.1.2
 django-bootstrap-icons==0.8.6
 django-betterforms==2.0.0
+whitenoise==6.0.0

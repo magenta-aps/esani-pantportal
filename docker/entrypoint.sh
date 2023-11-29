@@ -28,11 +28,11 @@ if [ "${CREATE_GROUPS,,}" = true ]; then
   python manage.py create_groups
 fi
 if [ "$DUMMYDATA" = true ]; then
-    echo 'Creating dummy data'
-    python3 manage.py create_dummy_companies
-    python3 manage.py create_dummy_users
-    python3 manage.py create_dummy_products
-    python3 manage.py create_dummy_packagingregistrations
+  echo 'Creating dummy data'
+  python3 manage.py create_dummy_companies
+  python3 manage.py create_dummy_users
+  python3 manage.py create_dummy_products
+  python3 manage.py create_dummy_packagingregistrations
 fi
 
 python manage.py createcachetable
@@ -43,4 +43,5 @@ if [ "$TEST" = true ]; then
   echo 'running tests'
   python manage.py test
 fi
+
 exec "$@"
