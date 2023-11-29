@@ -19,6 +19,8 @@ from esani_pantportal.views import (
     ProductSearchView,
     RegisterBranchUserAdminView,
     RegisterBranchUserPublicView,
+    RegisterCompanyUserAdminView,
+    RegisterCompanyUserPublicView,
     RegisterEsaniUserView,
     UserSearchView,
 )
@@ -40,6 +42,16 @@ urlpatterns = [
         "butik_bruger/opret/admin",
         RegisterBranchUserAdminView.as_view(),
         name="branch_user_register_by_admin",
+    ),
+    path(
+        "virksomhed_bruger/opret/offentlig",
+        RegisterCompanyUserPublicView.as_view(),
+        name="company_user_register",
+    ),
+    path(
+        "virksomhed_bruger/opret/admin",
+        RegisterCompanyUserAdminView.as_view(),
+        name="company_user_register_by_admin",
     ),
     path(
         "esani_bruger/opret",

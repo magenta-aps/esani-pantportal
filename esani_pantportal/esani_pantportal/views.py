@@ -24,6 +24,7 @@ from esani_pantportal.forms import (
     ProductFilterForm,
     ProductRegisterForm,
     RegisterBranchUserMultiForm,
+    RegisterCompanyUserMultiForm,
     RegisterEsaniUserForm,
     UserFilterForm,
 )
@@ -35,6 +36,7 @@ from esani_pantportal.models import (
     BranchUser,
     Company,
     CompanyBranch,
+    CompanyUser,
     EsaniUser,
     Product,
     User,
@@ -86,7 +88,7 @@ class RegisterEsaniUserView(PermissionRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class RegisterBranchUserPublicView(CreateView):
+class RegisterBranchUserView(CreateView):
     model = BranchUser
     form_class = RegisterBranchUserMultiForm
     template_name = "esani_pantportal/user/branch_user/form.html"
@@ -104,29 +106,15 @@ class RegisterBranchUserPublicView(CreateView):
 
         return context_data
 
+
+class RegisterBranchUserPublicView(RegisterBranchUserView):
     def get_success_url(self):
         return reverse("pant:login")
 
 
-class RegisterBranchUserAdminView(
-    PermissionRequiredMixin, RegisterBranchUserPublicView
-):
-    def get(self, *args, **kwargs):
-        self.required_permissions = ["esani_pantportal.add_branchuser"]
-
-        if self.request.user.user_type == ESANI_USER:
-            self.required_groups = ["EsaniAdmins"]
-            self.allowed_user_types = [ESANI_USER]
-
-        elif self.request.user.user_type == BRANCH_USER:
-            self.required_groups = ["CompanyAdmins"]
-            self.allowed_user_types = [BRANCH_USER]
-
-        elif self.request.user.user_type == COMPANY_USER:
-            self.required_groups = ["CompanyAdmins"]
-            self.allowed_user_types = [COMPANY_USER]
-
-        return super().get(*args, **kwargs)
+class RegisterBranchUserAdminView(PermissionRequiredMixin, RegisterBranchUserView):
+    required_permissions = ["esani_pantportal.add_branchuser"]
+    allowed_user_types = [ESANI_USER, BRANCH_USER, COMPANY_USER]
 
     def get_success_url(self):
         return reverse("pant:user_register_success")
@@ -140,6 +128,34 @@ class RegisterBranchUserAdminView(
             kwargs["company"] = self.request.user.branch.company
             kwargs["branch"] = self.request.user.branch
         elif self.request.user.user_type == COMPANY_USER:
+            kwargs["company"] = self.request.user.company
+        return kwargs
+
+
+class RegisterCompanyUserView(CreateView):
+    model = CompanyUser
+    form_class = RegisterCompanyUserMultiForm
+    template_name = "esani_pantportal/user/company_user/form.html"
+
+
+class RegisterCompanyUserPublicView(RegisterCompanyUserView):
+    def get_success_url(self):
+        return reverse("pant:login")
+
+
+class RegisterCompanyUserAdminView(PermissionRequiredMixin, RegisterCompanyUserView):
+    required_permissions = ["esani_pantportal.add_companyuser"]
+    allowed_user_types = [ESANI_USER, COMPANY_USER]
+
+    def get_success_url(self):
+        return reverse("pant:user_register_success")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["show_admin_flag"] = True
+        kwargs["allow_multiple_admins"] = True
+        kwargs["approved"] = True
+        if self.request.user.user_type == COMPANY_USER:
             kwargs["company"] = self.request.user.company
         return kwargs
 

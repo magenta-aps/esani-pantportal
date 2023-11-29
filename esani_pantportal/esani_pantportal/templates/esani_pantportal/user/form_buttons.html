@@ -1,0 +1,8 @@
+{% load i18n %}
+{% load l10n %}
+<div class="col-12">
+    <input class="btn btn-success float-right my-2 ms-0" type="submit" value="{% translate 'Opret' %}"/>
+    {% if not user.is_authenticated %}
+    <a href="{% url 'pant:login' %}" class="btn btn-secondary my-2 mx-1" role="button">{% translate 'Tilbage' %}</a>
+    {% endif %}
+</div>

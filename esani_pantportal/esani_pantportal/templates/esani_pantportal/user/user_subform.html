@@ -1,0 +1,14 @@
+<div class="input-group">
+    {% include "./form_field.html" with field=form.user.username %}
+    {% include "./form_field.html" with field=form.user.phone %}
+    {% include "./form_field.html" with field=form.user.password %}
+    {% include "./form_field.html" with field=form.user.password2 %}
+    {% include "./form_field.html" with field=form.user.first_name %}
+    {% include "./form_field.html" with field=form.user.last_name %}
+    {% include "./form_field.html" with field=form.user.email %}
+    {% if form.show_admin_flag %}
+        {% include "./form_field.html" with field=form.user.admin help_text=True %}
+    {% else %}
+        <div style="display:none"> {{form.user.admin}} </div>
+    {% endif %}
+</div>

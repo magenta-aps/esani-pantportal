@@ -1,0 +1,16 @@
+{% load i18n %}
+{% load l10n %}
+<div class="col-12"  id="company_dropdown">
+  {% if mainform.allow_changing_company %}
+      <label for="{{subform.company.id_for_label}}">
+          {{subform.company.label}} <a id="show_company_form" href="#">{% translate "Virksomhed er ikke i listen" %}</a>
+      </label>
+      {{subform.company}}
+  {% else %}
+      <div style="display:none" >{{subform.company}} </div>
+      <input type="text" disabled class="mr-2 form-control" value="{{mainform.company_str}}">
+  {% endif %}
+  <div class="form-text">
+      {{subform.company.errors}}
+  </div>
+</div>

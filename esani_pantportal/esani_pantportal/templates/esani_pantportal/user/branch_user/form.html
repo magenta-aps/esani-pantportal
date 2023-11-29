@@ -3,143 +3,35 @@
 {% load i18n %}
 {% load l10n %}
 
+{% block extra_headers %}
+<script src="{% static 'jquery/pantportal.js' %}"></script>
+{% endblock %}
+
 {% block content %}
 
 <div class="mx-5">
     <h1>{% translate "Registrer ny butiksadministrator" %}</h1>
     <form method="POST" class="row g-3">
         {% csrf_token %}
-    <div class="input-group">
-        {% include "./form_field.html" with field=form.user.username %}
-        {% include "./form_field.html" with field=form.user.phone %}
-        {% include "./form_field.html" with field=form.user.password %}
-        {% include "./form_field.html" with field=form.user.password2 %}
-        {% include "./form_field.html" with field=form.user.first_name %}
-        {% include "./form_field.html" with field=form.user.last_name %}
-        {% include "./form_field.html" with field=form.user.email %}
-        {% if form.show_admin_flag %}
-            {% include "./form_field.html" with field=form.user.admin help_text=True %}
-        {% else %}
-            <div style="display:none"> {{form.user.admin}} </div>
-        {% endif %}
-
-        <div class="col-12 my-4">
-            <h4>{% translate "Virksomhed" %}</h4>
-        </div>
-
-        <div class="col-12"  id="company_dropdown">
-          {% if form.allow_changing_company %}
-              <label for="{{form.branch.company.id_for_label}}">
-                  {{form.branch.company.label}} <a id="show_company_form" href="#">{% translate "Virksomhed er ikke i listen" %}</a>
-              </label>
-              {{form.branch.company}}
-          {% else %}
-              <div style="display:none" >{{form.branch.company}} </div>
-              <input type="text" disabled class="mr-2 form-control" value="{{form.company_str}}">
-          {% endif %}
-
-          <div class="form-text">
-              {{form.branch.company.errors}}
-          </div>
-        </div>
-
-        <div class="input-group  my-0" id="company_form" style="display:none" >
-            {% include "./form_field.html" with field=form.company.name colsize=3 link_id="show_company_dropdown" %}
-            {% include "./form_field.html" with field=form.company.phone colsize=3 %}
-            {% include "./form_field.html" with field=form.company.company_type colsize=3 %}
-            {% include "./form_field.html" with field=form.company.cvr colsize=3 %}
-            {% include "./form_field.html" with field=form.company.address colsize=3 %}
-            {% include "./form_field.html" with field=form.company.postal_code colsize=1 %}
-            {% include "./form_field.html" with field=form.company.city colsize=2 %}
-            {% include "./form_field.html" with field=form.company.municipality colsize=3 %}
-            {% include "./form_field.html" with field=form.company.country colsize=3 %}
-            {% include "./form_field.html" with field=form.company.permit_number help_text=True colsize=3 %}
-            {% include "./form_field.html" with field=form.company.registration_number help_text=True colsize=1 %}
-            {% include "./form_field.html" with field=form.company.account_number help_text=True colsize=2 %}
-            {% include "./form_field.html" with field=form.company.invoice_mail help_text=True colsize=3 %}
-        </div>
-
-        <div class="col-12 my-4"  style="display:none" id="branch_header">
-            <h4>{% translate "Butik" %}</h4>
-        </div>
-    
-        <div class="col-12"  id="branch_dropdown" style="display:none">
-          {% if form.allow_changing_branch %}
-              <label for="{{form.user.branch.id_for_label}}">
-                  {{form.user.branch.label}} <a id="show_branch_form" href="#">{% translate "Butik er ikke i listen" %}</a>
-              </label>
-              {{form.user.branch}}
-          {% else %}
-              <div style="display:none" >{{form.user.branch}} </div>
-              <input type="text" disabled class="mr-2 form-control" value="{{form.branch_str}}">
-          {% endif %}
-          <div class="form-text">
-              {{form.user.branch.errors}}
-          </div>
-        </div>
+    {% include "../user_subform.html" with form=form %}
+    <div class="col-12 my-4">
+        <h4>{% translate "Virksomhed" %}</h4>
     </div>
-
-    <div class="input-group my-0" id="branch_form" style="display:none">
-        {% include "./form_field.html" with field=form.branch.name colsize=3 link_id="show_branch_dropdown" %}
-        {% include "./form_field.html" with field=form.branch.phone colsize=3 %}
-        {% include "./form_field.html" with field=form.branch.branch_type colsize=3 %}
-        {% include "./form_field.html" with field=form.branch.location_id help_text=True colsize=3 %}
-        {% include "./form_field.html" with field=form.branch.address colsize=3 %}
-        {% include "./form_field.html" with field=form.branch.postal_code colsize=1 %}
-        {% include "./form_field.html" with field=form.branch.city colsize=2 %}
-        {% include "./form_field.html" with field=form.branch.municipality colsize=3 %}
-        {% include "./form_field.html" with field=form.branch.customer_id help_text=True colsize=3 %}
-        {% include "./form_field.html" with field=form.branch.registration_number help_text=True colsize=1 %}
-        {% include "./form_field.html" with field=form.branch.account_number help_text=True  colsize=2 %}
-        {% include "./form_field.html" with field=form.branch.invoice_mail help_text=True colsize=3 %}
-
+    {% include "../company_dropdown.html" with subform=form.branch mainform=form %}
+    {% include "../company_subform.html" with form=form.company %}
+    <div class="col-12 my-4"  style="display:none" id="branch_header">
+        <h4>{% translate "Butik" %}</h4>
     </div>
-
-    <div class="form-text">
-        <ul class="errorlist h4">
-        {% for error in form.crossform_errors %}
-            <li>{{error}}</li>
-        {% endfor %}
-        </ul>
-    </div>
-
-    <div class="col-12">
-        <input class="btn btn-success float-right my-2 ms-0" type="submit" value="{% translate 'Opret' %}"/>
-        {% if not user.is_authenticated %}
-        <a href="{% url 'pant:login' %}" class="btn btn-secondary my-2 mx-1" role="button">{% translate 'Tilbage' %}</a>
-        {% endif %}
-    </div>
+    {% include "../branch_dropdown.html" with subform=form.user mainform=form %}
+    {% include "../branch_subform.html" with form=form.branch %}
+    {% include "../crossform_errors.html" with form=form %}
+    {% include "../form_buttons.html" with user=user %}
     </form>
 </div>
 
 {{ branch_dict|json_script:"branch_dict" }}
 
 <script>
-function updateQueryString(key, value) {
-    if (history.pushState) {
-        let searchParams = new URLSearchParams(window.location.search);
-        searchParams.set(key, value);
-        let newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?' + searchParams.toString();
-        window.history.pushState({path: newurl}, '', newurl);
-    }
-}
-
-var getUrlParameter = function getUrlParameter(sParam) {
-    var sPageURL = window.location.search.substring(1),
-        sURLVariables = sPageURL.split('&'),
-        sParameterName,
-        i;
-
-    for (i = 0; i < sURLVariables.length; i++) {
-        sParameterName = sURLVariables[i].split('=');
-
-        if (sParameterName[0] === sParam) {
-            return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
-        }
-    }
-    return false;
-};
-
 function hide_branch_dropdown_options(){
     $("#id_user-branch").children("option").not(":first").hide();
 }
@@ -177,6 +69,8 @@ function show_company_form() {
     $("#company_form").show();
     updateQueryString("show_company","1");
     show_branch_form();
+    hide_branch_dropdown();
+    $("#show_branch_dropdown").hide()
 }
 
 function show_branch_form() {

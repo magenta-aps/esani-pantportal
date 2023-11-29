@@ -1,0 +1,60 @@
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+{% block extra_headers %}
+<script src="{% static 'jquery/pantportal.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="mx-5">
+    <h1>{% translate "Registrer ny virksomhedsadministrator" %}</h1>
+    <form method="POST" class="row g-3">
+        {% csrf_token %}
+    {% include "../user_subform.html" with form=form %}
+    <div class="col-12 my-4">
+        <h4>{% translate "Virksomhed" %}</h4>
+    </div>
+    {% include "../company_dropdown.html" with subform=form.user mainform=form %}
+    {% include "../company_subform.html" with form=form.company %}
+    {% include "../crossform_errors.html" with form=form %}
+    {% include "../form_buttons.html" with user=user %}
+    </form>
+</div>
+
+<script>
+function reset_company_dropdown() {
+    $("#id_user-company option[value='']").prop("selected", "selected");
+}
+function hide_company_dropdown(){
+   $("#company_dropdown").hide();
+   reset_company_dropdown();
+}
+function show_company_dropdown(){
+    $("#company_dropdown").show();
+}
+function show_company_form() {
+    $("#company_form").show();
+    updateQueryString("show_company","1");
+}
+function hide_company_form() {
+    $("#company_form").hide();
+    updateQueryString("show_company","0");
+}
+
+$("#show_company_dropdown").click(function() {
+    hide_company_form();
+    show_company_dropdown();
+});
+$("#show_company_form").click(function() {
+    show_company_form();
+    hide_company_dropdown();
+});
+
+var show_company = getUrlParameter("show_company");
+if (show_company == "1"){
+    show_company_form();
+    hide_company_dropdown();
+}
+</script>
+{% endblock %}

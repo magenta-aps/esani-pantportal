@@ -21,9 +21,9 @@ from esani_pantportal.models import (
     BranchUser,
     Company,
     CompanyBranch,
+    CompanyUser,
     EsaniUser,
     Product,
-    User,
     validate_barcode_length,
     validate_digit,
 )
@@ -59,22 +59,6 @@ class ProductRegisterForm(forms.ModelForm, BootstrapForm):
 
 
 class RegisterUserForm(forms.ModelForm, BootstrapForm):
-    class Meta:
-        model = User
-        fields = (
-            "username",
-            "password",
-            "password2",
-            "phone",
-            "first_name",
-            "last_name",
-            "email",
-        )
-        widgets = {
-            "password": forms.PasswordInput(render_value=True),
-            "password2": forms.PasswordInput(render_value=True),
-        }
-
     password2 = forms.CharField(
         widget=forms.PasswordInput(render_value=True),
         label=_("Gentag Adgangskode"),
@@ -95,7 +79,19 @@ class RegisterUserForm(forms.ModelForm, BootstrapForm):
         return password2
 
 
-class RegisterBranchUserForm(RegisterUserForm):
+class RegisterAdminUserForm(RegisterUserForm):
+    admin = forms.BooleanField(
+        initial=True,
+        label=_("Admin rettigheder"),
+        help_text=_(
+            "Brugere med admin rettigheder kan blandt andet oprette andre brugere, "
+            "registrere produkter og ændre produkter."
+        ),
+        required=False,
+    )
+
+
+class RegisterBranchUserForm(RegisterAdminUserForm):
     class Meta:
         model = BranchUser
         fields = (
@@ -114,15 +110,25 @@ class RegisterBranchUserForm(RegisterUserForm):
             "password2": forms.PasswordInput(render_value=True),
         }
 
-    admin = forms.BooleanField(
-        initial=True,
-        label=_("Admin rettigheder"),
-        help_text=_(
-            "Brugere med admin rettigheder kan blandt andet oprette andre brugere, "
-            "registrere produkter og ændre produkter."
-        ),
-        required=False,
-    )
+
+class RegisterCompanyUserForm(RegisterAdminUserForm):
+    class Meta:
+        model = CompanyUser
+        fields = (
+            "username",
+            "password",
+            "password2",
+            "phone",
+            "first_name",
+            "last_name",
+            "email",
+            "company",
+            "admin",
+        )
+        widgets = {
+            "password": forms.PasswordInput(render_value=True),
+            "password2": forms.PasswordInput(render_value=True),
+        }
 
 
 class RegisterEsaniUserForm(RegisterUserForm):
@@ -183,7 +189,7 @@ class RegisterCompanyForm(forms.ModelForm, BootstrapForm):
         )
 
 
-class RegisterBranchUserMultiForm(MultiModelForm, BootstrapForm):
+class RegisterUserMultiForm(MultiModelForm, BootstrapForm):
     def __init__(
         self,
         *args,
@@ -197,26 +203,32 @@ class RegisterBranchUserMultiForm(MultiModelForm, BootstrapForm):
         super().__init__(*args, **kwargs)
 
         # If the branch form is filled out we don't need this field
-        self.forms["user"].fields["branch"].required = False
+        if "branch" in self.forms["user"].fields:
+            self.forms["user"].fields["branch"].required = False
+
+        # If the company form is filled out we don't need this field
+        if "company" in self.forms["user"].fields:
+            self.forms["user"].fields["company"].required = False
 
         # Dict with default values for required fields
         self.required = {"branch": {}, "company": {}}
 
         # If the branch is selected from the dropdown, we don't need the branch form
-        for field_name in self.forms["branch"].fields.keys():
-            self.required["branch"][field_name] = (
-                self.forms["branch"].fields[field_name].required
-            )
-            self.forms["branch"].fields[field_name].required = False
+        if "branch" in self.forms:
+            for field_name in self.forms["branch"].fields.keys():
+                self.required["branch"][field_name] = (
+                    self.forms["branch"].fields[field_name].required
+                )
+                self.forms["branch"].fields[field_name].required = False
 
         # If the company is selected from the dropdown, we don't need the company form
-        for field_name in self.forms["company"].fields.keys():
-            self.required["company"][field_name] = (
-                self.forms["company"].fields[field_name].required
-            )
-            self.forms["company"].fields[field_name].required = False
+        if "company" in self.forms:
+            for field_name in self.forms["company"].fields.keys():
+                self.required["company"][field_name] = (
+                    self.forms["company"].fields[field_name].required
+                )
+                self.forms["company"].fields[field_name].required = False
 
-        self.parent_form_dict = {"branch": "user", "company": "branch"}
         self.allow_multiple_admins = allow_multiple_admins
         self.approved = approved
         self.company = company
@@ -224,31 +236,20 @@ class RegisterBranchUserMultiForm(MultiModelForm, BootstrapForm):
         self.show_admin_flag = show_admin_flag
 
         if company:
-            self.forms["branch"].initial = {"company": company}
+            parent_form = self.parent_form_dict["company"]
+            self.forms[parent_form].initial = {"company": company}
             self.allow_changing_company = False
             self.company_str = str(company)
         else:
             self.allow_changing_company = True
 
         if branch:
-            self.forms["user"].initial = {"branch": branch}
+            parent_form = self.parent_form_dict["branch"]
+            self.forms[parent_form].initial = {"branch": branch}
             self.allow_changing_branch = False
             self.branch_str = str(branch)
         else:
             self.allow_changing_branch = True
-
-    form_classes = {
-        "user": RegisterBranchUserForm,
-        "branch": RegisterBranchForm,
-        "company": RegisterCompanyForm,
-    }
-
-    @staticmethod
-    def has_admin_users(branch):
-        users = BranchUser.objects.filter(
-            branch__pk=branch.pk, groups__name="CompanyAdmins"
-        )
-        return True if users else False
 
     def check_subform(self, form_name, allowed_empty_keys=[]):
         # Check a sub-form for empty keys
@@ -278,6 +279,34 @@ class RegisterBranchUserMultiForm(MultiModelForm, BootstrapForm):
                     form_name=form_name
                 )
             )
+
+    def save_user(self, user, commit):
+        admin = self.cleaned_data["user"]["admin"]
+        user.approved = self.approved
+
+        user.set_password(self.cleaned_data["user"]["password"])
+        if commit:
+            user.save()
+
+        group_name = "CompanyAdmins" if admin else "CompanyUsers"
+        user.groups.add(Group.objects.get(name=group_name))
+        return user
+
+
+class RegisterBranchUserMultiForm(RegisterUserMultiForm):
+    form_classes = {
+        "user": RegisterBranchUserForm,
+        "branch": RegisterBranchForm,
+        "company": RegisterCompanyForm,
+    }
+    parent_form_dict = {"branch": "user", "company": "branch"}
+
+    @staticmethod
+    def has_admin_users(branch):
+        users = BranchUser.objects.filter(
+            branch__pk=branch.pk, groups__name="CompanyAdmins"
+        )
+        return True if users else False
 
     def clean(self):
         branch_from_list = self.cleaned_data.get("user", {}).get("branch", "")
@@ -317,7 +346,6 @@ class RegisterBranchUserMultiForm(MultiModelForm, BootstrapForm):
 
         company_from_list = self.company or self.cleaned_data["branch"]["company"]
         branch_from_list = self.branch or self.cleaned_data["user"]["branch"]
-        admin = self.cleaned_data["user"]["admin"]
 
         if branch_from_list:
             branch = branch_from_list
@@ -337,16 +365,63 @@ class RegisterBranchUserMultiForm(MultiModelForm, BootstrapForm):
 
         user = objects["user"]
         user.branch = branch
-        user.approved = self.approved
+        return self.save_user(user, commit)
 
-        user.set_password(self.cleaned_data["user"]["password"])
-        if commit:
-            user.save()
 
-        group_name = "CompanyAdmins" if admin else "CompanyUsers"
-        user.groups.add(Group.objects.get(name=group_name))
+class RegisterCompanyUserMultiForm(RegisterUserMultiForm):
+    form_classes = {
+        "user": RegisterCompanyUserForm,
+        "company": RegisterCompanyForm,
+    }
+    parent_form_dict = {"company": "user"}
 
-        return user
+    @staticmethod
+    def has_admin_users(company):
+        users = CompanyUser.objects.filter(
+            company__pk=company.pk, groups__name="CompanyAdmins"
+        )
+        return True if users else False
+
+    def clean(self):
+        company_from_list = self.cleaned_data.get("user", {}).get("company", "")
+        admin = self.cleaned_data.get("user", {}).get("admin", "")
+
+        if (
+            company_from_list
+            and self.has_admin_users(company_from_list)
+            and not self.allow_multiple_admins
+            and admin
+        ):
+            self.add_crossform_error(
+                _(
+                    "Denne virksomhed har allerede en admin bruger. "
+                    "Bed venligst din admin om at oprette dig."
+                )
+            )
+
+        user_form_valid = self.forms["user"].is_valid()
+
+        if user_form_valid and not company_from_list:
+            # If the company is not picked from the list we should not allow
+            # fields to be empty in the company-form
+            self.check_subform("company")
+
+        return self.cleaned_data
+
+    def save(self, commit=True):
+        objects = super().save(commit=False)
+        company_from_list = self.company or self.cleaned_data["user"]["company"]
+
+        if company_from_list:
+            company = company_from_list
+        else:
+            company = objects["company"]
+            if commit:
+                company.save()
+
+        user = objects["user"]
+        user.company = company
+        return self.save_user(user, commit)
 
 
 class SortPaginateForm(forms.Form):

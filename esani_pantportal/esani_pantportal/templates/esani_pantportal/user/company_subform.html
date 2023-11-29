@@ -1,0 +1,15 @@
+<div class="input-group  my-0" id="company_form" style="display:none" >
+    {% include "./form_field.html" with field=form.name colsize=3 link_id="show_company_dropdown" %}
+    {% include "./form_field.html" with field=form.phone colsize=3 %}
+    {% include "./form_field.html" with field=form.company_type colsize=3 %}
+    {% include "./form_field.html" with field=form.cvr colsize=3 %}
+    {% include "./form_field.html" with field=form.address colsize=3 %}
+    {% include "./form_field.html" with field=form.postal_code colsize=1 %}
+    {% include "./form_field.html" with field=form.city colsize=2 %}
+    {% include "./form_field.html" with field=form.municipality colsize=3 %}
+    {% include "./form_field.html" with field=form.country colsize=3 %}
+    {% include "./form_field.html" with field=form.permit_number help_text=True colsize=3 %}
+    {% include "./form_field.html" with field=form.registration_number help_text=True colsize=1 %}
+    {% include "./form_field.html" with field=form.account_number help_text=True colsize=2 %}
+    {% include "./form_field.html" with field=form.invoice_mail help_text=True colsize=3 %}
+</div>

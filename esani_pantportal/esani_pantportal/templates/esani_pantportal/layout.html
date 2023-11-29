@@ -37,7 +37,15 @@ SPDX-License-Identifier: MPL-2.0
         {% if user|has_group:"CompanyAdmins" and user.user_type == 2 %}
         <a class="p-2 text-muted" href="{% url 'pant:branch_user_register_by_admin' %}">Registrér bruger</a>
         {% elif user|has_group:"CompanyAdmins" and user.user_type == 3 %}
-        <a class="p-2 text-muted" href="{% url 'pant:branch_user_register_by_admin' %}">Registrér butiksadministrator</a>
+        <div class="dropdown p-2">
+        <a class="text-muted dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Registrér bruger
+        </a>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'pant:branch_user_register_by_admin' %}">Registrér butiksadministrator</a></li>
+            <li><a class="dropdown-item" href="{% url 'pant:company_user_register_by_admin' %}">Registrér virksomhedsadministrator</a></li>
+        </ul>
+        </div>
         {% endif %}
         {% if user|has_group:"EsaniAdmins" %}
         <div class="dropdown p-2">
@@ -46,6 +54,7 @@ SPDX-License-Identifier: MPL-2.0
         </a>
         <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="{% url 'pant:branch_user_register_by_admin' %}">Registrér butiksadministrator</a></li>
+            <li><a class="dropdown-item" href="{% url 'pant:company_user_register_by_admin' %}">Registrér virksomhedsadministrator</a></li>
             <li><a class="dropdown-item" href="{% url 'pant:esani_user_register' %}">Registrér ESANI administrator</a></li>
         </ul>
         </div>
