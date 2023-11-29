@@ -12,16 +12,16 @@
 
         <div class="row">
             <div class="col-6">
-                <h2>Pant</h2>
+                <h2>{% translate "Pant" %}</h2>
                 <table class="table table-bordered">
                     <tbody>
-                    {% include "./edit_field.html" with field_name="product_name" field=form.product_name %}
-                    {% include "./edit_field.html" with field_name="barcode" field=form.barcode %}
+                    {% include "../edit_field.html" with field_name="product_name" field=form.product_name %}
+                    {% include "../edit_field.html" with field_name="barcode" field=form.barcode %}
                     <tr>
                         <th>{{object|verbose_name:"approved"}}</th>
                         <td>{{object.approved|yesno}}</td>
                     </tr>
-                    {% include "./edit_field.html" with field_name="danish" field=form.danish %}
+                    {% include "../edit_field.html" with field_name="danish" field=form.danish %}
                     {% if can_approve %}
                     <tr>
                         <th>{{object|verbose_name:"created_by"}}</th>
@@ -32,15 +32,15 @@
                 </table>
             </div>
             <div class="col-6">
-                <h2>Materiale</h2>
+                <h2>{% translate "Materiale" %}</h2>
                 <table class="table table-bordered">
                     <tbody>
-                    {% include "./edit_field.html" with field_name="material" field=form.material %}
-                    {% include "./edit_field.html" with field_name="height" field=form.height unit="mm" %}
-                    {% include "./edit_field.html" with field_name="diameter" field=form.diameter unit="mm" %}
-                    {% include "./edit_field.html" with field_name="weight" field=form.weight unit="g" %}
-                    {% include "./edit_field.html" with field_name="capacity" field=form.capacity unit="ml" %}
-                    {% include "./edit_field.html" with field_name="shape" field=form.shape %}
+                    {% include "../edit_field.html" with field_name="material" field=form.material %}
+                    {% include "../edit_field.html" with field_name="height" field=form.height unit="mm" %}
+                    {% include "../edit_field.html" with field_name="diameter" field=form.diameter unit="mm" %}
+                    {% include "../edit_field.html" with field_name="weight" field=form.weight unit="g" %}
+                    {% include "../edit_field.html" with field_name="capacity" field=form.capacity unit="ml" %}
+                    {% include "../edit_field.html" with field_name="shape" field=form.shape %}
                     </tbody>
                 </table>
             </div>

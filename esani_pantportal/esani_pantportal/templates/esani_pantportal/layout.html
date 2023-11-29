@@ -20,6 +20,7 @@ SPDX-License-Identifier: MPL-2.0
 </head>
 <body>
 {% block header %}
+{% if user.is_authenticated %}
 <header>
     <nav class="nav flex-column flex-sm-row p-1">
         {% if user|has_group:"EsaniAdmins" or user|has_group:"CompanyAdmins" %}
@@ -33,12 +34,29 @@ SPDX-License-Identifier: MPL-2.0
         </ul>
         </div>
         {% endif %}
-        {% if user|has_group:"CompanyAdmins" %}
-        <a class="p-2 text-muted" href="{% url 'pant:user_register_by_company_admin' %}">Registrér bruger</a>
+        {% if user|has_group:"CompanyAdmins" and user.user_type == 2 %}
+        <a class="p-2 text-muted" href="{% url 'pant:branch_user_register_by_admin' %}">Registrér bruger</a>
+        {% elif user|has_group:"CompanyAdmins" and user.user_type == 3 %}
+        <a class="p-2 text-muted" href="{% url 'pant:branch_user_register_by_admin' %}">Registrér butiksadministrator</a>
         {% endif %}
-        <a class="p-2 text-muted" href="{% url 'pant:product_list' %}">Produktliste</a>
+        {% if user|has_group:"EsaniAdmins" %}
+        <div class="dropdown p-2">
+        <a class="text-muted dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Registrér bruger
+        </a>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'pant:branch_user_register_by_admin' %}">Registrér butiksadministrator</a></li>
+            <li><a class="dropdown-item" href="{% url 'pant:esani_user_register' %}">Registrér ESANI administrator</a></li>
+        </ul>
+        </div>
+        {% endif %}
+        <a class="p-2 text-muted" href="{% url 'pant:product_list' %}">Produkter</a>
+        {% if user|has_group:"EsaniAdmins" or user|has_group:"CompanyAdmins"%}
+        <a class="p-2 text-muted" href="{% url 'pant:user_list' %}">Brugere</a>
+        {% endif %}
+
         <span class="p-2 ms-auto">
-            {{user.first_name}} {{user.last_name}} - {{user.branch.name}}
+            {{user.first_name}} {{user.last_name}} - {{user.email}}
         </span>
         <a href="{% url 'pant:logout' %}" class="m-1 btn btn-sm btn-primary" id="logout-link">{% translate "Log ud" %}</a>
     </nav>
@@ -46,6 +64,7 @@ SPDX-License-Identifier: MPL-2.0
 
     <hr class="p-0 m-0"/>
 </header>
+{% endif %}
 {% endblock %}
 {% block content %}
 {% endblock %}

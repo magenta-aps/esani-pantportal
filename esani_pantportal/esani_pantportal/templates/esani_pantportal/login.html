@@ -41,7 +41,7 @@
             <div class="col-12">
                 <button type="submit" class="btn btn-primary float-end">{% translate 'Login' %}</button>
             </div>
-            <a href="{% url 'pant:user_register' %}?show_branch=0&show_company=0">{% translate "Ny bruger" %}</a>
+            <a href="{% url 'pant:branch_user_register' %}?show_branch=0&show_company=0">{% translate "Ny bruger" %}</a>
         </div>
         <input type="hidden" name="next" value="{{ next }}">
     </form>

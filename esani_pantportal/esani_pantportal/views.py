@@ -16,35 +16,37 @@ from django.http import HttpResponse, JsonResponse
 from django.template import loader
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+from django.views.generic import CreateView, FormView, ListView, UpdateView, View
 
+from esani_pantportal.forms import (
+    MultipleProductRegisterForm,
+    PantPortalAuthenticationForm,
+    ProductFilterForm,
+    ProductRegisterForm,
+    RegisterBranchUserMultiForm,
+    RegisterEsaniUserForm,
+    UserFilterForm,
+)
+from esani_pantportal.models import (
+    BRANCH_USER,
+    COMPANY_USER,
+    ESANI_USER,
+    KIOSK_USER,
+    BranchUser,
+    Company,
+    CompanyBranch,
+    EsaniUser,
+    Product,
+    User,
+)
+from esani_pantportal.templatetags.pant_tags import user_type
 from esani_pantportal.util import default_dataframe, remove_parameter_from_url
 from esani_pantportal.view_mixins import PermissionRequiredMixin
-
-from esani_pantportal.models import (  # isort: skip
-    CompanyUser,
-    Product,
-    Branch,
-    Company,
-)
-
-from django.views.generic import (  # isort: skip
-    CreateView,
-    FormView,
-    ListView,
-    UpdateView,
-    View,
-)
-from esani_pantportal.forms import (  # isort: skip
-    MultipleProductRegisterForm,
-    ProductRegisterForm,
-    ProductFilterForm,
-    UserRegisterMultiForm,
-    CompanyAdminUserRegisterForm,
-)
 
 
 class PantportalLoginView(LoginView):
     template_name = "esani_pantportal/login.html"
+    form_class = PantPortalAuthenticationForm
 
 
 class PantportalLogoutView(LogoutView):
@@ -58,9 +60,6 @@ class ProductRegisterView(PermissionRequiredMixin, CreateView):
     required_permissions = ["esani_pantportal.add_product"]
 
     def form_valid(self, form):
-        access_denied = self.check_permissions()
-        if access_denied:
-            return access_denied
         self.object = form.save(commit=False)
         self.object.created_by = self.request.user
         return super().form_valid(form)
@@ -69,43 +68,28 @@ class ProductRegisterView(PermissionRequiredMixin, CreateView):
         return reverse("pant:product_register_success")
 
 
-class CompanyAdminUserRegisterView(PermissionRequiredMixin, CreateView):
-    model = CompanyUser
-    form_class = CompanyAdminUserRegisterForm
-    template_name = "esani_pantportal/user/admin_form.html"
-    required_permissions = ["esani_pantportal.add_companyuser"]
-    required_groups = ["CompanyAdmins"]
+class RegisterEsaniUserView(PermissionRequiredMixin, CreateView):
+    model = EsaniUser
+    form_class = RegisterEsaniUserForm
+    template_name = "esani_pantportal/user/esani_user/form.html"
+    required_permissions = ["esani_pantportal.add_esaniuser"]
+    required_groups = ["EsaniAdmins"]
 
     def get_success_url(self):
         return reverse("pant:user_register_success")
 
-    def get_context_data(self, *args, **kwargs):
-        context_data = super().get_context_data(*args, **kwargs)
-        context_data["branch"] = str(self.request.user.branch)
-        return context_data
-
     def form_valid(self, form):
-        access_denied = self.check_permissions()
-        if access_denied:
-            return access_denied
         self.object = form.save(commit=False)
-
-        # The branch is the same as the branch of the admin who creates the user
-        self.object.branch = self.request.user.branch
         self.object.set_password(form.cleaned_data["password"])
         self.object.save()
-        if form.cleaned_data["admin"]:
-            self.object.groups.add(Group.objects.get(name="CompanyAdmins"))
-        else:
-            self.object.groups.add(Group.objects.get(name="CompanyUsers"))
-
+        self.object.groups.add(Group.objects.get(name="EsaniAdmins"))
         return super().form_valid(form)
 
 
-class UserRegisterView(CreateView):
-    model = CompanyUser
-    form_class = UserRegisterMultiForm
-    template_name = "esani_pantportal/user/form.html"
+class RegisterBranchUserPublicView(CreateView):
+    model = BranchUser
+    form_class = RegisterBranchUserMultiForm
+    template_name = "esani_pantportal/user/branch_user/form.html"
 
     def get_context_data(self, *args, **kwargs):
         context_data = super().get_context_data(*args, **kwargs)
@@ -113,7 +97,7 @@ class UserRegisterView(CreateView):
         # dict of companies and which shops they own
         branch_dict = {}
         for company in Company.objects.all():
-            branches = Branch.objects.filter(company__pk=company.pk)
+            branches = CompanyBranch.objects.filter(company__pk=company.pk)
             branch_dict[company.pk] = [b.pk for b in branches]
 
         context_data["branch_dict"] = branch_dict
@@ -124,12 +108,44 @@ class UserRegisterView(CreateView):
         return reverse("pant:login")
 
 
-class ProductSearchView(LoginRequiredMixin, FormView, ListView):
-    template_name = "esani_pantportal/product/list.html"
-    actions_template = "esani_pantportal/product/actions.html"
-    model = Product
+class RegisterBranchUserAdminView(
+    PermissionRequiredMixin, RegisterBranchUserPublicView
+):
+    def get(self, *args, **kwargs):
+        self.required_permissions = ["esani_pantportal.add_branchuser"]
+
+        if self.request.user.user_type == ESANI_USER:
+            self.required_groups = ["EsaniAdmins"]
+            self.allowed_user_types = [ESANI_USER]
+
+        elif self.request.user.user_type == BRANCH_USER:
+            self.required_groups = ["CompanyAdmins"]
+            self.allowed_user_types = [BRANCH_USER]
+
+        elif self.request.user.user_type == COMPANY_USER:
+            self.required_groups = ["CompanyAdmins"]
+            self.allowed_user_types = [COMPANY_USER]
+
+        return super().get(*args, **kwargs)
+
+    def get_success_url(self):
+        return reverse("pant:user_register_success")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["show_admin_flag"] = True
+        kwargs["allow_multiple_admins"] = True
+        kwargs["approved"] = True
+        if self.request.user.user_type == BRANCH_USER:
+            kwargs["company"] = self.request.user.branch.company
+            kwargs["branch"] = self.request.user.branch
+        elif self.request.user.user_type == COMPANY_USER:
+            kwargs["company"] = self.request.user.company
+        return kwargs
+
+
+class SearchView(LoginRequiredMixin, FormView, ListView):
     paginate_by = 20
-    form_class = ProductFilterForm
 
     def get(self, request, *args, **kwargs):
         self.form = self.get_form()
@@ -172,7 +188,8 @@ class ProductSearchView(LoginRequiredMixin, FormView, ListView):
             if data.get(field, None) not in (None, ""):  # False er en gyldig værdi
                 qs = qs.filter(**{field: data[field]})
 
-        for field in ("product_name", "barcode"):  # indehold alle ord, case insensitive
+        # indehold alle ord, case insensitive
+        for field in ("product_name", "barcode", "username", "user_type"):
             if data.get(field, None) not in (None, ""):
                 qs = qs.filter(
                     **{
@@ -217,11 +234,7 @@ class ProductSearchView(LoginRequiredMixin, FormView, ListView):
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(
-            **{
-                **kwargs,
-                "actions_template": self.actions_template
-                # "form": self.get_form()
-            }
+            **{**kwargs, "actions_template": self.actions_template}
         )
 
     def item_to_json_dict(
@@ -242,10 +255,90 @@ class ProductSearchView(LoginRequiredMixin, FormView, ListView):
         value = item[key]
         if key == "approved":
             value = _("Ja") if value else _("Nej")
+        elif key in ["phone", "groups"]:
+            value = str(value)
+        elif key == "user_type":
+            value = user_type(value)
+
         return value
 
 
-class ProductDetailView(PermissionRequiredMixin, UpdateView):
+class ProductSearchView(SearchView):
+    template_name = "esani_pantportal/product/list.html"
+    actions_template = "esani_pantportal/product/actions.html"
+    model = Product
+    form_class = ProductFilterForm
+
+
+class UserSearchView(PermissionRequiredMixin, SearchView):
+    template_name = "esani_pantportal/user/list.html"
+    actions_template = "esani_pantportal/user/actions.html"
+    model = User
+    form_class = UserFilterForm
+    required_permissions = ["esani_pantportal.view_user"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        # Only allow branch/company/kiosk users to see users of their own branch/company
+        user_ids = self.users_in_same_company
+        if user_ids:
+            qs = qs.filter(pk__in=user_ids)
+
+        return qs
+
+
+class DetailView(PermissionRequiredMixin, UpdateView):
+    @property
+    def same_branch(self):
+        obj = self.get_object()
+        author_branch = getattr(obj, "created_by", obj).branch
+        user_branch = self.request.user.branch
+        if author_branch and user_branch:
+            return author_branch == user_branch
+        else:
+            return False
+
+    @property
+    def same_company(self):
+        obj = self.get_object()
+        author_company = getattr(obj, "created_by", obj).company
+        user_company = self.request.user.company
+        if author_company and user_company:
+            return author_company == user_company
+        else:
+            return False
+
+    @property
+    def same_workplace(self):
+        if self.request.user.user_type in [BRANCH_USER, KIOSK_USER]:
+            return self.same_branch
+        elif self.request.user.user_type == COMPANY_USER:
+            return self.same_company
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form_fields"] = self.fields
+
+        if self.is_esani_admin:
+            context["can_approve"] = True
+            context["can_edit"] = True
+        else:
+            context["can_approve"] = False
+            context["can_edit"] = self.same_workplace and self.has_permissions
+        return context
+
+    def form_invalid(self, form):
+        """
+        If the form is invalid, leave all input fields open.
+        This indicates that nothing was edited
+        """
+        context = self.get_context_data(form=form)
+        context["form_fields_to_show"] = form.changed_data
+        return self.render_to_response(context)
+
+
+class ProductDetailView(DetailView):
     model = Product
     template_name = "esani_pantportal/product/view.html"
     fields = (
@@ -262,46 +355,18 @@ class ProductDetailView(PermissionRequiredMixin, UpdateView):
     )
     required_permissions = ["esani_pantportal.change_product"]
 
-    @property
-    def same_branch(self):
-        author_branch = getattr(self.get_object().created_by, "branch", None)
-        user_branch = self.request.user.branch
-        return author_branch == user_branch
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["form_fields"] = self.fields
-
-        if self.can_approve:
-            context["can_approve"] = True
-            context["can_edit"] = True
-        else:
-            context["can_approve"] = False
-            context["can_edit"] = self.same_branch and self.has_permissions
-        return context
-
     def form_valid(self, form):
-        if not self.can_approve:
+        if not self.is_esani_admin:
             approved = self.get_object().approved
             if approved:
                 return self.access_denied
-            if not self.same_branch:
+            if not self.same_workplace:
                 return self.access_denied
 
-        return self.check_permissions() or super().form_valid(form)
-
-    def form_invalid(self, form):
-        """
-        If the form is invalid, leave all input fields open.
-        This indicates that nothing was edited
-        """
-        context = self.get_context_data(form=form)
-        context["form_fields_to_show"] = form.changed_data
-        return self.render_to_response(context)
+        return super().form_valid(form)
 
     def get_success_url(self):
         back_url = unquote(self.request.GET.get("back", ""))
-
         approved = self.get_object().approved
         if approved:
             if back_url:
@@ -312,15 +377,78 @@ class ProductDetailView(PermissionRequiredMixin, UpdateView):
             return self.request.get_full_path()
 
 
+class UserDetailView(DetailView):
+    def get_context_data(self, *args, **kwargs):
+        context_data = super().get_context_data(*args, **kwargs)
+        context_data["user"] = self.request.user
+        context_data["profile"] = context_data["object"].user_profile
+
+        common_attributes = ["name", "address", "postal_code", "city", "phone"]
+        branch_attributes = ["customer_id"]
+        company_attributes = ["cvr", "permit_number"]
+        kiosk_attributes = ["cvr", "permit_number"]
+
+        context_data["branch_info_attributes"] = common_attributes + branch_attributes
+        if context_data["object"].user_type == KIOSK_USER:
+            context_data["branch_info_attributes"].extend(kiosk_attributes)
+        context_data["company_info_attributes"] = common_attributes + company_attributes
+        return context_data
+
+    def get(self, request, *args, **kwargs):
+        user = self.get_object()
+
+        user_ids = self.users_in_same_company
+        if not self.is_esani_admin and user.id not in user_ids:
+            return self.access_denied
+
+        return super().get(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return self.request.get_full_path()
+
+    def form_valid(self, form):
+        user_ids = self.users_in_same_company
+        if user_ids and self.get_object().id not in user_ids:
+            return self.access_denied
+        else:
+            return super().form_valid(form)
+
+
+class EsaniAdminUserDetailView(UserDetailView):
+    model = User
+    template_name = "esani_pantportal/user/view.html"
+    fields = (
+        "username",
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+        "approved",
+    )
+    required_groups = ["EsaniAdmins"]
+
+
+class CompanyAdminUserDetailView(UserDetailView):
+    model = User
+    template_name = "esani_pantportal/user/view.html"
+    fields = (
+        "username",
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+    )
+    required_groups = ["CompanyAdmins"]
+
+
 class MultipleProductRegisterView(PermissionRequiredMixin, FormView):
     template_name = "esani_pantportal/product/import.html"
     form_class = MultipleProductRegisterForm
     required_permissions = ["esani_pantportal.add_product"]
 
     def form_valid(self, form):
-        access_denied = self.check_permissions()
-        if access_denied:
-            return access_denied
+        if not self.has_permissions:
+            return self.access_denied
 
         products = form.df.rename(form.rename_dict, axis=1).to_dict(orient="records")
         existing_barcodes = Product.objects.values_list("barcode", flat=True).distinct()

@@ -13,15 +13,14 @@ from django.test import TestCase
 from django.urls import reverse
 
 from esani_pantportal.forms import MultipleProductRegisterForm
-from esani_pantportal.util import default_dataframe
-
-from .conftest import LoginMixin
-
-from esani_pantportal.models import (  # isort: skip
+from esani_pantportal.models import (
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
     Product,
 )
+from esani_pantportal.util import default_dataframe
+
+from .conftest import LoginMixin
 
 ProductMock = MagicMock()
 

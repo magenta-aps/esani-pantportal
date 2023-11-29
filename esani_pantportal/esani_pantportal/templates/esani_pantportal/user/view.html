@@ -1,0 +1,140 @@
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+{% load bootstrap_icons %}
+
+{% block content %}
+<form action="" method="post">
+    {% csrf_token %}
+    <div class="mx-5">
+        <h1>{% translate "Brugerdetaljer" %}</h1>
+
+        <div class="row">
+            <div class="col-6">
+                <h2>{% translate "Bruger" %}</h2>
+                <table class="table table-bordered">
+                    <tbody>
+                    {% include "../edit_field.html" with field_name="username" field=form.username %}
+                    {% include "../edit_field.html" with field_name="first_name" field=form.first_name %}
+                    {% include "../edit_field.html" with field_name="last_name" field=form.last_name %}
+                    {% include "../edit_field.html" with field_name="email" field=form.email %}
+                    {% include "../edit_field.html" with field_name="phone" field=form.phone %}
+                    <tr>
+                        <th>{{object|verbose_name:"user_type"}}</th>
+                        <td>{{object|get_display_name:"user_type"}}</td>
+                    </tr>
+                    {% if can_approve %}
+                        {% if object.approved %}
+                            {% include "../edit_field.html" with field_name="approved" field=form.approved %}
+                        {% else %}
+                            {% include "../edit_field.html" with field_name="approved" field=form.approved show_pencil=False %}
+                        {% endif %}
+                    {% else %}
+                    <tr>
+                        <th>{{object|verbose_name:"approved"}}</th>
+                        <td>{{object|get_display_name:"approved"}}</td>
+                    </tr>
+                    {% endif %}
+                    </tbody>
+                </table>
+
+
+            {% if can_edit %}
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="cart-title">Rediger</h5>
+                        <p class="card-text">
+                            Rediger en bruger ved at:
+
+                            <ul>
+                                <li>Rette de ønskede felter (ved brug af {% bs_icon "pencil-square" color="blue" %} knapper) </li>
+                                <li>Klik "Gem"</li>
+                            </ul>
+
+                        </p>
+                        <button id="update_button" type="submit" class="btn btn-primary disabled">Gem</button>
+                    </div>
+                </div>
+            {% endif %}
+            {% if not object.approved %}
+            {% if can_approve %}
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="cart-title">Godkend</h5>
+                        <p class="card-text">
+                            Når en bruger er godkendt, kan han logge ind.
+                        </p>
+                        <button id="approve_button" type="submit" name="{{form.approved.name}}" value="True" class="btn btn-success">Godkend</button>
+                    </div>
+                </div>
+            {% endif %}
+            {% endif %}
+            </div>
+
+            <div class="col-6">
+                {% if object.user_type == 2 or object.user_type == 4  %}
+                <h2>{% translate "Butik" %}</h2>
+                <table class="table table-bordered">
+                    <tbody>
+                    {% for attr in branch_info_attributes %}
+                    <tr>
+                        <th>{{profile.branch|verbose_name:attr}}</th>
+                        <td>{{profile.branch|get_display_name:attr}}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+                {% if object.user_type  == 2 or object.user_type  == 3 %}
+                <h2>{% translate "Virksomhed" %}</h2>
+                <table class="table table-bordered">
+                    <tbody>
+                    {% for attr in company_info_attributes %}
+                    <tr>
+                        {% if object.user_type == 2 %}
+                            <th>{{profile.branch.company|verbose_name:attr}}</th>
+                            <td>{{profile.branch.company|get_display_name:attr}}</td>
+                        {% else %}
+                            <th>{{profile.company|verbose_name:attr}}</th>
+                            <td>{{profile.company|get_display_name:attr}}</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</form>
+
+{{ form_fields_to_show|json_script:"form_fields_to_show" }}
+{{ form_fields|json_script:"form_fields" }}
+
+<script>
+function switch_input_mode(field_name){
+    $("#edit_"+field_name+"_div").show();
+    $("#show_"+field_name+"_div").hide();
+    $("#approve_button").addClass("disabled");
+    $("#update_button").removeClass("disabled");
+};
+
+function show_form_field(){
+    var field_name = this.id.replace("edit_","").replace("_button","");
+    switch_input_mode(field_name);
+};
+
+$(function() {
+    var form_fields_to_show = JSON.parse($("#form_fields_to_show").text());
+    var form_fields = JSON.parse($("#form_fields").text());
+    for (let field_name of form_fields_to_show){
+        switch_input_mode(field_name);
+    }
+    for (let field_name of form_fields){
+        $("#edit_"+field_name+"_button").on("click",show_form_field);
+    }
+});
+</script>
+{% endblock %}

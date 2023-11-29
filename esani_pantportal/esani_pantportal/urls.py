@@ -6,19 +6,22 @@ from django.urls import path, reverse_lazy
 from django.views.generic import RedirectView, TemplateView
 from django_mitid_auth.saml.views import AccessDeniedView
 
-from esani_pantportal.views import (  # isort: skip
-    ProductRegisterView,
-    ProductDetailView,
-    ProductSearchView,
-    MultipleProductRegisterView,
-    ExcelTemplateView,
+from esani_pantportal.views import (
+    CompanyAdminUserDetailView,
     CsvTemplateView,
+    EsaniAdminUserDetailView,
+    ExcelTemplateView,
+    MultipleProductRegisterView,
     PantportalLoginView,
     PantportalLogoutView,
-    UserRegisterView,
-    CompanyAdminUserRegisterView,
+    ProductDetailView,
+    ProductRegisterView,
+    ProductSearchView,
+    RegisterBranchUserAdminView,
+    RegisterBranchUserPublicView,
+    RegisterEsaniUserView,
+    UserSearchView,
 )
-
 
 app_name = "esani_pantportal"
 
@@ -28,11 +31,20 @@ urlpatterns = [
     path("login", PantportalLoginView.as_view(), name="login"),
     path("logout", PantportalLogoutView.as_view(), name="logout"),
     path("produkt/opret", ProductRegisterView.as_view(), name="product_register"),
-    path("bruger/opret", UserRegisterView.as_view(), name="user_register"),
     path(
-        "bruger/opret_af_admin",
-        CompanyAdminUserRegisterView.as_view(),
-        name="user_register_by_company_admin",
+        "butik_bruger/opret/offentlig",
+        RegisterBranchUserPublicView.as_view(),
+        name="branch_user_register",
+    ),
+    path(
+        "butik_bruger/opret/admin",
+        RegisterBranchUserAdminView.as_view(),
+        name="branch_user_register_by_admin",
+    ),
+    path(
+        "esani_bruger/opret",
+        RegisterEsaniUserView.as_view(),
+        name="esani_user_register",
     ),
     path(
         "produkt/opret/success",
@@ -40,12 +52,23 @@ urlpatterns = [
         name="product_register_success",
     ),
     path(
-        "bruger/opret_af_admin/success",
+        "bruger/opret/success",
         TemplateView.as_view(template_name="esani_pantportal/user/success.html"),
         name="user_register_success",
     ),
     path("produkt/", ProductSearchView.as_view(), name="product_list"),
+    path("bruger/", UserSearchView.as_view(), name="user_list"),
     path("produkt/<int:pk>", ProductDetailView.as_view(), name="product_view"),
+    path(
+        "bruger/esani_admin/<int:pk>",
+        EsaniAdminUserDetailView.as_view(),
+        name="user_view_for_esani_admin",
+    ),
+    path(
+        "bruger/admin/<int:pk>",
+        CompanyAdminUserDetailView.as_view(),
+        name="user_view_for_company_admin",
+    ),
     path(
         "error/login-timeout/",
         AccessDeniedView.as_view(

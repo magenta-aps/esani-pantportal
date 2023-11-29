@@ -7,11 +7,11 @@ import random
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from esani_pantportal.models import (  # isort: skip
+from esani_pantportal.models import (
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
+    EsaniUser,
     Product,
-    CompanyUser,
 )
 
 
@@ -27,7 +27,7 @@ class Command(BaseCommand):
 
         vowels = "aeiouyæøå"
         consonants = "bcdfghjklmnpqrstvwxz"
-        user = CompanyUser.objects.get(username="admin")
+        user = EsaniUser.objects.get(username="admin")
 
         for i in range(100):
             barcode = ""

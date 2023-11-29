@@ -5,12 +5,12 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from project.util import json_dump
 
-from esani_pantportal.util import (  # isort: skip
-    read_csv,
-    read_excel,
+from esani_pantportal.util import (
+    default_dataframe,
     join_strings_human_readable,
     make_valid_choices_str,
-    default_dataframe,
+    read_csv,
+    read_excel,
     remove_parameter_from_url,
 )
 

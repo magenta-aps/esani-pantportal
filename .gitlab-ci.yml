@@ -40,7 +40,7 @@ Lint Python:
   script:
     - flake8 --extend-ignore E226,E203,E501,W503 esani_pantportal/
     - black --check --diff --exclude=migrations esani_pantportal/
-    - isort -c --diff --skip migrations esani_pantportal/
+    - isort -c --diff --profile black --skip migrations esani_pantportal/
 
 
 Lint Dockerfiles:
@@ -112,7 +112,7 @@ Pantportal test:
   script:
     - cd /app
     - coverage run manage.py test
-    - coverage report --show-missing --fail-under=98
+    - coverage report --show-missing --fail-under=100
     - coverage xml
   coverage: '/^TOTAL.+?(\d+\%)$/'
   artifacts:
