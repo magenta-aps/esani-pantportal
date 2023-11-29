@@ -592,6 +592,14 @@ class User(AbstractUser):
         else:
             return None
 
+    @property
+    def is_company_admin(self):
+        return self.groups.filter(name="CompanyAdmins").exists()
+
+    @property
+    def is_esani_admin(self):
+        return self.groups.filter(name="EsaniAdmins").exists()
+
 
 class EsaniUser(User):
     class Meta:

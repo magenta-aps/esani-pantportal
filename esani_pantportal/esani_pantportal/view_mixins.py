@@ -8,7 +8,6 @@ from django.template.response import TemplateResponse
 from esani_pantportal.models import (
     BRANCH_USER,
     COMPANY_USER,
-    ESANI_USER,
     KIOSK_USER,
     BranchUser,
     CompanyUser,
@@ -72,10 +71,6 @@ class PermissionRequiredMixin(LoginRequiredMixin):
             return True
 
         return self.permissions_ok and self.groups_ok and self.user_type_ok
-
-    @property
-    def is_esani_admin(self) -> bool:
-        return True if self.request.user.user_type == ESANI_USER else False
 
     def get(self, request, *args, **kwargs):
         return self.check_permissions() or super().get(request, *args, **kwargs)

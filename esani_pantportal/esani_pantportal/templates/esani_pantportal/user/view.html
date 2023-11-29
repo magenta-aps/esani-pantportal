@@ -36,6 +36,12 @@
                         <td>{{object|get_display_name:"approved"}}</td>
                     </tr>
                     {% endif %}
+                    {% if object.user_type != 1 %}
+                        <tr>
+                            <th>{% translate "Admin-rettigheder" %}</th>
+                            <td>{{object.is_company_admin|yesno}}</td>
+                        </tr>
+                    {% endif %}
                     </tbody>
                 </table>
 
