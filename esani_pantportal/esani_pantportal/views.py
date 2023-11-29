@@ -336,7 +336,7 @@ class DetailView(PermissionRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         context["form_fields"] = self.fields
 
-        if self.is_esani_admin:
+        if self.request.user.is_esani_admin:
             context["can_approve"] = True
             context["can_edit"] = True
         else:
@@ -372,7 +372,7 @@ class ProductDetailView(DetailView):
     required_permissions = ["esani_pantportal.change_product"]
 
     def form_valid(self, form):
-        if not self.is_esani_admin:
+        if not self.request.user.is_esani_admin:
             approved = self.get_object().approved
             if approved:
                 return self.access_denied
@@ -414,7 +414,7 @@ class UserDetailView(DetailView):
         user = self.get_object()
 
         user_ids = self.users_in_same_company
-        if not self.is_esani_admin and user.id not in user_ids:
+        if not self.request.user.is_esani_admin and user.id not in user_ids:
             return self.access_denied
 
         return super().get(request, *args, **kwargs)
