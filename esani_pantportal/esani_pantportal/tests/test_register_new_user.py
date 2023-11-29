@@ -9,17 +9,22 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 
-from esani_pantportal.forms import RegisterBranchUserMultiForm
+from esani_pantportal.forms import (
+    RegisterBranchUserMultiForm,
+    RegisterCompanyUserMultiForm,
+)
 from esani_pantportal.models import (
     BranchUser,
     Company,
     CompanyBranch,
     CompanyUser,
     EsaniUser,
+    Kiosk,
+    KioskUser,
 )
 
 
-class RegisterNewBranchUserFormTest(TestCase):
+class RegisterNewUserFormTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.existing_company = Company.objects.create(
@@ -52,6 +57,16 @@ class RegisterNewBranchUserFormTest(TestCase):
             location_id=3,
         )
 
+        cls.existing_kiosk = Kiosk.objects.create(
+            name="existing kiosk",
+            address="koo",
+            postal_code="12311",
+            city="test town",
+            phone="+4542457845",
+            location_id=2,
+            cvr=11221122,
+        )
+
         cls.branch_admin = BranchUser.objects.create_user(
             username="branch_admin",
             password="12345",
@@ -59,8 +74,21 @@ class RegisterNewBranchUserFormTest(TestCase):
             branch=cls.existing_branch2,
         )
 
+        cls.kiosk_admin = KioskUser.objects.create_user(
+            username="kiosk_admin",
+            password="12345",
+            email="test@test.com",
+            branch=cls.existing_kiosk,
+        )
+
         cls.company_admin = CompanyUser.objects.create_user(
             username="company_admin",
+            password="12345",
+            email="test@test.com",
+            company=cls.existing_company,
+        )
+        cls.company_user = CompanyUser.objects.create_user(
+            username="company_user",
             password="12345",
             email="test@test.com",
             company=cls.existing_company,
@@ -76,10 +104,10 @@ class RegisterNewBranchUserFormTest(TestCase):
         cls.branch_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
         cls.company_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
         cls.esani_admin.groups.add(Group.objects.get(name="EsaniAdmins"))
+        cls.kiosk_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
+        cls.company_user.groups.add(Group.objects.get(name="CompanyUsers"))
 
-    @staticmethod
-    def make_user_data(include_branch_data=True, include_company_data=True):
-        user_data = {
+        cls.user_data = {
             "user-username": "angus_mc_fife",
             "user-password": "i_am_awesome_123!!",
             "user-password2": "i_am_awesome_123!!",
@@ -91,7 +119,7 @@ class RegisterNewBranchUserFormTest(TestCase):
             "user-admin": True,
         }
 
-        branch_data = {
+        cls.branch_data = {
             "branch-name": "The Unicorn fields",
             "branch-address": "Old Road 12",
             "branch-postal_code": "1245",
@@ -106,7 +134,7 @@ class RegisterNewBranchUserFormTest(TestCase):
             "branch-invoice_mail": "pay_me@moneyplz.dk",
             "branch-municipality": "Scotland",
         }
-        company_data = {
+        cls.company_data = {
             "company-name": "Dundee HQ",
             "company-address": "New Road 12",
             "company-postal_code": "2211",
@@ -122,10 +150,14 @@ class RegisterNewBranchUserFormTest(TestCase):
             "company-municipality": "Scotland",
         }
 
+
+class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
+    def make_user_data(self, include_branch_data=True, include_company_data=True):
+        user_data = self.user_data
         if include_branch_data:
-            user_data = {**user_data, **branch_data}
+            user_data = {**user_data, **self.branch_data}
         if include_company_data:
-            user_data = {**user_data, **company_data}
+            user_data = {**user_data, **self.company_data}
 
         return user_data
 
@@ -137,7 +169,7 @@ class RegisterNewBranchUserFormTest(TestCase):
         user = form.save()
         self.assertEquals(user.branch.name, user_data["branch-name"])
         self.assertEquals(user.branch.company.name, user_data["company-name"])
-        self.assertEquals(user.groups.all()[0].name, "CompanyAdmins")
+        self.assertTrue(user.groups.filter(name="CompanyAdmins").exists())
 
     def test_create_non_admin_user(self):
         user_data = self.make_user_data()
@@ -148,7 +180,8 @@ class RegisterNewBranchUserFormTest(TestCase):
         user = form.save()
         self.assertEquals(user.branch.name, user_data["branch-name"])
         self.assertEquals(user.branch.company.name, user_data["company-name"])
-        self.assertEquals(user.groups.all()[0].name, "CompanyUsers")
+        self.assertFalse(user.groups.filter(name="CompanyAdmins").exists())
+        self.assertTrue(user.groups.filter(name="CompanyUsers").exists())
 
     def test_company_exists(self):
         user_data = self.make_user_data(include_company_data=False)
@@ -426,3 +459,85 @@ class RegisterNewEsaniAdminTest(TestCase):
             self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
             self.client.logout()
             EsaniUser.objects.filter(username="john_doe").delete()
+
+
+class RegisterNewCompanyUserFormTest(RegisterNewUserFormTest):
+    def make_user_data(self, include_company_data=True):
+        if include_company_data:
+            return {**self.user_data, **self.company_data}
+        else:
+            return self.user_data
+
+    def test_create_admin_user(self):
+        user_data = self.make_user_data()
+        form = RegisterCompanyUserMultiForm(user_data)
+        self.assertEquals(form.is_valid(), True)
+
+        user = form.save()
+        self.assertEquals(user.company.name, user_data["company-name"])
+        self.assertTrue(user.groups.filter(name="CompanyAdmins").exists())
+
+    def test_create_non_admin_user(self):
+        user_data = self.make_user_data()
+        user_data["user-admin"] = False
+        form = RegisterCompanyUserMultiForm(user_data)
+        self.assertEquals(form.is_valid(), True)
+
+        user = form.save()
+        self.assertEquals(user.company.name, user_data["company-name"])
+        self.assertFalse(user.groups.filter(name="CompanyAdmins").exists())
+
+    def test_get_company_admin_view(self):
+        self.client.login(username="company_admin", password="12345")
+        url = reverse("pant:company_user_register_by_admin")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_post_company_admin_view(self):
+        self.client.login(username="company_admin", password="12345")
+        url = reverse("pant:company_user_register_by_admin")
+        user_data = self.make_user_data(include_company_data=False)
+        user_data["user-company"] = self.company_admin.company.pk
+
+        response = self.client.post(url, data=user_data)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+    def test_access_denied(self):
+        for username in ["branch_admin", "company_user", "kiosk_admin"]:
+            self.client.login(username=username, password="12345")
+            url = reverse("pant:company_user_register_by_admin")
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+            self.client.logout()
+
+    def test_get_esani_admin_view(self):
+        self.client.login(username="esani_admin", password="12345")
+        url = reverse("pant:company_user_register_by_admin")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_post_esani_admin_view(self):
+        self.client.login(username="esani_admin", password="12345")
+        url = reverse("pant:company_user_register_by_admin")
+        user_data = self.make_user_data()
+        response = self.client.post(url, data=user_data)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+    def test_post_company_admin_public_view(self):
+        url = reverse("pant:company_user_register")
+        user_data = self.make_user_data()
+
+        # Add a user in a company that does not exist.
+        response = self.client.post(url, data=user_data)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        created_company = Company.objects.get(name=user_data["company-name"])
+        self.assertEqual(created_company.name, user_data["company-name"])
+
+        # Try to add another user in the same company
+        user_data = self.make_user_data(include_company_data=False)
+        user_data["user-username"] = "another_user"
+        user_data["user-company"] = created_company.pk
+        response = self.client.post(url, data=user_data)
+        form = response.context_data["form"]
+        errors = form.crossform_errors
+        self.assertIn("Denne virksomhed har allerede en admin bruger", str(errors))
