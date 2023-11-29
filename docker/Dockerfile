@@ -18,7 +18,7 @@ RUN mkdir /app && \
     groupadd -g 75100 -r certificate_exporter && \
     useradd -u 75140 --no-log-init -r -g pant -G certificate_exporter pant && \
     chown pant:pant /var/cache/pant && chmod a+w /var/cache/pant && \
-    chown pant:pant /srv/media && chown pant:pant /static
+    chown pant:pant /srv/media && chown pant:pant /static && chmod a+w /static
 COPY esani_pantportal/requirements.txt /app/requirements.txt
 # hadolint ignore=DL3008
 RUN apt-get update && \
