@@ -7,7 +7,7 @@ function updateQueryString(key, value) {
     }
 }
 
-var getUrlParameter = function getUrlParameter(sParam) {
+function getUrlParameter(sParam) {
     var sPageURL = window.location.search.substring(1),
         sURLVariables = sPageURL.split('&'),
         sParameterName,
@@ -22,3 +22,19 @@ var getUrlParameter = function getUrlParameter(sParam) {
     }
     return false;
 };
+
+
+function queryParams(params){  // Kaldes af bootstrap-table fordi vi peger på den med data-query-params
+    if (params["offset"] < 0) {
+        params["offset"] = 0;
+    }
+    // Bootstrap takes care of these parameters for us.
+    const keys_to_ignore = ["limit", "offset", "search", "sort", "order"];
+    const search_data = JSON.parse($("#search_data").text());
+    for (let key in search_data) {
+        if (keys_to_ignore.includes(key) == false) {
+            params[key] = search_data[key];
+        }
+    }
+    return params;
+}
