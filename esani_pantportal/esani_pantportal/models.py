@@ -11,7 +11,6 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.utils.translation import gettext as _
-from phonenumber_field.modelfields import PhoneNumberField
 
 
 # Custom validators
@@ -54,43 +53,108 @@ REFUND_METHOD_CHOICES = [
 ]
 
 
-class Company(models.Model):
+ESANI_USER = 1
+BRANCH_USER = 2
+COMPANY_USER = 3
+KIOSK_USER = 4
+
+USER_TYPE_CHOICES = (
+    (ESANI_USER, "Esanibruger"),
+    (BRANCH_USER, "Butiksbruger"),
+    (COMPANY_USER, "Virksomhedsbruger"),
+    (KIOSK_USER, "Kioskbruger"),
+)
+
+BRANCH_TYPE_CHOICES = (
+    ("D", "Detail"),
+    ("H", "Hotel/Restauration/Bar"),
+    ("F", "Forening"),
+    ("A", "Andet"),
+)
+
+COMPANY_TYPE_CHOICES = (
+    ("E", "Eksportør"),
+    ("A", "Andet"),
+)
+
+
+class AbstractCompany(models.Model):
     class Meta:
-        indexes = [
-            models.Index(fields=["name", "cvr"]),
-        ]
+        abstract = True
 
     name = models.CharField(
-        verbose_name=_("Firmanavn"),
-        help_text=_("Firmanavn"),
+        verbose_name=_("Navn"),
+        help_text=_("Firma eller butiksnavn"),
         max_length=255,
-    )
-    cvr = models.PositiveIntegerField(
-        verbose_name=_("CVR Nummer"),
-        help_text=_("CVR Nummer"),
-        unique=True,
     )
     address = models.CharField(
         verbose_name=_("Adresse"),
-        help_text=_("Firmaets registrerede adresse"),
-        max_length=400,
+        help_text=_("Butikken eller firmaets registrerede adresse"),
+        max_length=255,
     )
 
     postal_code = models.CharField(
-        verbose_name=_("Postnummer"),
-        help_text=_("Firmaets registrerede postnummer"),
+        verbose_name=_("Postnr."),
+        help_text=_("Butikken eller firmaets registrerede postnummer"),
         max_length=10,
+    )
+
+    municipality = models.CharField(
+        verbose_name=_("Kommune"),
+        help_text=_("Butikken eller firmaets registrerede kommunenavn"),
+        max_length=255,
     )
 
     city = models.CharField(
         verbose_name=_("By"),
-        help_text=_("Firmaets registrerede bynavn"),
+        help_text=_("Butikken eller firmaets registrerede bynavn"),
         max_length=255,
     )
 
-    phone = PhoneNumberField(
+    phone = models.CharField(
         verbose_name=_("Telefonnummer"),
-        help_text=_("Firmaets telefonnummer inkl. landekode"),
+        help_text=_("Butikken eller firmaets telefonnummer inkl. landekode"),
+        max_length=30,
+    )
+
+    registration_number = models.PositiveIntegerField(
+        verbose_name=_("reg. nr."),
+        help_text=_("Pant konto reg. nr. (valgfri)"),
+        null=True,
+        blank=True,
+        default=None,
+    )
+
+    account_number = models.PositiveIntegerField(
+        verbose_name=_("konto nr."),
+        help_text=_("Pant konto nr. (valgfri)"),
+        null=True,
+        blank=True,
+        default=None,
+    )
+
+    invoice_mail = models.EmailField(
+        verbose_name=_("Faktura mail"),
+        help_text=_("Mail adresse som faktura skal sendes til (valgfri)"),
+        null=True,
+        blank=True,
+        default=None,
+    )
+
+    esani_customer_id = models.PositiveIntegerField(
+        verbose_name=_("Konto"),
+        help_text=_("Butikkens kontonummer hos ESANI (udfyldes af ESANI)"),
+        null=True,
+        blank=True,
+        default=None,
+    )
+
+
+class Company(AbstractCompany):
+    cvr = models.PositiveIntegerField(
+        verbose_name=_("CVR Nummer"),
+        help_text=_("CVR Nummer"),
+        unique=True,
     )
     permit_number = models.PositiveIntegerField(
         verbose_name=_("Tilladelsesnummer"),
@@ -102,53 +166,34 @@ class Company(models.Model):
         blank=True,
     )
 
+    company_type = models.CharField(
+        verbose_name=_("Virksomhedstype"),
+        help_text=_("Virksomhedstype"),
+        choices=COMPANY_TYPE_CHOICES,
+    )
+
+    country = models.CharField(
+        verbose_name=_("Land"),
+        help_text=_("Butikken eller firmaets registrerede landenavn"),
+        max_length=255,
+    )
+
     def __str__(self):
         name = self.name
         cvr = self.cvr
         return f"{name} - cvr: {cvr}"
 
 
-class Branch(models.Model):
-    company = models.ForeignKey(
-        "Company",
-        verbose_name=_("Virksomhed"),
-        help_text=_("Virksomhed som denne butik tilhører"),
-        on_delete=models.PROTECT,
-        related_name="company",
-    )
-
-    name = models.CharField(
-        verbose_name=_("Butiksnavn"),
-        help_text=_("Butiksnavn"),
-        max_length=255,
-    )
-
-    address = models.CharField(
-        verbose_name=_("Adresse"),
-        help_text=_("Butikkens registrerede adresse"),
-        max_length=255,
-    )
-
-    postal_code = models.CharField(
-        verbose_name=_("Postnummer"),
-        help_text=_("Butikkens registrerede postnummer"),
-        max_length=10,
-    )
-
-    city = models.CharField(
-        verbose_name=_("By"),
-        help_text=_("Butikkens registrerede bynavn"),
-        max_length=255,
-    )
-
-    phone = PhoneNumberField(
-        verbose_name=_("Telefonnummer"),
-        help_text=_("Butikkens telefonnummer inkl. landekode"),
-    )
+class Branch(AbstractCompany):
+    class Meta:
+        abstract = True
 
     location_id = models.PositiveIntegerField(
         verbose_name=_("LokationsID"),
-        help_text=_("Butikkens lokation ID"),
+        help_text=_("Butikkens lokation ID (valgfri)"),
+        null=True,
+        blank=True,
+        default=None,
     )
 
     customer_id = models.PositiveIntegerField(
@@ -158,10 +203,49 @@ class Branch(models.Model):
         blank=True,
     )
 
+    branch_type = models.CharField(
+        verbose_name=_("Branche"),
+        help_text=_("Branche-type"),
+        choices=BRANCH_TYPE_CHOICES,
+    )
+
+
+class CompanyBranch(Branch):
+    company = models.ForeignKey(
+        "Company",
+        verbose_name=_("Virksomhed"),
+        help_text=_("Virksomhed som denne butik tilhører"),
+        on_delete=models.PROTECT,
+        related_name="company",
+    )
+
     def __str__(self):
         name = self.name
         company = self.company
         return f"{name} - {company}"
+
+
+class Kiosk(Branch):
+    cvr = models.PositiveIntegerField(
+        verbose_name=_("CVR Nummer"),
+        help_text=_("CVR Nummer"),
+        unique=True,
+    )
+
+    permit_number = models.PositiveIntegerField(
+        verbose_name=_("Tilladelsesnummer"),
+        help_text=_(
+            "Butikkens tilladelsesnummer for import "
+            "af ethanolholdige drikkevarer (valgfri)"
+        ),
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        name = self.name
+        cvr = self.cvr
+        return f"{name} - cvr: {cvr}"
 
 
 class RefundMethod(models.Model):
@@ -189,11 +273,25 @@ class RefundMethod(models.Model):
     )
 
     branch = models.ForeignKey(
-        "Branch",
+        "CompanyBranch",
+        verbose_name=_("Kæde"),
+        help_text=_("Kæde hvor denne maskine står"),
+        on_delete=models.PROTECT,
+        related_name="kæde",
+        null=True,
+        blank=True,
+        default=None,
+    )
+
+    kiosk = models.ForeignKey(
+        "Kiosk",
         verbose_name=_("Butik"),
         help_text=_("Butik hvor denne maskine står"),
         on_delete=models.PROTECT,
-        related_name="butik",
+        related_name="kiosk",
+        null=True,
+        blank=True,
+        default=None,
     )
 
 
@@ -257,7 +355,7 @@ class Product(models.Model):
         ]
 
     created_by = models.ForeignKey(
-        "CompanyUser",
+        "User",
         related_name="products",
         on_delete=models.SET_NULL,  # Vi kan slette brugere og beholde deres anmeldelser
         null=True,
@@ -445,24 +543,136 @@ class QRCodeInterval(models.Model):
         return f"{gen_name}[{start}:{end}] - {self.salt}"
 
 
-class CompanyUser(AbstractUser):
+class User(AbstractUser):
     class Meta:
-        verbose_name = _("companyuser")
-        verbose_name_plural = _("companyusers")
+        verbose_name = "user"
+        verbose_name_plural = "users"
+        abstract = False
+        ordering = ["username"]
+
+    user_type = models.PositiveSmallIntegerField(choices=USER_TYPE_CHOICES)
+
+    phone = models.CharField(
+        verbose_name=_("Telefonnummer"),
+        help_text=_("Brugerens telefonnummer inkl. landekode"),
+        max_length=30,
+    )
+
+    approved = models.BooleanField(
+        verbose_name=_("Godkendt"),
+        help_text=_("Bruger godkendt af en ESANI medarbejder"),
+        default=False,
+        choices=((True, "Ja"), (False, "Nej")),
+    )
+
+    @property
+    def user_profile(self):
+        if self.user_type == BRANCH_USER:
+            return BranchUser.objects.get(username=self.username)
+        elif self.user_type == KIOSK_USER:
+            return KioskUser.objects.get(username=self.username)
+        elif self.user_type == ESANI_USER:
+            return EsaniUser.objects.get(username=self.username)
+        elif self.user_type == COMPANY_USER:
+            return CompanyUser.objects.get(username=self.username)
+
+    @property
+    def branch(self):
+        if self.user_type in [BRANCH_USER, KIOSK_USER]:
+            return self.user_profile.branch
+        else:
+            return None
+
+    @property
+    def company(self):
+        if self.user_type == BRANCH_USER:
+            return self.user_profile.branch.company
+        elif self.user_type == COMPANY_USER:
+            return self.user_profile.company
+        else:
+            return None
+
+
+class EsaniUser(User):
+    class Meta:
+        verbose_name = "esaniuser"
+        verbose_name_plural = "esaniusers"
         abstract = False
 
-    # Note: ESANI users do not need to belong to a branch
+    def save(self, *args, **kwargs):
+        self.user_type = ESANI_USER
+        self.approved = True
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        username = self.username
+        return f"{username} - ESANI User"
+
+
+class BranchUser(User):
+    class Meta:
+        verbose_name = "branchuser"
+        verbose_name_plural = "branchusers"
+        abstract = False
+
     branch = models.ForeignKey(
-        "Branch",
+        "CompanyBranch",
         verbose_name=_("Butik"),
         help_text=_("Butik hvor denne bruger arbejder"),
         on_delete=models.PROTECT,
-        related_name="arbejdssted",
-        null=True,
-        blank=True,
+        related_name="user_branch",
     )
 
-    phone = PhoneNumberField(
-        verbose_name=_("Telefonnummer"),
-        help_text=_("Brugerens telefonnummer inkl. landekode"),
+    def save(self, *args, **kwargs):
+        self.user_type = BRANCH_USER
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        username = self.username
+        return f"{username} - Branch User"
+
+
+class CompanyUser(User):
+    class Meta:
+        verbose_name = "companyuser"
+        verbose_name_plural = "companyusers"
+        abstract = False
+
+    company = models.ForeignKey(
+        "Company",
+        verbose_name=_("Virksomhed"),
+        help_text=_("Virksomhed hvor denne bruger arbejder"),
+        on_delete=models.PROTECT,
+        related_name="user_company",
     )
+
+    def save(self, *args, **kwargs):
+        self.user_type = COMPANY_USER
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        username = self.username
+        return f"{username} - Company User"
+
+
+class KioskUser(User):
+    class Meta:
+        verbose_name = "kioskuser"
+        verbose_name_plural = "kioskusers"
+        abstract = False
+
+    branch = models.ForeignKey(
+        "Kiosk",
+        verbose_name=_("Butik"),
+        help_text=_("Butik hvor denne bruger arbejder"),
+        on_delete=models.PROTECT,
+        related_name="user_kiosk",
+    )
+
+    def save(self, *args, **kwargs):
+        self.user_type = KIOSK_USER
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        username = self.username
+        return f"{username} - Kiosk User"

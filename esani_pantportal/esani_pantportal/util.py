@@ -10,10 +10,10 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
 
-from esani_pantportal.models import (  # isort: skip
+from esani_pantportal.models import (
+    DANISH_PANT_CHOICES,
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
-    DANISH_PANT_CHOICES,
 )
 
 

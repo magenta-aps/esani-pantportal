@@ -55,7 +55,6 @@ INSTALLED_APPS = [
     "ninja_jwt",
     "django_mitid_auth",
     "django_bootstrap_icons",
-    "phonenumber_field",
     "betterforms",
 ]
 
@@ -130,7 +129,7 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
-AUTH_USER_MODEL = "esani_pantportal.CompanyUser"
+AUTH_USER_MODEL = "esani_pantportal.User"
 
 
 # Internationalization

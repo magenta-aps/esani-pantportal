@@ -1,0 +1,290 @@
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+
+{% block content %}
+
+<div class="mx-5">
+    <h1>{% translate "Registrer ny butiksadministrator" %}</h1>
+    <form method="POST" class="row g-3">
+        {% csrf_token %}
+    <div class="input-group">
+        {% include "./form_field.html" with field=form.user.username %}
+        {% include "./form_field.html" with field=form.user.phone %}
+        {% include "./form_field.html" with field=form.user.password %}
+        {% include "./form_field.html" with field=form.user.password2 %}
+        {% include "./form_field.html" with field=form.user.first_name %}
+        {% include "./form_field.html" with field=form.user.last_name %}
+        {% include "./form_field.html" with field=form.user.email %}
+        {% if form.show_admin_flag %}
+            {% include "./form_field.html" with field=form.user.admin help_text=True %}
+        {% else %}
+            <div style="display:none"> {{form.user.admin}} </div>
+        {% endif %}
+
+        <div class="col-12 my-4">
+            <h4>{% translate "Virksomhed" %}</h4>
+        </div>
+
+        <div class="col-12"  id="company_dropdown">
+          {% if form.allow_changing_company %}
+              <label for="{{form.branch.company.id_for_label}}">
+                  {{form.branch.company.label}} <a id="show_company_form" href="#">{% translate "Virksomhed er ikke i listen" %}</a>
+              </label>
+              {{form.branch.company}}
+          {% else %}
+              <div style="display:none" >{{form.branch.company}} </div>
+              <input type="text" disabled class="mr-2 form-control" value="{{form.company_str}}">
+          {% endif %}
+
+          <div class="form-text">
+              {{form.branch.company.errors}}
+          </div>
+        </div>
+
+        <div class="input-group  my-0" id="company_form" style="display:none" >
+            {% include "./form_field.html" with field=form.company.name colsize=3 link_id="show_company_dropdown" %}
+            {% include "./form_field.html" with field=form.company.phone colsize=3 %}
+            {% include "./form_field.html" with field=form.company.company_type colsize=3 %}
+            {% include "./form_field.html" with field=form.company.cvr colsize=3 %}
+            {% include "./form_field.html" with field=form.company.address colsize=3 %}
+            {% include "./form_field.html" with field=form.company.postal_code colsize=1 %}
+            {% include "./form_field.html" with field=form.company.city colsize=2 %}
+            {% include "./form_field.html" with field=form.company.municipality colsize=3 %}
+            {% include "./form_field.html" with field=form.company.country colsize=3 %}
+            {% include "./form_field.html" with field=form.company.permit_number help_text=True colsize=3 %}
+            {% include "./form_field.html" with field=form.company.registration_number help_text=True colsize=1 %}
+            {% include "./form_field.html" with field=form.company.account_number help_text=True colsize=2 %}
+            {% include "./form_field.html" with field=form.company.invoice_mail help_text=True colsize=3 %}
+        </div>
+
+        <div class="col-12 my-4"  style="display:none" id="branch_header">
+            <h4>{% translate "Butik" %}</h4>
+        </div>
+    
+        <div class="col-12"  id="branch_dropdown" style="display:none">
+          {% if form.allow_changing_branch %}
+              <label for="{{form.user.branch.id_for_label}}">
+                  {{form.user.branch.label}} <a id="show_branch_form" href="#">{% translate "Butik er ikke i listen" %}</a>
+              </label>
+              {{form.user.branch}}
+          {% else %}
+              <div style="display:none" >{{form.user.branch}} </div>
+              <input type="text" disabled class="mr-2 form-control" value="{{form.branch_str}}">
+          {% endif %}
+          <div class="form-text">
+              {{form.user.branch.errors}}
+          </div>
+        </div>
+    </div>
+
+    <div class="input-group my-0" id="branch_form" style="display:none">
+        {% include "./form_field.html" with field=form.branch.name colsize=3 link_id="show_branch_dropdown" %}
+        {% include "./form_field.html" with field=form.branch.phone colsize=3 %}
+        {% include "./form_field.html" with field=form.branch.branch_type colsize=3 %}
+        {% include "./form_field.html" with field=form.branch.location_id help_text=True colsize=3 %}
+        {% include "./form_field.html" with field=form.branch.address colsize=3 %}
+        {% include "./form_field.html" with field=form.branch.postal_code colsize=1 %}
+        {% include "./form_field.html" with field=form.branch.city colsize=2 %}
+        {% include "./form_field.html" with field=form.branch.municipality colsize=3 %}
+        {% include "./form_field.html" with field=form.branch.customer_id help_text=True colsize=3 %}
+        {% include "./form_field.html" with field=form.branch.registration_number help_text=True colsize=1 %}
+        {% include "./form_field.html" with field=form.branch.account_number help_text=True  colsize=2 %}
+        {% include "./form_field.html" with field=form.branch.invoice_mail help_text=True colsize=3 %}
+
+    </div>
+
+    <div class="form-text">
+        <ul class="errorlist h4">
+        {% for error in form.crossform_errors %}
+            <li>{{error}}</li>
+        {% endfor %}
+        </ul>
+    </div>
+
+    <div class="col-12">
+        <input class="btn btn-success float-right my-2 ms-0" type="submit" value="{% translate 'Opret' %}"/>
+        {% if not user.is_authenticated %}
+        <a href="{% url 'pant:login' %}" class="btn btn-secondary my-2 mx-1" role="button">{% translate 'Tilbage' %}</a>
+        {% endif %}
+    </div>
+    </form>
+</div>
+
+{{ branch_dict|json_script:"branch_dict" }}
+
+<script>
+function updateQueryString(key, value) {
+    if (history.pushState) {
+        let searchParams = new URLSearchParams(window.location.search);
+        searchParams.set(key, value);
+        let newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?' + searchParams.toString();
+        window.history.pushState({path: newurl}, '', newurl);
+    }
+}
+
+var getUrlParameter = function getUrlParameter(sParam) {
+    var sPageURL = window.location.search.substring(1),
+        sURLVariables = sPageURL.split('&'),
+        sParameterName,
+        i;
+
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
+
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+        }
+    }
+    return false;
+};
+
+function hide_branch_dropdown_options(){
+    $("#id_user-branch").children("option").not(":first").hide();
+}
+
+function reset_company_dropdown() {
+    $("#id_branch-company option[value='']").prop("selected", "selected");
+    reset_branch_dropdown();
+    hide_branch_dropdown_options();
+}
+
+function reset_branch_dropdown() {
+    $("#id_user-branch option[value='']").prop("selected", "selected");
+}
+
+function hide_company_dropdown(){
+   $("#company_dropdown").hide();
+   reset_company_dropdown();
+}
+
+function hide_branch_dropdown(){
+    $("#branch_dropdown").hide();
+    reset_branch_dropdown();
+}
+
+function show_company_dropdown(){
+    $("#company_dropdown").show();
+}
+
+function show_branch_dropdown(){
+    $("#branch_header").show();
+    $("#branch_dropdown").show();
+}
+
+function show_company_form() {
+    $("#company_form").show();
+    updateQueryString("show_company","1");
+    show_branch_form();
+}
+
+function show_branch_form() {
+    $("#branch_header").show();
+    $("#branch_form").show();
+    updateQueryString("show_branch","1");
+
+    // If there are no branches to choose from, hide the option to show the dropdown
+    company_id = $("#id_branch-company").val();
+    const branches = get_branch_ids(company_id);
+
+    if (branches.length === 0) {
+        $("#show_branch_dropdown").hide();
+    } else {
+        $("#show_branch_dropdown").show();
+    }
+}
+
+function hide_company_form() {
+    $("#company_form").hide();
+    $("#branch_header").hide();
+    updateQueryString("show_company","0");
+    hide_branch_form();
+    hide_branch_dropdown();
+}
+
+function hide_branch_form() {
+    $("#branch_form").hide();
+    updateQueryString("show_branch","0");
+}
+
+$("#show_branch_dropdown").click(function() {
+    hide_branch_form();
+    show_branch_dropdown();
+});
+$("#show_branch_form").click(function() {
+    show_branch_form();
+    hide_branch_dropdown();
+});
+$("#show_company_dropdown").click(function() {
+    hide_company_form();
+    show_company_dropdown();
+});
+$("#show_company_form").click(function() {
+    show_company_form();
+    hide_company_dropdown();
+});
+
+var show_company = getUrlParameter("show_company");
+var show_branch = getUrlParameter("show_branch");
+company_id = $("#id_branch-company").val();
+
+if (company_id>0){
+    show_branch_dropdown();
+}
+
+if (show_branch == "1"){
+    show_branch_form();
+    hide_branch_dropdown();
+}
+
+if (show_company == "1"){
+    show_company_form();
+    hide_company_dropdown();
+}
+
+update_branch_dropdown();
+
+function get_branch_ids(company_id) {
+  if (company_id === ""){
+      return $([]);
+  }
+  const branch_dict = JSON.parse($("#branch_dict").text());
+  const branches_in_this_company = branch_dict[company_id];
+  return branches_in_this_company;
+}
+
+function update_branch_dropdown(){
+  company_id = $("#id_branch-company").val();
+  const branches_to_show_in_dropdown = get_branch_ids(company_id);
+
+  selected_branch_id = $("#id_user-branch").val();
+
+  reset_branch_dropdown();
+  hide_branch_dropdown_options();
+
+  $.each(branches_to_show_in_dropdown, function( index, value ) {
+      $("#id_user-branch").children("option[value^=" + value + "]").show();
+      if (value == selected_branch_id){
+          $("#id_user-branch").val(selected_branch_id);
+      }
+  });
+  return branches_to_show_in_dropdown
+}
+
+
+$("#id_branch-company").change(function(){
+  const branches_to_show_in_dropdown = update_branch_dropdown();
+
+  if (branches_to_show_in_dropdown.length === 0) {
+    show_branch_form();
+    hide_branch_dropdown();
+  } else {
+    hide_branch_form();
+    show_branch_dropdown();
+}
+
+});
+
+</script>
+{% endblock %}

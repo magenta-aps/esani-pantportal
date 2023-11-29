@@ -21,21 +21,21 @@
 
     <div class="row">
         <div class="col-6">
-            <h1>{% translate "Produkter" %}</h1>
+            <h1>{% translate "Brugere" %}</h1>
         </div>
     </div>
 
     <form method="get">
         <div class="row">
-            <div class="col-2">{% translate "Navn" %}</div>
-            <div class="col-4">{{form.product_name}}</div>
+            <div class="col-2">{% translate "Brugernavn" %}</div>
+            <div class="col-4">{{form.username}}</div>
         </div>
         <div class="row">
-            <div class="col-2">{% translate "Stregkode" %}</div>
-            <div class="col-4">{{form.barcode}}</div>
+            <div class="col-2">{% translate "Type" %}</div>
+            <div class="col-4">{{form.user_type}}</div>
         </div>
         <div class="row">
-            <div class="col-2">{% translate "Godkendt" %}</div>
+            <div class="col-2">{% translate "Godkendt af ESANI" %}</div>
             <div class="col-4">{{form.approved}}</div>
         </div>
         <div class="row">
@@ -55,7 +55,7 @@
            data-page-size="{{search_data.limit}}"
            data-side-pagination="server"
            data-pagination-loop="false"
-           data-defer-url="{% url 'pant:product_list' %}?json=1"
+           data-defer-url="{% url 'pant:user_list' %}?json=1"
            data-query-params="queryParams"
            data-row-style="rowStyle"
            data-total-rows="{{total}}"
@@ -64,8 +64,8 @@
     >
         <thead>
         <tr>
-            <th data-sortable="true" data-field="product_name" class="col-3">Produktnavn</th>
-            <th data-sortable="true" data-field="barcode" class="col-3">Stregkode</th>
+            <th data-sortable="true" data-field="username" class="col-3">Brugernavn</th>
+            <th data-sortable="true" data-field="user_type" class="col-3">Brugertype</th>
             <th data-sortable="true" data-field="approved" class="col-3">Godkendt</th>
             <th data-field="actions" class="col-3">Handlinger</th>
         </tr>
@@ -73,8 +73,8 @@
         <tbody>
         {% for item in items %}
         <tr>
-            <td>{{item.product_name}}</td>
-            <td>{{item.barcode}}</td>
+            <td>{{item.username}}</td>
+            <td>{{item.user_type}}</td>
             <td>{{item.approved}}</td>
             <td>
                 {% include actions_template with item=item %}

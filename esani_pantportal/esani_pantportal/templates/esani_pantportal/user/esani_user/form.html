@@ -7,9 +7,9 @@
 {% block content %}
 
 <div class="mx-5">
-    <h1>{% translate "Registrer ny bruger" %}</h1>
+    <h1>{% translate "Registrer ny ESANI-admin" %}</h1>
     <form method="POST" class="row g-3">
-        {% csrf_token %}
+    {% csrf_token %}
     <div class="col-6">
       <label for="{{form.username.id_for_label}}">{{form.username.label}}</label>
       {{form.username}}
@@ -65,24 +65,9 @@
           {{form.email.errors}}
       </div>
     </div>
-
-    <div class="col-6">
-      <label>{% translate 'Butik' %} </label>
-      <input type="text" disabled class="mr-2 form-control" value="{{branch}}">
-    </div>
-
-    <div class="col-6">
-      <label for="{{form.admin.id_for_label}}">{{form.admin.label}}</label>
-      {{form.admin}}
-      <div class="form-text">
-          {{form.admin.errors}}
-          {{form.admin.help_text}}
-      </div>
-    </div>
-
-    <div class="col-12">
-        <input tabindex="5" class="btn btn-success float-right my-2" type="submit" value="{% translate 'Opret' %}"/>
-    </div>
+        <div class="col-12">
+            <input tabindex="5" class="btn btn-success float-right my-2" type="submit" value="{% translate 'Opret' %}"/>
+        </div>
     </form>
 </div>
 {% endblock %}

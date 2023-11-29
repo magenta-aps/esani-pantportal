@@ -1,6 +1,7 @@
 import json
 
 from bs4 import BeautifulSoup
+from django import forms
 from django.http import HttpRequest
 from django.test import TestCase
 from django.urls import reverse
@@ -253,6 +254,21 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             id=2,
             created_by=self.user,
         )
+
+    def test_form_invalid(self):
+        class InvalidProductFilterForm(ProductFilterForm):
+            def clean_product_name(self):
+                raise forms.ValidationError("This name is not allowed")
+
+        view = ProductSearchView()
+        view.form_class = InvalidProductFilterForm
+        view.request = HttpRequest()
+        view.request.method = "GET"
+        view.object_list = []
+        view.kwargs = {}
+        response = view.get(view.request)
+        self.assertEquals(response.status_code, 200)
+        self.assertFalse(response.context_data["form"].is_valid())
 
     def test_form_valid(self):
         self.maxDiff = None

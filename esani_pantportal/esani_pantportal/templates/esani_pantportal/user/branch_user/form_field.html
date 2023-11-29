@@ -1,0 +1,19 @@
+{% load i18n %}
+{% load l10n %}
+{% translate "Tilbage til listen" as link_text %}
+
+<div class="col-{{colsize|default:6}} mb-3">
+  <label class="mx-1" for="{{field.id_for_label}}">
+      {{field.label}}
+      {% if link_id %}
+          <a id="{{link_id}}" href="#">{{link_text}}</a>
+      {% endif %}
+  </label>
+  {{field}}
+  <div class="form-text mx-1">
+      {{field.errors}}
+      {% if help_text|default:False %}
+          {{field.help_text}}
+      {% endif %}
+  </div>
+</div>

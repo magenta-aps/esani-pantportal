@@ -5,7 +5,15 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
 
-from esani_pantportal.models import Branch, Company, CompanyUser
+from esani_pantportal.models import (
+    BranchUser,
+    Company,
+    CompanyBranch,
+    CompanyUser,
+    EsaniUser,
+    Kiosk,
+    KioskUser,
+)
 
 
 class Command(BaseCommand):
@@ -22,26 +30,49 @@ class Command(BaseCommand):
             cvr=15787406,
             defaults={
                 "name": "Brugseni",
-                "address": "Aqqusinersuaq 4, 2 th. P.O.Box 1092 3900 Nuuk",
+                "address": "Aqqusinersuaq 4, 2 th. P.O.Box 1092 ",
+                "postal_code": "1092",
+                "city": "Nuuk",
+                "municipality": "Semersooq",
+                "country": "Grønland",
                 "phone": "+299 36 35 00",
                 "permit_number": None,
+                "company_type": "A",
             },
         )
 
-        brugseni_natalie, created = Branch.objects.update_or_create(
-            company=brugseni,
+        brugseni_natalie, created = CompanyBranch.objects.update_or_create(
+            name="Brugseni Natalie",
             defaults={
                 "name": "Brugseni Natalie",
                 "address": "57RR+M9M, Iiminaq",
                 "postal_code": "3905",
                 "city": "Nuuk",
+                "municipality": "Semersooq",
                 "phone": "+299 36 35 01",
                 "location_id": "00432",
                 "customer_id": "1234",
+                "company": brugseni,
+                "branch_type": "D",
             },
         )
 
-        company_user, created = CompanyUser.objects.update_or_create(
+        brugseni_nuuk, created = CompanyBranch.objects.update_or_create(
+            name="Brugseni Nuuk",
+            defaults={
+                "address": "Brugsen, Aqqusinersuaq 2",
+                "postal_code": "3900",
+                "city": "Nuuk",
+                "municipality": "Semersooq",
+                "phone": "+299 32 11 22",
+                "location_id": "004321",
+                "customer_id": "12345",
+                "company": brugseni,
+                "branch_type": "D",
+            },
+        )
+
+        branch_user, created = BranchUser.objects.update_or_create(
             defaults={
                 "first_name": "Rip",
                 "last_name": "And",
@@ -52,12 +83,13 @@ class Command(BaseCommand):
                 "is_superuser": False,
                 "branch": brugseni_natalie,
                 "phone": "+299 36 35 03",
+                "approved": True,
             },
             username="rip",
         )
-        company_user.groups.add(company_user_group)
+        branch_user.groups.add(company_user_group)
 
-        company_admin, created = CompanyUser.objects.update_or_create(
+        branch_admin, created = BranchUser.objects.update_or_create(
             defaults={
                 "first_name": "Anders",
                 "last_name": "And",
@@ -68,12 +100,13 @@ class Command(BaseCommand):
                 "is_superuser": False,
                 "branch": brugseni_natalie,
                 "phone": "+299 36 35 03",
+                "approved": True,
             },
             username="anders",
         )
-        company_admin.groups.add(company_admin_group)
+        branch_admin.groups.add(company_admin_group)
 
-        company_admin, created = CompanyUser.objects.update_or_create(
+        branch_admin, created = BranchUser.objects.update_or_create(
             defaults={
                 "first_name": "Andersine",
                 "last_name": "And",
@@ -84,12 +117,30 @@ class Command(BaseCommand):
                 "is_superuser": False,
                 "branch": brugseni_natalie,
                 "phone": "+299 36 35 03",
+                "approved": True,
             },
             username="andersine",
         )
-        company_admin.groups.add(company_admin_group)
+        branch_admin.groups.add(company_admin_group)
 
-        esani_user, created = CompanyUser.objects.update_or_create(
+        branch_admin, created = BranchUser.objects.update_or_create(
+            defaults={
+                "first_name": "Kim",
+                "last_name": "Larsen",
+                "email": "K.larsen@brugseni.dk",
+                "password": make_password("kim"),
+                "is_active": True,
+                "is_staff": False,
+                "is_superuser": False,
+                "branch": brugseni_nuuk,
+                "phone": "+299 36 35 03",
+                "approved": True,
+            },
+            username="kim",
+        )
+        branch_admin.groups.add(company_admin_group)
+
+        esani_user, created = EsaniUser.objects.update_or_create(
             defaults={
                 "first_name": "ESANI",
                 "last_name": "Admin",
@@ -98,9 +149,55 @@ class Command(BaseCommand):
                 "is_active": True,
                 "is_staff": False,
                 "is_superuser": False,
-                "branch": None,
                 "phone": "+299 36 35 04",
             },
             username="admin",
         )
         esani_user.groups.add(esani_user_group)
+
+        company_user, created = CompanyUser.objects.update_or_create(
+            defaults={
+                "first_name": "Alfred",
+                "last_name": "Pennyworth",
+                "email": "A.pennyworth@brugseni.dk",
+                "password": make_password("alfred"),
+                "is_active": True,
+                "is_staff": False,
+                "is_superuser": False,
+                "company": brugseni,
+                "phone": "+299 36 35 03",
+                "approved": True,
+            },
+            username="alfred",
+        )
+        company_user.groups.add(company_admin_group)
+
+        nuuk_kiosk, created = Kiosk.objects.update_or_create(
+            cvr=15787407,
+            defaults={
+                "name": "Kamik",
+                "address": "57C8+9F6, Nuuk",
+                "postal_code": "3900",
+                "city": "Nuuk",
+                "phone": "+299 32 11 22",
+                "location_id": "2",
+                "customer_id": "22",
+            },
+        )
+
+        kiosk_user, created = KioskUser.objects.update_or_create(
+            defaults={
+                "first_name": "Oswald",
+                "last_name": "Cobblepot",
+                "email": "O.cobblepot@brugseni.dk",
+                "password": make_password("oswald"),
+                "is_active": True,
+                "is_staff": False,
+                "is_superuser": False,
+                "branch": nuuk_kiosk,
+                "phone": "+299 36 35 03",
+                "approved": True,
+            },
+            username="oswald",
+        )
+        kiosk_user.groups.add(company_admin_group)

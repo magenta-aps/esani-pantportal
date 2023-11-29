@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 
-from esani_pantportal.models import CompanyUser, Product
+from esani_pantportal.models import BranchUser, EsaniUser, Product, User
 
 
 class Command(BaseCommand):
@@ -28,19 +28,23 @@ class Command(BaseCommand):
         product_model = ContentType.objects.get_for_model(
             Product, for_concrete_model=False
         )
-        user_model = ContentType.objects.get_for_model(
-            CompanyUser, for_concrete_model=False
+        esani_user_model = ContentType.objects.get_for_model(
+            EsaniUser, for_concrete_model=False
         )
+        branch_user_model = ContentType.objects.get_for_model(
+            BranchUser, for_concrete_model=False
+        )
+        user_model = ContentType.objects.get_for_model(User, for_concrete_model=False)
 
         for action, model in (
             ("view", product_model),
             ("add", product_model),
             ("change", product_model),
-            # Ingen delete
+            ("view", branch_user_model),
+            ("add", branch_user_model),
+            ("change", branch_user_model),
+            ("delete", branch_user_model),
             ("view", user_model),
-            ("add", user_model),
-            ("change", user_model),
-            # Ingen delete
         ):
             company_admins.permissions.add(
                 Permission.objects.get(
@@ -50,13 +54,7 @@ class Command(BaseCommand):
 
         for action, model in (
             ("view", product_model),
-            # Ingen add
-            # Ingen change
-            # Ingen delete
-            ("view", user_model),
-            # Ingen delete
-            # Ingen change
-            # Ingen delete
+            ("view", branch_user_model),
         ):
             company_users.permissions.add(
                 Permission.objects.get(
@@ -68,11 +66,19 @@ class Command(BaseCommand):
             ("view", product_model),
             ("add", product_model),
             ("change", product_model),
-            # Ingen delete
+            ("delete", product_model),
+            ("view", branch_user_model),
+            ("add", branch_user_model),
+            ("change", branch_user_model),
+            ("delete", branch_user_model),
+            ("view", esani_user_model),
+            ("add", esani_user_model),
+            ("change", esani_user_model),
+            ("delete", esani_user_model),
             ("view", user_model),
             ("add", user_model),
             ("change", user_model),
-            # Ingen delete
+            ("delete", user_model),
         ):
             esani_admins.permissions.add(
                 Permission.objects.get(
