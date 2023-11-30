@@ -194,7 +194,7 @@ Deploy to Staging:
 Deploy to Prod:
   stage: deploy
   extends:
-    - .rules:semver-all
+    - .rules:semver-core
     - .saltbert
   needs: ["Configure Prod"]
   variables:
