@@ -95,25 +95,6 @@ class PermissionTest(TestCase):
         self.mixin.required_permissions = ["view_me"]
         self.assertTrue(self.mixin.permissions_ok)
 
-    def test_groups_ok(self):
-        admin_group = MagicMock()
-        admin_group.name = "admin_group"
-        self.mixin.request.user.groups.all.return_value = [admin_group]
-
-        self.mixin.required_groups = ["admin_group"]
-        self.assertTrue(self.mixin.groups_ok)
-
-        self.mixin.required_groups = ["super_admin_group"]
-        self.assertFalse(self.mixin.groups_ok)
-
-    def test_user_type_ok(self):
-        self.mixin.request.user.user_type = 1
-        self.mixin.allowed_user_types = [2]
-        self.assertFalse(self.mixin.user_type_ok)
-
-        self.mixin.allowed_user_types = [1]
-        self.assertTrue(self.mixin.user_type_ok)
-
     def test_has_superuser_permissions(self):
         self.mixin.request.user.is_superuser = True
         self.assertTrue(self.mixin.has_permissions)

@@ -23,6 +23,8 @@ from esani_pantportal.models import (
     CompanyBranch,
     CompanyUser,
     EsaniUser,
+    Kiosk,
+    KioskUser,
     Product,
     validate_barcode_length,
     validate_digit,
@@ -111,6 +113,26 @@ class RegisterBranchUserForm(RegisterAdminUserForm):
         }
 
 
+class RegisterKioskUserForm(RegisterAdminUserForm):
+    class Meta:
+        model = KioskUser
+        fields = (
+            "username",
+            "password",
+            "password2",
+            "phone",
+            "first_name",
+            "last_name",
+            "email",
+            "branch",
+            "admin",
+        )
+        widgets = {
+            "password": forms.PasswordInput(render_value=True),
+            "password2": forms.PasswordInput(render_value=True),
+        }
+
+
 class RegisterCompanyUserForm(RegisterAdminUserForm):
     class Meta:
         model = CompanyUser
@@ -166,6 +188,27 @@ class RegisterBranchForm(forms.ModelForm, BootstrapForm):
             "account_number",
             "invoice_mail",
             "municipality",
+        )
+
+
+class RegisterKioskForm(forms.ModelForm, BootstrapForm):
+    class Meta:
+        model = Kiosk
+        fields = (
+            "name",
+            "address",
+            "postal_code",
+            "city",
+            "phone",
+            "location_id",
+            "customer_id",
+            "branch_type",
+            "registration_number",
+            "account_number",
+            "invoice_mail",
+            "municipality",
+            "cvr",
+            "permit_number",
         )
 
 
@@ -422,6 +465,62 @@ class RegisterCompanyUserMultiForm(RegisterUserMultiForm):
         user = objects["user"]
         user.company = company
         return self.save_user(user, commit, "CompanyAdmins", "CompanyUsers")
+
+
+class RegisterKioskUserMultiForm(RegisterUserMultiForm):
+    form_classes = {
+        "user": RegisterKioskUserForm,
+        "branch": RegisterKioskForm,
+    }
+    parent_form_dict = {"branch": "user"}
+
+    @staticmethod
+    def has_admin_users(branch):
+        users = KioskUser.objects.filter(
+            branch__pk=branch.pk, groups__name="KioskAdmins"
+        )
+        return True if users else False
+
+    def clean(self):
+        branch_from_list = self.cleaned_data.get("user", {}).get("branch", "")
+        admin = self.cleaned_data.get("user", {}).get("admin", "")
+
+        if (
+            branch_from_list
+            and self.has_admin_users(branch_from_list)
+            and not self.allow_multiple_admins
+            and admin
+        ):
+            self.add_crossform_error(
+                _(
+                    "Denne butik har allerede en admin bruger. "
+                    "Bed venligst din admin om at oprette dig."
+                )
+            )
+
+        user_form_valid = self.forms["user"].is_valid()
+
+        if user_form_valid and not branch_from_list:
+            # If the kiosk is not picked from the list we should not allow
+            # fields to be empty in the branch-form
+            self.check_subform("branch")
+
+        return self.cleaned_data
+
+    def save(self, commit=True):
+        objects = super().save(commit=False)
+        branch_from_list = self.branch or self.cleaned_data["user"]["branch"]
+
+        if branch_from_list:
+            branch = branch_from_list
+        else:
+            branch = objects["branch"]
+            if commit:
+                branch.save()
+
+        user = objects["user"]
+        user.branch = branch
+        return self.save_user(user, commit, "KioskAdmins", "KioskUsers")
 
 
 class SortPaginateForm(forms.Form):

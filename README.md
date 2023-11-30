@@ -34,12 +34,12 @@ Virksomhedsbrugere kan kun oprette brugere i den samme virksomhed som dem selv, 
 ESANI brugere kan oprette brugere af alle slags:
 
 | Bruger type             | opret `EsaniUser` | opret `BranchUser` | opret `CompanyUser` | opret `KioskUser` |
-|-------------------------|---|---|----|------------------------|
-| ESANI admin             | x | x | x  | x                      |
-| Butiksmedarbejder       |   | x |    |                        |
-| Virksomhedsmedarbejder  |   | x | x  |                        |
-| Kioskejer               |   |   |    | x (ikke implementeret) |
-| Uregistreret bruger     |   | x | x  | x (ikke implementeret) |
+|-------------------------|---|---|----|----|
+| ESANI admin             | x | x | x  | x  |
+| Butiksmedarbejder       |   | x |    |    |
+| Virksomhedsmedarbejder  |   | x | x  |    |
+| Kioskejer               |   |   |    | x  |
+| Uregistreret bruger     |   | x | x  | x  |
 
 Når en uregistreret bruger opretter sig selv, skan han først godkendes af en ESANI
 bruger, før han kan logge ind. Alle andre bruger typer er automatisk godkendt når de

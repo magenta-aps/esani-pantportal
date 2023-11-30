@@ -1,0 +1,61 @@
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+{% block extra_headers %}
+<script src="{% static 'jquery/pantportal.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="mx-5">
+    <h1>{% translate "Registrer ny kioskadministrator" %}</h1>
+    <form method="POST" class="row g-3">
+        {% csrf_token %}
+    {% include "../user_subform.html" with form=form %}
+    <div class="col-12 my-4">
+        <h4>{% translate "Butik/Kiosk/Købmand" %}</h4>
+    </div>
+    {% include "../branch_dropdown.html" with subform=form.user mainform=form %}
+    {% include "../kiosk_subform.html" with form=form.branch %}
+    {% include "../crossform_errors.html" with form=form %}
+    {% include "../form_buttons.html" with user=user %}
+    </form>
+</div>
+
+<script>
+function reset_branch_dropdown() {
+    $("#id_user-branch option[value='']").prop("selected", "selected");
+}
+function hide_branch_dropdown(){
+   $("#branch_dropdown").hide();
+   reset_branch_dropdown();
+}
+function show_branch_dropdown(){
+    $("#branch_dropdown").show();
+}
+function show_branch_form() {
+    $("#branch_form").show();
+    updateQueryString("show_branch","1");
+}
+function hide_branch_form() {
+    $("#branch_form").hide();
+    updateQueryString("show_branch","0");
+}
+
+$("#show_branch_dropdown").click(function() {
+    hide_branch_form();
+    show_branch_dropdown();
+});
+$("#show_branch_form").click(function() {
+    show_branch_form();
+    hide_branch_dropdown();
+});
+
+show_branch_dropdown();
+var show_branch = getUrlParameter("show_branch");
+if (show_branch == "1"){
+    show_branch_form();
+    hide_branch_dropdown();
+}
+</script>
+{% endblock %}
