@@ -23,7 +23,7 @@ SPDX-License-Identifier: MPL-2.0
 {% if user.is_authenticated %}
 <header>
     <nav class="nav flex-column flex-sm-row p-1">
-        {% if user|has_group:"EsaniAdmins" or user|has_group:"CompanyAdmins" %}
+        {% if user.is_admin %}
         <div class="dropdown p-2">
         <a class="text-muted dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             Registrér produkt
@@ -34,9 +34,9 @@ SPDX-License-Identifier: MPL-2.0
         </ul>
         </div>
         {% endif %}
-        {% if user|has_group:"CompanyAdmins" and user.user_type == 2 %}
+        {% if user.is_admin and user.get_user_type_display == "Butiksbruger" %}
         <a class="p-2 text-muted" href="{% url 'pant:branch_user_register_by_admin' %}">Registrér bruger</a>
-        {% elif user|has_group:"CompanyAdmins" and user.user_type == 3 %}
+        {% elif user.is_admin and user.get_user_type_display == "Virksomhedsbruger" %}
         <div class="dropdown p-2">
         <a class="text-muted dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             Registrér bruger
@@ -47,7 +47,7 @@ SPDX-License-Identifier: MPL-2.0
         </ul>
         </div>
         {% endif %}
-        {% if user|has_group:"EsaniAdmins" %}
+        {% if user.is_esani_admin %}
         <div class="dropdown p-2">
         <a class="text-muted dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             Registrér bruger
@@ -60,7 +60,7 @@ SPDX-License-Identifier: MPL-2.0
         </div>
         {% endif %}
         <a class="p-2 text-muted" href="{% url 'pant:product_list' %}">Produkter</a>
-        {% if user|has_group:"EsaniAdmins" or user|has_group:"CompanyAdmins"%}
+        {% if user.is_admin%}
         <a class="p-2 text-muted" href="{% url 'pant:user_list' %}">Brugere</a>
         {% endif %}
 

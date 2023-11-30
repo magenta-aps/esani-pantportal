@@ -280,7 +280,7 @@ class RegisterUserMultiForm(MultiModelForm, BootstrapForm):
                 )
             )
 
-    def save_user(self, user, commit):
+    def save_user(self, user, commit, admin_group_name, regular_group_name):
         admin = self.cleaned_data["user"]["admin"]
         user.approved = self.approved
 
@@ -288,7 +288,7 @@ class RegisterUserMultiForm(MultiModelForm, BootstrapForm):
         if commit:
             user.save()
 
-        group_name = "CompanyAdmins" if admin else "CompanyUsers"
+        group_name = admin_group_name if admin else regular_group_name
         user.groups.add(Group.objects.get(name=group_name))
         return user
 
@@ -304,7 +304,7 @@ class RegisterBranchUserMultiForm(RegisterUserMultiForm):
     @staticmethod
     def has_admin_users(branch):
         users = BranchUser.objects.filter(
-            branch__pk=branch.pk, groups__name="CompanyAdmins"
+            branch__pk=branch.pk, groups__name="BranchAdmins"
         )
         return True if users else False
 
@@ -365,7 +365,7 @@ class RegisterBranchUserMultiForm(RegisterUserMultiForm):
 
         user = objects["user"]
         user.branch = branch
-        return self.save_user(user, commit)
+        return self.save_user(user, commit, "BranchAdmins", "BranchUsers")
 
 
 class RegisterCompanyUserMultiForm(RegisterUserMultiForm):
@@ -421,7 +421,7 @@ class RegisterCompanyUserMultiForm(RegisterUserMultiForm):
 
         user = objects["user"]
         user.company = company
-        return self.save_user(user, commit)
+        return self.save_user(user, commit, "CompanyAdmins", "CompanyUsers")
 
 
 class SortPaginateForm(forms.Form):

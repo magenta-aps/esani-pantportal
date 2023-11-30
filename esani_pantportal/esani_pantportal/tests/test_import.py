@@ -248,13 +248,13 @@ class MultipleProductRegisterFormTests(LoginMixin, TestCase):
         self.assertEqual(response.context_data["success_count"], len(df))
 
     def test_view_get(self):
-        self.login("CompanyAdmins")
+        self.login("BranchAdmins")
         url = reverse("pant:multiple_product_register")
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_view_post_access_denied(self):
-        self.login("CompanyUsers")
+        self.login("BranchUsers")
         df = default_dataframe()
         file = self.make_excel_file_dict(df)
         url = reverse("pant:multiple_product_register") + "?login_bypass=1"
@@ -264,7 +264,7 @@ class MultipleProductRegisterFormTests(LoginMixin, TestCase):
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
     def test_view_get_access_denied(self):
-        self.login("CompanyUsers")
+        self.login("BranchUsers")
         url = reverse("pant:multiple_product_register")
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
@@ -393,13 +393,13 @@ class SingleProductRegisterFormTests(LoginMixin, TestCase):
         }
 
     def test_view_get(self):
-        self.login("CompanyAdmins")
+        self.login("BranchAdmins")
         url = reverse("pant:product_register")
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_view_get_access_denied(self):
-        self.login("CompanyUsers")
+        self.login("BranchUsers")
         url = reverse("pant:product_register")
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
@@ -414,7 +414,7 @@ class SingleProductRegisterFormTests(LoginMixin, TestCase):
         self.assertGreater(len(product_qs), 0)
 
     def test_view_post_access_denied(self):
-        self.login("CompanyUsers")
+        self.login("BranchUsers")
         url = reverse("pant:product_register")
         response = self.client.post(url, data=self.defaults)
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)

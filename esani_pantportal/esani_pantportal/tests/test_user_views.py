@@ -112,9 +112,9 @@ class BaseUserTest(LoginMixin, TestCase):
         cls.esani_admin.groups.add(Group.objects.get(name="EsaniAdmins"))
         cls.facebook_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
         cls.google_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
-        cls.facebook_branch_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
-        cls.facebook_branch_user.groups.add(Group.objects.get(name="CompanyUsers"))
-        cls.kiosk_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
+        cls.facebook_branch_admin.groups.add(Group.objects.get(name="BranchAdmins"))
+        cls.facebook_branch_user.groups.add(Group.objects.get(name="BranchUsers"))
+        cls.kiosk_admin.groups.add(Group.objects.get(name="KioskAdmins"))
 
     @staticmethod
     def make_form_data(form):

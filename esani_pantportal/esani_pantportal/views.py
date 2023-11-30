@@ -417,6 +417,9 @@ class UserDetailView(DetailView):
         if not self.request.user.is_esani_admin and user.id not in user_ids:
             return self.access_denied
 
+        user_verbose = user.user_profile._meta.verbose_name
+        self.required_permissions = [f"esani_pantportal.change_{user_verbose}"]
+
         return super().get(request, *args, **kwargs)
 
     def get_success_url(self):
@@ -454,7 +457,6 @@ class CompanyAdminUserDetailView(UserDetailView):
         "email",
         "phone",
     )
-    required_groups = ["CompanyAdmins"]
 
 
 class MultipleProductRegisterView(PermissionRequiredMixin, FormView):

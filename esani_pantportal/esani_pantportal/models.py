@@ -593,12 +593,13 @@ class User(AbstractUser):
             return None
 
     @property
-    def is_company_admin(self):
-        return self.groups.filter(name="CompanyAdmins").exists()
-
-    @property
     def is_esani_admin(self):
         return self.groups.filter(name="EsaniAdmins").exists()
+
+    @property
+    def is_admin(self):
+        admin_groups = ["EsaniAdmins", "CompanyAdmins", "BranchAdmins", "KioskAdmins"]
+        return self.groups.filter(name__in=admin_groups)
 
 
 class EsaniUser(User):
