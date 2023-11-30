@@ -147,5 +147,9 @@ class Command(BaseCommand):
             ("add", company_user_model),
             ("change", company_user_model),
             ("delete", company_user_model),
+            ("view", kiosk_user_model),
+            ("add", kiosk_user_model),
+            ("change", kiosk_user_model),
+            ("delete", kiosk_user_model),
         ):
             esani_admins.permissions.add(get_permission(action, model))

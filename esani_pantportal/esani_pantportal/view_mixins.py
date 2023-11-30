@@ -48,29 +48,12 @@ class PermissionRequiredMixin(LoginRequiredMixin):
         return permissions_ok
 
     @property
-    def groups_ok(self) -> bool:
-        user = self.request.user
-        required_groups = set(getattr(self, "required_groups", []))
-        user_groups = set([g.name for g in user.groups.all()])
-        groups_ok = required_groups.issubset(user_groups)
-        return groups_ok
-
-    @property
-    def user_type_ok(self) -> bool:
-        user = self.request.user
-        allowed_user_types = set(getattr(self, "allowed_user_types", []))
-        user_type_ok = (
-            user.user_type in allowed_user_types if allowed_user_types else True
-        )
-        return user_type_ok
-
-    @property
     def has_permissions(self) -> bool:
         user = self.request.user
         if user.is_superuser:
             return True
 
-        return self.permissions_ok and self.groups_ok and self.user_type_ok
+        return self.permissions_ok
 
     def get(self, request, *args, **kwargs):
         return self.check_permissions() or super().get(request, *args, **kwargs)

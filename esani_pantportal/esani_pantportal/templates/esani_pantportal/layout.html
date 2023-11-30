@@ -46,6 +46,8 @@ SPDX-License-Identifier: MPL-2.0
             <li><a class="dropdown-item" href="{% url 'pant:company_user_register_by_admin' %}">Registrér virksomhedsadministrator</a></li>
         </ul>
         </div>
+        {% elif user.is_admin and user.get_user_type_display == "Kioskbruger" %}
+        <a class="p-2 text-muted" href="{% url 'pant:kiosk_user_register_by_admin' %}">Registrér bruger</a>
         {% endif %}
         {% if user.is_esani_admin %}
         <div class="dropdown p-2">
@@ -55,6 +57,7 @@ SPDX-License-Identifier: MPL-2.0
         <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="{% url 'pant:branch_user_register_by_admin' %}">Registrér butiksadministrator</a></li>
             <li><a class="dropdown-item" href="{% url 'pant:company_user_register_by_admin' %}">Registrér virksomhedsadministrator</a></li>
+            <li><a class="dropdown-item" href="{% url 'pant:kiosk_user_register_by_admin' %}">Registrér kioskadministrator</a></li>
             <li><a class="dropdown-item" href="{% url 'pant:esani_user_register' %}">Registrér ESANI administrator</a></li>
         </ul>
         </div>

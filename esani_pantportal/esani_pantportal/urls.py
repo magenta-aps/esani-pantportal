@@ -22,6 +22,8 @@ from esani_pantportal.views import (
     RegisterCompanyUserAdminView,
     RegisterCompanyUserPublicView,
     RegisterEsaniUserView,
+    RegisterKioskUserAdminView,
+    RegisterKioskUserPublicView,
     UserSearchView,
 )
 
@@ -52,6 +54,16 @@ urlpatterns = [
         "virksomhed_bruger/opret/admin",
         RegisterCompanyUserAdminView.as_view(),
         name="company_user_register_by_admin",
+    ),
+    path(
+        "kiosk_bruger/opret/offentlig",
+        RegisterKioskUserPublicView.as_view(),
+        name="kiosk_user_register",
+    ),
+    path(
+        "kiosk_bruger/opret/admin",
+        RegisterKioskUserAdminView.as_view(),
+        name="kiosk_user_register_by_admin",
     ),
     path(
         "esani_bruger/opret",

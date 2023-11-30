@@ -12,6 +12,7 @@ from django.urls import reverse
 from esani_pantportal.forms import (
     RegisterBranchUserMultiForm,
     RegisterCompanyUserMultiForm,
+    RegisterKioskUserMultiForm,
 )
 from esani_pantportal.models import (
     BranchUser,
@@ -134,6 +135,24 @@ class RegisterNewUserFormTest(TestCase):
             "branch-invoice_mail": "pay_me@moneyplz.dk",
             "branch-municipality": "Scotland",
         }
+        cls.kiosk_data = {
+            "branch-name": "The Unicorn fields",
+            "branch-address": "Old Road 12",
+            "branch-postal_code": "1245",
+            "branch-city": "Dundee",
+            "branch-phone": "+12125552368",
+            "branch-location_id": 2,
+            "branch-customer_id": 3,
+            "branch-company": "",
+            "branch-branch_type": "D",
+            "branch-registration_number": 2222,
+            "branch-account_number": 102010,
+            "branch-invoice_mail": "pay_me@moneyplz.dk",
+            "branch-municipality": "Scotland",
+            "branch-cvr": 1017196402,
+            "branch-permit_number": 3,
+        }
+
         cls.company_data = {
             "company-name": "Dundee HQ",
             "company-address": "New Road 12",
@@ -531,7 +550,6 @@ class RegisterNewCompanyUserFormTest(RegisterNewUserFormTest):
         response = self.client.post(url, data=user_data)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
         created_company = Company.objects.get(name=user_data["company-name"])
-        self.assertEqual(created_company.name, user_data["company-name"])
 
         # Try to add another user in the same company
         user_data = self.make_user_data(include_company_data=False)
@@ -541,3 +559,85 @@ class RegisterNewCompanyUserFormTest(RegisterNewUserFormTest):
         form = response.context_data["form"]
         errors = form.crossform_errors
         self.assertIn("Denne virksomhed har allerede en admin bruger", str(errors))
+
+
+class RegisterNewKioskUserFormTest(RegisterNewUserFormTest):
+    def make_user_data(self, include_kiosk_data=True):
+        if include_kiosk_data:
+            return {**self.user_data, **self.kiosk_data}
+        else:
+            return self.user_data
+
+    def test_create_admin_user(self):
+        user_data = self.make_user_data()
+        form = RegisterKioskUserMultiForm(user_data)
+        self.assertEquals(form.is_valid(), True)
+
+        user = form.save()
+        self.assertEquals(user.branch.name, user_data["branch-name"])
+        self.assertTrue(user.groups.filter(name="KioskAdmins").exists())
+
+    def test_create_non_admin_user(self):
+        user_data = self.make_user_data()
+        user_data["user-admin"] = False
+        form = RegisterKioskUserMultiForm(user_data)
+        self.assertEquals(form.is_valid(), True)
+
+        user = form.save()
+        self.assertEquals(user.branch.name, user_data["branch-name"])
+        self.assertFalse(user.groups.filter(name="KioskAdmins").exists())
+        self.assertTrue(user.groups.filter(name="KioskUsers").exists())
+
+    def test_get_kiosk_admin_view(self):
+        self.client.login(username="kiosk_admin", password="12345")
+        url = reverse("pant:kiosk_user_register_by_admin")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_post_kiosk_admin_view(self):
+        self.client.login(username="kiosk_admin", password="12345")
+        url = reverse("pant:kiosk_user_register_by_admin")
+        user_data = self.make_user_data(include_kiosk_data=False)
+        user_data["user-branch"] = self.kiosk_admin.branch.pk
+
+        response = self.client.post(url, data=user_data)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+    def test_access_denied(self):
+        for username in ["branch_admin", "company_user", "company_admin"]:
+            self.client.login(username=username, password="12345")
+            url = reverse("pant:kiosk_user_register_by_admin")
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+            self.client.logout()
+
+    def test_get_esani_admin_view(self):
+        self.client.login(username="esani_admin", password="12345")
+        url = reverse("pant:kiosk_user_register_by_admin")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_post_esani_admin_view(self):
+        self.client.login(username="esani_admin", password="12345")
+        url = reverse("pant:kiosk_user_register_by_admin")
+        user_data = self.make_user_data()
+        response = self.client.post(url, data=user_data)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+    def test_post_company_admin_public_view(self):
+        url = reverse("pant:kiosk_user_register")
+        user_data = self.make_user_data()
+
+        # Add a user in a branch that does not exist.
+        response = self.client.post(url, data=user_data)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        created_branch = Kiosk.objects.get(name=user_data["branch-name"])
+
+        # Try to add another user in the same branch
+        user_data = self.make_user_data(include_kiosk_data=False)
+        user_data["user-username"] = "another_user"
+        user_data["user-branch"] = created_branch.pk
+        response = self.client.post(url, data=user_data)
+        form = response.context_data["form"]
+        errors = form.crossform_errors
+        self.assertIn("Denne butik har allerede en admin bruger", str(errors))

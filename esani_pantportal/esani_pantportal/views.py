@@ -26,18 +26,19 @@ from esani_pantportal.forms import (
     RegisterBranchUserMultiForm,
     RegisterCompanyUserMultiForm,
     RegisterEsaniUserForm,
+    RegisterKioskUserMultiForm,
     UserFilterForm,
 )
 from esani_pantportal.models import (
     BRANCH_USER,
     COMPANY_USER,
-    ESANI_USER,
     KIOSK_USER,
     BranchUser,
     Company,
     CompanyBranch,
     CompanyUser,
     EsaniUser,
+    KioskUser,
     Product,
     User,
 )
@@ -75,7 +76,6 @@ class RegisterEsaniUserView(PermissionRequiredMixin, CreateView):
     form_class = RegisterEsaniUserForm
     template_name = "esani_pantportal/user/esani_user/form.html"
     required_permissions = ["esani_pantportal.add_esaniuser"]
-    required_groups = ["EsaniAdmins"]
 
     def get_success_url(self):
         return reverse("pant:user_register_success")
@@ -114,7 +114,6 @@ class RegisterBranchUserPublicView(RegisterBranchUserView):
 
 class RegisterBranchUserAdminView(PermissionRequiredMixin, RegisterBranchUserView):
     required_permissions = ["esani_pantportal.add_branchuser"]
-    allowed_user_types = [ESANI_USER, BRANCH_USER, COMPANY_USER]
 
     def get_success_url(self):
         return reverse("pant:user_register_success")
@@ -145,7 +144,6 @@ class RegisterCompanyUserPublicView(RegisterCompanyUserView):
 
 class RegisterCompanyUserAdminView(PermissionRequiredMixin, RegisterCompanyUserView):
     required_permissions = ["esani_pantportal.add_companyuser"]
-    allowed_user_types = [ESANI_USER, COMPANY_USER]
 
     def get_success_url(self):
         return reverse("pant:user_register_success")
@@ -157,6 +155,33 @@ class RegisterCompanyUserAdminView(PermissionRequiredMixin, RegisterCompanyUserV
         kwargs["approved"] = True
         if self.request.user.user_type == COMPANY_USER:
             kwargs["company"] = self.request.user.company
+        return kwargs
+
+
+class RegisterKioskUserView(CreateView):
+    model = KioskUser
+    form_class = RegisterKioskUserMultiForm
+    template_name = "esani_pantportal/user/kiosk_user/form.html"
+
+
+class RegisterKioskUserPublicView(RegisterKioskUserView):
+    def get_success_url(self):
+        return reverse("pant:login")
+
+
+class RegisterKioskUserAdminView(PermissionRequiredMixin, RegisterKioskUserView):
+    required_permissions = ["esani_pantportal.add_kioskuser"]
+
+    def get_success_url(self):
+        return reverse("pant:user_register_success")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["show_admin_flag"] = True
+        kwargs["allow_multiple_admins"] = True
+        kwargs["approved"] = True
+        if self.request.user.user_type == KIOSK_USER:
+            kwargs["branch"] = self.request.user.branch
         return kwargs
 
 
@@ -410,27 +435,8 @@ class UserDetailView(DetailView):
         context_data["company_info_attributes"] = common_attributes + company_attributes
         return context_data
 
-    def get(self, request, *args, **kwargs):
-        user = self.get_object()
-
-        user_ids = self.users_in_same_company
-        if not self.request.user.is_esani_admin and user.id not in user_ids:
-            return self.access_denied
-
-        user_verbose = user.user_profile._meta.verbose_name
-        self.required_permissions = [f"esani_pantportal.change_{user_verbose}"]
-
-        return super().get(request, *args, **kwargs)
-
     def get_success_url(self):
         return self.request.get_full_path()
-
-    def form_valid(self, form):
-        user_ids = self.users_in_same_company
-        if user_ids and self.get_object().id not in user_ids:
-            return self.access_denied
-        else:
-            return super().form_valid(form)
 
 
 class EsaniAdminUserDetailView(UserDetailView):
@@ -444,7 +450,7 @@ class EsaniAdminUserDetailView(UserDetailView):
         "phone",
         "approved",
     )
-    required_groups = ["EsaniAdmins"]
+    required_permissions = ["esani_pantportal.change_user"]
 
 
 class CompanyAdminUserDetailView(UserDetailView):
@@ -457,6 +463,25 @@ class CompanyAdminUserDetailView(UserDetailView):
         "email",
         "phone",
     )
+
+    def get(self, request, *args, **kwargs):
+        user = self.get_object()
+
+        user_ids = self.users_in_same_company
+        if user.id not in user_ids:
+            return self.access_denied
+
+        user_verbose = user.user_profile._meta.verbose_name
+        self.required_permissions = [f"esani_pantportal.change_{user_verbose}"]
+
+        return super().get(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        user_ids = self.users_in_same_company
+        if self.get_object().id not in user_ids:
+            return self.access_denied
+        else:
+            return super().form_valid(form)
 
 
 class MultipleProductRegisterView(PermissionRequiredMixin, FormView):
