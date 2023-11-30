@@ -46,6 +46,19 @@
                             <td>{{object.is_admin|yesno}}</td>
                         </tr>
                     {% endif %}
+
+                    <tr>
+                        <th>{% translate "Adgangskode" %}</th>
+                        <td>
+                            &#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;
+                            {% if user.username != object.username %}
+                            <a class="icon-link" href="{% url 'pant:change_password' object.id %}">
+                             {% bs_icon "pencil-square" %}
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+
                     </tbody>
                 </table>
 

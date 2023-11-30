@@ -7,6 +7,7 @@ from django.views.generic import RedirectView, TemplateView
 from django_mitid_auth.saml.views import AccessDeniedView
 
 from esani_pantportal.views import (
+    ChangePasswordView,
     CompanyAdminUserDetailView,
     CsvTemplateView,
     EsaniAdminUserDetailView,
@@ -92,6 +93,11 @@ urlpatterns = [
         "bruger/admin/<int:pk>",
         CompanyAdminUserDetailView.as_view(),
         name="user_view_for_company_admin",
+    ),
+    path(
+        "bruger/<int:pk>/skift_adgangskode",
+        ChangePasswordView.as_view(),
+        name="change_password",
     ),
     path(
         "error/login-timeout/",

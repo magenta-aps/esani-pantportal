@@ -289,3 +289,55 @@ class CompanyAdminUserDetailViewTest(BaseUserTest):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context_data["object"].branch.cvr, self.kiosk.cvr)
         self.assertEqual(response.context_data["object"].username, "kiosk_admin")
+
+
+class ResetPasswordTest(BaseUserTest):
+    def setUp(self):
+        self.facebook_employee_password_url = reverse(
+            "pant:change_password",
+            kwargs={"pk": self.facebook_branch_user.pk},
+        )
+
+        self.google_employee_password_url = reverse(
+            "pant:change_password",
+            kwargs={"pk": self.google_admin.pk},
+        )
+
+    def test_facebook_admin_reset_facebook_employee_password(self):
+        self.client.login(username="facebook_admin", password="12345")
+        response = self.client.get(self.facebook_employee_password_url)
+        self.assertEqual(response.status_code, 200)
+
+        form_data = self.make_form_data(response.context_data["form"])
+        form_data["password"] = "new_pass"
+        form_data["password2"] = "new_pass"
+        response = self.client.post(self.facebook_employee_password_url, form_data)
+
+        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+
+        ok = self.client.login(username="facebook_branch_user", password="new_pass")
+        self.assertTrue(ok)
+        ok = self.client.login(username="facebook_branch_user", password="12345")
+        self.assertFalse(ok)
+
+    def test_facebook_admin_reset_google_employee_password(self):
+        self.client.login(username="facebook_admin", password="12345")
+        response = self.client.get(self.google_employee_password_url)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_esani_admin_reset_google_employee_password(self):
+        self.client.login(username="esani_admin", password="12345")
+        response = self.client.get(self.google_employee_password_url)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+        form_data = self.make_form_data(response.context_data["form"])
+        form_data["password"] = "new_pass"
+        form_data["password2"] = "new_pass"
+        response = self.client.post(self.google_employee_password_url, form_data)
+
+        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+
+        ok = self.client.login(username="google_admin", password="new_pass")
+        self.assertTrue(ok)
+        ok = self.client.login(username="google_admin", password="12345")
+        self.assertFalse(ok)
