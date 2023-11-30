@@ -81,11 +81,12 @@ class ProductViewGuiTest(LoginMixin, TestCase):
 
         call_command("create_groups")
         company_admin_group = Group.objects.get(name="CompanyAdmins")
+        branch_admin_group = Group.objects.get(name="BranchAdmins")
         esani_admin_group = Group.objects.get(name="EsaniAdmins")
         cls.admin_user.groups.add(esani_admin_group)
-        cls.branch_user.groups.add(company_admin_group)
-        cls.another_branch_user.groups.add(company_admin_group)
-        cls.branch_user_from_other_branch.groups.add(company_admin_group)
+        cls.branch_user.groups.add(branch_admin_group)
+        cls.another_branch_user.groups.add(branch_admin_group)
+        cls.branch_user_from_other_branch.groups.add(branch_admin_group)
         cls.company_user.groups.add(company_admin_group)
 
     def setUp(self) -> None:
@@ -200,7 +201,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         )
 
     def test_render_branch_user(self):
-        self.login("CompanyAdmins")
+        self.login("BranchAdmins")
         response = self.client.get(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
             + "?login_bypass=1"

@@ -23,7 +23,9 @@ class Command(BaseCommand):
         if settings.ENVIRONMENT in ("production", "staging"):
             raise Exception(f"Will not create dummy users in {settings.ENVIRONMENT}")
         company_admin_group = Group.objects.get(name="CompanyAdmins")
-        company_user_group = Group.objects.get(name="CompanyUsers")
+        branch_admin_group = Group.objects.get(name="BranchAdmins")
+        kiosk_admin_group = Group.objects.get(name="KioskAdmins")
+        branch_user_group = Group.objects.get(name="BranchUsers")
         esani_user_group = Group.objects.get(name="EsaniAdmins")
 
         brugseni, created = Company.objects.update_or_create(
@@ -87,7 +89,7 @@ class Command(BaseCommand):
             },
             username="rip",
         )
-        branch_user.groups.add(company_user_group)
+        branch_user.groups.add(branch_user_group)
 
         branch_admin, created = BranchUser.objects.update_or_create(
             defaults={
@@ -104,7 +106,7 @@ class Command(BaseCommand):
             },
             username="anders",
         )
-        branch_admin.groups.add(company_admin_group)
+        branch_admin.groups.add(branch_admin_group)
 
         branch_admin, created = BranchUser.objects.update_or_create(
             defaults={
@@ -121,7 +123,7 @@ class Command(BaseCommand):
             },
             username="andersine",
         )
-        branch_admin.groups.add(company_admin_group)
+        branch_admin.groups.add(branch_admin_group)
 
         branch_admin, created = BranchUser.objects.update_or_create(
             defaults={
@@ -138,7 +140,7 @@ class Command(BaseCommand):
             },
             username="kim",
         )
-        branch_admin.groups.add(company_admin_group)
+        branch_admin.groups.add(branch_admin_group)
 
         esani_user, created = EsaniUser.objects.update_or_create(
             defaults={
@@ -200,4 +202,4 @@ class Command(BaseCommand):
             },
             username="oswald",
         )
-        kiosk_user.groups.add(company_admin_group)
+        kiosk_user.groups.add(kiosk_admin_group)

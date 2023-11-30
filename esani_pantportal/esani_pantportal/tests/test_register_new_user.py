@@ -101,10 +101,10 @@ class RegisterNewUserFormTest(TestCase):
         )
 
         call_command("create_groups")
-        cls.branch_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
+        cls.branch_admin.groups.add(Group.objects.get(name="BranchAdmins"))
         cls.company_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
         cls.esani_admin.groups.add(Group.objects.get(name="EsaniAdmins"))
-        cls.kiosk_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
+        cls.kiosk_admin.groups.add(Group.objects.get(name="KioskAdmins"))
         cls.company_user.groups.add(Group.objects.get(name="CompanyUsers"))
 
         cls.user_data = {
@@ -169,7 +169,7 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         user = form.save()
         self.assertEquals(user.branch.name, user_data["branch-name"])
         self.assertEquals(user.branch.company.name, user_data["company-name"])
-        self.assertTrue(user.groups.filter(name="CompanyAdmins").exists())
+        self.assertTrue(user.groups.filter(name="BranchAdmins").exists())
 
     def test_create_non_admin_user(self):
         user_data = self.make_user_data()
@@ -180,8 +180,8 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         user = form.save()
         self.assertEquals(user.branch.name, user_data["branch-name"])
         self.assertEquals(user.branch.company.name, user_data["company-name"])
-        self.assertFalse(user.groups.filter(name="CompanyAdmins").exists())
-        self.assertTrue(user.groups.filter(name="CompanyUsers").exists())
+        self.assertFalse(user.groups.filter(name="BranchAdmins").exists())
+        self.assertTrue(user.groups.filter(name="BranchUsers").exists())
 
     def test_company_exists(self):
         user_data = self.make_user_data(include_company_data=False)
@@ -403,8 +403,8 @@ class RegisterNewEsaniAdminTest(TestCase):
             email="test@test.com",
             branch=cls.branch,
         )
-        cls.company_user = BranchUser.objects.create_user(
-            username="company_user",
+        cls.branch_user = BranchUser.objects.create_user(
+            username="branch_user",
             password="12345",
             email="test@test.com",
             branch=cls.branch,
@@ -416,8 +416,8 @@ class RegisterNewEsaniAdminTest(TestCase):
         )
 
         call_command("create_groups")
-        cls.company_user.groups.add(Group.objects.get(name="CompanyUsers"))
-        cls.branch_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
+        cls.branch_user.groups.add(Group.objects.get(name="BranchUsers"))
+        cls.branch_admin.groups.add(Group.objects.get(name="BranchAdmins"))
         cls.esani_admin.groups.add(Group.objects.get(name="EsaniAdmins"))
 
     def setUp(self):
@@ -452,7 +452,7 @@ class RegisterNewEsaniAdminTest(TestCase):
         self.assertTemplateUsed(response, "esani_pantportal/user/success.html")
 
     def test_post_access_denied(self):
-        for username in ["company_user", "branch_admin"]:
+        for username in ["branch_user", "branch_admin"]:
             self.client.login(username=username, password="12345")
             url = reverse("pant:esani_user_register")
             response = self.client.post(url, self.user_data)
