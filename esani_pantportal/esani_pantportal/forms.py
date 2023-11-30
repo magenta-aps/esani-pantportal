@@ -26,6 +26,7 @@ from esani_pantportal.models import (
     Kiosk,
     KioskUser,
     Product,
+    User,
     validate_barcode_length,
     validate_digit,
 )
@@ -79,6 +80,26 @@ class RegisterUserForm(forms.ModelForm, BootstrapForm):
         if password and password != password2:
             raise forms.ValidationError(_("Adgangskoder er ikke ens"))
         return password2
+
+
+class ChangePasswordForm(RegisterUserForm):
+    class Meta:
+        model = User
+        fields = (
+            "password",
+            "password2",
+        )
+
+    password = forms.CharField(
+        widget=forms.PasswordInput(),
+        label=_("Ny Adgangskode"),
+    )
+
+    def save(self):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data["password"])
+        user.save()
+        return user
 
 
 class RegisterAdminUserForm(RegisterUserForm):
