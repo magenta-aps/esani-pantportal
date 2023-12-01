@@ -326,6 +326,17 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         )
         self.assertEquals(response.status_code, HTTPStatus.FOUND)
 
+        # But he should not be allowed to approve his own product
+        form_data = self.get_form_data(self.prod2.pk)
+        form_data["approved"] = True
+
+        self.assertEqual(self.prod2.created_by.username, "branch_user")
+        response = self.client.post(
+            reverse("pant:product_view", kwargs={"pk": self.prod2.pk}),
+            form_data,
+        )
+        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
+
         # Or if the product was created by a colleague
         form_data = self.get_form_data(self.prod4.pk)
         form_data["weight"] = 1223

@@ -184,7 +184,7 @@ class UserListTest(BaseUserTest):
         self.assertEqual(len(ids), 1)
 
 
-class EsaniAdminUserDetailViewTest(BaseUserTest):
+class EsaniAdminUserUpdateViewTest(BaseUserTest):
     def setUp(self):
         self.facebook_admin_url = reverse(
             "pant:user_view",
@@ -217,7 +217,7 @@ class EsaniAdminUserDetailViewTest(BaseUserTest):
         self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
 
 
-class CompanyAdminUserDetailViewTest(BaseUserTest):
+class CompanyAdminUserUpdateViewTest(BaseUserTest):
     def setUp(self):
         self.facebook_admin_url = reverse(
             "pant:user_view",
