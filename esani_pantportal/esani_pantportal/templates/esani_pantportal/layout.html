@@ -26,50 +26,56 @@ SPDX-License-Identifier: MPL-2.0
         {% if user.is_admin %}
         <div class="dropdown p-2">
         <a class="text-muted dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Registrér produkt
+            {% translate "Registrér produkt" %}
         </a>
         <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="{% url 'pant:product_register' %}">Registrér et enkelt produkt</a></li>
-            <li><a class="dropdown-item" href="{% url 'pant:multiple_product_register' %}">Importér regneark</a></li>
+            <li><a class="dropdown-item" href="{% url 'pant:product_register' %}">{% translate "Registrér et enkelt produkt" %}</a></li>
+            <li><a class="dropdown-item" href="{% url 'pant:multiple_product_register' %}">{% translate "Importér regneark" %}</a></li>
         </ul>
         </div>
         {% endif %}
         {% if user.is_admin and user.get_user_type_display == "Butiksbruger" %}
-        <a class="p-2 text-muted" href="{% url 'pant:branch_user_register_by_admin' %}">Registrér bruger</a>
+        <a class="p-2 text-muted" href="{% url 'pant:branch_user_register_by_admin' %}">{% translate "Registrér bruger" %}</a>
         {% elif user.is_admin and user.get_user_type_display == "Virksomhedsbruger" %}
         <div class="dropdown p-2">
         <a class="text-muted dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Registrér bruger
+            {% translate "Registrér bruger" %}
         </a>
         <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="{% url 'pant:branch_user_register_by_admin' %}">Registrér butiksadministrator</a></li>
-            <li><a class="dropdown-item" href="{% url 'pant:company_user_register_by_admin' %}">Registrér virksomhedsadministrator</a></li>
+            <li><a class="dropdown-item" href="{% url 'pant:branch_user_register_by_admin' %}">{% translate "Registrér butiksadministrator" %}</a></li>
+            <li><a class="dropdown-item" href="{% url 'pant:company_user_register_by_admin' %}">{% translate "Registrér virksomhedsadministrator" %}</a></li>
         </ul>
         </div>
         {% elif user.is_admin and user.get_user_type_display == "Kioskbruger" %}
-        <a class="p-2 text-muted" href="{% url 'pant:kiosk_user_register_by_admin' %}">Registrér bruger</a>
+        <a class="p-2 text-muted" href="{% url 'pant:kiosk_user_register_by_admin' %}">{% translate "Registrér bruger" %}</a>
         {% endif %}
         {% if user.is_esani_admin %}
         <div class="dropdown p-2">
         <a class="text-muted dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Registrér bruger
+            {% translate "Registrér bruger" %}
         </a>
         <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="{% url 'pant:branch_user_register_by_admin' %}">Registrér butiksadministrator</a></li>
-            <li><a class="dropdown-item" href="{% url 'pant:company_user_register_by_admin' %}">Registrér virksomhedsadministrator</a></li>
-            <li><a class="dropdown-item" href="{% url 'pant:kiosk_user_register_by_admin' %}">Registrér kioskadministrator</a></li>
-            <li><a class="dropdown-item" href="{% url 'pant:esani_user_register' %}">Registrér ESANI administrator</a></li>
+            <li><a class="dropdown-item" href="{% url 'pant:branch_user_register_by_admin' %}">{% translate "Registrér butiksadministrator" %}</a></li>
+            <li><a class="dropdown-item" href="{% url 'pant:company_user_register_by_admin' %}">{% translate "Registrér virksomhedsadministrator" %}</a></li>
+            <li><a class="dropdown-item" href="{% url 'pant:kiosk_user_register_by_admin' %}">{% translate "Registrér kioskadministrator" %}</a></li>
+            <li><a class="dropdown-item" href="{% url 'pant:esani_user_register' %}">{% translate "Registrér ESANI administrator" %}</a></li>
         </ul>
         </div>
         {% endif %}
-        <a class="p-2 text-muted" href="{% url 'pant:product_list' %}">Produkter</a>
+        <a class="p-2 text-muted" href="{% url 'pant:product_list' %}">{% translate "Produkter" %}</a>
         {% if user.is_admin%}
-        <a class="p-2 text-muted" href="{% url 'pant:user_list' %}">Brugere</a>
+        <a class="p-2 text-muted" href="{% url 'pant:user_list' %}">{% translate "Brugere" %}</a>
         {% endif %}
 
-        <span class="p-2 ms-auto">
+        <div class="dropdown p-2 ms-auto">
+        <a class="text-muted dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             {{user.first_name}} {{user.last_name}} - {{user.email}}
-        </span>
+        </a>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'pant:user_view' user.id %}">{% translate "Brugerprofil" %}</a></li>
+            <li><a class="dropdown-item" href="{% url 'pant:change_password' user.id %}">{% translate "Skift adgangskode" %}</a></li>
+        </ul>
+        </div>
         <a href="{% url 'pant:logout' %}" class="m-1 btn btn-sm btn-primary" id="logout-link">{% translate "Log ud" %}</a>
     </nav>
 

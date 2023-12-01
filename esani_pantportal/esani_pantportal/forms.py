@@ -4,7 +4,7 @@ import pandas as pd
 from betterforms.multiform import MultiModelForm
 from django import forms
 from django.conf import settings
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.models import Group
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -82,7 +82,7 @@ class RegisterUserForm(forms.ModelForm, BootstrapForm):
         return password2
 
 
-class ChangePasswordForm(RegisterUserForm):
+class SetPasswordForm(RegisterUserForm):
     class Meta:
         model = User
         fields = (
@@ -100,6 +100,10 @@ class ChangePasswordForm(RegisterUserForm):
         user.set_password(self.cleaned_data["password"])
         user.save()
         return user
+
+
+class ChangePasswordForm(PasswordChangeForm, BootstrapForm):
+    pass
 
 
 class RegisterAdminUserForm(RegisterUserForm):

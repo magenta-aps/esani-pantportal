@@ -7,9 +7,10 @@ from typing import Any, Dict
 from urllib.parse import unquote
 
 import pandas as pd
+from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
-from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView
 from django.core.exceptions import ValidationError
 from django.forms import model_to_dict
 from django.http import HttpResponse, JsonResponse
@@ -28,6 +29,7 @@ from esani_pantportal.forms import (
     RegisterCompanyUserMultiForm,
     RegisterEsaniUserForm,
     RegisterKioskUserMultiForm,
+    SetPasswordForm,
     UserFilterForm,
 )
 from esani_pantportal.models import (
@@ -480,14 +482,33 @@ class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
             return super().form_valid(form)
 
 
-class ChangePasswordView(PermissionRequiredMixin, SameCompanyMixin, UpdateView):
-    template_name = "esani_pantportal/user/change_password.html"
+class SetPasswordView(PermissionRequiredMixin, SameCompanyMixin, UpdateView):
+    template_name = "esani_pantportal/user/password/set.html"
     model = User
-    form_class = ChangePasswordForm
+    form_class = SetPasswordForm
+
+    def get_context_data(self, *args, **kwargs):
+        context_data = super().get_context_data(*args, **kwargs)
+        context_data["user"] = self.request.user
+        return context_data
 
     def get_success_url(self):
         kwargs = {"pk": self.object.pk}
         return reverse("pant:user_view", kwargs=kwargs)
+
+
+class ChangePasswordView(PermissionRequiredMixin, PasswordChangeView):
+    template_name = "esani_pantportal/user/password/change.html"
+    form_class = ChangePasswordForm
+
+    def get_success_url(self):
+        kwargs = {"pk": self.request.user.pk}
+        return reverse("pant:user_view", kwargs=kwargs)
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        update_session_auth_hash(self.request, form.user)
+        return response
 
 
 class MultipleProductRegisterView(PermissionRequiredMixin, FormView):

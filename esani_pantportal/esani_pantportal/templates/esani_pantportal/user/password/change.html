@@ -1,0 +1,47 @@
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+{% load bootstrap_icons %}
+
+{% block content %}
+<div class="mx-5">
+    <h1>{% translate "Skift adgangskode" %}</h1>
+    <form method="POST" class="row g-3">
+        {% csrf_token %}
+        <div class="col-6">
+          <label for="{{form.old_password.id_for_label}}">{{form.old_password.label}}</label>
+          {{form.old_password}}
+          {% if form.old_password.errors %}
+              <div class="form-text">
+                  {{form.old_password.errors}}
+              </div>
+          {% endif %}
+        </div>
+        <div class="col-6">
+        </div>
+        <div class="col-6">
+          <label for="{{form.new_password1.id_for_label}}">{{form.new_password1.label}}</label>
+          {{form.new_password1}}
+          {% if form.new_password1.errors %}
+              <div class="form-text">
+                  {{form.new_password1.errors}}
+              </div>
+          {% endif %}
+        </div>
+        <div class="col-6">
+          <label for="{{form.new_password2.id_for_label}}">{{form.new_password2.label}}</label>
+          {{form.new_password2}}
+          {% if form.new_password2.errors %}
+              <div class="form-text">
+                  {{form.new_password2.errors}}
+              </div>
+          {% endif %}
+        </div>
+        <div class="col-12">
+            <input class="btn btn-success float-right my-2" type="submit" value="{% translate 'Gem' %}"/>
+            <a href="{% url 'pant:user_view' user.id %}" class="btn btn-secondary my-2 mx-1" role="button">{% translate 'Tilbage' %}</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
