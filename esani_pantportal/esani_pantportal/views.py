@@ -330,7 +330,7 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
         return qs
 
 
-class DetailView(PermissionRequiredMixin, UpdateView):
+class UpdateViewMixin(PermissionRequiredMixin, UpdateView):
     @property
     def same_branch(self):
         obj = self.get_object()
@@ -380,7 +380,7 @@ class DetailView(PermissionRequiredMixin, UpdateView):
         return self.render_to_response(context)
 
 
-class ProductDetailView(DetailView):
+class ProductUpdateView(UpdateViewMixin):
     model = Product
     template_name = "esani_pantportal/product/view.html"
     fields = (
@@ -403,6 +403,8 @@ class ProductDetailView(DetailView):
             if approved:
                 return self.access_denied
             if not self.same_workplace:
+                return self.access_denied
+            if "approved" in form.changed_data:
                 return self.access_denied
 
         return super().form_valid(form)
@@ -440,7 +442,7 @@ class SameCompanyMixin:
         return super().form_valid(form)
 
 
-class UserDetailView(SameCompanyMixin, DetailView):
+class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
     model = User
     template_name = "esani_pantportal/user/view.html"
     fields = (
