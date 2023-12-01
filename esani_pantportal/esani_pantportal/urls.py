@@ -8,9 +8,7 @@ from django_mitid_auth.saml.views import AccessDeniedView
 
 from esani_pantportal.views import (
     ChangePasswordView,
-    CompanyAdminUserDetailView,
     CsvTemplateView,
-    EsaniAdminUserDetailView,
     ExcelTemplateView,
     MultipleProductRegisterView,
     PantportalLoginView,
@@ -25,6 +23,7 @@ from esani_pantportal.views import (
     RegisterEsaniUserView,
     RegisterKioskUserAdminView,
     RegisterKioskUserPublicView,
+    UserDetailView,
     UserSearchView,
 )
 
@@ -85,14 +84,9 @@ urlpatterns = [
     path("bruger/", UserSearchView.as_view(), name="user_list"),
     path("produkt/<int:pk>", ProductDetailView.as_view(), name="product_view"),
     path(
-        "bruger/esani_admin/<int:pk>",
-        EsaniAdminUserDetailView.as_view(),
-        name="user_view_for_esani_admin",
-    ),
-    path(
-        "bruger/admin/<int:pk>",
-        CompanyAdminUserDetailView.as_view(),
-        name="user_view_for_company_admin",
+        "bruger/<int:pk>",
+        UserDetailView.as_view(),
+        name="user_view",
     ),
     path(
         "bruger/<int:pk>/skift_adgangskode",

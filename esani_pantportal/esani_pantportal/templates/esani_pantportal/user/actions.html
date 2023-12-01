@@ -1,5 +1,1 @@
-{% if user.is_esani_admin %}
-<a href="{% url 'pant:user_view_for_esani_admin' item.id %}" class="btn btn-sm btn-primary">Vis</a>
-{% elif user.is_admin %}
-<a href="{% url 'pant:user_view_for_company_admin' item.id %}" class="btn btn-sm btn-primary">Vis</a>
-{% endif %}
+<a href="{% url 'pant:user_view' item.id %}" class="btn btn-sm btn-primary">Vis</a>
