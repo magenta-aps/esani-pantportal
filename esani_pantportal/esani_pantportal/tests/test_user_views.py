@@ -298,12 +298,12 @@ class CompanyAdminUserUpdateViewTest(BaseUserTest):
 class ResetPasswordTest(BaseUserTest):
     def setUp(self):
         self.facebook_employee_password_url = reverse(
-            "pant:change_password",
+            "pant:set_password",
             kwargs={"pk": self.facebook_branch_user.pk},
         )
 
         self.google_employee_password_url = reverse(
-            "pant:change_password",
+            "pant:set_password",
             kwargs={"pk": self.google_admin.pk},
         )
 
@@ -345,3 +345,51 @@ class ResetPasswordTest(BaseUserTest):
         self.assertTrue(ok)
         ok = self.client.login(username="google_admin", password="12345")
         self.assertFalse(ok)
+
+
+class ChangePasswordTest(BaseUserTest):
+    def test_change_password(self):
+        url = reverse("pant:change_password", kwargs={"pk": self.facebook_admin.pk})
+
+        self.client.login(username="facebook_admin", password="12345")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        form_data = self.make_form_data(response.context_data["form"])
+        form_data["old_password"] = "12345"
+        form_data["new_password1"] = "new_pass"
+        form_data["new_password2"] = "new_pass"
+
+        response = self.client.post(url, form_data, follow=True)
+        self.assertEquals(response.status_code, HTTPStatus.OK)
+        self.assertTemplateUsed(response, "esani_pantportal/user/view.html")
+
+        ok = self.client.login(username="facebook_admin", password="new_pass")
+        self.assertTrue(ok)
+
+    def test_change_password_bad_pw(self):
+        url = reverse("pant:change_password", kwargs={"pk": self.facebook_admin.pk})
+        self.client.login(username="facebook_admin", password="12345")
+        response = self.client.get(url)
+        form_data = self.make_form_data(response.context_data["form"])
+
+        # Password is too short
+        form_data["old_password"] = "12345"
+        form_data["new_password1"] = "pw"
+        form_data["new_password2"] = "pw"
+        response = self.client.post(url, form_data)
+        self.assertFalse(response.context_data["form"].is_valid())
+
+        # Wrong old password
+        form_data["old_password"] = "wrong_pw"
+        form_data["new_password1"] = "new_pass"
+        form_data["new_password2"] = "new_pass"
+        response = self.client.post(url, form_data)
+        self.assertFalse(response.context_data["form"].is_valid())
+
+        # Too simple password
+        form_data["old_password"] = "12345"
+        form_data["new_password1"] = "hahahaha"
+        form_data["new_password2"] = "hahahaha"
+        response = self.client.post(url, form_data)
+        self.assertFalse(response.context_data["form"].is_valid())

@@ -113,7 +113,7 @@ Pantportal test:
     - cd /app
     - python manage.py collectstatic
     - coverage run manage.py test
-    - coverage report --show-missing --fail-under=98
+    - coverage report --show-missing --fail-under=100
     - coverage xml
   coverage: '/^TOTAL.+?(\d+\%)$/'
   artifacts:

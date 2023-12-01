@@ -45,6 +45,10 @@
                         <td>
                             &#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;
                             {% if user.username != object.username %}
+                            <a class="icon-link" href="{% url 'pant:set_password' object.id %}">
+                             {% bs_icon "pencil-square" %}
+                            </a>
+                            {% else %}
                             <a class="icon-link" href="{% url 'pant:change_password' object.id %}">
                              {% bs_icon "pencil-square" %}
                             </a>

@@ -23,6 +23,7 @@ from esani_pantportal.views import (
     RegisterEsaniUserView,
     RegisterKioskUserAdminView,
     RegisterKioskUserPublicView,
+    SetPasswordView,
     UserSearchView,
     UserUpdateView,
 )
@@ -89,7 +90,12 @@ urlpatterns = [
         name="user_view",
     ),
     path(
-        "bruger/<int:pk>/skift_adgangskode",
+        "bruger/<int:pk>/adgangskode/nulstil",
+        SetPasswordView.as_view(),
+        name="set_password",
+    ),
+    path(
+        "bruger/<int:pk>/adgangskode/skift",
         ChangePasswordView.as_view(),
         name="change_password",
     ),
