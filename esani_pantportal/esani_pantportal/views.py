@@ -419,41 +419,6 @@ class ProductDetailView(DetailView):
             return self.request.get_full_path()
 
 
-class UserDetailView(DetailView):
-    def get_context_data(self, *args, **kwargs):
-        context_data = super().get_context_data(*args, **kwargs)
-        context_data["user"] = self.request.user
-        context_data["profile"] = context_data["object"].user_profile
-
-        common_attributes = ["name", "address", "postal_code", "city", "phone"]
-        branch_attributes = ["customer_id"]
-        company_attributes = ["cvr", "permit_number"]
-        kiosk_attributes = ["cvr", "permit_number"]
-
-        context_data["branch_info_attributes"] = common_attributes + branch_attributes
-        if context_data["object"].user_type == KIOSK_USER:
-            context_data["branch_info_attributes"].extend(kiosk_attributes)
-        context_data["company_info_attributes"] = common_attributes + company_attributes
-        return context_data
-
-    def get_success_url(self):
-        return self.request.get_full_path()
-
-
-class EsaniAdminUserDetailView(UserDetailView):
-    model = User
-    template_name = "esani_pantportal/user/view.html"
-    fields = (
-        "username",
-        "first_name",
-        "last_name",
-        "email",
-        "phone",
-        "approved",
-    )
-    required_permissions = ["esani_pantportal.change_user"]
-
-
 class SameCompanyMixin:
     def get(self, request, *args, **kwargs):
         user = self.get_object()
@@ -475,7 +440,7 @@ class SameCompanyMixin:
         return super().form_valid(form)
 
 
-class CompanyAdminUserDetailView(SameCompanyMixin, UserDetailView):
+class UserDetailView(SameCompanyMixin, DetailView):
     model = User
     template_name = "esani_pantportal/user/view.html"
     fields = (
@@ -484,7 +449,33 @@ class CompanyAdminUserDetailView(SameCompanyMixin, UserDetailView):
         "last_name",
         "email",
         "phone",
+        "approved",
     )
+
+    def get_context_data(self, *args, **kwargs):
+        context_data = super().get_context_data(*args, **kwargs)
+        context_data["user"] = self.request.user
+        context_data["profile"] = context_data["object"].user_profile
+
+        common_attributes = ["name", "address", "postal_code", "city", "phone"]
+        branch_attributes = ["customer_id"]
+        company_attributes = ["cvr", "permit_number"]
+        kiosk_attributes = ["cvr", "permit_number"]
+
+        context_data["branch_info_attributes"] = common_attributes + branch_attributes
+        if context_data["object"].user_type == KIOSK_USER:
+            context_data["branch_info_attributes"].extend(kiosk_attributes)
+        context_data["company_info_attributes"] = common_attributes + company_attributes
+        return context_data
+
+    def get_success_url(self):
+        return self.request.get_full_path()
+
+    def form_valid(self, form):
+        if "approved" in form.changed_data and not self.request.user.is_esani_admin:
+            return self.access_denied
+        else:
+            return super().form_valid(form)
 
 
 class ChangePasswordView(PermissionRequiredMixin, SameCompanyMixin, UpdateView):
@@ -494,10 +485,7 @@ class ChangePasswordView(PermissionRequiredMixin, SameCompanyMixin, UpdateView):
 
     def get_success_url(self):
         kwargs = {"pk": self.object.pk}
-        if self.request.user.is_esani_admin:
-            return reverse("pant:user_view_for_esani_admin", kwargs=kwargs)
-        else:
-            return reverse("pant:user_view_for_company_admin", kwargs=kwargs)
+        return reverse("pant:user_view", kwargs=kwargs)
 
 
 class MultipleProductRegisterView(PermissionRequiredMixin, FormView):

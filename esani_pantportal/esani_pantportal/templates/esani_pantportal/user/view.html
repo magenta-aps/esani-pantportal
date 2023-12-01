@@ -28,17 +28,10 @@
                         <th>{{object|verbose_name:"user_type"}}</th>
                         <td>{{object|get_display_name:"user_type"}}</td>
                     </tr>
-                    {% if can_approve %}
-                        {% if object.approved %}
-                            {% include "../edit_field.html" with field_name="approved" field=form.approved %}
-                        {% else %}
-                            {% include "../edit_field.html" with field_name="approved" field=form.approved show_pencil=False %}
-                        {% endif %}
+                    {% if can_approve and object.approved %}
+                        {% include "../edit_field.html" with field_name="approved" field=form.approved %}
                     {% else %}
-                    <tr>
-                        <th>{{object|verbose_name:"approved"}}</th>
-                        <td>{{object|get_display_name:"approved"}}</td>
-                    </tr>
+                        {% include "../edit_field.html" with field_name="approved" field=form.approved show_pencil=False %}
                     {% endif %}
                     {% if object.user_type != 1 %}
                         <tr>

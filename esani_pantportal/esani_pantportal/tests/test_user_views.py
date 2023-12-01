@@ -187,7 +187,7 @@ class UserListTest(BaseUserTest):
 class EsaniAdminUserDetailViewTest(BaseUserTest):
     def setUp(self):
         self.facebook_admin_url = reverse(
-            "pant:user_view_for_esani_admin",
+            "pant:user_view",
             kwargs={"pk": self.facebook_admin.pk},
         )
 
@@ -210,31 +210,35 @@ class EsaniAdminUserDetailViewTest(BaseUserTest):
     def test_forbidden(self):
         self.client.login(username="facebook_admin", password="12345")
         response = self.client.get(self.facebook_admin_url)
-        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+        form_data = self.make_form_data(response.context_data["form"])
+        form_data["approved"] = True
+
+        response = self.client.post(self.facebook_admin_url, form_data)
+        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
 
 
 class CompanyAdminUserDetailViewTest(BaseUserTest):
     def setUp(self):
         self.facebook_admin_url = reverse(
-            "pant:user_view_for_company_admin",
+            "pant:user_view",
             kwargs={"pk": self.facebook_admin.pk},
         )
         self.google_admin_url = reverse(
-            "pant:user_view_for_company_admin",
+            "pant:user_view",
             kwargs={"pk": self.google_admin.pk},
         )
 
         self.facebook_branch_user_url = reverse(
-            "pant:user_view_for_company_admin",
+            "pant:user_view",
             kwargs={"pk": self.facebook_branch_user.pk},
         )
 
         self.esani_admin_url = reverse(
-            "pant:user_view_for_company_admin",
+            "pant:user_view",
             kwargs={"pk": self.esani_admin.pk},
         )
         self.kiosk_admin_url = reverse(
-            "pant:user_view_for_company_admin",
+            "pant:user_view",
             kwargs={"pk": self.kiosk_admin.pk},
         )
 
