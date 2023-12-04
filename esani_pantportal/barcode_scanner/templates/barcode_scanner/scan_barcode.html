@@ -275,9 +275,30 @@ function onScanSuccess(barcode, decodedResult) {
     process_barcode(barcode);
 }
 
+// https://danskretursystem.dk/app/uploads/2020/08/Manual_primaer_maerkning_af_emballager.pdf
+// Dansk retursystem:
+// Den primære mærkning omfatter også en stregkode. Den kan være en EAN 13, EAN 8 eller
+// en UPCstregkode
+const formatsToSupport = [
+  Html5QrcodeSupportedFormats.UPC_A,
+  Html5QrcodeSupportedFormats.UPC_E,
+  Html5QrcodeSupportedFormats.EAN_13,
+  Html5QrcodeSupportedFormats.EAN_8,
+];
+
 const html5QrcodeScanner = new Html5QrcodeScanner(
 	"reader",
-	 {fps: 60, qrbox: {width: 250, height: 150}}
+	 {
+	  fps: 10,
+	  qrbox: {width: 250, height: 150},
+	  disableFlip: true,
+	  supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+	  formatsToSupport: formatsToSupport,
+	  useBarCodeDetectorIfSupported: true,
+	  defaultZoomValueIfSupported: 2,
+	  showZoomSliderIfSupported: true,
+	  rememberLastUsedCamera: true
+	 }
 );
 html5QrcodeScanner.render(onScanSuccess);
 
