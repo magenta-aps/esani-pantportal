@@ -6,12 +6,14 @@
 
 {% block extra_headers %}
 <script src="{% static 'jquery/detail_view.js' %}"></script>
+<script src="{% static 'jquery/jquery-3.5.1.min.js' %}"></script>
+<script src="{% static 'bootstrap/bootstrap.bundle.min.js' %}"></script>
 {% endblock %}
 
 {% block content %}
-<form action="" method="post">
-    {% csrf_token %}
-    <div class="mx-5">
+<div class="mx-5">
+    <form action="" method="post">
+        {% csrf_token %}
         <h1>{% translate "Brugerdetaljer" %}</h1>
 
         <div class="row">
@@ -124,13 +126,26 @@
                     </tbody>
                 </table>
                 {% endif %}
-
             </div>
         </div>
-    </div>
-</form>
+    </form>
+
+    {% if can_edit %}
+        {% translate "Når man fjerner en bruger, fjernes den helt fra databasen." as delete_text %}
+        {% url 'pant:user_delete' object.id as delete_url %}
+        {% include "../delete_button.html" with url=delete_url text=delete_text %}
+    {% endif %}
+
+</div>
+
 
 {{ form_fields_to_show|json_script:"form_fields_to_show" }}
 {{ form_fields|json_script:"form_fields" }}
+
+<script>
+$("#delete_button").on('click', function () {
+    return confirm("{% translate 'Er du sikker på at du vil fjerne denne bruger?' %}");
+});
+</script>
 
 {% endblock %}

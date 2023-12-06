@@ -13,6 +13,7 @@ from esani_pantportal.models import (
     EsaniUser,
     Kiosk,
     KioskUser,
+    User,
 )
 
 from .conftest import LoginMixin
@@ -393,3 +394,54 @@ class ChangePasswordTest(BaseUserTest):
         form_data["new_password2"] = "hahahaha"
         response = self.client.post(url, form_data)
         self.assertFalse(response.context_data["form"].is_valid())
+
+
+class DeleteUserTest(BaseUserTest):
+    def test_delete_user_by_esani_admin(self):
+        self.client.login(username="esani_admin", password="12345")
+        username = self.facebook_admin.username
+        url = reverse("pant:user_delete", kwargs={"pk": self.facebook_admin.pk})
+
+        self.assertTrue(User.objects.filter(username=username).exists())
+        self.assertTrue(CompanyUser.objects.filter(username=username).exists())
+
+        response = self.client.post(url)
+
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertFalse(User.objects.filter(username=username).exists())
+        self.assertFalse(CompanyUser.objects.filter(username=username).exists())
+
+    def test_delete_user_by_facebook_admin(self):
+        self.client.login(username="facebook_admin", password="12345")
+        username = self.facebook_branch_admin.username
+        url = reverse("pant:user_delete", kwargs={"pk": self.facebook_branch_admin.pk})
+
+        self.assertTrue(User.objects.filter(username=username).exists())
+        self.assertTrue(BranchUser.objects.filter(username=username).exists())
+
+        response = self.client.post(url)
+
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertFalse(User.objects.filter(username=username).exists())
+        self.assertFalse(BranchUser.objects.filter(username=username).exists())
+
+    def test_delete_self(self):
+        self.client.login(username="facebook_admin", password="12345")
+        username = self.facebook_admin.username
+        url = reverse("pant:user_delete", kwargs={"pk": self.facebook_admin.pk})
+        self.assertTrue(User.objects.filter(username=username).exists())
+        self.assertTrue(CompanyUser.objects.filter(username=username).exists())
+
+        response = self.client.post(url, follow=True)
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertFalse(User.objects.filter(username=username).exists())
+        self.assertFalse(CompanyUser.objects.filter(username=username).exists())
+        self.assertTemplateUsed(response, "esani_pantportal/login.html")
+
+    def test_delete_user_from_other_company(self):
+        self.client.login(username="facebook_admin", password="12345")
+        url = reverse("pant:user_delete", kwargs={"pk": self.google_admin.pk})
+
+        response = self.client.post(url, follow=True)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)

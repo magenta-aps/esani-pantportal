@@ -432,3 +432,17 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             )
             self.prod1.refresh_from_db()
             self.assertDictEqual(model_to_dict(self.prod1), original)
+
+    def test_remove(self):
+        self.client.login(username="branch_user", password="12345")
+        self.assertEqual(self.prod1.created_by.username, "esani_admin")
+        self.assertEqual(self.prod2.created_by.username, "branch_user")
+
+        url_prod1 = reverse("pant:product_delete", kwargs={"pk": self.prod1.pk})
+        url_prod2 = reverse("pant:product_delete", kwargs={"pk": self.prod2.pk})
+        response = self.client.post(url_prod1)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+        response = self.client.post(url_prod2)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertFalse(Product.objects.filter(pk=self.prod2.pk).exists())

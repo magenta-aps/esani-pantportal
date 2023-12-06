@@ -2,6 +2,7 @@
 {% load static %}
 {% load i18n %}
 {% load l10n %}
+{% load bootstrap_icons %}
 
 {# Docs for bootstrap-table: https://bootstrap-table.com/docs/ #}
 {% block extra_headers %}
@@ -43,6 +44,15 @@
             <div class="col-6 clearfix"><button type="submit" class="btn btn-primary float-end">Søg</button></div>
         </div>
     </form>
+
+    <div class="card" id="delete_confirmation" style="display:none">
+        <div class="card-body text-center">
+            {% bs_icon "trash" size="2em" %}
+            <div>
+                {% translate "Produkt fjernet" %}
+            </div>
+        </div>
+    </div>
 
     <table id="table" class="table table-bordered table-striped"
            data-toggle="table"
@@ -87,5 +97,12 @@
 </div>
 
 {{search_data|json_script:"search_data"}}
+
+<script>
+var delete_success = getUrlParameter("delete_success");
+if (delete_success=="1"){
+    $("#delete_confirmation").show()
+    }
+</script>
 
 {% endblock %}

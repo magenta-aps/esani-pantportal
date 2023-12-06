@@ -14,10 +14,18 @@ from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView
 from django.core.exceptions import ValidationError
 from django.forms import model_to_dict
 from django.http import HttpResponse, JsonResponse
+from django.shortcuts import redirect
 from django.template import loader
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import CreateView, FormView, ListView, UpdateView, View
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    FormView,
+    ListView,
+    UpdateView,
+    View,
+)
 
 from esani_pantportal.forms import (
     ChangePasswordForm,
@@ -333,33 +341,6 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
 
 
 class UpdateViewMixin(PermissionRequiredMixin, UpdateView):
-    @property
-    def same_branch(self):
-        obj = self.get_object()
-        author_branch = getattr(obj, "created_by", obj).branch
-        user_branch = self.request.user.branch
-        if author_branch and user_branch:
-            return author_branch == user_branch
-        else:
-            return False
-
-    @property
-    def same_company(self):
-        obj = self.get_object()
-        author_company = getattr(obj, "created_by", obj).company
-        user_company = self.request.user.company
-        if author_company and user_company:
-            return author_company == user_company
-        else:
-            return False
-
-    @property
-    def same_workplace(self):
-        if self.request.user.user_type in [BRANCH_USER, KIOSK_USER]:
-            return self.same_branch
-        elif self.request.user.user_type == COMPANY_USER:
-            return self.same_company
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["form_fields"] = self.fields
@@ -497,6 +478,21 @@ class SetPasswordView(PermissionRequiredMixin, SameCompanyMixin, UpdateView):
         return reverse("pant:user_view", kwargs=kwargs)
 
 
+class UserDeleteView(SameCompanyMixin, PermissionRequiredMixin, DeleteView):
+    model = User
+
+    def get_success_url(self):
+        return reverse("pant:user_list") + "?delete_success=1"
+
+    def form_valid(self, form):
+        if self.object.id == self.request.user.id:
+            # Hvis en bruger forsøger at fjerne sig selv: tilbage til login skærm
+            super().form_valid(form)
+            return redirect(reverse("pant:login"))
+        else:
+            return super().form_valid(form)
+
+
 class ChangePasswordView(PermissionRequiredMixin, PasswordChangeView):
     template_name = "esani_pantportal/user/password/change.html"
     form_class = ChangePasswordForm
@@ -588,3 +584,16 @@ class CsvTemplateView(LoginRequiredMixin, View):
 
         df.to_csv(path_or_buf=response, sep=";", index=False)
         return response
+
+
+class ProductDeleteView(PermissionRequiredMixin, DeleteView):
+    model = Product
+    required_permissions = ["esani_pantportal.delete_product"]
+
+    def form_valid(self, form):
+        if not self.request.user.is_esani_admin and not self.same_workplace:
+            return self.access_denied
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("pant:product_list") + "?delete_success=1"

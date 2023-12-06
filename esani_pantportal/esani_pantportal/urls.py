@@ -13,6 +13,7 @@ from esani_pantportal.views import (
     MultipleProductRegisterView,
     PantportalLoginView,
     PantportalLogoutView,
+    ProductDeleteView,
     ProductRegisterView,
     ProductSearchView,
     ProductUpdateView,
@@ -24,6 +25,7 @@ from esani_pantportal.views import (
     RegisterKioskUserAdminView,
     RegisterKioskUserPublicView,
     SetPasswordView,
+    UserDeleteView,
     UserSearchView,
     UserUpdateView,
 )
@@ -84,11 +86,9 @@ urlpatterns = [
     path("produkt/", ProductSearchView.as_view(), name="product_list"),
     path("bruger/", UserSearchView.as_view(), name="user_list"),
     path("produkt/<int:pk>", ProductUpdateView.as_view(), name="product_view"),
-    path(
-        "bruger/<int:pk>",
-        UserUpdateView.as_view(),
-        name="user_view",
-    ),
+    path("produkt/<int:pk>/fjern", ProductDeleteView.as_view(), name="product_delete"),
+    path("bruger/<int:pk>", UserUpdateView.as_view(), name="user_view"),
+    path("bruger/<int:pk>/fjern", UserDeleteView.as_view(), name="user_delete"),
     path(
         "bruger/<int:pk>/adgangskode/nulstil",
         SetPasswordView.as_view(),

@@ -1,0 +1,21 @@
+{% load i18n %}
+{% load l10n %}
+
+<form action={{url}} method="post">
+    {% csrf_token %}
+    <div class="row">
+        <div class="col-6">
+            <div class="card my-3">
+                <div class="card-body">
+                    <h5 class="cart-title">{% translate "Fjern" %}</h5>
+                    <p class="card-text">
+                        {{ delete_text }}
+                    </p>
+                    <button id="delete_button" type="submit" name="Delete" class="btn btn-danger">
+                        {% translate "Fjern" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
