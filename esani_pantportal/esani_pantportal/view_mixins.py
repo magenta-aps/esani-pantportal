@@ -97,3 +97,30 @@ class PermissionRequiredMixin(LoginRequiredMixin):
             user_ids = []
 
         return user_ids
+
+    @property
+    def same_branch(self):
+        obj = self.get_object()
+        author_branch = getattr(obj, "created_by", obj).branch
+        user_branch = self.request.user.branch
+        if author_branch and user_branch:
+            return author_branch == user_branch
+        else:
+            return False
+
+    @property
+    def same_company(self):
+        obj = self.get_object()
+        author_company = getattr(obj, "created_by", obj).company
+        user_company = self.request.user.company
+        if author_company and user_company:
+            return author_company == user_company
+        else:
+            return False
+
+    @property
+    def same_workplace(self):
+        if self.request.user.user_type in [BRANCH_USER, KIOSK_USER]:
+            return self.same_branch
+        elif self.request.user.user_type == COMPANY_USER:
+            return self.same_company
