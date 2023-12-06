@@ -177,7 +177,7 @@ Configure Prod:
 # Deploy stage
 ##############
 
-Deploy to Staging:
+Deploy to Test:
   stage: deploy
   extends:
     - .rules:semver-all
