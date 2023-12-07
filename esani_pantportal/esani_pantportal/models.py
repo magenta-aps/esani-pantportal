@@ -685,3 +685,84 @@ class KioskUser(User):
     def __str__(self):
         username = self.username
         return f"{username} - Kiosk User"
+
+
+class DepositPayout(models.Model):
+    """Represents a single CSV file of received bottle deposits."""
+
+    filename = models.CharField(max_length=255)
+
+    from_date = models.DateField(
+        _("Fra-dato"),
+        db_index=True,
+    )
+
+    to_date = models.DateField(
+        _("Til-dato"),
+        db_index=True,
+    )
+
+    item_count = models.PositiveIntegerField()
+    """Contains the 'final' item count at end of CSV file"""
+
+    def __str__(self):
+        return f"{self.filename} ({self.pk})"  # pragma: no cover
+
+
+class DepositPayoutItem(models.Model):
+    """Represents a line in a CSV file of received bottle deposits."""
+
+    deposit_payout = models.ForeignKey(
+        DepositPayout,
+        on_delete=models.CASCADE,
+    )
+
+    company_branch = models.ForeignKey(
+        CompanyBranch,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        verbose_name=_("Butik"),
+    )
+    """If the RVM serial number matches a known company branch, we link this item to the
+    company branch"""
+
+    kiosk = models.ForeignKey(
+        Kiosk,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        verbose_name=_("Kiosk"),
+    )
+    """If the RVM serial number matches a known kiosk, we link this item to the kiosk"""
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        verbose_name=_("Produkt"),
+    )
+    """If the bar code matches a known product, we link this item to the product"""
+
+    location_id = models.PositiveIntegerField()
+    """Holds the raw value of the location ID in the CSV file line"""
+
+    rvm_serial = models.PositiveIntegerField()
+    """Serial number of RVM (= 'Reverse vending machine', aka. 'flaskeautomat')"""
+
+    date = models.DateField()
+    """Date for when items have been processed by the RVM.
+    Can be before `DepositPayout.from_date` in case of offline situations.`"""
+
+    barcode = models.CharField(
+        validators=[validate_barcode_length, validate_digit],
+    )
+    """Holds the raw value of the barcode in the CSV file line"""
+
+    count = models.PositiveIntegerField()
+    """Each CSV file line can represent a number of bottles, if they share the same
+    barcode."""
+
+    def __str__(self):
+        return f"{self.count}x {self.barcode}"  # pragma: no cover
