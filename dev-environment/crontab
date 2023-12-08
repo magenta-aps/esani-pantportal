@@ -7,3 +7,4 @@
 # * * * * * command to execute
 
   * * * * * python manage.py export_approved_products_to_csv /srv/media/product_lists
+  * * * * * python manage.py import_deposit_payouts
