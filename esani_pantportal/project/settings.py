@@ -200,3 +200,7 @@ QR_GENERATOR_SERIES = {
 QR_OUTPUT_DIR = "/srv/media/qr_codes"
 
 DEFAULT_REFUND_VALUE = 200
+
+TOMRA_SFTP_URL = os.environ.get(
+    "TOMRA_SFTP_URL", "sftp://sftp_tomra:foo@localhost:2222/deposit_payouts/"
+)

@@ -38,6 +38,7 @@ if [ "$DUMMYDATA" = true ]; then
   python3 manage.py create_dummy_users
   python3 manage.py create_dummy_products
   python3 manage.py create_dummy_packagingregistrations
+  python3 manage.py create_dummy_objects_for_csv_import
 fi
 
 python manage.py createcachetable

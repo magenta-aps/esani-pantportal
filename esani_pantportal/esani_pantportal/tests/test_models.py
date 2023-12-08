@@ -10,6 +10,8 @@ from esani_pantportal.models import (
     Company,
     CompanyBranch,
     CompanyUser,
+    DepositPayout,
+    DepositPayoutItem,
     EsaniUser,
     Kiosk,
     KioskUser,
@@ -96,6 +98,34 @@ class KioskTest(TestCase):
 
     def test_str(self):
         self.assertEqual(str(self.kiosk), "my kiosk - cvr: 11221122")
+
+
+class DepositPayoutTest(TestCase):
+    def setUp(self):
+        self.deposit_payout = DepositPayout.objects.create(
+            filename="hello", from_date="20230101", to_date="20240101", item_count=127
+        )
+
+    def test_str(self):
+        self.assertNotEqual(str(self.deposit_payout), "Hello World!")
+
+
+class DepositPayoutItemTest(TestCase):
+    def setUp(self):
+        deposit_payout = DepositPayout.objects.create(
+            filename="hello", from_date="20230101", to_date="20240101", item_count=127
+        )
+        self.deposit_payout_item = DepositPayoutItem.objects.create(
+            deposit_payout=deposit_payout,
+            location_id=1,
+            rvm_serial=2,
+            date="20230101",
+            barcode="123",
+            count=27,
+        )
+
+    def test_str(self):
+        self.assertNotEqual(str(self.deposit_payout_item), "Hello world!")
 
 
 class UserTest(TestCase):

@@ -13,12 +13,14 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN mkdir /app && \
     mkdir /static && \
     mkdir -p /srv/media && \
+    mkdir -p /srv/media/deposit_payouts && \
     mkdir -p /var/cache/pant && \
     groupadd -g 75140 -r pant && \
     groupadd -g 75100 -r certificate_exporter && \
     useradd -u 75140 --no-log-init -r -g pant -G certificate_exporter pant && \
     chown pant:pant /var/cache/pant && chmod a+w /var/cache/pant && \
-    chown pant:pant /srv/media && chown pant:pant /static && chmod a+w /static
+    chown pant:pant /srv/media && chown pant:pant /static && chmod a+w /static && \
+    chown pant:pant /srv/media/deposit_payouts
 COPY esani_pantportal/requirements.txt /app/requirements.txt
 # hadolint ignore=DL3008
 RUN apt-get update && \
@@ -35,6 +37,7 @@ RUN pip3 install --no-cache-dir -r /app/requirements.txt
 USER pant
 COPY ./docker/entrypoint.sh /entrypoint.sh
 COPY --chown=pant:pant ./esani_pantportal /app
+COPY --chown=pant:pant ./data/deposit_payouts/*.csv /srv/media/deposit_payouts/
 EXPOSE 8000
 VOLUME /srv/media
 ENTRYPOINT ["/entrypoint.sh"]

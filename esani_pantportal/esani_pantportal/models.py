@@ -706,7 +706,7 @@ class DepositPayout(models.Model):
     """Contains the 'final' item count at end of CSV file"""
 
     def __str__(self):
-        return f"{self.filename} ({self.pk})"  # pragma: no cover
+        return f"{self.filename} ({self.pk})"
 
 
 class DepositPayoutItem(models.Model):
@@ -765,4 +765,4 @@ class DepositPayoutItem(models.Model):
     barcode."""
 
     def __str__(self):
-        return f"{self.count}x {self.barcode}"  # pragma: no cover
+        return f"{self.count}x {self.barcode}"

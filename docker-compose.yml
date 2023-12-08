@@ -17,6 +17,7 @@ services:
       - ./esani_pantportal/:/app
       - ./dev-environment/cert:/ssl:ro
       - ./data/qr_codes:/srv/media/qr_codes
+      - ./data/deposit_payouts:/srv/media/deposit_payouts
     depends_on:
       - pantportal-db
     environment:
@@ -56,6 +57,7 @@ services:
     image: atmoz/sftp
     volumes:
         - ./data/product_lists:/home/sftp_tomra/product_lists
+        - ./data/deposit_payouts:/home/sftp_tomra/deposit_payouts
         - ./dev-environment/users.conf:/etc/sftp/users.conf
     ports:
         - "2222:22"
