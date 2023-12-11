@@ -79,6 +79,12 @@ SPDX-License-Identifier: MPL-2.0
             </div>
             <div class="col-6 text-start" id="product_name"></div>
         </div>
+        <div class="row my-1">
+            <div class="col-6 text-end">
+                <b>{% translate "Format:" %}</b>
+            </div>
+            <div class="col-6 text-start" id="barcode_format_success"></div>
+        </div>
     </div>
     <div id="failure" style="display:none">
         <div class="row my-1 justify-content-center">
@@ -103,6 +109,13 @@ SPDX-License-Identifier: MPL-2.0
             </div>
             <div class="col-6 text-start">0</div>
         </div>
+        <div class="row my-1">
+            <div class="col-6 text-end">
+                <b>{% translate "Format:" %}</b>
+            </div>
+            <div class="col-6 text-start" id="barcode_format_failure"></div>
+        </div>
+
     </div>
     <div id="results_div" style="display:none">
         <div class="row my-1 justify-content-center">
@@ -273,6 +286,10 @@ function process_barcode(barcode) {
 
 function onScanSuccess(barcode, decodedResult) {
     process_barcode(barcode);
+    console.log(decodedResult)
+    format = decodedResult["result"]["format"]["formatName"]
+    $("#barcode_format_success").text(format);
+    $("#barcode_format_failure").text(format);
 }
 
 // https://danskretursystem.dk/app/uploads/2020/08/Manual_primaer_maerkning_af_emballager.pdf
