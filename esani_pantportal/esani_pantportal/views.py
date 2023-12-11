@@ -46,7 +46,6 @@ from esani_pantportal.models import (
     KIOSK_USER,
     BranchUser,
     Company,
-    CompanyBranch,
     CompanyUser,
     EsaniUser,
     KioskUser,
@@ -110,7 +109,7 @@ class RegisterBranchUserView(CreateView):
         # dict of companies and which shops they own
         branch_dict = {}
         for company in Company.objects.all():
-            branches = CompanyBranch.objects.filter(company__pk=company.pk)
+            branches = company.branches.all()
             branch_dict[company.pk] = [b.pk for b in branches]
 
         context_data["branch_dict"] = branch_dict
@@ -234,7 +233,8 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
         data = self.search_data
         qs = self.model.objects.all()
 
-        # django-filter kan gøre det samme, men der er ingen grund til at overkomplicere tingene
+        # django-filter kan gøre det samme, men der er ingen grund til at
+        # overkomplicere tingene
 
         for field in ("approved",):  # præcist match
             if data.get(field, None) not in (None, ""):  # False er en gyldig værdi
@@ -567,9 +567,12 @@ class ExcelTemplateView(LoginRequiredMixin, View):
             writer.close()
 
             filename = "template.xlsx"
+            content_type = (
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
             response = HttpResponse(
                 b.getvalue(),
-                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                content_type=content_type,
             )
             response["Content-Disposition"] = "attachment; filename=%s" % filename
             return response
