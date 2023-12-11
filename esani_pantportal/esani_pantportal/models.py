@@ -216,7 +216,7 @@ class CompanyBranch(Branch):
         verbose_name=_("Virksomhed"),
         help_text=_("Virksomhed som denne butik tilhører"),
         on_delete=models.PROTECT,
-        related_name="company",
+        related_name="branches",
     )
 
     def __str__(self):
@@ -274,10 +274,10 @@ class RefundMethod(models.Model):
 
     branch = models.ForeignKey(
         "CompanyBranch",
-        verbose_name=_("Kæde"),
-        help_text=_("Kæde hvor denne maskine står"),
+        verbose_name=_("Afdeling"),
+        help_text=_("Afdeling hvor denne maskine står"),
         on_delete=models.PROTECT,
-        related_name="kæde",
+        related_name="refund_methods",
         null=True,
         blank=True,
         default=None,
@@ -288,59 +288,10 @@ class RefundMethod(models.Model):
         verbose_name=_("Butik"),
         help_text=_("Butik hvor denne maskine står"),
         on_delete=models.PROTECT,
-        related_name="kiosk",
+        related_name="refund_methods",
         null=True,
         blank=True,
         default=None,
-    )
-
-
-class PackagingRegistration(models.Model):
-    class Meta:
-        ordering = ["date"]
-
-    registration_number = models.PositiveIntegerField(
-        verbose_name=_("Afgiftsanmeldelsesnummer"),
-        help_text=_("Afgiftsanmeldelsesnummer"),
-        unique=True,
-    )
-    registration_company = models.ForeignKey(
-        "Company",
-        verbose_name=_("Anmelder"),
-        help_text=_("Firma ansvarligt for afgiftsanmeldelsen"),
-        on_delete=models.PROTECT,
-        related_name="registered_packaging",
-    )
-    recipient_company = models.ForeignKey(
-        "Company",
-        verbose_name=_("Varemodtager"),
-        help_text=_("Firma, som skal modtage varerne og betale pant"),
-        on_delete=models.PROTECT,
-        related_name="received_packaging",
-    )
-    date = models.DateField(
-        _("Dato"),
-        auto_now_add=True,
-        db_index=True,
-    )
-
-
-class ProductLine(models.Model):
-    packaging_registration = models.ForeignKey(
-        PackagingRegistration,
-        on_delete=models.CASCADE,
-    )
-
-    quantity = models.PositiveIntegerField(
-        verbose_name=_("Antal"),
-        help_text=_("Styks pant-pligtig emballage importeret"),
-    )
-    product = models.ForeignKey(
-        "Product",
-        verbose_name=_("Produkt"),
-        help_text=_("Indmeldte produkt"),
-        on_delete=models.PROTECT,
-        related_name="product_line",
     )
 
 
@@ -629,7 +580,7 @@ class BranchUser(User):
         verbose_name=_("Butik"),
         help_text=_("Butik hvor denne bruger arbejder"),
         on_delete=models.PROTECT,
-        related_name="user_branch",
+        related_name="users",
     )
 
     def save(self, *args, **kwargs):
@@ -652,7 +603,7 @@ class CompanyUser(User):
         verbose_name=_("Virksomhed"),
         help_text=_("Virksomhed hvor denne bruger arbejder"),
         on_delete=models.PROTECT,
-        related_name="user_company",
+        related_name="users",
     )
 
     def save(self, *args, **kwargs):
@@ -675,7 +626,7 @@ class KioskUser(User):
         verbose_name=_("Butik"),
         help_text=_("Butik hvor denne bruger arbejder"),
         on_delete=models.PROTECT,
-        related_name="user_kiosk",
+        related_name="users",
     )
 
     def save(self, *args, **kwargs):

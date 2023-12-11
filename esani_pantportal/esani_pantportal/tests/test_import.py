@@ -46,10 +46,13 @@ class MultipleProductRegisterFormTests(LoginMixin, TestCase):
     def make_excel_file_dict(self, df):
         output_stream = io.BytesIO()
         df.to_excel(output_stream, index=False, sheet_name="Ark1")
+        content_type = (
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
         file = SimpleUploadedFile(
             "test_data.xlsx",
             output_stream.getvalue(),
-            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            content_type=content_type,
         )
         return {"file": file}
 

@@ -14,7 +14,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if settings.ENVIRONMENT in ("production", "staging"):
             raise Exception(
-                f"Will not create dummy objects for CSV import in {settings.ENVIRONMENT}"
+                "Will not create dummy objects for CSV import in "
+                + f"{settings.ENVIRONMENT}"
             )
 
         # Add `RefundMethod` objects matching "Kamik" kiosk.
