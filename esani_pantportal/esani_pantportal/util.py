@@ -54,9 +54,9 @@ def default_dataframe():
         df.loc[i, defaults["barcode"]] = f"0000000{i}"
         df.loc[i, defaults["material"]] = next(materials)
         df.loc[i, defaults["height"]] = 150
-        df.loc[i, defaults["diameter"]] = 20
+        df.loc[i, defaults["diameter"]] = 60
         df.loc[i, defaults["weight"]] = 200
-        df.loc[i, defaults["capacity"]] = 33
+        df.loc[i, defaults["capacity"]] = 330
         df.loc[i, defaults["shape"]] = next(shapes)
         df.loc[i, defaults["danish"]] = next(danish)
     return df

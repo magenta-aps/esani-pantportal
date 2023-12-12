@@ -12,7 +12,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
-from esani_pantportal.forms import MultipleProductRegisterForm
+from esani_pantportal.forms import MultipleProductRegisterForm, ProductRegisterForm
 from esani_pantportal.models import (
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
@@ -23,6 +23,33 @@ from esani_pantportal.util import default_dataframe
 from .conftest import LoginMixin
 
 ProductMock = MagicMock()
+
+invalid_heights = [
+    ("F", 84),
+    ("F", 381),
+    ("D", 79),
+    ("D", 201),
+    ("A", 79),
+    ("A", 381),
+]
+
+invalid_capacities = [
+    ("F", 149),
+    ("F", 3001),
+    ("D", 149),
+    ("D", 1001),
+    ("A", 149),
+    ("A", 3001),
+]
+
+invalid_diameters = [
+    ("F", 49),
+    ("F", 131),
+    ("D", 49),
+    ("D", 101),
+    ("A", 49),
+    ("A", 131),
+]
 
 
 class MultipleProductRegisterFormTests(LoginMixin, TestCase):
@@ -216,6 +243,45 @@ class MultipleProductRegisterFormTests(LoginMixin, TestCase):
         self.assertEquals(len(form.errors), 1)
         self.assertIn("capacity_col", form.errors)
 
+    def test_import_csv_invalid_diameter(self):
+        df = default_dataframe()
+        for shape, value in invalid_diameters:
+            df.loc[0, "Diameter [mm]"] = value
+            df.loc[0, "Form [str]"] = shape
+            file = self.make_csv_file_dict(df)
+
+            form = MultipleProductRegisterForm(self.defaults, file)
+
+            self.assertEquals(form.is_valid(), False)
+            self.assertEquals(len(form.errors), 1)
+            self.assertIn("diameter_col", form.errors)
+
+    def test_import_csv_invalid_capacity(self):
+        df = default_dataframe()
+        for shape, value in invalid_capacities:
+            df.loc[0, "Volumen [ml]"] = value
+            df.loc[0, "Form [str]"] = shape
+            file = self.make_csv_file_dict(df)
+
+            form = MultipleProductRegisterForm(self.defaults, file)
+
+            self.assertEquals(form.is_valid(), False)
+            self.assertEquals(len(form.errors), 1)
+            self.assertIn("capacity_col", form.errors)
+
+    def test_import_csv_invalid_height(self):
+        df = default_dataframe()
+        for shape, value in invalid_heights:
+            df.loc[0, "Højde [mm]"] = value
+            df.loc[0, "Form [str]"] = shape
+            file = self.make_csv_file_dict(df)
+
+            form = MultipleProductRegisterForm(self.defaults, file)
+
+            self.assertEquals(form.is_valid(), False)
+            self.assertEquals(len(form.errors), 1)
+            self.assertIn("height_col", form.errors)
+
     def test_import_csv_empty_integer_field(self):
         df = default_dataframe()
         df.loc[0, "Volumen [ml]"] = None
@@ -313,10 +379,10 @@ class MultipleProductRegisterFormTests(LoginMixin, TestCase):
             product_name="foo",
             approved=False,
             material=PRODUCT_MATERIAL_CHOICES[0][0],
-            height=1,
-            diameter=1,
+            height=100,
+            diameter=50,
             weight=1,
-            capacity=1,
+            capacity=200,
             shape=PRODUCT_SHAPE_CHOICES[0][0],
         )
 
@@ -367,9 +433,9 @@ class TestProductRegisterView(LoginMixin, TestCase):
             "product_type": "Øl",
             "material": "P",
             "height": 100,
-            "diameter": 200,
+            "diameter": 100,
             "weight": 100,
-            "capacity": 100,
+            "capacity": 150,
             "shape": "F",
             "danish": "U",
         }
@@ -394,6 +460,42 @@ class SingleProductRegisterFormTests(LoginMixin, TestCase):
             "shape": "F",
             "danish": "J",
         }
+
+    def test_invalid_diameter(self):
+        parameters = self.defaults
+        for shape, value in invalid_diameters:
+            parameters["diameter"] = value
+            parameters["shape"] = shape
+
+            form = ProductRegisterForm(parameters)
+
+            self.assertEquals(form.is_valid(), False)
+            self.assertEquals(len(form.errors), 1)
+            self.assertIn("diameter", form.errors)
+
+    def test_invalid_height(self):
+        parameters = self.defaults
+        for shape, value in invalid_heights:
+            parameters["height"] = value
+            parameters["shape"] = shape
+
+            form = ProductRegisterForm(parameters)
+
+            self.assertEquals(form.is_valid(), False)
+            self.assertEquals(len(form.errors), 1)
+            self.assertIn("height", form.errors)
+
+    def test_invalid_capacity(self):
+        parameters = self.defaults
+        for shape, value in invalid_capacities:
+            parameters["capacity"] = value
+            parameters["shape"] = shape
+
+            form = ProductRegisterForm(parameters)
+
+            self.assertEquals(form.is_valid(), False)
+            self.assertEquals(len(form.errors), 1)
+            self.assertIn("capacity", form.errors)
 
     def test_view_get(self):
         self.login("BranchAdmins")

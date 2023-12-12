@@ -147,6 +147,15 @@
           <li>
           {% translate "Alle stregkoder skal være unikke." %}
           </li>
+          <li>
+          {% translate "Gyldige produktdiametre er: " %} {{"diameter"|constraints_string:" mm"}}
+          </li>
+          <li>
+          {% translate "Gyldige produkthøjder er: " %} {{"height"|constraints_string:" mm"}}
+          </li>
+          <li>
+          {% translate "Gyldige produktrumfang er: " %} {{"capacity"|constraints_string:" ml"}}
+          </li>
           </ul>
               <a href="{% url 'pant:example_csv' %}" class="btn btn-sm btn-primary">
                  {% translate "Download eksempel csv-fil" %}

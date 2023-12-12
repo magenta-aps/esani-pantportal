@@ -51,10 +51,10 @@ class Command(BaseCommand):
                 barcode=barcode,
                 approved=random.choice([True, False]),
                 material=random.choice(PRODUCT_MATERIAL_CHOICES)[0],
-                height=random.randint(10, 100),
-                diameter=random.randint(10, 100),
+                height=random.randint(85, 200),
+                diameter=random.randint(50, 100),
                 weight=random.randint(100, 1000),
-                capacity=random.randint(100, 1000),
+                capacity=random.randint(150, 1000),
                 shape=random.choice(PRODUCT_SHAPE_CHOICES)[0],
                 created_by=user,
             )

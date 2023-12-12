@@ -18,7 +18,7 @@ class BarcodeScannerTestCase(TestCase):
             height=200,
             diameter=100,
             weight=50,
-            capacity=20,
+            capacity=200,
             shape="F",
         )
 
@@ -30,7 +30,7 @@ class BarcodeScannerTestCase(TestCase):
             height=200,
             diameter=100,
             weight=50,
-            capacity=20,
+            capacity=200,
             shape="F",
         )
 

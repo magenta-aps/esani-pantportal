@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.db.utils import IntegrityError
 from django.test import TestCase
 
 from esani_pantportal.models import (
@@ -15,6 +16,7 @@ from esani_pantportal.models import (
     EsaniUser,
     Kiosk,
     KioskUser,
+    Product,
     QRCodeGenerator,
     QRCodeInterval,
     validate_barcode_length,
@@ -217,3 +219,70 @@ class UserTest(TestCase):
             str(self.facebook_branch_admin.user_profile),
             "facebook_branch_admin - Branch User",
         )
+
+
+class ProductTest(TestCase):
+    def test_create_product(self):
+        product1 = Product.objects.create(
+            product_name="prod1",
+            barcode="0010",
+            refund_value=3,
+            approved=False,
+            material="A",
+            height=100,
+            diameter=60,
+            weight=20,
+            capacity=500,
+            shape="F",
+        )
+
+        self.assertEqual(product1.product_name, "prod1")
+
+    def test_create_product_existing_barcode(self):
+        product1 = Product(
+            product_name="prod1",
+            barcode="0011",
+            refund_value=3,
+            approved=False,
+            material="A",
+            height=100,
+            diameter=60,
+            weight=20,
+            capacity=500,
+            shape="F",
+        )
+
+        product2 = Product(
+            product_name="prod2",
+            barcode="0011",
+            refund_value=3,
+            approved=False,
+            material="A",
+            height=100,
+            diameter=60,
+            weight=20,
+            capacity=500,
+            shape="F",
+        )
+
+        product1.save()
+
+        with self.assertRaisesRegexp(IntegrityError, ".*duplicate key value.*"):
+            product2.save()
+
+    def test_create_product_invalid_dimensions(self):
+        product = Product(
+            product_name="prod2",
+            barcode="0011",
+            refund_value=3,
+            approved=False,
+            material="A",
+            height=10,
+            diameter=60,
+            weight=20,
+            capacity=500,
+            shape="F",
+        )
+
+        with self.assertRaisesRegexp(IntegrityError, "height_constraints"):
+            product.save()
