@@ -440,7 +440,11 @@ class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
     def get_context_data(self, *args, **kwargs):
         context_data = super().get_context_data(*args, **kwargs)
         context_data["user"] = self.request.user
-        context_data["profile"] = context_data["object"].user_profile
+        context_data["profile"] = (
+            context_data["object"]
+            if context_data["form"].is_valid()
+            else User.objects.get(pk=context_data["object"].pk)
+        ).user_profile
 
         common_attributes = ["name", "address", "postal_code", "city", "phone"]
         branch_attributes = ["customer_id"]
