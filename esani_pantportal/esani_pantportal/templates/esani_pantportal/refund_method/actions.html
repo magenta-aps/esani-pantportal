@@ -1,0 +1,3 @@
+<form method="POST" action="{% url 'pant:refund_method_delete' item.id %}">
+   {% csrf_token %}<input type="submit" class="btn btn-sm btn-danger" value="Fjern">
+</form>

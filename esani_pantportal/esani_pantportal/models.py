@@ -45,9 +45,9 @@ DANISH_PANT_CHOICES = [
 
 
 REFUND_METHOD_CHOICES = [
-    ("K", "Flaskeautomat m/komprimator"),
-    ("S", "Flaskeautomat m/sikkerhedscontainer"),
-    ("SK", "Flaskeautomat m/komprimator m/sikkerhedscontainer"),
+    ("FK", "Flaskeautomat m/komprimator"),
+    ("FS", "Flaskeautomat m/sikkerhedscontainer"),
+    ("FKS", "Flaskeautomat m/komprimator m/sikkerhedscontainer"),
     ("S", "Sække"),
     ("M", "Manuel sortering"),
     ("A", "Anden"),
@@ -255,6 +255,12 @@ class Kiosk(Branch):
 
 
 class RefundMethod(models.Model):
+    class Meta:
+        verbose_name = "refundmethod"
+        verbose_name_plural = "refundmethods"
+        abstract = False
+        ordering = ["serial_number"]
+
     # Note: Compensation seems to be dependent on the kind of machine a branch has.
     # See
     # https://danskretursystem.dk/app/uploads/2023/05/Haandteringsgodtgoerelse_2023.pdf
@@ -299,6 +305,12 @@ class RefundMethod(models.Model):
         blank=True,
         default=None,
     )
+
+    def get_branch(self):
+        return self.branch or self.kiosk
+
+    def get_company(self):
+        return self.branch.company if self.branch else None
 
 
 class Product(models.Model):
@@ -429,6 +441,12 @@ class Product(models.Model):
         default="U",
         choices=DANISH_PANT_CHOICES,
     )
+
+    def get_branch(self):
+        return self.created_by.branch if self.created_by else None
+
+    def get_company(self):
+        return self.created_by.company if self.created_by else None
 
 
 class QRCodeGenerator(models.Model):
@@ -614,6 +632,12 @@ class User(AbstractUser):
     def is_admin(self):
         admin_groups = ["EsaniAdmins", "CompanyAdmins", "BranchAdmins", "KioskAdmins"]
         return self.groups.filter(name__in=admin_groups)
+
+    def get_branch(self):
+        return self.branch
+
+    def get_company(self):
+        return self.company
 
 
 class EsaniUser(User):

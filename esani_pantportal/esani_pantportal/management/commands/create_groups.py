@@ -12,6 +12,7 @@ from esani_pantportal.models import (
     EsaniUser,
     KioskUser,
     Product,
+    RefundMethod,
     User,
 )
 
@@ -61,6 +62,9 @@ class Command(BaseCommand):
             CompanyUser, for_concrete_model=False
         )
         user_model = ContentType.objects.get_for_model(User, for_concrete_model=False)
+        refund_method_model = ContentType.objects.get_for_model(
+            RefundMethod, for_concrete_model=False
+        )
 
         def get_permission(action, model):
             return Permission.objects.get(
@@ -81,6 +85,10 @@ class Command(BaseCommand):
             ("add", company_user_model),
             ("change", company_user_model),
             ("delete", company_user_model),
+            ("view", refund_method_model),
+            ("add", refund_method_model),
+            ("change", refund_method_model),
+            ("delete", refund_method_model),
         ):
             company_admins.permissions.add(get_permission(action, model))
 
@@ -94,6 +102,10 @@ class Command(BaseCommand):
             ("change", branch_user_model),
             ("delete", branch_user_model),
             ("view", user_model),
+            ("view", refund_method_model),
+            ("add", refund_method_model),
+            ("change", refund_method_model),
+            ("delete", refund_method_model),
         ):
             branch_admins.permissions.add(get_permission(action, model))
 
@@ -107,6 +119,10 @@ class Command(BaseCommand):
             ("change", kiosk_user_model),
             ("delete", kiosk_user_model),
             ("view", user_model),
+            ("view", refund_method_model),
+            ("add", refund_method_model),
+            ("change", refund_method_model),
+            ("delete", refund_method_model),
         ):
             kiosk_admins.permissions.add(get_permission(action, model))
 
@@ -154,5 +170,9 @@ class Command(BaseCommand):
             ("add", kiosk_user_model),
             ("change", kiosk_user_model),
             ("delete", kiosk_user_model),
+            ("view", refund_method_model),
+            ("add", refund_method_model),
+            ("change", refund_method_model),
+            ("delete", refund_method_model),
         ):
             esani_admins.permissions.add(get_permission(action, model))
