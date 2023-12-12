@@ -46,7 +46,9 @@
       <label for="{{form.height.id_for_label}}">{{form.height.label}}</label>
       {{form.height}}
       <div class="form-text">
-          {{form.height.help_text}}
+          {{form.height.help_text}}:
+          <br>
+          {{"height"|constraints_string:"mm"}}
           {{form.height.errors}}
       </div>
     </div>
@@ -54,7 +56,9 @@
       <label for="{{form.diameter.id_for_label}}">{{form.diameter.label}}</label>
       {{form.diameter}}
       <div class="form-text">
-          {{form.diameter.help_text}}
+          {{form.diameter.help_text}}:
+          <br>
+          {{"diameter"|constraints_string:"mm"}}
           {{form.diameter.errors}}
       </div>
     </div>
@@ -62,7 +66,9 @@
       <label for="{{form.capacity.id_for_label}}">{{form.capacity.label}}</label>
       {{form.capacity}}
       <div class="form-text">
-          {{form.capacity.help_text}}
+          {{form.capacity.help_text}}:
+          <br>
+          {{"capacity"|constraints_string:"ml"}}
           {{form.capacity.errors}}
       </div>
     </div>

@@ -33,6 +33,7 @@ PRODUCT_MATERIAL_CHOICES = [
 
 PRODUCT_SHAPE_CHOICES = [
     ("F", "Flaske"),
+    ("D", "Dåse"),
     ("A", "Anden"),
 ]
 
@@ -76,6 +77,11 @@ COMPANY_TYPE_CHOICES = (
     ("E", "Eksportør"),
     ("A", "Andet"),
 )
+
+
+diameter_constraints = settings.PRODUCT_CONSTRAINTS["diameter"]
+height_constraints = settings.PRODUCT_CONSTRAINTS["height"]
+capacity_constraints = settings.PRODUCT_CONSTRAINTS["capacity"]
 
 
 class AbstractCompany(models.Model):
@@ -303,6 +309,63 @@ class Product(models.Model):
                 "approve_product",
                 "User is allowed to approve products awaiting registration",
             )
+        ]
+
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(
+                    shape="F",
+                    height__gte=height_constraints["F"][0],
+                    height__lte=height_constraints["F"][1],
+                )
+                | models.Q(
+                    shape="D",
+                    height__gte=height_constraints["D"][0],
+                    height__lte=height_constraints["D"][1],
+                )
+                | models.Q(
+                    shape="A",
+                    height__gte=height_constraints["A"][0],
+                    height__lte=height_constraints["A"][1],
+                ),
+                name="height_constraints",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    shape="F",
+                    diameter__gte=diameter_constraints["F"][0],
+                    diameter__lte=diameter_constraints["F"][1],
+                )
+                | models.Q(
+                    shape="D",
+                    diameter__gte=diameter_constraints["D"][0],
+                    diameter__lte=diameter_constraints["D"][1],
+                )
+                | models.Q(
+                    shape="A",
+                    diameter__gte=diameter_constraints["A"][0],
+                    diameter__lte=diameter_constraints["A"][1],
+                ),
+                name="diameter_constraints",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    shape="F",
+                    capacity__gte=capacity_constraints["F"][0],
+                    capacity__lte=capacity_constraints["F"][1],
+                )
+                | models.Q(
+                    shape="D",
+                    capacity__gte=capacity_constraints["D"][0],
+                    capacity__lte=capacity_constraints["D"][1],
+                )
+                | models.Q(
+                    shape="A",
+                    capacity__gte=capacity_constraints["A"][0],
+                    capacity__lte=capacity_constraints["A"][1],
+                ),
+                name="capacity_constraints",
+            ),
         ]
 
     created_by = models.ForeignKey(

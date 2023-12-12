@@ -7,6 +7,7 @@ from typing import Any, Dict
 from urllib.parse import unquote
 
 import pandas as pd
+from django.conf import settings
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
@@ -33,12 +34,14 @@ from esani_pantportal.forms import (
     PantPortalAuthenticationForm,
     ProductFilterForm,
     ProductRegisterForm,
+    ProductUpdateForm,
     RegisterBranchUserMultiForm,
     RegisterCompanyUserMultiForm,
     RegisterEsaniUserForm,
     RegisterKioskUserMultiForm,
     SetPasswordForm,
     UserFilterForm,
+    UserUpdateForm,
 )
 from esani_pantportal.models import (
     BRANCH_USER,
@@ -76,6 +79,11 @@ class ProductRegisterView(PermissionRequiredMixin, CreateView):
         self.object = form.save(commit=False)
         self.object.created_by = self.request.user
         return super().form_valid(form)
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context["product_constraints"] = settings.PRODUCT_CONSTRAINTS
+        return context
 
     def get_success_url(self):
         return reverse("pant:product_register_success")
@@ -343,7 +351,7 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
 class UpdateViewMixin(PermissionRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["form_fields"] = self.fields
+        context["form_fields"] = list(context["form"].fields.keys())
 
         if self.request.user.is_esani_admin:
             context["can_approve"] = True
@@ -366,18 +374,7 @@ class UpdateViewMixin(PermissionRequiredMixin, UpdateView):
 class ProductUpdateView(UpdateViewMixin):
     model = Product
     template_name = "esani_pantportal/product/view.html"
-    fields = (
-        "approved",
-        "product_name",
-        "barcode",
-        "danish",
-        "material",
-        "height",
-        "diameter",
-        "weight",
-        "capacity",
-        "shape",
-    )
+    form_class = ProductUpdateForm
     required_permissions = ["esani_pantportal.change_product"]
 
     def form_valid(self, form):
@@ -428,14 +425,7 @@ class SameCompanyMixin:
 class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
     model = User
     template_name = "esani_pantportal/user/view.html"
-    fields = (
-        "username",
-        "first_name",
-        "last_name",
-        "email",
-        "phone",
-        "approved",
-    )
+    form_class = UserUpdateForm
 
     def get_context_data(self, *args, **kwargs):
         context_data = super().get_context_data(*args, **kwargs)

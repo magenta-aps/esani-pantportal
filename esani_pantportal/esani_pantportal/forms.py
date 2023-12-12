@@ -51,13 +51,65 @@ class ProductRegisterForm(forms.ModelForm, BootstrapForm):
         fields = (
             "product_name",
             "barcode",
+            "shape",
             "material",
             "height",
             "diameter",
             "weight",
             "capacity",
+            "danish",
+        )
+
+    def check_min_max(self, attr, unit):
+        value = self.cleaned_data[attr]
+        shape = self.cleaned_data["shape"]
+        min_value, max_value = settings.PRODUCT_CONSTRAINTS[attr][shape]
+
+        if value < min_value or value > max_value:
+            raise ValidationError(
+                _("Værdi skal være mellem {min_value} og {max_value} {unit}").format(
+                    min_value=min_value, max_value=max_value, unit=unit
+                )
+            )
+        return value
+
+    def clean_diameter(self):
+        return self.check_min_max("diameter", "mm")
+
+    def clean_height(self):
+        return self.check_min_max("height", "mm")
+
+    def clean_capacity(self):
+        return self.check_min_max("capacity", "ml")
+
+
+class ProductUpdateForm(ProductRegisterForm):
+    class Meta:
+        model = Product
+        fields = (
+            "approved",
+            "product_name",
+            "barcode",
             "shape",
             "danish",
+            "material",
+            "height",
+            "diameter",
+            "weight",
+            "capacity",
+        )
+
+
+class UserUpdateForm(forms.ModelForm, BootstrapForm):
+    class Meta:
+        model = User
+        fields = (
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "phone",
+            "approved",
         )
 
 
@@ -612,6 +664,10 @@ class MultipleProductRegisterForm(BootstrapForm):
         initial=defaults["product_name"],
         label=_("Produktnavn-kolonnenavn"),
     )
+    shape_col = forms.CharField(
+        initial=defaults["shape"],
+        label=_("Form-kolonnenavn"),
+    )
     material_col = forms.CharField(
         initial=defaults["material"],
         label=_("Materiale-kolonnenavn"),
@@ -632,10 +688,6 @@ class MultipleProductRegisterForm(BootstrapForm):
         initial=defaults["capacity"],
         label=_("Volumen-kolonnenavn"),
     )
-    shape_col = forms.CharField(
-        initial=defaults["shape"],
-        label=_("Form-kolonnenavn"),
-    )
     danish_col = forms.CharField(
         initial=defaults["danish"],
         label=_("Dansk pant-kolonnenavn"),
@@ -653,6 +705,7 @@ class MultipleProductRegisterForm(BootstrapForm):
         self.valid_materials = make_valid_choices_str(PRODUCT_MATERIAL_CHOICES)
         self.valid_shapes = make_valid_choices_str(PRODUCT_SHAPE_CHOICES)
         self.valid_danish_strings = make_valid_choices_str(DANISH_PANT_CHOICES)
+        self.product_constraints = settings.PRODUCT_CONSTRAINTS
 
         super().__init__(*args, **kwargs)
 
@@ -777,6 +830,31 @@ class MultipleProductRegisterForm(BootstrapForm):
                     )
                 )
 
+    def validate_minmax(self, col, unit):
+        if "shape_col" not in self.cleaned_data:
+            return
+        else:
+            shape_col_name = self.cleaned_data["shape_col"]
+            col_name = self.cleaned_data[col]
+
+        for row_number in self.df.index:
+            value = self.df.loc[row_number, col_name]
+            shape = self.df.loc[row_number, shape_col_name]
+            min_value, max_value = settings.PRODUCT_CONSTRAINTS[col[:-4]][shape]
+            if value < min_value or value > max_value:
+                raise ValidationError(
+                    _(
+                        "Værdien '{value}' i række {row_number} "
+                        "skal være mellem {min_value} og {max_value} {unit}"
+                    ).format(
+                        value=value,
+                        row_number=row_number,
+                        min_value=min_value,
+                        max_value=max_value,
+                        unit=unit,
+                    )
+                )
+
     def clean_file(self):
         data = self.cleaned_data["file"]
         validate_file_extension(data, self.valid_extensions)
@@ -836,6 +914,8 @@ class MultipleProductRegisterForm(BootstrapForm):
         column_exists = self.validate_that_column_exists(col_name)
         if column_exists:
             self.validate_positive_integer(col_name)
+            self.validate_minmax("height_col", "mm")
+
         return col_name
 
     def clean_diameter_col(self):
@@ -844,6 +924,7 @@ class MultipleProductRegisterForm(BootstrapForm):
         column_exists = self.validate_that_column_exists(col_name)
         if column_exists:
             self.validate_positive_integer(col_name)
+            self.validate_minmax("diameter_col", "mm")
         return col_name
 
     def clean_weight_col(self):
@@ -860,6 +941,8 @@ class MultipleProductRegisterForm(BootstrapForm):
         column_exists = self.validate_that_column_exists(col_name)
         if column_exists:
             self.validate_positive_integer(col_name)
+            self.validate_minmax("capacity_col", "ml")
+
         return col_name
 
     def clean_shape_col(self):

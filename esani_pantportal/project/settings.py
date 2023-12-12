@@ -204,3 +204,50 @@ DEFAULT_REFUND_VALUE = 200
 TOMRA_SFTP_URL = os.environ.get(
     "TOMRA_SFTP_URL", "sftp://sftp_tomra:foo@localhost:2222/deposit_payouts/"
 )
+
+# https://redmine.magenta.dk/issues/58865
+MIN_BOTTLE_DIAMETER = int(os.environ.get("MIN_BOTTLE_DIAMETER", 50))
+MAX_BOTTLE_DIAMETER = int(os.environ.get("MAX_BOTTLE_DIAMETER", 130))
+
+MIN_BOTTLE_HEIGHT = int(os.environ.get("MIN_BOTTLE_HEIGHT", 85))
+MAX_BOTTLE_HEIGHT = int(os.environ.get("MAX_BOTTLE_HEIGHT", 380))
+
+MIN_BOTTLE_VOLUME = int(os.environ.get("MIN_BOTTLE_VOLUME", 150))
+MAX_BOTTLE_VOLUME = int(os.environ.get("MAX_BOTTLE_VOLUME", 3000))
+
+MIN_CAN_DIAMETER = int(os.environ.get("MIN_CAN_DIAMETER", 50))
+MAX_CAN_DIAMETER = int(os.environ.get("MAX_CAN_DIAMETER", 100))
+
+MIN_CAN_HEIGHT = int(os.environ.get("MIN_CAN_HEIGHT", 80))
+MAX_CAN_HEIGHT = int(os.environ.get("MAX_CAN_HEIGHT", 200))
+
+MIN_CAN_VOLUME = int(os.environ.get("MIN_CAN_VOLUME", 150))
+MAX_CAN_VOLUME = int(os.environ.get("MAX_CAN_VOLUME", 1000))
+
+
+MIN_DIAMETER = min(MIN_BOTTLE_DIAMETER, MIN_CAN_DIAMETER)
+MIN_HEIGHT = min(MIN_BOTTLE_HEIGHT, MIN_CAN_HEIGHT)
+MIN_VOLUME = min(MIN_BOTTLE_VOLUME, MIN_CAN_VOLUME)
+
+MAX_DIAMETER = max(MAX_BOTTLE_DIAMETER, MAX_CAN_DIAMETER)
+MAX_HEIGHT = max(MAX_BOTTLE_HEIGHT, MAX_CAN_HEIGHT)
+MAX_VOLUME = max(MAX_BOTTLE_VOLUME, MAX_CAN_VOLUME)
+
+
+PRODUCT_CONSTRAINTS = {
+    "diameter": {
+        "F": (MIN_BOTTLE_DIAMETER, MAX_BOTTLE_DIAMETER),
+        "D": (MIN_CAN_DIAMETER, MAX_CAN_DIAMETER),
+        "A": (MIN_DIAMETER, MAX_DIAMETER),
+    },
+    "height": {
+        "F": (MIN_BOTTLE_HEIGHT, MAX_BOTTLE_HEIGHT),
+        "D": (MIN_CAN_HEIGHT, MAX_CAN_HEIGHT),
+        "A": (MIN_HEIGHT, MAX_HEIGHT),
+    },
+    "capacity": {
+        "F": (MIN_BOTTLE_VOLUME, MAX_BOTTLE_VOLUME),
+        "D": (MIN_CAN_VOLUME, MAX_CAN_VOLUME),
+        "A": (MIN_VOLUME, MAX_VOLUME),
+    },
+}

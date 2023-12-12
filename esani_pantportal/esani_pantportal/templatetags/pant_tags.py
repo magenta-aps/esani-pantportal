@@ -1,9 +1,10 @@
 from urllib.parse import quote
 
+from django.conf import settings
 from django.template.defaultfilters import register
 from django.utils.translation import gettext_lazy as _
 
-from esani_pantportal.models import USER_TYPE_CHOICES
+from esani_pantportal.models import PRODUCT_SHAPE_CHOICES, USER_TYPE_CHOICES
 
 
 @register.filter
@@ -42,3 +43,14 @@ def is_user_object(obj):
 @register.filter
 def yesno(boolean):
     return _("Ja") if boolean else _("Nej")
+
+
+@register.filter
+def constraints_string(key, unit):
+    product_constraints = settings.PRODUCT_CONSTRAINTS
+    product_shape_dict = {p[0]: p[1] for p in PRODUCT_SHAPE_CHOICES}
+    output = []
+    for shape, [minv, maxv] in product_constraints[key].items():
+        if shape != "A":
+            output += [product_shape_dict[shape] + f": [{minv}-{maxv}{unit}]"]
+    return ", ".join(output)

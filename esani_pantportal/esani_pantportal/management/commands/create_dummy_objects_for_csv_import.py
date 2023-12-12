@@ -34,10 +34,11 @@ class Command(BaseCommand):
 
         # Add `Product` objects matching the barcodes in `example_with_valid_ids.csv`
         defaults = {
-            "height": 250,
-            "diameter": 15,
+            "height": 200,
+            "diameter": 100,
             "weight": 20,
             "capacity": 330,
+            "shape": "F",
         }
         Product.objects.update_or_create(
             product_name="Foo",
