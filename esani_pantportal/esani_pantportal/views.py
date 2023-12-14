@@ -4,7 +4,6 @@
 from functools import cached_property
 from io import BytesIO
 from typing import Any, Dict
-from urllib.parse import unquote
 
 import pandas as pd
 from django.conf import settings
@@ -61,7 +60,7 @@ from esani_pantportal.models import (
     User,
 )
 from esani_pantportal.templatetags.pant_tags import refund_method, user_type
-from esani_pantportal.util import default_dataframe, remove_parameter_from_url
+from esani_pantportal.util import default_dataframe
 from esani_pantportal.view_mixins import PermissionRequiredMixin
 
 
@@ -478,6 +477,9 @@ class UpdateViewMixin(PermissionRequiredMixin, UpdateView):
         context["form_fields_to_show"] = form.changed_data
         return self.render_to_response(context)
 
+    def get_success_url(self):
+        return self.request.get_full_path()
+
 
 class ProductUpdateView(UpdateViewMixin):
     model = Product
@@ -496,17 +498,6 @@ class ProductUpdateView(UpdateViewMixin):
                 return self.access_denied
 
         return super().form_valid(form)
-
-    def get_success_url(self):
-        back_url = unquote(self.request.GET.get("back", ""))
-        approved = self.get_object().approved
-        if approved:
-            if back_url:
-                return remove_parameter_from_url(back_url, "json")
-            else:
-                return reverse("pant:product_list")
-        else:
-            return self.request.get_full_path()
 
 
 class SameCompanyMixin:
@@ -554,9 +545,6 @@ class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
             context_data["branch_info_attributes"].extend(kiosk_attributes)
         context_data["company_info_attributes"] = common_attributes + company_attributes
         return context_data
-
-    def get_success_url(self):
-        return self.request.get_full_path()
 
     def form_valid(self, form):
         if "approved" in form.changed_data and not self.request.user.is_esani_admin:
