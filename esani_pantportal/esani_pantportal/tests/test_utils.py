@@ -7,6 +7,7 @@ from project.util import json_dump
 
 from esani_pantportal.util import (
     default_dataframe,
+    float_to_string,
     join_strings_human_readable,
     make_valid_choices_str,
     read_csv,
@@ -69,3 +70,7 @@ class UtilTest(TestCase):
         url = "relative_url/?foo=2&bar=4"
         self.assertEqual(remove_parameter_from_url(url, "foo"), "relative_url/?bar=4")
         self.assertEqual(remove_parameter_from_url(url, "bar"), "relative_url/?foo=2")
+
+    def test_float_to_string(self):
+        self.assertEqual(float_to_string(2.1), "2,1")
+        self.assertEqual(float_to_string(2.0), "2")

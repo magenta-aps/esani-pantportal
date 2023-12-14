@@ -61,7 +61,11 @@ from esani_pantportal.models import (
     User,
 )
 from esani_pantportal.templatetags.pant_tags import refund_method, user_type
-from esani_pantportal.util import default_dataframe, remove_parameter_from_url
+from esani_pantportal.util import (
+    default_dataframe,
+    float_to_string,
+    remove_parameter_from_url,
+)
 from esani_pantportal.view_mixins import PermissionRequiredMixin
 
 
@@ -387,7 +391,7 @@ class RefundMethodSearchView(PermissionRequiredMixin, SearchView):
             else:
                 value = ""
         elif key == "compensation":
-            value = f"{value} øre"
+            value = float_to_string(value) + " øre"
 
         return value or ""
 

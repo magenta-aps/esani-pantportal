@@ -145,6 +145,8 @@ class RefundMethodRegisterForm(forms.ModelForm, BootstrapForm):
             "kiosk",
         )
 
+    compensation = forms.FloatField(localize=True)
+
     def clean(self):
         branch = self.cleaned_data.get("branch", None)
         kiosk = self.cleaned_data.get("kiosk", None)
