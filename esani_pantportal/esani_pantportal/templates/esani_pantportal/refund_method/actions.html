@@ -1,0 +1,17 @@
+{% load i18n %}
+{% load l10n %}
+
+<form method="POST" action="{% url 'pant:refund_method_delete' item.id %}">
+   {% csrf_token %}
+   <button id="delete_button_{{item.id}}" type="submit" class="btn btn-sm btn-danger">
+     {% translate "Fjern" %}
+   </button>
+</form>
+
+<script>
+$("#delete_button_{{item.id}}").on("click", function () {
+    return confirm("{% translate 'Er du sikker på at du vil fjerne denne pantmetode?' %}");
+});
+</script>
+
+

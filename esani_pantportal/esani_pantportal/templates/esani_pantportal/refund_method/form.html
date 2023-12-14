@@ -1,0 +1,76 @@
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+
+
+{% block content %}
+
+<div class="mx-5">
+    <h1>{% translate "Registrer nyt produkt" %}</h1>
+    <form method="POST" class="row g-3">
+        {% csrf_token %}
+
+    <div class="col-6">
+      <label for="{{form.compensation.id_for_label}}">{{form.compensation.label}}</label>
+      {{form.compensation}}
+      <div class="form-text">
+          {{form.compensation.help_text}}
+          {{form.compensation.errors}}
+      </div>
+    </div>
+
+    <div class="col-6">
+      <label for="{{form.serial_number.id_for_label}}">{{form.serial_number.label}}</label>
+      {{form.serial_number}}
+      <div class="form-text">
+          {{form.serial_number.help_text}}
+          {{form.serial_number.errors}}
+      </div>
+    </div>
+
+    <div class="col-6">
+      <label for="{{form.method.id_for_label}}">{{form.method.label}}</label>
+      {{form.method}}
+      <div class="form-text">
+          {{form.method.help_text}}
+          {{form.method.errors}}
+      </div>
+    </div>
+
+    {% if not form.hide_branch_dropdown %}
+    <div class="col-12">
+      <label for="{{form.branch.id_for_label}}">{{form.branch.label}}</label>
+      {{form.branch}}
+      <div class="form-text">
+          {{form.branch.help_text}}
+          {{form.branch.errors}}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if not form.hide_kiosk_dropdown %}
+    <div class="col-12">
+      <label for="{{form.kiosk.id_for_label}}">{{form.kiosk.label}}</label>
+      {{form.kiosk}}
+      <div class="form-text">
+          {{form.kiosk.help_text}}
+          {{form.kiosk.errors}}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="form-text">
+        <ul class="errorlist h4">
+            {% for error in form.non_field_errors %}
+                <li>{{error}}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="col-12">
+        <input class="btn btn-success float-right my-2" type="submit" value="{% translate 'Opret' %}"/>
+    </div>
+    </form>
+</div>
+{% endblock %}
