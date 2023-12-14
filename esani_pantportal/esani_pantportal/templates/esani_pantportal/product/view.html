@@ -24,10 +24,11 @@
                     <tbody>
                     {% include "../edit_field.html" with field_name="product_name" field=form.product_name %}
                     {% include "../edit_field.html" with field_name="barcode" field=form.barcode %}
-                    <tr>
-                        <th>{{object|verbose_name:"approved"}}</th>
-                        <td>{{object.approved|yesno}}</td>
-                    </tr>
+                    {% if can_approve and object.approved %}
+                        {% include "../edit_field.html" with field_name="approved" field=form.approved %}
+                    {% else %}
+                        {% include "../edit_field.html" with field_name="approved" field=form.approved show_pencil=False %}
+                    {% endif %}
                     {% include "../edit_field.html" with field_name="danish" field=form.danish %}
                     {% if can_approve %}
                     <tr>
@@ -52,7 +53,6 @@
                 </table>
             </div>
         </div>
-        {% if not object.approved %}
         <div class="row">
             {% if can_edit %}
             <div class="col-6">
@@ -73,7 +73,7 @@
                 </div>
             </div>
             {% endif %}
-            {% if can_approve %}
+            {% if can_approve and not object.approved %}
             <div class="col-6">
                 <div class="card">
                     <div class="card-body">
@@ -85,13 +85,12 @@
                             <li>Navn og stregkode på produktet er korrekt</li>
                             <li>At emballagen er pantbelagt</li>
                         </ul>
-                        <button id="approve_button" type="submit" name="{{form.approved.name}}" value="1" class="btn btn-success">Godkend</button>
+                        <button id="approve_button" type="submit" name="{{form.approved.name}}" value="True" class="btn btn-success">Godkend</button>
                     </div>
                 </div>
             </div>
+            {% endif %}
         </div>
-        {% endif %}
-    {% endif %}
     </form>
     {% if can_edit %}
         {% translate "Når man fjerner et produkt, fjernes det helt fra databasen." as delete_text %}
