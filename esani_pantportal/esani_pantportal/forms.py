@@ -17,6 +17,7 @@ from esani_pantportal.models import (
     DANISH_PANT_CHOICES,
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
+    REFUND_METHOD_CHOICES,
     USER_TYPE_CHOICES,
     BranchUser,
     Company,
@@ -26,6 +27,7 @@ from esani_pantportal.models import (
     Kiosk,
     KioskUser,
     Product,
+    RefundMethod,
     User,
     validate_barcode_length,
     validate_digit,
@@ -111,6 +113,58 @@ class UserUpdateForm(forms.ModelForm, BootstrapForm):
             "phone",
             "approved",
         )
+
+
+class RefundMethodRegisterForm(forms.ModelForm, BootstrapForm):
+    def __init__(self, *args, kiosks=None, branches=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if kiosks is not None:
+            self.fields["kiosk"].choices = [(k.pk, str(k)) for k in kiosks]
+            if len(kiosks) == 0:
+                self.hide_kiosk_dropdown = True
+            elif len(kiosks) == 1:
+                self.fields["kiosk"].disabled = True
+                self.initial["kiosk"] = kiosks[0].pk
+
+        if branches is not None:
+            self.fields["branch"].choices = [(b.pk, str(b)) for b in branches]
+            if len(branches) == 0:
+                self.hide_branch_dropdown = True
+            elif len(branches) == 1:
+                self.fields["branch"].disabled = True
+                self.initial["branch"] = branches[0].pk
+
+    class Meta:
+        model = RefundMethod
+        fields = (
+            "compensation",
+            "method",
+            "serial_number",
+            "branch",
+            "kiosk",
+        )
+
+    def clean(self):
+        branch = self.cleaned_data.get("branch", None)
+        kiosk = self.cleaned_data.get("kiosk", None)
+
+        if not branch and not kiosk:
+            raise ValidationError(_("Udfyld enten butik eller kæde felt."))
+
+        if branch and kiosk:
+            raise ValidationError(_("Vælg enten en butik eller en kæde."))
+
+        return self.cleaned_data
+
+    def clean_serial_number(self):
+        serial_number = self.cleaned_data["serial_number"]
+        method = self.cleaned_data["method"]
+
+        # "Flaskeautomat" methods start with F
+        if method.startswith("F") and not serial_number:
+            raise ValidationError(_("Dette felt må ikke være tom"))
+        return serial_number
 
 
 class RegisterUserForm(forms.ModelForm, BootstrapForm):
@@ -600,7 +654,7 @@ class RegisterKioskUserMultiForm(RegisterUserMultiForm):
         return self.save_user(user, commit, "KioskAdmins", "KioskUsers")
 
 
-class SortPaginateForm(forms.Form):
+class SortPaginateForm(BootstrapForm):
     json = forms.BooleanField(required=False)
     sort = forms.CharField(required=False)
     order = forms.CharField(required=False)
@@ -608,7 +662,7 @@ class SortPaginateForm(forms.Form):
     limit = forms.IntegerField(required=False)
 
 
-class ProductFilterForm(SortPaginateForm, BootstrapForm):
+class ProductFilterForm(SortPaginateForm):
     product_name = forms.CharField(required=False)
     barcode = forms.CharField(required=False)
     approved = forms.NullBooleanField(
@@ -617,7 +671,20 @@ class ProductFilterForm(SortPaginateForm, BootstrapForm):
     )
 
 
-class UserFilterForm(SortPaginateForm, BootstrapForm):
+class RefundMethodFilterForm(SortPaginateForm):
+    serial_number = forms.CharField(required=False)
+    method = forms.ChoiceField(
+        choices=[(None, "-")] + list(REFUND_METHOD_CHOICES), required=False
+    )
+    branch__name = forms.CharField(required=False)
+    kiosk__name = forms.CharField(required=False)
+
+    def clean_kiosk__name(self):
+        # We use the branch__name search-field for both kiosk and branch filtering.
+        return self.cleaned_data["branch__name"]
+
+
+class UserFilterForm(SortPaginateForm):
     username = forms.CharField(required=False)
     user_type = forms.ChoiceField(
         choices=[(None, "-")] + list(USER_TYPE_CHOICES), required=False

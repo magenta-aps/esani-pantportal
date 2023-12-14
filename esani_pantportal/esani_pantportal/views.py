@@ -35,6 +35,8 @@ from esani_pantportal.forms import (
     ProductFilterForm,
     ProductRegisterForm,
     ProductUpdateForm,
+    RefundMethodFilterForm,
+    RefundMethodRegisterForm,
     RegisterBranchUserMultiForm,
     RegisterCompanyUserMultiForm,
     RegisterEsaniUserForm,
@@ -49,13 +51,16 @@ from esani_pantportal.models import (
     KIOSK_USER,
     BranchUser,
     Company,
+    CompanyBranch,
     CompanyUser,
     EsaniUser,
+    Kiosk,
     KioskUser,
     Product,
+    RefundMethod,
     User,
 )
-from esani_pantportal.templatetags.pant_tags import user_type
+from esani_pantportal.templatetags.pant_tags import refund_method, user_type
 from esani_pantportal.util import default_dataframe, remove_parameter_from_url
 from esani_pantportal.view_mixins import PermissionRequiredMixin
 
@@ -87,6 +92,32 @@ class ProductRegisterView(PermissionRequiredMixin, CreateView):
 
     def get_success_url(self):
         return reverse("pant:product_register_success")
+
+
+class RefundMethodRegisterView(PermissionRequiredMixin, CreateView):
+    model = RefundMethod
+    form_class = RefundMethodRegisterForm
+    template_name = "esani_pantportal/refund_method/form.html"
+    required_permissions = ["esani_pantportal.add_refundmethod"]
+
+    def get_success_url(self):
+        return reverse("pant:refund_method_list")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        user = self.request.user
+
+        if user.user_type == KIOSK_USER:
+            kwargs["kiosks"] = [user.branch]
+            kwargs["branches"] = []
+        elif user.user_type == BRANCH_USER:
+            kwargs["kiosks"] = []
+            kwargs["branches"] = [user.branch]
+        elif user.user_type == COMPANY_USER:
+            kwargs["kiosks"] = []
+            kwargs["branches"] = list(user.company.branches.all())
+
+        return kwargs
 
 
 class RegisterEsaniUserView(PermissionRequiredMixin, CreateView):
@@ -244,12 +275,12 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
         # django-filter kan gøre det samme, men der er ingen grund til at
         # overkomplicere tingene
 
-        for field in ("approved",):  # præcist match
+        for field in self.search_fields_exact:  # præcist match
             if data.get(field, None) not in (None, ""):  # False er en gyldig værdi
                 qs = qs.filter(**{field: data[field]})
 
         # indehold alle ord, case insensitive
-        for field in ("product_name", "barcode", "username", "user_type"):
+        for field in self.search_fields:
             if data.get(field, None) not in (None, ""):
                 qs = qs.filter(
                     **{
@@ -262,7 +293,8 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
         sort = data.get("sort", None)
         if sort:
             reverse = "-" if data.get("order", None) == "desc" else ""
-            qs = qs.order_by(f"{reverse}{sort}")
+            order_args = [f"{reverse}{s}" for s in sort.split("_or_")]
+            qs = qs.order_by(*order_args)
 
         return qs
 
@@ -312,15 +344,7 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
                 {"item": item, **context},
                 self.request,
             )
-        value = item[key]
-        if key == "approved":
-            value = _("Ja") if value else _("Nej")
-        elif key in ["phone", "groups"]:
-            value = str(value)
-        elif key == "user_type":
-            value = user_type(value)
-
-        return value
+        return item[key]
 
 
 class ProductSearchView(SearchView):
@@ -328,6 +352,77 @@ class ProductSearchView(SearchView):
     actions_template = "esani_pantportal/product/actions.html"
     model = Product
     form_class = ProductFilterForm
+
+    search_fields = ["product_name", "barcode"]
+    search_fields_exact = ["approved"]
+
+    def map_value(self, item, key, context):
+        value = super().map_value(item, key, context)
+
+        if key == "approved":
+            value = _("Ja") if value else _("Nej")
+        return value
+
+
+class RefundMethodSearchView(PermissionRequiredMixin, SearchView):
+    template_name = "esani_pantportal/refund_method/list.html"
+    actions_template = "esani_pantportal/refund_method/actions.html"
+    model = RefundMethod
+    form_class = RefundMethodFilterForm
+    required_permissions = ["esani_pantportal.view_refundmethod"]
+
+    search_fields = ["serial_number"]
+    search_fields_exact = ["method"]
+
+    def map_value(self, item, key, context):
+        value = super().map_value(item, key, context)
+
+        if key == "method":
+            value = refund_method(value)
+        elif key in ["branch", "kiosk"]:
+            if value and key == "branch":
+                value = CompanyBranch.objects.get(pk=int(value)).name
+            elif value and key == "kiosk":
+                value = Kiosk.objects.get(pk=int(value)).name
+            else:
+                value = ""
+        elif key == "compensation":
+            value = f"{value} øre"
+
+        return value or ""
+
+    def item_to_json_dict(self, *args, **kwargs):
+        json_dict = super().item_to_json_dict(*args, **kwargs)
+        json_dict["branch_or_kiosk"] = json_dict["branch"] or json_dict["kiosk"]
+        return json_dict
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        data = self.search_data
+
+        branch_qs = self.model.objects.none()
+        for field in ["branch__name", "kiosk__name"]:
+            if data.get(field, None) not in (None, ""):
+                branch_qs = branch_qs | self.model.objects.all().filter(
+                    **{
+                        field + "__icontains": part
+                        for part in data[field].split()
+                        if part
+                    }
+                )
+
+        if branch_qs:
+            qs = qs & branch_qs
+
+        # Only allow branch/company/kiosk users to see machines in their own company
+        user = self.request.user
+        if user.user_type == KIOSK_USER:
+            qs = qs.filter(kiosk__pk=user.branch.pk)
+        elif user.user_type == BRANCH_USER:
+            qs = qs.filter(branch__pk=user.branch.pk)
+        elif user.user_type == COMPANY_USER:
+            qs = qs.filter(branch__company__pk=user.company.pk)
+        return qs
 
 
 class UserSearchView(PermissionRequiredMixin, SearchView):
@@ -337,6 +432,20 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
     form_class = UserFilterForm
     required_permissions = ["esani_pantportal.view_user"]
 
+    search_fields = ["username", "user_type"]
+    search_fields_exact = ["approved"]
+
+    def map_value(self, item, key, context):
+        value = super().map_value(item, key, context)
+
+        if key == "approved":
+            value = _("Ja") if value else _("Nej")
+        elif key == "groups":
+            value = str(value)
+        elif key == "user_type":
+            value = user_type(value)
+        return value
+
     def get_queryset(self):
         qs = super().get_queryset()
 
@@ -344,7 +453,6 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
         user_ids = self.users_in_same_company
         if user_ids:
             qs = qs.filter(pk__in=user_ids)
-
         return qs
 
 
@@ -594,3 +702,16 @@ class ProductDeleteView(PermissionRequiredMixin, DeleteView):
 
     def get_success_url(self):
         return reverse("pant:product_list") + "?delete_success=1"
+
+
+class RefundMethodDeleteView(PermissionRequiredMixin, DeleteView):
+    model = RefundMethod
+    required_permissions = ["esani_pantportal.delete_refundmethod"]
+
+    def form_valid(self, form):
+        if not self.request.user.is_esani_admin and not self.same_workplace:
+            return self.access_denied
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("pant:refund_method_list")

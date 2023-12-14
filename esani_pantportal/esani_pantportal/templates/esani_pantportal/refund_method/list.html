@@ -1,0 +1,92 @@
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+
+{# Docs for bootstrap-table: https://bootstrap-table.com/docs/ #}
+{% block extra_headers %}
+<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.css">
+<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.css">
+<script src="{% static 'jquery/pantportal.js' %}"></script>
+{% endblock %}
+
+{% block extra_footers %}
+<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
+<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
+<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/defer-url/bootstrap-table-defer-url.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="mx-5">
+    <div class="row">
+        <div class="col-6">
+            <h1>{% translate "Pantmaskiner" %}</h1>
+        </div>
+    </div>
+
+    <form method="get">
+        <div class="row">
+            <div class="col-2">{% translate "Serienummer" %}</div>
+            <div class="col-4">{{form.serial_number}}</div>
+        </div>
+        <div class="row">
+            <div class="col-2">{% translate "Pantmethode" %}</div>
+            <div class="col-4">{{form.method}}</div>
+        </div>
+        {% if user.get_user_type_display == "Virksomhedsbruger" or user.is_esani_admin %}
+        <div class="row">
+            <div class="col-2">{% translate "Butik" %}</div>
+            <div class="col-4">{{form.branch__name}}</div>
+        </div>
+        {% endif %}
+        <div class="row">
+            <div class="col-6 clearfix"><button type="submit" class="btn btn-primary float-end">Søg</button></div>
+        </div>
+    </form>
+
+    <table id="table" class="table table-bordered table-striped"
+           data-toggle="table"
+           data-sticky-header="true"
+           data-classes="table"
+           data-data-field="items"
+           data-sortable="true"
+           data-pagination="true"
+           data-pagination-parts="['pageList']"
+           data-page-number="{{search_data.page_number}}"
+           data-page-size="{{search_data.limit}}"
+           data-side-pagination="server"
+           data-pagination-loop="false"
+           data-defer-url="{% url 'pant:refund_method_list' %}?json=1"
+           data-query-params="queryParams"
+           data-row-style="rowStyle"
+           data-total-rows="{{total}}"
+           data-silent-sort="true" {# vil vi vise en loading-boks? #}
+           data-remember-order="true"
+    >
+        <thead>
+        <tr>
+            <th data-sortable="true" data-field="serial_number" class="col-3">Serienummer</th>
+            <th data-sortable="true" data-field="compensation" class="col-3">Håndterings-godtgørelse</th>
+            <th data-sortable="true" data-field="method" class="col-3">Methode</th>
+            <th data-sortable="true" data-field="branch_or_kiosk" class="col-3">Butik</th>
+            <th data-field="actions" class="col-3">Handlinger</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in items %}
+        <tr>
+            <td>{{item.serial_number}}</td>
+            <td>{{item.compensation}}</td>
+            <td>{{item.method}}</td>
+            <td>{{item.branch_or_kiosk}}</td>
+            <td>
+                {% include actions_template with item=item %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'pant:refund_method_register' %}" class="btn btn-sm btn-primary">+</a>
+</div>
+{{search_data|json_script:"search_data"}}
+{% endblock %}

@@ -24,12 +24,12 @@ class Command(BaseCommand):
         RefundMethod.objects.update_or_create(
             kiosk=kamik,
             serial_number="3",
-            defaults={"method": REFUND_METHOD_CHOICES[0]},
+            defaults={"method": REFUND_METHOD_CHOICES[0][0]},
         )
         RefundMethod.objects.update_or_create(
             kiosk=kamik,
             serial_number="4",
-            defaults={"method": REFUND_METHOD_CHOICES[0]},
+            defaults={"method": REFUND_METHOD_CHOICES[0][0]},
         )
 
         # Add `Product` objects matching the barcodes in `example_with_valid_ids.csv`
