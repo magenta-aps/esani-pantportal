@@ -3,6 +3,10 @@
 {% load i18n %}
 {% load l10n %}
 
+{% block extra_headers %}
+<script src="{% static 'jquery/jquery-3.5.1.min.js' %}"></script>
+<script src="{% static 'bootstrap/bootstrap.bundle.min.js' %}"></script>
+{% endblock %}
 
 {% block content %}
 
@@ -24,6 +28,9 @@
       <div class="form-text">
           {{form.barcode.help_text}}
           {{form.barcode.errors}}
+          <ul class="errorlist" style="display:none" id="existing_barcode_message">
+              <li>{% translate "Produkt med denne stregkode eksisterer allerede." %}</li>
+          </ul>
       </div>
     </div>
 
@@ -94,4 +101,17 @@
     </div>
     </form>
 </div>
+{{ barcodes|json_script:"barcodes" }}
+
+<script>
+const barcodes = JSON.parse($("#barcodes").text());
+$("#id_barcode").on('input', function () {
+    const barcode = $("#id_barcode").val();
+    if (barcodes.indexOf(barcode) !== -1) {
+        $("#existing_barcode_message").show();
+    } else {
+        $("#existing_barcode_message").hide();
+    }
+});
+</script>
 {% endblock %}

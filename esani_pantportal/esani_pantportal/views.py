@@ -92,6 +92,7 @@ class ProductRegisterView(PermissionRequiredMixin, CreateView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         context["product_constraints"] = settings.PRODUCT_CONSTRAINTS
+        context["barcodes"] = [product.barcode for product in Product.objects.all()]
         return context
 
     def get_success_url(self):
