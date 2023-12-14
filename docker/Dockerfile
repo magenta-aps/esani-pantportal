@@ -24,7 +24,7 @@ RUN mkdir /app && \
 COPY esani_pantportal/requirements.txt /app/requirements.txt
 # hadolint ignore=DL3008
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends gettext python3-distutils graphviz libxmlsec1-dev xmlsec1 && \
+    apt-get install -y --no-install-recommends gettext python3-distutils graphviz libxmlsec1-dev xmlsec1 locales && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* \
     && curl -fsSLO "$SUPERCRONIC_URL" \
@@ -34,6 +34,18 @@ RUN apt-get update && \
     && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
 
 RUN pip3 install --no-cache-dir -r /app/requirements.txt
+
+# Set the locale
+RUN sed -i '/da_DK.UTF-8/s/^# //g' /etc/locale.gen && \
+    sed -i '/kl_GL.UTF-8/s/^# //g' /etc/locale.gen && \
+    locale-gen
+ENV LANG da_DK.UTF-8
+ENV LANGUAGE da_DK:da
+ENV LC_ALL da_DK.UTF-8
+ENV LANG kl_GL.UTF-8
+ENV LANGUAGE kl_GL:da
+ENV LC_ALL kl_GL.UTF-8
+
 USER pant
 COPY ./docker/entrypoint.sh /entrypoint.sh
 COPY --chown=pant:pant ./esani_pantportal /app

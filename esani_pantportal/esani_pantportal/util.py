@@ -3,12 +3,15 @@
 # SPDX-License-Identifier: MPL-2.0
 
 
+import locale
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import pandas as pd
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.utils.translation import get_language
 from django.utils.translation import gettext as _
+from django.utils.translation import to_locale
 
 from esani_pantportal.models import (
     DANISH_PANT_CHOICES,
@@ -90,3 +93,12 @@ def remove_parameter_from_url(url, key_to_remove):
     query.pop(key_to_remove, None)
     u = u._replace(query=urlencode(query, True))
     return urlunparse(u)
+
+
+def float_to_string(value):
+    if (value).is_integer():
+        return str(int(value))
+    else:
+        locale_name = to_locale(get_language())
+        locale.setlocale(locale.LC_ALL, locale_name + ".UTF-8")
+        return locale.format("%.1f", value)

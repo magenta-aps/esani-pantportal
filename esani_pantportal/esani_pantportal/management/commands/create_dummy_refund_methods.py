@@ -23,17 +23,17 @@ class Command(BaseCommand):
 
         RefundMethod.objects.update_or_create(
             serial_number=100000000,
-            defaults={"compensation": 100, "method": "FK", "branch": brugseni_nuuk},
+            defaults={"compensation": 2.3, "method": "FK", "branch": brugseni_nuuk},
         )
         RefundMethod.objects.update_or_create(
             serial_number=110000000,
-            defaults={"compensation": 200, "method": "FKS", "branch": brugseni_natalie},
+            defaults={"compensation": 2.1, "method": "FKS", "branch": brugseni_natalie},
         )
         RefundMethod.objects.update_or_create(
             serial_number=120000000,
-            defaults={"compensation": 200, "method": "FKS", "branch": brugseni_natalie},
+            defaults={"compensation": 1.2, "method": "FKS", "branch": brugseni_natalie},
         )
         RefundMethod.objects.update_or_create(
             serial_number=130000000,
-            defaults={"compensation": 300, "method": "S", "kiosk": nuuk_kiosk},
+            defaults={"compensation": 2.6, "method": "S", "kiosk": nuuk_kiosk},
         )
