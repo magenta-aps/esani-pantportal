@@ -37,8 +37,15 @@
             <div class="col-4">{{form.barcode}}</div>
         </div>
         <div class="row">
-            <div class="col-2">{% translate "Godkendt" %}</div>
+            <div class="col-2">
+                {% translate "Godkendt" %}
+                {% if user.is_esani_admin %}
+                ({% bs_icon "bag-check" size="1em" color="green" %}: {{approved_products}},
+                {% bs_icon "bag-x" size="1em" color="red" %}: {{pending_products}})
+                {% endif %}
+            </div>
             <div class="col-4">{{form.approved}}</div>
+
         </div>
         <div class="row">
             <div class="col-6 clearfix"><button type="submit" class="btn btn-primary float-end">Søg</button></div>

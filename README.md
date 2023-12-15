@@ -10,6 +10,11 @@ To run the tests run
 docker exec esani_pantportal bash -c 'coverage run manage.py test ; coverage report --show-missing'
 ```
 
+To run tests only in a specific file run
+```
+docker exec esani_pantportal bash -c 'coverage run manage.py test esani_pantportal.tests.test_productlist'
+```
+
 # Brugerhåndtering
 Der findes 4 forskellige slags brugere:
 - ESANI admins (`EsaniUser`)

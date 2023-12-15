@@ -368,6 +368,15 @@ class ProductSearchView(SearchView):
             value = _("Ja") if value else _("Nej")
         return value
 
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        if self.request.user.is_esani_admin:
+            # Statistics on approved products for ESANI admins
+            # Other users don't need to see this because they cannot approve anyway.
+            context["approved_products"] = Product.objects.filter(approved=True).count()
+            context["pending_products"] = Product.objects.filter(approved=False).count()
+        return context
+
 
 class RefundMethodSearchView(PermissionRequiredMixin, SearchView):
     template_name = "esani_pantportal/refund_method/list.html"
