@@ -1,4 +1,5 @@
 import json
+from unittest.mock import MagicMock
 
 from bs4 import BeautifulSoup
 from django import forms
@@ -264,6 +265,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         view.form_class = InvalidProductFilterForm
         view.request = HttpRequest()
         view.request.method = "GET"
+        view.request.user = MagicMock(is_esani_admin=True)
         view.object_list = []
         view.kwargs = {}
         response = view.get(view.request)
@@ -278,6 +280,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         view.form.cleaned_data = {"offset": 0, "limit": 10, "json": "1"}
         view.request = HttpRequest()
         view.request.method = "GET"
+        view.request.user = MagicMock(is_esani_admin=True)
         view.object_list = view.get_queryset()
         view.kwargs = {}
         response = view.form_valid(view.form)
@@ -336,6 +339,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         }
         view.request = HttpRequest()
         view.request.method = "GET"
+        view.request.user = MagicMock(is_esani_admin=True)
         view.object_list = view.get_queryset()
         view.kwargs = {}
         response = view.form_valid(view.form)
