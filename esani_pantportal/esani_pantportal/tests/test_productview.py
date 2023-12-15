@@ -371,6 +371,26 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         )
         self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
 
+    def test_edit_approved_product(self):
+        # ESANI admins can edit approved products.
+        # Branch admins cannot
+        self.login()
+        expected_status_dict = {
+            "esani_admin": HTTPStatus.FOUND,
+            "branch_user": HTTPStatus.FORBIDDEN,
+        }
+        form_data = self.get_form_data(self.prod3.pk)
+        form_data["weight"] = 1223
+        self.assertEqual(self.prod3.approved, True)
+
+        for username, expected_status in expected_status_dict.items():
+            self.client.login(username=username, password="12345")
+            response = self.client.post(
+                reverse("pant:product_view", kwargs={"pk": self.prod3.pk}),
+                form_data,
+            )
+            self.assertEquals(response.status_code, expected_status)
+
     def test_edit_forbidden_company_user(self):
         # A company user should not be able to edit products created by esani admins
         self.client.login(username="company_user", password="12345")

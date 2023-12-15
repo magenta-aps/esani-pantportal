@@ -408,6 +408,7 @@ class Product(models.Model):
         verbose_name=_("Godkendt"),
         help_text=_("Produkt godkendt til pantsystemet af en ESANI medarbejder"),
         default=False,
+        choices=((True, "Ja"), (False, "Nej")),
     )
     material = models.CharField(
         verbose_name=_("Materiale"),

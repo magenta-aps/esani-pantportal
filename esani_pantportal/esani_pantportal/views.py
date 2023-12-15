@@ -499,6 +499,12 @@ class ProductUpdateView(UpdateViewMixin):
     form_class = ProductUpdateForm
     required_permissions = ["esani_pantportal.change_product"]
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if context["object"].approved and not self.request.user.is_esani_admin:
+            context["can_edit"] = False
+        return context
+
     def form_valid(self, form):
         if not self.request.user.is_esani_admin:
             approved = self.get_object().approved
