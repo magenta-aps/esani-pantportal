@@ -298,12 +298,12 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "diameter": 60,
                         "height": 100,
                         "id": 1,
-                        "material": "A",
+                        "material": "Aluminium",
                         "product_name": "prod1",
                         "refund_value": 3,
-                        "shape": "F",
+                        "shape": "Flaske",
                         "weight": 20,
-                        "danish": "U",
+                        "danish": "Ukendt",
                         "created_by": self.user.pk,
                     },
                     {
@@ -315,12 +315,12 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "diameter": 60,
                         "height": 100,
                         "id": 2,
-                        "material": "A",
+                        "material": "Aluminium",
                         "product_name": "prod2",
                         "refund_value": 3,
-                        "shape": "F",
+                        "shape": "Flaske",
                         "weight": 20,
-                        "danish": "U",
+                        "danish": "Ukendt",
                         "created_by": self.user.pk,
                     },
                 ],
@@ -357,12 +357,12 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "diameter": 60,
                         "height": 100,
                         "id": 1,
-                        "material": "A",
+                        "material": "Aluminium",
                         "product_name": "prod1",
                         "refund_value": 3,
-                        "shape": "F",
+                        "shape": "Flaske",
                         "weight": 20,
-                        "danish": "U",
+                        "danish": "Ukendt",
                         "created_by": self.user.pk,
                     }
                 ],
@@ -399,6 +399,34 @@ class ProductListGuiTest(LoginMixin, TestCase):
             shape="F",
         )
 
+        self.prod1_expected_response = {
+            "Produktnavn": self.prod1.product_name,
+            "Stregkode": self.prod1.barcode,
+            "Godkendt": "Nej",
+            "Volumen": str(self.prod1.capacity),
+            "Materiale": "Aluminium",
+            "Højde": str(self.prod1.height),
+            "Diameter": str(self.prod1.diameter),
+            "Vægt": str(self.prod1.weight),
+            "Form": "Flaske",
+            "Dansk pant": "Ukendt",
+            "Handlinger": "Vis",
+        }
+
+        self.prod2_expected_response = {
+            "Produktnavn": self.prod2.product_name,
+            "Stregkode": self.prod2.barcode,
+            "Godkendt": "Ja",
+            "Volumen": str(self.prod2.capacity),
+            "Materiale": "Aluminium",
+            "Højde": str(self.prod2.height),
+            "Diameter": str(self.prod2.diameter),
+            "Vægt": str(self.prod2.weight),
+            "Form": "Flaske",
+            "Dansk pant": "Ukendt",
+            "Handlinger": "Vis",
+        }
+
     @staticmethod
     def get_html_items(html):
         soup = BeautifulSoup(html, "html.parser")
@@ -418,26 +446,20 @@ class ProductListGuiTest(LoginMixin, TestCase):
                 "Produktnavn": item["product_name"],
                 "Stregkode": item["barcode"],
                 "Godkendt": item["approved"],
+                "Volumen": str(item["capacity"]),
+                "Materiale": item["material"],
+                "Højde": str(item["height"]),
+                "Diameter": str(item["diameter"]),
+                "Vægt": str(item["weight"]),
+                "Form": item["shape"],
+                "Dansk pant": item["danish"],
                 "Handlinger": "Vis",
             }
             for item in data["items"]
         ]
 
     def test_render(self):
-        expected = [
-            {
-                "Produktnavn": "prod1",
-                "Stregkode": "0010",
-                "Godkendt": "Nej",
-                "Handlinger": "Vis",
-            },
-            {
-                "Produktnavn": "prod2",
-                "Stregkode": "0002",
-                "Godkendt": "Ja",
-                "Handlinger": "Vis",
-            },
-        ]
+        expected = [self.prod1_expected_response, self.prod2_expected_response]
         response = self.client.get(reverse("pant:product_list") + "?login_bypass=1")
         data = self.get_html_items(response.content)
         self.assertEquals(data, expected)
@@ -448,14 +470,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
         self.assertEquals(data, expected)
 
     def test_render_paginated(self):
-        expected = [
-            {
-                "Produktnavn": "prod2",
-                "Stregkode": "0002",
-                "Godkendt": "Ja",
-                "Handlinger": "Vis",
-            },
-        ]
+        expected = [self.prod2_expected_response]
         response = self.client.get(
             reverse("pant:product_list") + "?login_bypass=1&offset=1"
         )
@@ -468,14 +483,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
         self.assertEquals(data, expected)
 
     def test_filter_name(self):
-        expected = [
-            {
-                "Produktnavn": "prod1",
-                "Stregkode": "0010",
-                "Godkendt": "Nej",
-                "Handlinger": "Vis",
-            },
-        ]
+        expected = [self.prod1_expected_response]
         response = self.client.get(
             reverse("pant:product_list") + "?login_bypass=1&product_name=p+1"
         )
@@ -488,14 +496,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
         self.assertEquals(data, expected)
 
     def test_filter_barcode(self):
-        expected = [
-            {
-                "Produktnavn": "prod2",
-                "Stregkode": "0002",
-                "Godkendt": "Ja",
-                "Handlinger": "Vis",
-            }
-        ]
+        expected = [self.prod2_expected_response]
         response = self.client.get(
             reverse("pant:product_list") + "?login_bypass=1&barcode=2"
         )
@@ -508,14 +509,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
         self.assertEquals(data, expected)
 
     def test_filter_approved(self):
-        expected = [
-            {
-                "Produktnavn": "prod2",
-                "Stregkode": "0002",
-                "Godkendt": "Ja",
-                "Handlinger": "Vis",
-            }
-        ]
+        expected = [self.prod2_expected_response]
         response = self.client.get(
             reverse("pant:product_list") + "?login_bypass=1&approved=true"
         )

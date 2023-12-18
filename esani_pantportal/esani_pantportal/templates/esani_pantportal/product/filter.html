@@ -1,0 +1,9 @@
+<div class="col-4">
+    {% if show|default_if_none:True %}
+        <input class="w-100 btn btn-outline-primary" id="{{name}}Show" type="button" value="Vis '{{verbose_name}}'" style="display:none"/>
+        <input class="w-100 btn btn-outline-secondary" id="{{name}}Hide" type="button" value="Vis '{{verbose_name}}'"/>
+    {% else %}
+        <input class="w-100 btn btn-outline-primary" id="{{name}}Show" type="button" value="Vis '{{verbose_name}}'"/>
+        <input class="w-100 btn btn-outline-secondary" id="{{name}}Hide" type="button" value="Vis '{{verbose_name}}'" style="display:none"/>
+    {% endif %}
+</div>
