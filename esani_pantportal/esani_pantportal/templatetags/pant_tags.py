@@ -5,6 +5,8 @@ from django.template.defaultfilters import register
 from django.utils.translation import gettext_lazy as _
 
 from esani_pantportal.models import (
+    DANISH_PANT_CHOICES,
+    PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
     REFUND_METHOD_CHOICES,
     USER_TYPE_CHOICES,
@@ -43,6 +45,27 @@ def user_type(user_type_id):
 def refund_method(refund_method_id):
     for c in REFUND_METHOD_CHOICES:
         if c[0] == refund_method_id:
+            return c[1]
+
+
+@register.filter
+def material(material_id):
+    for c in PRODUCT_MATERIAL_CHOICES:
+        if c[0] == material_id:
+            return c[1]
+
+
+@register.filter
+def shape(shape_id):
+    for c in PRODUCT_SHAPE_CHOICES:
+        if c[0] == shape_id:
+            return c[1]
+
+
+@register.filter
+def danish(danish_id):
+    for c in DANISH_PANT_CHOICES:
+        if c[0] == danish_id:
             return c[1]
 
 

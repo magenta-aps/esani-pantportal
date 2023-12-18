@@ -29,30 +29,49 @@
 
     <form method="get">
         <div class="row">
-            <div class="col-2">{% translate "Navn" %}</div>
-            <div class="col-4">{{form.product_name}}</div>
-        </div>
-        <div class="row">
-            <div class="col-2">{% translate "Stregkode" %}</div>
-            <div class="col-4">{{form.barcode}}</div>
-        </div>
-        <div class="row">
-            <div class="col-2">
-                {% translate "Godkendt" %}
-                {% if user.is_esani_admin %}
-                ({% bs_icon "bag-check" size="1em" color="green" %}: {{approved_products}},
-                {% bs_icon "bag-x" size="1em" color="red" %}: {{pending_products}})
-                {% endif %}
+            <div class="col-4">
+                <div class="row">
+                    <div class="col-4">{% translate "Navn" %}</div>
+                    <div class="col-8">{{form.product_name}}</div>
+                </div>
+                <div class="row">
+                    <div class="col-4">{% translate "Stregkode" %}</div>
+                    <div class="col-8">{{form.barcode}}</div>
+                </div>
+                <div class="row">
+                    <div class="col-4">
+                	{% translate "Godkendt" %}
+             	  	{% if user.is_esani_admin %}
+                	({% bs_icon "bag-check" size="1em" color="green" %}: {{approved_products}},
+                	{% bs_icon "bag-x" size="1em" color="red" %}: {{pending_products}})
+                	{% endif %}
+       		    </div>
+                    <div class="col-8">{{form.approved}}</div>
+                </div>
+                <div class="row">
+                    <div class="col-12"><button type="submit" class="btn btn-primary float-end">Søg</button></div>
+                </div>
             </div>
-            <div class="col-4">{{form.approved}}</div>
 
-        </div>
-        <div class="row">
-            <div class="col-6 clearfix"><button type="submit" class="btn btn-primary float-end">Søg</button></div>
+            <div class="col-8">
+                <div class="row">
+                    {% include "./filter.html" with verbose_name="Materiale" name="material" %}
+                    {% include "./filter.html" with verbose_name="Højde" name="height" show=False  %}
+                    {% include "./filter.html" with verbose_name="Volumen" name="capacity" show=False  %}
+                </div>
+                <div class="row">
+                    {% include "./filter.html" with verbose_name="Form" name="shape" %}
+                    {% include "./filter.html" with verbose_name="Diameter" name="diameter" show=False %}
+                </div>
+                <div class="row">
+                    {% include "./filter.html" with verbose_name="Dansk pant" name="danish" %}
+                    {% include "./filter.html" with verbose_name="Vægt" name="weight" show=False  %}
+                </div>
+            </div>
         </div>
     </form>
 
-    <div class="card" id="delete_confirmation" style="display:none">
+    <div class="card mt-3" id="delete_confirmation" style="display:none">
         <div class="card-body text-center">
             {% bs_icon "trash" size="2em" %}
             <div>
@@ -61,7 +80,7 @@
         </div>
     </div>
 
-    <table id="table" class="table table-bordered table-striped"
+    <table id="table" class="table table-bordered table-striped mt-3"
            data-toggle="table"
            data-sticky-header="true"
            data-classes="table"
@@ -85,6 +104,13 @@
             <th data-sortable="true" data-field="product_name" class="col-3">Produktnavn</th>
             <th data-sortable="true" data-field="barcode" class="col-3">Stregkode</th>
             <th data-sortable="true" data-field="approved" class="col-3">Godkendt</th>
+            <th data-sortable="true" data-field="material" class="col-3">Materiale</th>
+            <th data-sortable="true" data-field="shape" class="col-3">Form</th>
+            <th data-sortable="true" data-field="danish" class="col-3">Dansk pant</th>
+            <th data-sortable="true" data-field="height" class="col-3" data-visible="false">Højde</th>
+            <th data-sortable="true" data-field="diameter" class="col-3" data-visible="false">Diameter</th>
+            <th data-sortable="true" data-field="weight" class="col-3" data-visible="false">Vægt</th>
+            <th data-sortable="true" data-field="capacity" class="col-3" data-visible="false">Volumen</th>
             <th data-field="actions" class="col-3">Handlinger</th>
         </tr>
         </thead>
@@ -94,6 +120,13 @@
             <td>{{item.product_name}}</td>
             <td>{{item.barcode}}</td>
             <td>{{item.approved}}</td>
+            <td>{{item.material}}</td>
+            <td>{{item.shape}}</td>
+            <td>{{item.danish}}</td>
+            <td>{{item.height}}</td>
+            <td>{{item.diameter}}</td>
+            <td>{{item.weight}}</td>
+            <td>{{item.capacity}}</td>
             <td>
                 {% include actions_template with item=item %}
             </td>
@@ -108,8 +141,30 @@
 <script>
 var delete_success = getUrlParameter("delete_success");
 if (delete_success=="1"){
-    $("#delete_confirmation").show()
+    $("#delete_confirmation").show();
     }
+
+var $table = $('#table');
+function hideItem(item_name){
+    $table.bootstrapTable('hideColumn', item_name);
+    $('#'+item_name+'Hide').hide();
+    $('#'+item_name+'Show').show();
+}
+function showItem(item_name){
+    $table.bootstrapTable('showColumn', item_name);
+    $('#'+item_name+'Hide').show();
+    $('#'+item_name+'Show').hide();
+}
+$('[id$=Hide]').click(function() {
+    var id = $(this).attr('id');
+    var item_name = id.slice(0,-4);
+    hideItem(item_name);
+  });
+$('[id$=Show]').click(function() {
+    var id = $(this).attr('id');
+    var item_name = id.slice(0,-4);
+    showItem(item_name);
+   });
 </script>
 
 {% endblock %}

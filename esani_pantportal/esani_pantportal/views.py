@@ -60,7 +60,13 @@ from esani_pantportal.models import (
     RefundMethod,
     User,
 )
-from esani_pantportal.templatetags.pant_tags import refund_method, user_type
+from esani_pantportal.templatetags.pant_tags import (
+    danish,
+    material,
+    refund_method,
+    shape,
+    user_type,
+)
 from esani_pantportal.util import (
     default_dataframe,
     float_to_string,
@@ -366,6 +372,12 @@ class ProductSearchView(SearchView):
 
         if key == "approved":
             value = _("Ja") if value else _("Nej")
+        elif key == "material":
+            value = material(value)
+        elif key == "shape":
+            value = shape(value)
+        elif key == "danish":
+            value = danish(value)
         return value
 
     def get_context_data(self, *args, **kwargs):
