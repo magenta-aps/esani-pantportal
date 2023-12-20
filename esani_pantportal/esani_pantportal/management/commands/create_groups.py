@@ -6,12 +6,13 @@ from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 
-from esani_pantportal.models import (
+from esani_pantportal.models import (  # isort: skip
     BranchUser,
     CompanyUser,
     EsaniUser,
     KioskUser,
     Product,
+    QRBag,
     RefundMethod,
     User,
 )
@@ -65,10 +66,11 @@ class Command(BaseCommand):
         refund_method_model = ContentType.objects.get_for_model(
             RefundMethod, for_concrete_model=False
         )
+        qrbagmodel = ContentType.objects.get_for_model(QRBag, for_concrete_model=False)
 
         def get_permission(action, model):
             return Permission.objects.get(
-                codename=f"{action}_{model.name}", content_type=model
+                codename=f"{action}_{model.model}", content_type=model
             )
 
         for action, model in (
@@ -174,5 +176,8 @@ class Command(BaseCommand):
             ("add", refund_method_model),
             ("change", refund_method_model),
             ("delete", refund_method_model),
+            ("view", qrbagmodel),
+            ("add", qrbagmodel),
+            ("change", qrbagmodel),
         ):
             esani_admins.permissions.add(get_permission(action, model))
