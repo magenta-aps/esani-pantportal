@@ -11,6 +11,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.utils.translation import gettext as _
+from simple_history.models import HistoricalRecords
 
 
 # Custom validators
@@ -805,3 +806,26 @@ class DepositPayoutItem(models.Model):
 
     def __str__(self):
         return f"{self.count}x {self.barcode}"
+
+
+class QRBag(models.Model):
+    qr = models.CharField(
+        primary_key=True,
+        max_length=200,  # TODO: Hvor lange er vores QR-koder?
+    )
+    owner = models.ForeignKey(
+        User,
+        null=True,
+        blank=False,
+        on_delete=models.SET_NULL,
+    )
+    active = models.BooleanField(
+        default=True,
+    )
+    status = models.CharField(
+        max_length=20,
+    )
+    updated = models.DateTimeField(
+        auto_now=True,
+    )
+    history = HistoricalRecords()
