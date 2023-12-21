@@ -52,7 +52,7 @@ class Command(BaseCommand):
             "shape": "Shape",
         }
 
-        shape_map = {"F": "Bottle", "A": "Other"}
+        shape_map = {"F": "Bottle", "A": "Other", "D": "Other"}
 
         all_products = list(
             Product.objects.filter(approved=True).values(
