@@ -63,7 +63,7 @@ class QRBagIn(ModelSchema):
             "active",
             "status",
         ]
-        fields_optional = ["active", "status"]
+        model_fields_optional = ["active", "status"]
 
 
 class QRBagOut(ModelSchema):

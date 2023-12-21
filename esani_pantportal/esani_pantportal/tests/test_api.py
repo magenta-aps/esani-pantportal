@@ -108,7 +108,7 @@ class QRBagTest(LoginMixin, TestCase):
         code = "00000000005001d200"
         response = self.client.patch(
             f"/api/qrbag/{code}",
-            data=json.dumps({"active": True, "status": "oprettet"}),
+            data=json.dumps({"status": "oprettet"}),
             content_type="application/json",
             headers=self.headers,
         )
@@ -121,7 +121,25 @@ class QRBagTest(LoginMixin, TestCase):
 
         response = self.client.patch(
             f"/api/qrbag/{code}",
-            data=json.dumps({"active": False, "status": "afsluttet"}),
+            data=json.dumps({"status": "i brug"}),
+            content_type="application/json",
+            headers=self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["qr"], code)
+        self.assertEqual(data["active"], True)
+        self.assertEqual(data["status"], "i brug")
+
+        self.client.patch(
+            f"/api/qrbag/{code}",
+            data=json.dumps({"active": False}),
+            content_type="application/json",
+            headers=self.headers,
+        )
+        response = self.client.patch(
+            f"/api/qrbag/{code}",
+            data=json.dumps({"status": "afsluttet"}),
             content_type="application/json",
             headers=self.headers,
         )
