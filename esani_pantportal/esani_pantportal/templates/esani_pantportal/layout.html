@@ -66,6 +66,7 @@ SPDX-License-Identifier: MPL-2.0
         {% if user.is_admin%}
         <a class="p-2 text-muted" href="{% url 'pant:refund_method_list' %}">{% translate "Pantmaskiner" %}</a>
         <a class="p-2 text-muted" href="{% url 'pant:user_list' %}">{% translate "Brugere" %}</a>
+        <a class="p-2 text-muted" href="{% url 'pant:send_newsletter' %}">{% translate "Send Nyhedsbrev" %}</a>
         {% endif %}
 
         <div class="dropdown p-2 ms-auto">
@@ -83,6 +84,17 @@ SPDX-License-Identifier: MPL-2.0
 
     <hr class="p-0 m-0"/>
 </header>
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert text-center {% if message.level == 20 %}alert-info
+                              {% elif message.level == 25 %}alert-success
+                              {% elif message.level == 30 %}alert-warning
+                              {% elif message.level == 40 %}alert-danger
+                              {% endif %}" role="alert">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
 {% endif %}
 {% endblock %}
 {% block content %}

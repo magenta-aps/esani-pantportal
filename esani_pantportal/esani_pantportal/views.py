@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
+import logging
 from functools import cached_property
 from io import BytesIO
 from typing import Any, Dict
@@ -8,11 +9,13 @@ from urllib.parse import unquote
 
 import pandas as pd
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
 from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView
 from django.core.exceptions import ValidationError
+from django.core.mail import EmailMultiAlternatives
 from django.forms import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
@@ -27,10 +30,12 @@ from django.views.generic import (
     UpdateView,
     View,
 )
+from project.settings import DEFAULT_FROM_EMAIL
 
 from esani_pantportal.forms import (
     ChangePasswordForm,
     MultipleProductRegisterForm,
+    NewsEmailForm,
     PantPortalAuthenticationForm,
     ProductFilterForm,
     ProductRegisterForm,
@@ -73,6 +78,8 @@ from esani_pantportal.util import (
     remove_parameter_from_url,
 )
 from esani_pantportal.view_mixins import PermissionRequiredMixin
+
+logger = logging.getLogger(__name__)
 
 
 class PantportalLoginView(LoginView):
@@ -747,3 +754,43 @@ class RefundMethodDeleteView(PermissionRequiredMixin, DeleteView):
 
     def get_success_url(self):
         return reverse("pant:refund_method_list")
+
+
+class NewsEmailView(PermissionRequiredMixin, FormView):
+    form_class = NewsEmailForm
+    template_name = "esani_pantportal/email/form.html"
+    required_permissions = ["esani_pantportal.add_sentemail"]
+
+    def form_valid(self, form):
+        to_list = [user.email for user in User.objects.filter(newsletter=True)]
+        data = form.cleaned_data
+
+        msg = EmailMultiAlternatives(
+            subject=data["subject"],
+            body=data["body"],
+            from_email=DEFAULT_FROM_EMAIL,
+            to=to_list,
+            reply_to=[DEFAULT_FROM_EMAIL],
+        )
+        if settings.ENVIRONMENT != "production":
+            msg.metadata = {"o:testmode": True}
+            msg.headers = {"o:testmode": True}
+        msg.tags = ["newsletter"]
+        # NOTE: To include html images
+        # Include an inline image in the html:
+        # logo_cid = attach_inline_image_file(msg, "path/to/file")
+        # html = """<img alt="Logo" src="cid:{logo_cid}">
+        #          <p>Please <a href="https://example.com/activate">activate</a>
+        #          your account</p>""".format(logo_cid=logo_cid)
+        # msg.attach_alternative(html, "text/html")
+        msg.send()
+        logger.info("Email succesfully sent")
+        messages.add_message(
+            self.request,
+            messages.INFO,
+            "Nyhedsbrevet blev sendt",
+        )
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("pant:send_newsletter")

@@ -1,0 +1,29 @@
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+
+
+{% block content %}
+
+<div class="mx-5">
+    <h1>{% translate "Send Nyhedsbrev" %}</h1>
+    <form method="POST">
+        {% csrf_token %}
+    <div class="col-3">
+        <label for="{{ form.subject.id_for_label}}">{{ form.subject.label }}</label>
+        {{ form.subject }}
+    </div>
+    <div class="col-6">
+        <label for="{{ form.body.id_for_label}}">{{ form.body.label }}</label>
+        {{ form.body }}
+    </div>
+    
+    <div class="col-6">
+        <input class="btn btn-success float-right my-2" type="submit" value="{% translate 'Send' %}"/>
+    </div>
+    </form>
+
+</div>
+{% endblock %}
+

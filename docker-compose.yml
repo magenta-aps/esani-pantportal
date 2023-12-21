@@ -67,6 +67,17 @@ services:
     ports:
         - "2222:22"
 
+  mailhog:
+    container_name: mailhog
+    image: mailhog/mailhog
+    logging:
+      driver: 'none' # Disable saving logs
+    ports:
+      - "8025:8025" # Web UI
+      - "1025:1025" # SMTP port
+    networks:
+      - postgres
+
 volumes:
   postgres-data:
 

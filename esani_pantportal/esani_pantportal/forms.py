@@ -708,6 +708,17 @@ def validate_file_extension(value, valid_extensions):
         )
 
 
+class NewsEmailForm(BootstrapForm):
+    body = forms.CharField(
+        label=_("Beskedens indhold"),
+        widget=forms.Textarea(),
+    )
+    subject = forms.CharField(
+        max_length=200,
+        label=_("Emnefelt"),
+    )
+
+
 class MultipleProductRegisterForm(BootstrapForm):
     defaults = settings.DEFAULT_CSV_HEADER_DICT
     sheet_name = forms.CharField(

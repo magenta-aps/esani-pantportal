@@ -599,6 +599,18 @@ class User(AbstractUser):
         choices=((True, "Ja"), (False, "Nej")),
     )
 
+    newsletter = models.BooleanField(
+        verbose_name=_("Nyhedsbrev"),
+        help_text=_("Brugeren har godkendt at modtage nyhedsbreve"),
+        default=True,
+        choices=((True, "Ja"), (False, "Nej")),
+    )
+
+    email = models.EmailField(
+        verbose_name=_("Emailadresse"),
+        help_text=_("Brugerens emailadresse"),
+    )
+
     @property
     def user_profile(self):
         if self.user_type == BRANCH_USER:
@@ -829,3 +841,25 @@ class QRBag(models.Model):
         auto_now=True,
     )
     history = HistoricalRecords()
+
+
+class SentEmail(models.Model):
+    class Meta:
+        verbose_name = "sentemail"
+        abstract = False
+
+    to = models.CharField(
+        verbose_name=_("Modtager"),
+        help_text=_("Modtager(e) af email"),
+        max_length=300,
+    )
+    subject = models.CharField(
+        verbose_name=_("Emne"),
+        help_text=_("Emailens emne"),
+        max_length=200,
+    )
+    body = models.TextField(
+        verbose_name=_("Modtager"),
+        help_text=_("Modtager(e) af email"),
+        max_length=300,
+    )
