@@ -12,7 +12,6 @@ SKIP_IDP_METADATA=${SKIP_IDP_METADATA:=false}
 TEST=${TEST:=false}
 CREATE_GROUPS=${CREATE_GROUPS:=true}
 
-
 if [ "$MAKE_MIGRATIONS" = true ] || [ "$MIGRATE" = true ]; then
   python3 manage.py wait_for_db
 fi
