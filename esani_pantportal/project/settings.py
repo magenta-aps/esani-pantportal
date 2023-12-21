@@ -53,7 +53,6 @@ INSTALLED_APPS = [
     "barcode_scanner",
     "ninja_extra",
     "ninja_jwt",
-    "django_mitid_auth",
     "django_bootstrap_icons",
     "betterforms",
 ]
@@ -172,10 +171,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
 
-
-from .login_settings import *  # noqa
-
 LOGIN_URL = "/login"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
 
 DEFAULT_CSV_HEADER_DICT = {
     "product_name": "Produktnavn [str]",

@@ -9,9 +9,6 @@ django-ninja-extra==0.19.1
 django-ninja-jwt==5.2.5
 orjson==3.9.1
 six==1.16.0
-django_mitid_auth @ git+https://github.com/magenta-aps/gl-django-login.git@1.1.7
-pysaml2==7.4.2
-xmltodict==0.13.0
 beautifulsoup4==4.12.2
 humanize==4.7.0
 pandas==1.5.1

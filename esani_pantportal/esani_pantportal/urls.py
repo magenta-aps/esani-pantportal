@@ -4,7 +4,6 @@
 
 from django.urls import path, reverse_lazy
 from django.views.generic import RedirectView, TemplateView
-from django_mitid_auth.saml.views import AccessDeniedView
 
 from esani_pantportal.views import (
     ChangePasswordView,
@@ -112,20 +111,6 @@ urlpatterns = [
         "bruger/<int:pk>/adgangskode/skift",
         ChangePasswordView.as_view(),
         name="change_password",
-    ),
-    path(
-        "error/login-timeout/",
-        AccessDeniedView.as_view(
-            template_name="esani_pantportal/error/login_timeout.html"
-        ),
-        name="login-timeout",
-    ),
-    path(
-        "error/login-repeat/",
-        AccessDeniedView.as_view(
-            template_name="esani_pantportal/error/login_repeat.html"
-        ),
-        name="login-repeat",
     ),
     path(
         "produkt/opret/multiple",
