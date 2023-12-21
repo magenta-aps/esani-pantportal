@@ -10,6 +10,7 @@ from esani_pantportal.views import (
     CsvTemplateView,
     ExcelTemplateView,
     MultipleProductRegisterView,
+    NewsEmailView,
     PantportalLoginView,
     PantportalLogoutView,
     ProductDeleteView,
@@ -126,5 +127,10 @@ urlpatterns = [
         "produkt/opret/multiple/csv_sample",
         CsvTemplateView.as_view(),
         name="example_csv",
+    ),
+    path(
+        "send_nyhedsbrev",
+        NewsEmailView.as_view(),
+        name="send_newsletter",
     ),
 ]

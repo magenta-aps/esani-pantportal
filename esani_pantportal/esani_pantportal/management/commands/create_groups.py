@@ -14,6 +14,7 @@ from esani_pantportal.models import (  # isort: skip
     Product,
     QRBag,
     RefundMethod,
+    SentEmail,
     User,
 )
 
@@ -65,6 +66,9 @@ class Command(BaseCommand):
         user_model = ContentType.objects.get_for_model(User, for_concrete_model=False)
         refund_method_model = ContentType.objects.get_for_model(
             RefundMethod, for_concrete_model=False
+        )
+        email_model = ContentType.objects.get_for_model(
+            SentEmail, for_concrete_model=False
         )
         qrbagmodel = ContentType.objects.get_for_model(QRBag, for_concrete_model=False)
 
@@ -179,5 +183,6 @@ class Command(BaseCommand):
             ("view", qrbagmodel),
             ("add", qrbagmodel),
             ("change", qrbagmodel),
+            ("add", email_model),
         ):
             esani_admins.permissions.add(get_permission(action, model))
