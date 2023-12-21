@@ -17,7 +17,7 @@ if [ "$MAKE_MIGRATIONS" = true ] || [ "$MIGRATE" = true ]; then
 fi
 if [ "$MAKE_MIGRATIONS" = true ]; then
   echo 'Generating migrations'
-  python3 manage.py makemigrations
+  python3 manage.py makemigrations --no-input
 fi
 if [ "$MIGRATE" = true ]; then
   echo 'Running migrations'

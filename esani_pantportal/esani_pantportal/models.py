@@ -10,6 +10,7 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
+from django.db.models import CheckConstraint, Q
 from django.utils.translation import gettext as _
 from simple_history.models import HistoricalRecords
 
@@ -831,6 +832,18 @@ class QRBag(models.Model):
         blank=False,
         on_delete=models.SET_NULL,
     )
+    companybranch = models.ForeignKey(
+        CompanyBranch,
+        null=True,
+        blank=False,
+        on_delete=models.SET_NULL,
+    )
+    kiosk = models.ForeignKey(
+        Kiosk,
+        null=True,
+        blank=False,
+        on_delete=models.SET_NULL,
+    )
     active = models.BooleanField(
         default=True,
     )
@@ -841,6 +854,14 @@ class QRBag(models.Model):
         auto_now=True,
     )
     history = HistoricalRecords()
+
+    class Meta:
+        constraints = [
+            CheckConstraint(
+                check=Q(companybranch__isnull=True) | Q(kiosk__isnull=True),
+                name="has_only_companybranch_or_kiosk",
+            )
+        ]
 
 
 class SentEmail(models.Model):
