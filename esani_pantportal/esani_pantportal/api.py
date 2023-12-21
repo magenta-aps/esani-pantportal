@@ -6,15 +6,34 @@ from datetime import datetime
 from typing import Optional
 
 from django.db import IntegrityError
-from django.http import Http404, HttpResponseBadRequest
+from django.http import Http404, HttpRequest, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
-from ninja import Field, FilterSchema, ModelSchema, Query
-from ninja_extra import api_controller, permissions, route
+from ninja import FilterSchema, ModelSchema, Query
+from ninja_extra import ControllerBase, api_controller, permissions, route
 from ninja_extra.pagination import paginate
 from ninja_extra.schemas import NinjaPaginationResponseSchema
 from ninja_jwt.authentication import JWTAuth
 
-from esani_pantportal.models import Product, QRBag
+from esani_pantportal.models import CompanyBranch, Kiosk, Product, QRBag
+
+
+class DjangoPermission(permissions.BasePermission):
+    method_map = {
+        "GET": "view",
+        "POST": "add",
+        "PATCH": "change",
+        "DELETE": "delete",
+    }
+
+    def __init__(self, appname, modelname):
+        super().__init__()
+        self.appname = appname
+        self.modelname = modelname
+
+    def has_permission(self, request: HttpRequest, controller: ControllerBase) -> bool:
+        return request.user.has_perm(
+            f"{self.appname}.{self.method_map[request.method]}_{self.modelname}"
+        )
 
 
 class ApprovedProductsOut(ModelSchema):
@@ -67,7 +86,7 @@ class QRBagIn(ModelSchema):
 
 
 class QRBagOut(ModelSchema):
-    owner: str = Field(..., alias="owner.username")
+    owner: str
 
     class Config:
         model = QRBag
@@ -78,6 +97,10 @@ class QRBagOut(ModelSchema):
             "updated",
         ]
 
+    @staticmethod
+    def resolve_owner(obj: QRBag):
+        return obj.owner.username
+
 
 class QRBagHistoryOut(QRBagOut):
     history_date: datetime
@@ -86,7 +109,10 @@ class QRBagHistoryOut(QRBagOut):
 @api_controller(
     "/qrbag",
     tags=["QR-Pose"],
-    permissions=[permissions.IsAuthenticatedOrReadOnly],
+    permissions=[
+        permissions.IsAuthenticatedOrReadOnly,
+        DjangoPermission("esani_pantportal", "qrbag"),
+    ],
 )
 class QRBagAPI:
     @route.get(
@@ -110,8 +136,16 @@ class QRBagAPI:
     )
     def create(self, qr: str, payload: QRBagIn):
         try:
+            user = self.context.request.user
+            branch = user.branch
+            companybranch = branch if isinstance(branch, CompanyBranch) else None
+            kiosk = branch if isinstance(branch, Kiosk) else None
             return QRBag.objects.create(
-                **payload.dict(), qr=qr, owner=self.context.request.user
+                **payload.dict(),
+                qr=qr,
+                owner=user,
+                companybranch=companybranch,
+                kiosk=kiosk,
             )
         except IntegrityError:
             return HttpResponseBadRequest(
@@ -126,14 +160,15 @@ class QRBagAPI:
         response=QRBagOut,
     )
     def update(self, qr: str, payload: QRBagIn):
-        try:
-            item = QRBag.objects.get(qr=qr)
-        except QRBag.DoesNotExist:
-            return self.create(qr, payload)
+        item = get_object_or_404(QRBag, qr=qr)
         data = payload.dict(exclude_unset=True)
         for attr, value in data.items():
             setattr(item, attr, value)
-        item.owner = self.context.request.user
+        user = self.context.request.user
+        item.owner = user
+        branch = user.branch
+        item.companybranch = branch if isinstance(branch, CompanyBranch) else None
+        item.kiosk = branch if isinstance(branch, Kiosk) else None
         item.save()
         return item
 

@@ -5,7 +5,7 @@ from django.test import TestCase
 
 from esani_pantportal.models import Product
 
-from ..models import QRBag
+from ..models import CompanyBranch, Kiosk, QRBag
 from .conftest import LoginMixin
 
 
@@ -53,11 +53,14 @@ class QRBagTest(LoginMixin, TestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        self.user = self.login()
+        self.user = self.login("BranchUsers")
+
+    def login(self, group="EsaniAdmins"):
+        user = super().login(group)
         password = "12345"  # Must match password in conftest.py
         response = self.client.post(
             "/api/token/pair",
-            {"username": self.user.username, "password": password},
+            {"username": user.username, "password": password},
             content_type="application/json",
         )
         data = response.json()
@@ -67,11 +70,23 @@ class QRBagTest(LoginMixin, TestCase):
             "Authorization": f"Bearer {self.accesstoken}",
             "Content-Type": "application/json",
         }
+        return user
 
     def test_get_404(self):
         code = "00000000005001d198"
         response = self.client.get(f"/api/qrbag/{code}", headers=self.headers)
         self.assertEqual(response.status_code, 404, response.content)
+
+    def test_create_disallowed(self):
+        self.user = self.login("EsaniAdmins")
+        code = "00000000005001d198"
+        response = self.client.post(
+            f"/api/qrbag/{code}",
+            data=json.dumps({"active": True, "status": "oprettet"}),
+            content_type="application/json",
+            headers=self.headers,
+        )
+        self.assertEqual(response.status_code, 403)
 
     def test_create(self):
         code = "00000000005001d199"
@@ -86,7 +101,7 @@ class QRBagTest(LoginMixin, TestCase):
         self.assertEqual(data["qr"], "00000000005001d199")
         self.assertEqual(data["active"], True)
         self.assertEqual(data["status"], "oprettet")
-        self.assertEqual(data["owner"], "testuser_EsaniAdmins")
+        self.assertEqual(data["owner"], self.user.username)
 
         response = self.client.get(f"/api/qrbag/{code}", headers=self.headers)
         self.assertEqual(response.status_code, 200, response.content)
@@ -106,7 +121,7 @@ class QRBagTest(LoginMixin, TestCase):
 
     def test_update(self):
         code = "00000000005001d200"
-        response = self.client.patch(
+        response = self.client.post(
             f"/api/qrbag/{code}",
             data=json.dumps({"status": "oprettet"}),
             content_type="application/json",
@@ -114,10 +129,15 @@ class QRBagTest(LoginMixin, TestCase):
         )
         self.assertEqual(response.status_code, 200)
         data = response.json()
+        item = QRBag.objects.get(qr=code)
         self.assertEqual(data["qr"], code)
         self.assertEqual(data["active"], True)
         self.assertEqual(data["status"], "oprettet")
         self.assertEqual(data["owner"], self.user.username)
+        self.assertEqual(item.qr, code)
+        self.assertEqual(item.active, True)
+        self.assertEqual(item.status, "oprettet")
+        self.assertEqual(item.owner, self.user.user_ptr)
 
         response = self.client.patch(
             f"/api/qrbag/{code}",
@@ -127,9 +147,14 @@ class QRBagTest(LoginMixin, TestCase):
         )
         self.assertEqual(response.status_code, 200)
         data = response.json()
+        item.refresh_from_db()
         self.assertEqual(data["qr"], code)
         self.assertEqual(data["active"], True)
         self.assertEqual(data["status"], "i brug")
+        self.assertEqual(item.qr, code)
+        self.assertEqual(item.active, True)
+        self.assertEqual(item.status, "i brug")
+        self.assertEqual(item.owner, self.user.user_ptr)
 
         self.client.patch(
             f"/api/qrbag/{code}",
@@ -145,23 +170,43 @@ class QRBagTest(LoginMixin, TestCase):
         )
         self.assertEqual(response.status_code, 200)
         data = response.json()
+        item.refresh_from_db()
         self.assertEqual(data["qr"], code)
         self.assertEqual(data["active"], False)
         self.assertEqual(data["status"], "afsluttet")
         self.assertEqual(data["owner"], self.user.username)
+        self.assertEqual(item.qr, code)
+        self.assertEqual(item.active, False)
+        self.assertEqual(item.status, "afsluttet")
+        self.assertEqual(item.owner, self.user.user_ptr)
 
         response = self.client.get(f"/api/qrbag/{code}", headers=self.headers)
         self.assertEqual(response.status_code, 200, response.content)
         data = response.json()
+        item.refresh_from_db()
         self.assertEqual(data["qr"], code)
         self.assertEqual(data["active"], False)
         self.assertEqual(data["status"], "afsluttet")
         self.assertEqual(data["owner"], self.user.username)
+        self.assertEqual(item.qr, code)
+        self.assertEqual(item.active, False)
+        self.assertEqual(item.status, "afsluttet")
+        self.assertEqual(item.owner, self.user.user_ptr)
 
     def test_history(self):
         code = "00000000005001d201"
+
+        branch = self.user.branch
+        companybranch = branch if isinstance(branch, CompanyBranch) else None
+        kiosk = branch if isinstance(branch, Kiosk) else None
+
         bag = QRBag.objects.create(
-            qr=code, active=True, status="oprettet", owner=self.user
+            qr=code,
+            active=True,
+            status="oprettet",
+            owner=self.user,
+            companybranch=companybranch,
+            kiosk=kiosk,
         )
 
         sleep(0.1)
@@ -213,7 +258,7 @@ class QRBagTest(LoginMixin, TestCase):
 
     def test_history_from_update(self):
         code = "00000000005001d202"
-        self.client.patch(
+        self.client.post(
             f"/api/qrbag/{code}",
             data=json.dumps({"active": True, "status": "oprettet"}),
             content_type="application/json",

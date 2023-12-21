@@ -95,6 +95,8 @@ class Command(BaseCommand):
             ("add", refund_method_model),
             ("change", refund_method_model),
             ("delete", refund_method_model),
+            ("view", qrbagmodel),
+            ("change", qrbagmodel),
         ):
             company_admins.permissions.add(get_permission(action, model))
 
@@ -112,6 +114,9 @@ class Command(BaseCommand):
             ("add", refund_method_model),
             ("change", refund_method_model),
             ("delete", refund_method_model),
+            ("view", qrbagmodel),
+            ("add", qrbagmodel),
+            ("change", qrbagmodel),
         ):
             branch_admins.permissions.add(get_permission(action, model))
 
@@ -129,6 +134,9 @@ class Command(BaseCommand):
             ("add", refund_method_model),
             ("change", refund_method_model),
             ("delete", refund_method_model),
+            ("view", qrbagmodel),
+            ("add", qrbagmodel),
+            ("change", qrbagmodel),
         ):
             kiosk_admins.permissions.add(get_permission(action, model))
 
@@ -136,18 +144,26 @@ class Command(BaseCommand):
             ("view", product_model),
             ("view", branch_user_model),
             ("view", company_user_model),
+            ("view", qrbagmodel),
+            ("change", qrbagmodel),
         ):
             company_users.permissions.add(get_permission(action, model))
 
         for action, model in (
             ("view", product_model),
             ("view", branch_user_model),
+            ("view", qrbagmodel),
+            ("add", qrbagmodel),
+            ("change", qrbagmodel),
         ):
             branch_users.permissions.add(get_permission(action, model))
 
         for action, model in (
             ("view", product_model),
             ("view", kiosk_user_model),
+            ("view", qrbagmodel),
+            ("add", qrbagmodel),
+            ("change", qrbagmodel),
         ):
             kiosk_users.permissions.add(get_permission(action, model))
 
@@ -181,7 +197,6 @@ class Command(BaseCommand):
             ("change", refund_method_model),
             ("delete", refund_method_model),
             ("view", qrbagmodel),
-            ("add", qrbagmodel),
             ("change", qrbagmodel),
             ("add", email_model),
         ):

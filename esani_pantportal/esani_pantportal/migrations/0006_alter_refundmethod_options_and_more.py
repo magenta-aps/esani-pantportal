@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('esani_pantportal', '0001_initial'),
+        ('esani_pantportal', '0005_alter_product_shape_product_height_constraints_and_more'),
     ]
 
     operations = [
