@@ -133,7 +133,7 @@ class AbstractCompany(models.Model):
         default=None,
     )
 
-    account_number = models.PositiveIntegerField(
+    account_number = models.PositiveBigIntegerField(
         verbose_name=_("konto nr."),
         help_text=_("Pant konto nr. (valgfri)"),
         null=True,
