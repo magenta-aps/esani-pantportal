@@ -41,9 +41,6 @@ if [ "$DUMMYDATA" = true ]; then
 fi
 
 python manage.py createcachetable
-if [ "$SKIP_IDP_METADATA" = false ]; then
-  python manage.py update_mitid_idp_metadata
-fi
 if [ "$TEST" = true ]; then
   echo 'running tests'
   python manage.py test
