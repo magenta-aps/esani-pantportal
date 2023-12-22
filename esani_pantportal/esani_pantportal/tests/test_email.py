@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+#
+# SPDX-License-Identifier: MPL-2.0
 from django.contrib.auth.models import Group
 from django.core import mail
 from django.core.management import call_command

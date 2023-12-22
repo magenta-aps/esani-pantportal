@@ -2,9 +2,17 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: ESANI Pantportal
 Upstream-Contact: Magenta ApS <info@magenta.dk>
 
-Files: barcode_scanner/* esani_pantportal/* dev-environment/* docker/* docker-compose.yml README.md .gitignore .gitlab-ci.yml .pre-commit-config.yaml data/deposit_payouts/*.csv
+Files: dev-environment/*  esani_pantportal/requirements.txt esani_pantportal/.coveragerc esani_pantportal/barcode_scanner/static/images/* esani_pantportal/esani_pantportal/migrations/* .gitignore .gitlab-ci.yml .pre-commit-config.yaml data/deposit_payouts/*.csv esani_pantportal/esani_pantportal/templates/esani_pantportal/*/actions.html
 Copyright: 2023 Magenta ApS <info@magenta.dk>
 License: MPL-2.0
+
+Files: esani_pantportal/esani_pantportal/static/bootstrap/*.map esani_pantportal/barcode_scanner/static/bootstrap/*.map
+Copyright: 2011-2023 The Bootstrap Authors
+License: MIT
+
+Files: esani_pantportal/esani_pantportal/static/jquery/* esani_pantportal/barcode_scanner/static/jquery/*
+Copyright: OpenJS Foundation and other contributors, https://openjsf.org/
+License: MIT
 
 Files: docs/*
 Copyright: 2023 Magenta ApS <info@magenta.dk>
