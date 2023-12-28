@@ -124,7 +124,7 @@ class QRBagTest(LoginMixin, TestCase):
 
     def test_update(self):
         code = "00000000005001d200"
-        response = self.client.post(
+        response = self.client.patch(
             f"/api/qrbag/{code}",
             data=json.dumps({"status": "oprettet"}),
             content_type="application/json",
