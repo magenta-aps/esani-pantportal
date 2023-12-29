@@ -160,7 +160,10 @@ class QRBagAPI:
         response=QRBagOut,
     )
     def update(self, qr: str, payload: QRBagIn):
-        item = get_object_or_404(QRBag, qr=qr)
+        try:
+            item = QRBag.objects.get(qr=qr)
+        except QRBag.DoesNotExist:
+            return self.create(qr, payload)
         data = payload.dict(exclude_unset=True)
         for attr, value in data.items():
             setattr(item, attr, value)
