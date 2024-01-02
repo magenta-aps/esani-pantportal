@@ -211,7 +211,7 @@ QR_OUTPUT_DIR = "/srv/media/qr_codes"
 DEFAULT_REFUND_VALUE = 200
 
 TOMRA_SFTP_URL = os.environ.get(
-    "TOMRA_SFTP_URL", "sftp://sftp_tomra:foo@localhost:2222/deposit_payouts/"
+    "TOMRA_SFTP_URL", "sftp://sftp_tomra:foo@pantportal-sftp:22/deposit_payouts/"
 )
 
 # https://redmine.magenta.dk/issues/58865

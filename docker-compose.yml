@@ -29,6 +29,7 @@ services:
       - "8000:8000"
     networks:
       - postgres
+      - sftp
     command: gunicorn -b 0.0.0.0:8000 project.wsgi:application --reload -w 1 --access-logfile - --error-logfile - --capture-output # reload on code changes
 
   pantportal-db:
@@ -55,6 +56,7 @@ services:
       - ./dev-environment/crontab:/crontab
     networks:
       - postgres
+      - sftp
     entrypoint: [ ]
     command: [ "supercronic", "/crontab" ]
 
@@ -66,6 +68,8 @@ services:
         - ./dev-environment/users.conf:/etc/sftp/users.conf
     ports:
         - "2222:22"
+    networks:
+      - sftp
 
   mailhog:
     container_name: mailhog
@@ -84,3 +88,5 @@ volumes:
 networks:
   postgres:
     name: postgres
+  sftp:
+    name: sftp
