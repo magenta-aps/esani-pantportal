@@ -142,7 +142,7 @@ class AbstractCompany(models.Model):
     )
 
     invoice_mail = models.EmailField(
-        verbose_name=_("Faktura mail"),
+        verbose_name=_("Fakturamail"),
         help_text=_("Mail adresse som faktura skal sendes til (valgfri)"),
         null=True,
         blank=True,
@@ -160,18 +160,9 @@ class AbstractCompany(models.Model):
 
 class Company(AbstractCompany):
     cvr = models.PositiveIntegerField(
-        verbose_name=_("CVR Nummer"),
+        verbose_name=_("CVR-nummer"),
         help_text=_("CVR Nummer"),
         unique=True,
-    )
-    permit_number = models.PositiveIntegerField(
-        verbose_name=_("Tilladelsesnummer"),
-        help_text=_(
-            "Firmaets tilladelsesnummer for import "
-            "af ethanolholdige drikkevarer (valgfri)"
-        ),
-        null=True,
-        blank=True,
     )
 
     company_type = models.CharField(
@@ -184,6 +175,14 @@ class Company(AbstractCompany):
         verbose_name=_("Land"),
         help_text=_("Butikken eller firmaets registrerede landenavn"),
         max_length=255,
+    )
+
+    municipality = models.CharField(
+        verbose_name=_("Kommune"),
+        help_text=_("Butikken eller firmaets hjemkommune (valgfri)"),
+        max_length=255,
+        default="",
+        blank=True,
     )
 
     def __str__(self):
@@ -238,16 +237,6 @@ class Kiosk(Branch):
         verbose_name=_("CVR Nummer"),
         help_text=_("CVR Nummer"),
         unique=True,
-    )
-
-    permit_number = models.PositiveIntegerField(
-        verbose_name=_("Tilladelsesnummer"),
-        help_text=_(
-            "Butikkens tilladelsesnummer for import "
-            "af ethanolholdige drikkevarer (valgfri)"
-        ),
-        null=True,
-        blank=True,
     )
 
     def __str__(self):
@@ -585,7 +574,9 @@ class User(AbstractUser):
         abstract = False
         ordering = ["username"]
 
-    user_type = models.PositiveSmallIntegerField(choices=USER_TYPE_CHOICES)
+    user_type = models.PositiveSmallIntegerField(
+        choices=USER_TYPE_CHOICES, verbose_name=_("Brugertype")
+    )
 
     phone = models.CharField(
         verbose_name=_("Telefonnummer"),
@@ -608,7 +599,7 @@ class User(AbstractUser):
     )
 
     email = models.EmailField(
-        verbose_name=_("Emailadresse"),
+        verbose_name=_("Email"),
         help_text=_("Brugerens emailadresse"),
     )
 

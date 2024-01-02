@@ -40,7 +40,6 @@ class EmailTest(TestCase):
             postal_code="123",
             city="test city",
             phone="+4544457845",
-            permit_number=2,
         )
 
         cls.google = Company.objects.create(
@@ -50,7 +49,6 @@ class EmailTest(TestCase):
             postal_code="123",
             city="test city",
             phone="+4544457845",
-            permit_number=2,
         )
 
         cls.facebook_branch = CompanyBranch.objects.create(

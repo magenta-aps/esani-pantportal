@@ -583,10 +583,17 @@ class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
             else User.objects.get(pk=context_data["object"].pk)
         ).user_profile
 
-        common_attributes = ["name", "address", "postal_code", "city", "phone"]
+        common_attributes = [
+            "name",
+            "address",
+            "postal_code",
+            "municipality",
+            "city",
+            "phone",
+        ]
         branch_attributes = ["customer_id"]
-        company_attributes = ["cvr", "permit_number"]
-        kiosk_attributes = ["cvr", "permit_number"]
+        company_attributes = ["cvr"]
+        kiosk_attributes = ["cvr"]
 
         context_data["branch_info_attributes"] = common_attributes + branch_attributes
         if context_data["object"].user_type == KIOSK_USER:

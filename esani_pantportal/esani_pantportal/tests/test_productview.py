@@ -32,7 +32,6 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             postal_code="123",
             city="test city",
             phone="+4544457845",
-            permit_number=2,
         )
         cls.branch = CompanyBranch.objects.create(
             company=cls.company,
@@ -189,8 +188,8 @@ class ProductViewGuiTest(LoginMixin, TestCase):
                     "Produktnavn": "prod1",
                     "Stregkode": "00101122",
                     "Godkendt": "Nej",
-                    "Dansk Pant": "Ja",
-                    "Oprettet Af": "esani_admin (test@test.com)",
+                    "Dansk pant": "Ja",
+                    "Oprettet af": "esani_admin (test@test.com)",
                 },
                 {
                     "Materiale": "Aluminium",
@@ -217,7 +216,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
                     "Produktnavn": "prod1",
                     "Stregkode": "00101122",
                     "Godkendt": "Nej",
-                    "Dansk Pant": "Ja",
+                    "Dansk pant": "Ja",
                 },
                 {
                     "Materiale": "Aluminium",

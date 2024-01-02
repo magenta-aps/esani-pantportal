@@ -24,7 +24,6 @@ class LoginMixin:
                 postal_code="123",
                 city="test city",
                 phone="+4544457845",
-                permit_number=2,
             )
             branch = CompanyBranch.objects.create(
                 company=company,

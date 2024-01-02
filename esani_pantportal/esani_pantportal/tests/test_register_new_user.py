@@ -35,7 +35,6 @@ class RegisterNewUserFormTest(TestCase):
             postal_code="123",
             city="test city",
             phone="+4544457845",
-            permit_number=2,
         )
 
         cls.existing_branch = CompanyBranch.objects.create(
@@ -150,7 +149,6 @@ class RegisterNewUserFormTest(TestCase):
             "branch-invoice_mail": "pay_me@moneyplz.dk",
             "branch-municipality": "Scotland",
             "branch-cvr": 1017196402,
-            "branch-permit_number": 3,
         }
 
         cls.company_data = {
@@ -160,7 +158,6 @@ class RegisterNewUserFormTest(TestCase):
             "company-city": "Fife",
             "company-phone": "+4544457845",
             "company-cvr": 1017196401,
-            "company-permit_number": 123,
             "company-company_type": "E",
             "company-registration_number": 2333,
             "company-account_number": 102033,
@@ -274,7 +271,6 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         user_data = self.make_user_data()
 
         # These fields are not mandatory
-        user_data["company-permit_number"] = None
         user_data["branch-customer_id"] = None
 
         form = RegisterBranchUserMultiForm(user_data)
@@ -403,7 +399,6 @@ class RegisterNewEsaniAdminTest(TestCase):
             postal_code="123",
             city="test city",
             phone="+4544457845",
-            permit_number=2,
         )
 
         cls.branch = CompanyBranch.objects.create(

@@ -32,7 +32,6 @@ class BaseUserTest(LoginMixin, TestCase):
             postal_code="123",
             city="test city",
             phone="+4544457845",
-            permit_number=2,
         )
 
         cls.google = Company.objects.create(
@@ -42,7 +41,6 @@ class BaseUserTest(LoginMixin, TestCase):
             postal_code="123",
             city="test city",
             phone="+4544457845",
-            permit_number=2,
         )
 
         cls.facebook_branch = CompanyBranch.objects.create(
