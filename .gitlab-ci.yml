@@ -79,7 +79,7 @@ Lint REUSE compliance:
 
 Build ESANI-Pantportal image:
   stage: build
-  needs: ["Lint Python", "Lint Dockerfiles", "Lint REUSE compliance", "Lint Commits"]
+  needs: ["Lint Python", "Lint Dockerfiles", "Lint REUSE compliance"]
   dependencies: []
   image:
     name: gcr.io/kaniko-project/executor:v1.15.0-debug
