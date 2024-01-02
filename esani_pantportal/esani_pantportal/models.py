@@ -880,7 +880,7 @@ class SentEmail(models.Model):
         max_length=200,
     )
     body = models.TextField(
-        verbose_name=_("Modtager"),
-        help_text=_("Modtager(e) af email"),
+        verbose_name=_("Indhold"),
+        help_text=_("Emailens indhold"),
         max_length=300,
     )
