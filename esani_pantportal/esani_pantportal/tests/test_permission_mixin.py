@@ -27,7 +27,6 @@ class PermissionTest(TestCase):
             postal_code="123",
             city="test city",
             phone="+4544457845",
-            permit_number=2,
         )
 
         cls.facebook_branch = CompanyBranch.objects.create(

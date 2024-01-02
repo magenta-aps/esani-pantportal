@@ -27,5 +27,4 @@ class Command(BaseCommand):
                 city="Nuuk",
                 postal_code="1234",
                 phone="+299 36 35 " + str(random.randint(10, 99)),
-                permit_number=company_names.index(company_name),
             )

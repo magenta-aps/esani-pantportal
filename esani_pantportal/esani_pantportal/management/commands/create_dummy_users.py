@@ -40,7 +40,6 @@ class Command(BaseCommand):
                 "municipality": "Semersooq",
                 "country": "Grønland",
                 "phone": "+299 36 35 00",
-                "permit_number": None,
                 "company_type": "A",
             },
         )

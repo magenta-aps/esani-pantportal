@@ -344,7 +344,6 @@ class RegisterKioskForm(forms.ModelForm, BootstrapForm):
             "invoice_mail",
             "municipality",
             "cvr",
-            "permit_number",
         )
 
 
@@ -358,7 +357,6 @@ class RegisterCompanyForm(forms.ModelForm, BootstrapForm):
             "city",
             "phone",
             "cvr",
-            "permit_number",
             "company_type",
             "registration_number",
             "account_number",

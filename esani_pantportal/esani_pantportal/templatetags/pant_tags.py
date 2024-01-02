@@ -18,7 +18,11 @@ from esani_pantportal.models import (
 
 @register.filter
 def verbose_name(item, field):
-    return item._meta.get_field(field).verbose_name.title()
+    name = item._meta.get_field(field).verbose_name
+    if name and name[0].isupper():
+        return name
+    else:
+        return name.capitalize()
 
 
 @register.filter
