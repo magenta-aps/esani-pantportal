@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404
 from ninja import FilterSchema, ModelSchema, Query
 from ninja_extra import ControllerBase, api_controller, permissions, route
 from ninja_extra.pagination import paginate
+from ninja_extra.permissions import SAFE_METHODS
 from ninja_extra.schemas import NinjaPaginationResponseSchema
 from ninja_jwt.authentication import JWTAuth
 
@@ -31,7 +32,7 @@ class DjangoPermission(permissions.BasePermission):
         self.modelname = modelname
 
     def has_permission(self, request: HttpRequest, controller: ControllerBase) -> bool:
-        return request.user.has_perm(
+        return request.method in SAFE_METHODS or request.user.has_perm(
             f"{self.appname}.{self.method_map[request.method]}_{self.modelname}"
         )
 

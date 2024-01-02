@@ -77,7 +77,7 @@ class QRBagTest(LoginMixin, TestCase):
 
     def test_get_404(self):
         code = "00000000005001d198"
-        response = self.client.get(f"/api/qrbag/{code}", headers=self.headers)
+        response = self.client.get(f"/api/qrbag/{code}")
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_create_disallowed(self):
