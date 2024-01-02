@@ -6,6 +6,16 @@ stages:
   - configure
   - deploy
 
+# https://docs.gitlab.com/ee/ci/yaml/workflow.html#switch-between-branch-pipelines-and-merge-request-pipelines
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS && $CI_PIPELINE_SOURCE == "push"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
 include:
   - project: "labs/salt-automation"
     file:
@@ -14,6 +24,7 @@ include:
       - "/gitlab-ci-templates/common/docker-build-meta.v2.yml"
       - "/gitlab-ci-templates/common/docker-release-meta.v1.yml"
       - "/gitlab-ci-templates/common/config-updater-meta.v1.yml"
+      - "/gitlab-ci-templates/common/conventional-commits-meta.v1.yml"
 
 variables:
   RELEASE_REGISTRY: docker.io
@@ -31,6 +42,9 @@ variables:
   needs: []
   image: python:3.11
   
+Lint Commits:
+  extends: .lint:commits
+
 Lint Python:
   <<: *lint-default
   before_script:
@@ -65,7 +79,7 @@ Lint REUSE compliance:
 
 Build ESANI-Pantportal image:
   stage: build
-  needs: ["Lint Python", "Lint Dockerfiles", "Lint REUSE compliance"]
+  needs: ["Lint Python", "Lint Dockerfiles", "Lint REUSE compliance", "Lint Commits"]
   dependencies: []
   image:
     name: gcr.io/kaniko-project/executor:v1.15.0-debug
@@ -152,6 +166,12 @@ Release ESANI-Pantportal image:
       --dest-creds=${RELEASE_REGISTRY_USER}:${RELEASE_REGISTRY_PASSWORD}
       "docker://${IMAGE_SHA}"
       "docker://${IMAGE_TAG}"
+
+Release Semantic commit:
+  extends: .release:semantic-commit
+
+Release Generate changelog:
+  extends: .release:generate-changelog
 
 # Configure stage
 #################
