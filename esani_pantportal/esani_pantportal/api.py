@@ -117,6 +117,7 @@ class QRBagHistoryOut(QRBagOut):
 class QRBagAPI:
     @route.get(
         "/{qr}",
+        auth=JWTAuth(),
         response=QRBagOut,
         url_name="qrbag_get",
         summary="QR-pose ud fra kode",
