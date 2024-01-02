@@ -170,9 +170,6 @@ class QRBagAPI:
             setattr(item, attr, value)
         user = self.context.request.user
         item.owner = user
-        branch = user.branch
-        item.companybranch = branch if isinstance(branch, CompanyBranch) else None
-        item.kiosk = branch if isinstance(branch, Kiosk) else None
         item.save()
         return item
 
