@@ -83,7 +83,7 @@ class Command(BaseCommand):
         total_count = 0
 
         for row in reader:
-            if row[0] != "COUNT":
+            if row[0].upper() != "COUNT":
                 # We are not yet at last line in file. Parse it as a regular item
                 tomra_lines.append(TomraCSVFileLine.from_csv_row(row))
             else:
