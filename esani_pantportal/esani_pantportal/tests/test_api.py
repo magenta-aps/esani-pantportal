@@ -8,7 +8,7 @@ from django.test import TestCase
 
 from esani_pantportal.models import Product
 
-from ..models import CompanyBranch, Kiosk, QRBag
+from ..models import CompanyBranch, Kiosk, QRBag, QRStatus
 from .conftest import LoginMixin
 
 
@@ -318,3 +318,56 @@ class QRBagTest(LoginMixin, TestCase):
         self.assertEqual(h3["active"], False)
         self.assertEqual(h3["status"], "afsluttet")
         self.assertEqual(h3["owner"], self.user.username)
+
+
+class QRStatusTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        QRStatus.objects.create(
+            code="butik_oprettet",
+            name_da="Oprettet af forhandler",
+            name_kl="Oprettet af forhandler",
+        )
+        QRStatus.objects.create(
+            code="pantsystem_modtaget",
+            name_da="Modtaget af pantsystemet",
+            name_kl="Modtaget af pantsystemet",
+        )
+        QRStatus.objects.create(
+            code="backbone_modtaget",
+            name_da="Modtaget af Backbone",
+            name_kl="Modtaget af Backbone",
+        )
+        QRStatus.objects.create(
+            code="esani_modtaget",
+            name_da="Modtaget af ESANI",
+            name_kl="Modtaget af ESANI",
+        )
+
+    def test_list(self):
+        response = self.client.get("/api/qrstatus/")
+        self.assertEqual(
+            response.json(),
+            [
+                {
+                    "code": "butik_oprettet",
+                    "name_da": "Oprettet af forhandler",
+                    "name_kl": "Oprettet af forhandler",
+                },
+                {
+                    "code": "pantsystem_modtaget",
+                    "name_da": "Modtaget af pantsystemet",
+                    "name_kl": "Modtaget af pantsystemet",
+                },
+                {
+                    "code": "backbone_modtaget",
+                    "name_da": "Modtaget af Backbone",
+                    "name_kl": "Modtaget af Backbone",
+                },
+                {
+                    "code": "esani_modtaget",
+                    "name_da": "Modtaget af ESANI",
+                    "name_kl": "Modtaget af ESANI",
+                },
+            ],
+        )

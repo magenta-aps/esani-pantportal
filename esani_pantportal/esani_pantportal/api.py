@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import json
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from django.db import IntegrityError
 from django.http import Http404, HttpRequest, HttpResponseBadRequest
@@ -14,7 +14,7 @@ from ninja_extra.pagination import paginate
 from ninja_extra.schemas import NinjaPaginationResponseSchema
 from ninja_jwt.authentication import JWTAuth
 
-from esani_pantportal.models import CompanyBranch, Kiosk, Product, QRBag
+from esani_pantportal.models import CompanyBranch, Kiosk, Product, QRBag, QRStatus
 
 
 class DjangoPermission(permissions.BasePermission):
@@ -183,3 +183,26 @@ class QRBagAPI:
     def history(self, qr: str):
         item = get_object_or_404(QRBag, qr=qr)
         return list(item.history.order_by("history_date"))
+
+
+class QRStatusOut(ModelSchema):
+    class Config:
+        model = QRStatus
+        model_fields = [
+            "code",
+            "name_da",
+            "name_kl",
+        ]
+
+
+@api_controller(
+    "/qrstatus",
+    tags=["QR-Status"],
+    permissions=[
+        permissions.AllowAny,
+    ],
+)
+class QRStatusAPI:
+    @route.get("/", response=List[QRStatusOut])
+    def list(self):
+        return QRStatus.objects.all()
