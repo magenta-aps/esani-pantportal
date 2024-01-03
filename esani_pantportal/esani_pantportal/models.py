@@ -855,6 +855,19 @@ class QRBag(models.Model):
         ]
 
 
+class QRStatus(models.Model):
+    code = models.CharField(
+        unique=True,
+        max_length=20,
+    )
+    name_da = models.CharField(
+        max_length=50,
+    )
+    name_kl = models.CharField(
+        max_length=50,
+    )
+
+
 class SentEmail(models.Model):
     class Meta:
         verbose_name = "sentemail"

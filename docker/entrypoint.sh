@@ -39,6 +39,7 @@ if [ "$DUMMYDATA" = true ]; then
   python3 manage.py create_dummy_objects_for_csv_import
   python3 manage.py create_dummy_refund_methods
 fi
+python3 manage.py create_qr_status
 
 python manage.py createcachetable
 if [ "$TEST" = true ]; then
