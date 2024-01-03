@@ -241,7 +241,6 @@ Deploy to Test:
   variables:
     SALTBERT_ORCHESTRATION: groenland.esani_pantportal.service-test
     SALTBERT_URL: https://saltmaster.groenland.magentahosted.dk
-  when: manual
   environment:
     name: test
     url: "https://test.pant.gl"
