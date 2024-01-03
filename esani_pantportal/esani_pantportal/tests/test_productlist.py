@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
+import datetime
 import json
 from unittest.mock import MagicMock
 
@@ -296,6 +297,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "actions": '<a href="/produkt/1?back=" class="btn btn-sm '
                         'btn-primary">Vis</a>\n',
                         "approved": "Nej",
+                        "approval_date": "-",
                         "barcode": "0010",
                         "capacity": 500,
                         "diameter": 60,
@@ -313,6 +315,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "actions": '<a href="/produkt/2?back=" class="btn btn-sm '
                         'btn-primary">Vis</a>\n',
                         "approved": "Ja",
+                        "approval_date": datetime.date.today().strftime("%-d. %b %Y"),
                         "barcode": "0002",
                         "capacity": 500,
                         "diameter": 60,
@@ -355,6 +358,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "actions": '<a href="/produkt/1?back=" class="btn btn-sm '
                         'btn-primary">Vis</a>\n',
                         "approved": "Nej",
+                        "approval_date": "-",
                         "barcode": "0010",
                         "capacity": 500,
                         "diameter": 60,
@@ -406,6 +410,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
             "Produktnavn": self.prod1.product_name,
             "Stregkode": self.prod1.barcode,
             "Godkendt": "Nej",
+            "Godkendt dato": "-",
             "Volumen": str(self.prod1.capacity),
             "Materiale": "Aluminium",
             "Højde": str(self.prod1.height),
@@ -420,6 +425,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
             "Produktnavn": self.prod2.product_name,
             "Stregkode": self.prod2.barcode,
             "Godkendt": "Ja",
+            "Godkendt dato": datetime.date.today().strftime("%-d. %b %Y"),
             "Volumen": str(self.prod2.capacity),
             "Materiale": "Aluminium",
             "Højde": str(self.prod2.height),
@@ -456,6 +462,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
                 "Vægt": str(item["weight"]),
                 "Form": item["shape"],
                 "Dansk pant": item["danish"],
+                "Godkendt dato": item["approval_date"],
                 "Handlinger": "Vis",
             }
             for item in data["items"]

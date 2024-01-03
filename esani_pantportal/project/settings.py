@@ -260,3 +260,5 @@ PRODUCT_CONSTRAINTS = {
         "A": (MIN_VOLUME, MAX_VOLUME),
     },
 }
+
+DATE_FORMAT = "j. N Y"

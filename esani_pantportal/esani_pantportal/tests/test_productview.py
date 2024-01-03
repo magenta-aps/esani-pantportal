@@ -190,6 +190,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
                     "Godkendt": "Nej",
                     "Dansk pant": "Ja",
                     "Oprettet af": "esani_admin (test@test.com)",
+                    "Godkendt dato": "-",
                 },
                 {
                     "Materiale": "Aluminium",
@@ -217,6 +218,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
                     "Stregkode": "00101122",
                     "Godkendt": "Nej",
                     "Dansk pant": "Ja",
+                    "Godkendt dato": "-",
                 },
                 {
                     "Materiale": "Aluminium",

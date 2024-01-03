@@ -386,7 +386,10 @@ class ProductSearchView(SearchView):
             value = shape(value)
         elif key == "danish":
             value = danish(value)
-        return value
+        elif key == "approval_date" and value:
+            value = value.strftime("%-d. %b %Y")
+
+        return value or "-"
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
