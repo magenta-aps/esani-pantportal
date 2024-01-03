@@ -41,6 +41,10 @@ SPDX-License-Identifier: MPL-2.0
                         <td>{{object.created_by.username}} (<a href="mailto:{{object.created_by.email}}">{{object.created_by.email}}</a>)</td>
                     </tr>
                     {% endif %}
+                    <tr>
+                        <th>{{object|verbose_name:"approval_date"}}</th>
+                        <td>{{object.approval_date|default_if_none:"-"}}</td>
+                    </tr>
                     </tbody>
                 </table>
             </div>

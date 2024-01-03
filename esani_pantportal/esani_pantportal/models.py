@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+import datetime
 import hashlib
 import random
 import string
@@ -401,6 +402,13 @@ class Product(models.Model):
         default=False,
         choices=((True, "Ja"), (False, "Nej")),
     )
+    approval_date = models.DateField(
+        verbose_name=_("Godkendt dato"),
+        help_text=_("Dato som dette produkt blev godkendt på"),
+        default=None,
+        null=True,
+        blank=True,
+    )
     material = models.CharField(
         verbose_name=_("Materiale"),
         help_text=_("Kategori for emballagens materiale."),
@@ -433,6 +441,11 @@ class Product(models.Model):
         default="U",
         choices=DANISH_PANT_CHOICES,
     )
+
+    def save(self, *args, **kwargs):
+        if self.approved and not self.approval_date:
+            self.approval_date = datetime.date.today()
+        super().save(*args, **kwargs)
 
     def get_branch(self):
         return self.created_by.branch if self.created_by else None
