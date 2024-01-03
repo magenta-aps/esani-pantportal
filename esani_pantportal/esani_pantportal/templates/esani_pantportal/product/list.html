@@ -34,7 +34,7 @@ SPDX-License-Identifier: MPL-2.0
 
     <form method="get">
         <div class="row">
-            <div class="col-4">
+            <div class="col-6">
                 <div class="row">
                     <div class="col-4">{% translate "Navn" %}</div>
                     <div class="col-8">{{form.product_name}}</div>
@@ -57,22 +57,6 @@ SPDX-License-Identifier: MPL-2.0
                     <div class="col-4">{% translate "Produkter pr. side" %}</div>
                     <div class="col-8">{{form.limit}}</div>
                     <div class="col-12"><button type="submit" class="btn btn-primary float-end">Søg</button></div>
-                </div>
-            </div>
-
-            <div class="col-8">
-                <div class="row">
-                    {% include "./filter.html" with verbose_name="Materiale" name="material" %}
-                    {% include "./filter.html" with verbose_name="Højde" name="height" show=False  %}
-                    {% include "./filter.html" with verbose_name="Volumen" name="capacity" show=False  %}
-                </div>
-                <div class="row">
-                    {% include "./filter.html" with verbose_name="Form" name="shape" %}
-                    {% include "./filter.html" with verbose_name="Diameter" name="diameter" show=False %}
-                </div>
-                <div class="row">
-                    {% include "./filter.html" with verbose_name="Dansk pant" name="danish" %}
-                    {% include "./filter.html" with verbose_name="Vægt" name="weight" show=False  %}
                 </div>
             </div>
         </div>
@@ -99,7 +83,25 @@ SPDX-License-Identifier: MPL-2.0
         </div>
     </div>
 
-    <table id="table" class="table table-bordered table-striped mt-3"
+    <div class="col-12  mt-3">
+        <div class="dropdown">
+            <a class="btn btn-primary dropdown-toggle  float-end" role="button" id="dropdownMenuButton"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            {% bs_icon "funnel" size="1em" %}
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                {% include "./filter.html" with verbose_name="Materiale" name="material" %}
+                {% include "./filter.html" with verbose_name="Form" name="shape" %}
+                {% include "./filter.html" with verbose_name="Dansk pant" name="danish" %}
+                {% include "./filter.html" with verbose_name="Højde" name="height" show=False  %}
+                {% include "./filter.html" with verbose_name="Diameter" name="diameter" show=False %}
+                {% include "./filter.html" with verbose_name="Vægt" name="weight" show=False  %}
+                {% include "./filter.html" with verbose_name="Volumen" name="capacity" show=False  %}
+            </ul>
+        </div>
+    </div>
+
+    <table id="table" class="table table-bordered table-striped mt-1"
            data-toggle="table"
            data-sticky-header="true"
            data-classes="table"
@@ -166,23 +168,21 @@ if (delete_success=="1"){
 var $table = $('#table');
 function hideItem(item_name){
     $table.bootstrapTable('hideColumn', item_name);
-    $('#'+item_name+'Hide').hide();
-    $('#'+item_name+'Show').show();
 }
 function showItem(item_name){
     $table.bootstrapTable('showColumn', item_name);
-    $('#'+item_name+'Hide').show();
-    $('#'+item_name+'Show').hide();
 }
-$('[id$=Hide]').click(function() {
-    var id = $(this).attr('id');
-    var item_name = id.slice(0,-4);
-    hideItem(item_name);
-  });
-$('[id$=Show]').click(function() {
-    var id = $(this).attr('id');
-    var item_name = id.slice(0,-4);
-    showItem(item_name);
+
+$('[id$=Toggle]').click(function() {
+    const $this = $(this);
+    var id = $this.attr('id');
+    var item_name = id.slice(0,-6);
+
+    if ($this.is(":checked")){
+        showItem(item_name);
+    } else {
+        hideItem(item_name);
+    }
    });
 </script>
 
