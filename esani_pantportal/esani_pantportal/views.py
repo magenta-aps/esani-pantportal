@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
+import datetime
 import logging
 from functools import cached_property
 from io import BytesIO
@@ -732,8 +733,82 @@ class CsvTemplateView(LoginRequiredMixin, View):
 
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = "attachment; filename=template.csv"
-
         df.to_csv(path_or_buf=response, sep=";", index=False)
+        return response
+
+
+class CsvProductsView(CsvTemplateView):
+    def get(self, request, approved, *args, **kwargs):
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        material_type_map = {
+            "P": "PET",
+            "A": "Aluminium",
+            "S": "Steel",
+            "G": "Glass",
+        }
+
+        column_map = {
+            "barcode": "Barcode",
+            "product_name": "ProductName",
+            "material": "MaterialType",
+            "height": "Height",
+            "diameter": "Diameter",
+            "weight": "Weight",
+            "capacity": "Capacity",
+            "shape": "Shape",
+        }
+
+        shape_map = {"F": "Bottle", "A": "Other", "D": "Other"}
+        approval_map = {True: "Approved", False: "Pending"}
+
+        if bool(approved):
+            qs = Product.objects.filter(approved=True)
+            filename = f"{timestamp}_product_list.csv"
+            all_products = list(
+                qs.values(
+                    "barcode",
+                    "product_name",
+                    "material",
+                    "height",
+                    "diameter",
+                    "weight",
+                    "capacity",
+                    "shape",
+                )
+            )
+        else:
+            column_map["approved"] = "Approved by ESANI A/S"
+            qs = Product.objects.all()
+            filename = f"{timestamp}_full_product_list.csv"
+            all_products = list(
+                qs.values(
+                    "barcode",
+                    "product_name",
+                    "material",
+                    "height",
+                    "diameter",
+                    "weight",
+                    "capacity",
+                    "shape",
+                    "approved",
+                )
+            )
+
+        df = pd.DataFrame(all_products)
+        df = df.replace(
+            {
+                "material": material_type_map,
+                "shape": shape_map,
+            }
+        )
+        if not bool(approved):
+            df = df.replace({"approved": approval_map})
+        df = df.rename(column_map, axis=1)
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f"attachment; filename={filename}"
+        df.to_csv(path_or_buf=response, sep=";", index=False)
+
         return response
 
 

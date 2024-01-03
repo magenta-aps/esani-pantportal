@@ -7,6 +7,7 @@ from django.views.generic import RedirectView, TemplateView
 
 from esani_pantportal.views import (
     ChangePasswordView,
+    CsvProductsView,
     CsvTemplateView,
     ExcelTemplateView,
     MultipleProductRegisterView,
@@ -132,5 +133,10 @@ urlpatterns = [
         "send_nyhedsbrev",
         NewsEmailView.as_view(),
         name="send_newsletter",
+    ),
+    path(
+        "produkt/download<int:approved>/",
+        CsvProductsView.as_view(),
+        name="registered_products_csv",
     ),
 ]

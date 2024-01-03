@@ -419,6 +419,22 @@ class TemplateViewTests(LoginMixin, TestCase):
 
         self.assertEqualDf(df, default_dataframe())
 
+    def test_approved_product_csv_view(self):
+        url = (
+            reverse("pant:registered_products_csv", kwargs={"approved": 1})
+            + "?login_bypass=1"
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_all_product_csv_view(self):
+        url = (
+            reverse("pant:registered_products_csv", kwargs={"approved": 0})
+            + "?login_bypass=1"
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
 
 class TestProductRegisterView(LoginMixin, TestCase):
     def setUp(self) -> None:
