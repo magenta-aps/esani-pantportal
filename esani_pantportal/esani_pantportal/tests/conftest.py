@@ -4,7 +4,14 @@
 from django.contrib.auth.models import Group
 from django.core.management import call_command
 
-from esani_pantportal.models import BranchUser, Company, CompanyBranch, EsaniUser
+from esani_pantportal.models import (
+    BranchUser,
+    Company,
+    CompanyBranch,
+    EsaniUser,
+    Kiosk,
+    KioskUser,
+)
 
 
 class LoginMixin:
@@ -35,6 +42,19 @@ class LoginMixin:
                 location_id=3,
             )
             kwargs = {"branch": branch}
+        elif group in ["KioskAdmins", "KioskUsers"]:
+            user_model = KioskUser
+
+            kiosk = Kiosk.objects.create(
+                cvr=12345677,
+                name="test kiosk",
+                address="foodora kiosk",
+                postal_code="12311",
+                city="test town",
+                phone="+4542457846",
+                location_id=4,
+            )
+            kwargs = {"branch": kiosk}
 
         qs = user_model.objects.filter(username=username)
         if not qs:
