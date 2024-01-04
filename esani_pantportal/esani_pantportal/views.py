@@ -579,6 +579,15 @@ class ProductUpdateView(UpdateViewMixin):
         context = super().get_context_data(**kwargs)
         if context["object"].approved and not self.request.user.is_esani_admin:
             context["can_edit"] = False
+        context["latest_history"] = self.object.history.filter(
+            Q(
+                history_change_reason="Oprettet"
+            ) | Q(
+                history_change_reason="Godkendt"
+            ) | Q( # NOTE: Gjort Inaktiv not yet implemented
+                history_change_reason="Gjort Inaktiv"
+            )
+        ).order_by("-history_date")[0]
         return context
 
     def form_valid(self, form):
