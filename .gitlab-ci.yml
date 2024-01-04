@@ -7,14 +7,28 @@ stages:
   - deploy
 
 # https://docs.gitlab.com/ee/ci/yaml/workflow.html#switch-between-branch-pipelines-and-merge-request-pipelines
+.if-default-branch-refs: &if-default-branch-refs
+  if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+.if-tag: &if-tag
+  if: '$CI_COMMIT_TAG'
+
+.if-merge-request: &if-merge-request
+  if: '$CI_MERGE_REQUEST_IID'
+
+# Workflow
+###########
 workflow:
   rules:
-    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS && $CI_PIPELINE_SOURCE == "push"
-      when: never
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
-      when: never
-    - if: $CI_COMMIT_BRANCH
+    - <<: *if-tag
+      variables:
+        # Override the IMAGE_SHA variable on tag pipelines to avoid both the default
+        # branch pipeline and tag pipeline overriding each other's images arbitrarily when
+        # they are both running at the same time on master.
+        IMAGE_SHA: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}
+    - <<: *if-default-branch-refs
+    - <<: *if-merge-request
+
 
 include:
   - project: "labs/salt-automation"
