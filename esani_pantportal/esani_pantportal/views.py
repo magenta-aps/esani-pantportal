@@ -580,11 +580,9 @@ class ProductUpdateView(UpdateViewMixin):
         if context["object"].approved and not self.request.user.is_esani_admin:
             context["can_edit"] = False
         context["latest_history"] = self.object.history.filter(
-            Q(
-                history_change_reason="Oprettet"
-            ) | Q(
-                history_change_reason="Godkendt"
-            ) | Q( # NOTE: Gjort Inaktiv not yet implemented
+            Q(history_change_reason="Oprettet")
+            | Q(history_change_reason="Godkendt")
+            | Q(  # NOTE: Gjort Inaktiv not yet implemented
                 history_change_reason="Gjort Inaktiv"
             )
         ).order_by("-history_date")[0]
@@ -613,6 +611,7 @@ class ProductUpdateView(UpdateViewMixin):
         else:
             return self.request.get_full_path()
 
+
 class ProductHistoryView(LoginRequiredMixin, DetailView):
     model = Product
     template_name = "esani_pantportal/product/history.html"
@@ -621,11 +620,9 @@ class ProductHistoryView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["histories"] = self.object.history.filter(
-            Q(
-                history_change_reason="Oprettet"
-            ) | Q(
-                history_change_reason="Godkendt"
-            ) | Q( # NOTE: Gjort Inaktiv not yet implemented
+            Q(history_change_reason="Oprettet")
+            | Q(history_change_reason="Godkendt")
+            | Q(  # NOTE: Gjort Inaktiv not yet implemented
                 history_change_reason="Gjort Inaktiv"
             )
         ).order_by("-history_date")
