@@ -45,7 +45,7 @@ SPDX-License-Identifier: MPL-2.0
                         <th>{{object|verbose_name:"approval_date"}}</th>
                         <td>{{object.approval_date|default_if_none:"-"}}</td>
                     </tr>
-                    {% if object.history.most_recent %}
+                    {% if latest_history %}
                     <tr>
                         <th>
                             <a href="{% url 'pant:product_history' object.id %}">
