@@ -122,6 +122,17 @@ class QRBagTest(LoginMixin, TestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    def test_create_as_kiosk_user(self):
+        self.user = self.login("KioskUsers")
+        code = "00000000005001d19x"
+        response = self.client.post(
+            f"/api/qrbag/{code}",
+            data=json.dumps({"active": True, "status": "oprettet"}),
+            content_type="application/json",
+            headers=self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+
     def test_update(self):
         code = "00000000005001d200"
         response = self.client.patch(

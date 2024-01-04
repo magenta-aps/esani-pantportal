@@ -87,6 +87,7 @@ class QRBagIn(ModelSchema):
 
 class QRBagOut(ModelSchema):
     owner: str
+    company: str
 
     class Config:
         model = QRBag
@@ -100,6 +101,13 @@ class QRBagOut(ModelSchema):
     @staticmethod
     def resolve_owner(obj: QRBag):
         return obj.owner.username
+
+    @staticmethod
+    def resolve_company(obj: QRBag):
+        if obj.kiosk:
+            return obj.kiosk.name
+        elif obj.companybranch:
+            return obj.companybranch.name
 
 
 class QRBagHistoryOut(QRBagOut):
