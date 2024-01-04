@@ -17,6 +17,7 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
+from django.db.models import Q
 from django.forms import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
@@ -26,12 +27,14 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import (
     CreateView,
     DeleteView,
+    DetailView,
     FormView,
     ListView,
     UpdateView,
     View,
 )
 from project.settings import DEFAULT_FROM_EMAIL
+from simple_history.utils import update_change_reason
 
 from esani_pantportal.forms import (
     ChangePasswordForm,
@@ -103,6 +106,7 @@ class ProductRegisterView(PermissionRequiredMixin, CreateView):
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
+        self.object._change_reason = "Oprettet"
         self.object.created_by = self.request.user
         return super().form_valid(form)
 
@@ -586,19 +590,37 @@ class ProductUpdateView(UpdateViewMixin):
                 return self.access_denied
             if "approved" in form.changed_data:
                 return self.access_denied
-
         return super().form_valid(form)
 
     def get_success_url(self):
         back_url = unquote(self.request.GET.get("back", ""))
         approved = self.get_object().approved
         if approved:
+            update_change_reason(self.get_object(), "Godkendt")
             if back_url:
                 return remove_parameter_from_url(back_url, "json")
             else:
                 return reverse("pant:product_list")
         else:
             return self.request.get_full_path()
+
+class ProductHistoryView(LoginRequiredMixin, DetailView):
+    model = Product
+    template_name = "esani_pantportal/product/history.html"
+    context_object_name = "historical_product"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["histories"] = self.object.history.filter(
+            Q(
+                history_change_reason="Oprettet"
+            ) | Q(
+                history_change_reason="Godkendt"
+            ) | Q( # NOTE: Gjort Inaktiv not yet implemented
+                history_change_reason="Gjort Inaktiv"
+            )
+        ).order_by("-history_date")
+        return context
 
 
 class SameCompanyMixin(PermissionRequiredMixin):
@@ -741,6 +763,7 @@ class MultipleProductRegisterView(PermissionRequiredMixin, FormView):
         context["filename"] = form.filename
 
         for product in products_to_save:
+            product._change_reason = "Oprettet"
             product.save()
 
         return self.render_to_response(context=context)
