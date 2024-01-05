@@ -609,8 +609,8 @@ class SameCompanyMixin(PermissionRequiredMixin):
             if user.id not in user_ids:
                 return self.access_denied
 
-        user_verbose = user.user_profile._meta.verbose_name
-        self.required_permissions = [f"esani_pantportal.change_{user_verbose}"]
+        user_model_name = user.user_profile._meta.model_name
+        self.required_permissions = [f"esani_pantportal.change_{user_model_name}"]
         return super().check_permissions()
 
 
