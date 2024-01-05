@@ -601,8 +601,8 @@ class ProductUpdateView(UpdateViewMixin):
             return self.request.get_full_path()
 
 
-class SameCompanyMixin:
-    def get(self, request, *args, **kwargs):
+class SameCompanyMixin(PermissionRequiredMixin):
+    def check_permissions(self):
         user = self.get_object()
         if not self.request.user.is_esani_admin:
             user_ids = self.users_in_same_company
@@ -611,15 +611,7 @@ class SameCompanyMixin:
 
         user_verbose = user.user_profile._meta.verbose_name
         self.required_permissions = [f"esani_pantportal.change_{user_verbose}"]
-
-        return super().get(request, *args, **kwargs)
-
-    def form_valid(self, form):
-        if not self.request.user.is_esani_admin:
-            user_ids = self.users_in_same_company
-            if self.get_object().id not in user_ids:
-                return self.access_denied
-        return super().form_valid(form)
+        return super().check_permissions()
 
 
 class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
@@ -664,7 +656,7 @@ class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
             return super().form_valid(form)
 
 
-class SetPasswordView(PermissionRequiredMixin, SameCompanyMixin, UpdateView):
+class SetPasswordView(SameCompanyMixin, UpdateView):
     template_name = "esani_pantportal/user/password/set.html"
     model = User
     form_class = SetPasswordForm
@@ -679,7 +671,7 @@ class SetPasswordView(PermissionRequiredMixin, SameCompanyMixin, UpdateView):
         return reverse("pant:user_view", kwargs=kwargs)
 
 
-class UserDeleteView(SameCompanyMixin, PermissionRequiredMixin, DeleteView):
+class UserDeleteView(SameCompanyMixin, DeleteView):
     model = User
 
     def get_success_url(self):
