@@ -575,17 +575,21 @@ class ProductUpdateView(UpdateViewMixin):
     form_class = ProductUpdateForm
     required_permissions = ["esani_pantportal.change_product"]
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if context["object"].approved and not self.request.user.is_esani_admin:
-            context["can_edit"] = False
-        qs = self.object.history.filter(
+    def get_latest_relevant_history(self):
+        return self.object.history.filter(
             Q(history_change_reason="Oprettet")
             | Q(history_change_reason="Godkendt")
             | Q(  # NOTE: Gjort Inaktiv not yet implemented
                 history_change_reason="Gjort Inaktiv"
             )
         )
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if context["object"].approved and not self.request.user.is_esani_admin:
+            context["can_edit"] = False
+        qs = self.get_latest_relevant_history()
         if qs:
             context["latest_history"] = qs.order_by("-history_date")[0]
         return context
@@ -604,13 +608,26 @@ class ProductUpdateView(UpdateViewMixin):
     def get_success_url(self):
         back_url = unquote(self.request.GET.get("back", ""))
         approved = self.get_object().approved
+        latest_history_qs = self.get_latest_relevant_history()
+        recently_approved = bool(
+            latest_history_qs and latest_history_qs.order_by(
+                "-history_date"
+            )[0].history_change_reason == "Godkendt"
+        )
         if approved:
-            update_change_reason(self.get_object(), "Godkendt")
+            if recently_approved:
+                update_change_reason(self.get_object(), "Ændret")
+            else:
+                update_change_reason(self.get_object(), "Godkendt")
             if back_url:
                 return remove_parameter_from_url(back_url, "json")
             else:
                 return reverse("pant:product_list")
         else:
+            if recently_approved:
+                update_change_reason(self.get_object(), "Gjort Inaktiv")
+            else:
+                update_change_reason(self.get_object(), "Ændret")
             return self.request.get_full_path()
 
 
