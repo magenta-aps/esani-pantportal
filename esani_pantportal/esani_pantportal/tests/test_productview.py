@@ -276,6 +276,55 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             response,
             reverse("pant:product_list") + "?product_name=prod1",
         )
+        response = self.client.get(
+            reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
+        )
+        self.assertIn(
+            "Produkthistorik",
+            response.content,
+        )
+
+    def test_disapprove(self):
+        self.login()
+        form_data = self.get_form_data()
+        form_data["approved"] = True
+        self.assertFalse(self.prod1.approved)
+        response = self.client.post(
+            reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
+            form_data,
+        )
+
+        response = self.client.get(
+            reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
+        )
+        self.assertNotIn(
+            "Oprettet d.",
+            response.content.decode(),
+        )
+        self.assertIn(
+            "Produkthistorik",
+            response.content.decode(),
+        )
+
+        form_data = self.get_form_data()
+        form_data["approved"] = False
+        response = self.client.post(
+            reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
+            + "?back=/produkt/%3Fproduct_name%3Dprod1",
+            form_data,
+        )
+
+        response = self.client.get(
+            reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
+        )
+        self.assertIn(
+            "Produkthistorik",
+            response.content.decode(),
+        )
+        self.assertIn(
+            "Gjort Inaktiv",
+            response.content.decode(),
+        )
 
     def test_approve_forbidden(self):
         self.client.login(username="branch_user", password="12345")
