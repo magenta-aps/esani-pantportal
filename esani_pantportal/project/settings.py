@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "ninja_jwt",
     "django_bootstrap_icons",
     "betterforms",
+    "simple_history",
     # "anymail",
 ]
 
@@ -67,6 +68,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "simple_history.middleware.HistoryRequestMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
 ]
 
@@ -131,7 +133,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 AUTH_USER_MODEL = "esani_pantportal.User"
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/

@@ -399,6 +399,8 @@ class Product(models.Model):
             ),
         ]
 
+    history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
+
     created_by = models.ForeignKey(
         "User",
         related_name="products",
