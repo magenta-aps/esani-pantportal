@@ -62,6 +62,8 @@ BRANCH_USER = 2
 COMPANY_USER = 3
 KIOSK_USER = 4
 
+# Note: We use these strings in html templates to evaluate the type of a user.
+# Be careful when changing them.
 USER_TYPE_CHOICES = (
     (ESANI_USER, "Esanibruger"),
     (BRANCH_USER, "Butiksbruger"),
@@ -191,6 +193,12 @@ class Company(AbstractCompany):
         cvr = self.cvr
         return f"{name} - cvr: {cvr}"
 
+    def get_branch(self):
+        return None
+
+    def get_company(self):
+        return self
+
 
 class Branch(AbstractCompany):
     class Meta:
@@ -217,8 +225,16 @@ class Branch(AbstractCompany):
         choices=BRANCH_TYPE_CHOICES,
     )
 
+    def get_branch(self):
+        return self
+
 
 class CompanyBranch(Branch):
+    class Meta:
+        verbose_name = "companybranch"
+        verbose_name_plural = "companybranches"
+        abstract = False
+
     company = models.ForeignKey(
         "Company",
         verbose_name=_("Virksomhed"),
@@ -232,8 +248,16 @@ class CompanyBranch(Branch):
         company = self.company
         return f"{name} - {company}"
 
+    def get_company(self):
+        return self.company
+
 
 class Kiosk(Branch):
+    class Meta:
+        verbose_name = "kiosk"
+        verbose_name_plural = "kiosks"
+        abstract = False
+
     cvr = models.PositiveIntegerField(
         verbose_name=_("CVR Nummer"),
         help_text=_("CVR Nummer"),
@@ -244,6 +268,9 @@ class Kiosk(Branch):
         name = self.name
         cvr = self.cvr
         return f"{name} - cvr: {cvr}"
+
+    def get_company(self):
+        return None
 
 
 class RefundMethod(models.Model):

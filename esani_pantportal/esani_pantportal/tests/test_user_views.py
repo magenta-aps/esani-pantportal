@@ -31,7 +31,12 @@ class BaseUserTest(LoginMixin, TestCase):
             address="foo",
             postal_code="123",
             city="test city",
+            country="USA",
             phone="+4544457845",
+            company_type="E",
+            registration_number="112",
+            account_number="112",
+            invoice_mail="foo@bar.com",
         )
 
         cls.google = Company.objects.create(
@@ -40,7 +45,12 @@ class BaseUserTest(LoginMixin, TestCase):
             address="foo",
             postal_code="123",
             city="test city",
+            country="USA",
             phone="+4544457845",
+            company_type="A",
+            registration_number="112",
+            account_number="112",
+            invoice_mail="foo@bar.com",
         )
 
         cls.facebook_branch = CompanyBranch.objects.create(
@@ -51,6 +61,12 @@ class BaseUserTest(LoginMixin, TestCase):
             city="test town",
             phone="+4542457845",
             location_id=2,
+            municipality="foo",
+            branch_type="A",
+            customer_id=2,
+            registration_number="112",
+            account_number="112",
+            invoice_mail="foo@bar.com",
         )
 
         cls.kiosk = Kiosk.objects.create(
@@ -61,6 +77,12 @@ class BaseUserTest(LoginMixin, TestCase):
             phone="+4542457845",
             location_id=2,
             cvr=11221122,
+            municipality="foo",
+            branch_type="A",
+            customer_id=2,
+            registration_number="112",
+            account_number="112",
+            invoice_mail="foo@bar.com",
         )
 
         cls.facebook_admin = CompanyUser.objects.create_user(
@@ -446,3 +468,78 @@ class DeleteUserTest(BaseUserTest):
 
         response = self.client.post(url, follow=True)
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+
+class UpdateCompanyTest(BaseUserTest):
+    def update_name(self, url):
+        response = self.client.get(url)
+        form_data = self.make_form_data(response.context_data["form"])
+
+        form_data["name"] = "x"
+        response = self.client.post(url, form_data)
+
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+    def assert_forbidden(self, url):
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_update_facebook_by_facebook_admin(self):
+        self.client.login(username="facebook_admin", password="12345")
+        url = reverse("pant:update_company", kwargs={"pk": self.facebook.pk})
+
+        self.update_name(url)
+        self.facebook.refresh_from_db()
+        self.assertEqual(self.facebook.name, "x")
+
+    def test_update_facebook_by_google_admin(self):
+        self.client.login(username="google_admin", password="12345")
+        url = reverse("pant:update_company", kwargs={"pk": self.facebook.pk})
+        self.assert_forbidden(url)
+
+    def test_update_facebook_branch_by_facebook_admin(self):
+        self.client.login(username="facebook_admin", password="12345")
+        url = reverse(
+            "pant:update_company_branch", kwargs={"pk": self.facebook_branch.pk}
+        )
+
+        self.update_name(url)
+        self.facebook_branch.refresh_from_db()
+        self.assertEqual(self.facebook_branch.name, "x")
+
+    def test_update_facebook_branch_by_facebook_branch_admin(self):
+        self.client.login(username="facebook_branch_admin", password="12345")
+        url = reverse(
+            "pant:update_company_branch", kwargs={"pk": self.facebook_branch.pk}
+        )
+
+        self.update_name(url)
+        self.facebook_branch.refresh_from_db()
+        self.assertEqual(self.facebook_branch.name, "x")
+
+    def test_update_facebook_branch_by_facebook_branch_user(self):
+        self.client.login(username="facebook_branch_user", password="12345")
+        url = reverse(
+            "pant:update_company_branch", kwargs={"pk": self.facebook_branch.pk}
+        )
+        self.assert_forbidden(url)  # Only admins can update company info
+
+    def test_update_facebook_branch_by_kiosk_admin(self):
+        self.client.login(username="kiosk_admin", password="12345")
+        url = reverse(
+            "pant:update_company_branch", kwargs={"pk": self.facebook_branch.pk}
+        )
+        self.assert_forbidden(url)
+
+    def test_update_kiosk_by_kiosk_admin(self):
+        self.client.login(username="kiosk_admin", password="12345")
+        url = reverse("pant:update_kiosk", kwargs={"pk": self.kiosk.pk})
+
+        self.update_name(url)
+        self.kiosk.refresh_from_db()
+        self.assertEqual(self.kiosk.name, "x")
+
+    def test_update_kiosk_by_facebook_admin(self):
+        self.client.login(username="facebook_admin", password="12345")
+        url = reverse("pant:update_kiosk", kwargs={"pk": self.kiosk.pk})
+        self.assert_forbidden(url)

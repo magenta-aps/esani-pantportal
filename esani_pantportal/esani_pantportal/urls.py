@@ -7,9 +7,12 @@ from django.views.generic import RedirectView, TemplateView
 
 from esani_pantportal.views import (
     ChangePasswordView,
+    CompanyBranchUpdateView,
+    CompanyUpdateView,
     CsvProductsView,
     CsvTemplateView,
     ExcelTemplateView,
+    KioskUpdateView,
     MultipleProductRegisterView,
     NewsEmailView,
     PantportalLoginView,
@@ -139,4 +142,11 @@ urlpatterns = [
         CsvProductsView.as_view(),
         name="registered_products_csv",
     ),
+    path("virksomhed/<int:pk>/ret", CompanyUpdateView.as_view(), name="update_company"),
+    path(
+        "butik/<int:pk>/ret",
+        CompanyBranchUpdateView.as_view(),
+        name="update_company_branch",
+    ),
+    path("kiosk/<int:pk>/ret", KioskUpdateView.as_view(), name="update_kiosk"),
 ]

@@ -16,6 +16,9 @@ from esani_pantportal.models import (  # isort: skip
     RefundMethod,
     SentEmail,
     User,
+    Kiosk,
+    CompanyBranch,
+    Company,
 )
 
 
@@ -71,6 +74,13 @@ class Command(BaseCommand):
             SentEmail, for_concrete_model=False
         )
         qrbagmodel = ContentType.objects.get_for_model(QRBag, for_concrete_model=False)
+        kiosk_model = ContentType.objects.get_for_model(Kiosk, for_concrete_model=False)
+        company_branch_model = ContentType.objects.get_for_model(
+            CompanyBranch, for_concrete_model=False
+        )
+        company_model = ContentType.objects.get_for_model(
+            Company, for_concrete_model=False
+        )
 
         def get_permission(action, model):
             return Permission.objects.get(
@@ -97,6 +107,10 @@ class Command(BaseCommand):
             ("delete", refund_method_model),
             ("view", qrbagmodel),
             ("change", qrbagmodel),
+            ("view", company_model),
+            ("change", company_model),
+            ("view", company_branch_model),
+            ("change", company_branch_model),
         ):
             company_admins.permissions.add(get_permission(action, model))
 
@@ -117,6 +131,10 @@ class Command(BaseCommand):
             ("view", qrbagmodel),
             ("add", qrbagmodel),
             ("change", qrbagmodel),
+            ("view", company_branch_model),
+            ("change", company_branch_model),
+            ("view", company_model),
+            ("change", company_model),
         ):
             branch_admins.permissions.add(get_permission(action, model))
 
@@ -137,6 +155,8 @@ class Command(BaseCommand):
             ("view", qrbagmodel),
             ("add", qrbagmodel),
             ("change", qrbagmodel),
+            ("view", kiosk_model),
+            ("change", kiosk_model),
         ):
             kiosk_admins.permissions.add(get_permission(action, model))
 
@@ -199,5 +219,11 @@ class Command(BaseCommand):
             ("view", qrbagmodel),
             ("change", qrbagmodel),
             ("add", email_model),
+            ("view", kiosk_model),
+            ("change", kiosk_model),
+            ("view", company_model),
+            ("change", company_model),
+            ("view", company_branch_model),
+            ("change", company_branch_model),
         ):
             esani_admins.permissions.add(get_permission(action, model))
