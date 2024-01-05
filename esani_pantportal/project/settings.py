@@ -213,6 +213,7 @@ DEFAULT_REFUND_VALUE = 200
 TOMRA_SFTP_URL = os.environ.get(
     "TOMRA_SFTP_URL", "sftp://sftp_tomra:foo@pantportal-sftp:22/deposit_payouts/"
 )
+TOMRA_PATH = os.environ.get("TOMRA_PATH", "/srv/media/deposit_payouts/")
 
 # https://redmine.magenta.dk/issues/58865
 MIN_BOTTLE_DIAMETER = int(os.environ.get("MIN_BOTTLE_DIAMETER", 50))

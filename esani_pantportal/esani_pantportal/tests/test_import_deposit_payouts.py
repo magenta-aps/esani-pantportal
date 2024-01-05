@@ -3,32 +3,26 @@
 # SPDX-License-Identifier: MPL-2.0
 
 import datetime
-import os
 from io import StringIO
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import ANY, MagicMock, mock_open, patch
 
 from django.core.management import call_command
 from django.test import TestCase
 
-from esani_pantportal.management.commands.import_deposit_payouts import SFTP, Command
+from esani_pantportal.management.commands.import_deposit_payouts import (
+    SFTP,
+    Command,
+    LocalFilesystem,
+    Source,
+)
 from esani_pantportal.models import (
     REFUND_METHOD_CHOICES,
+    DepositPayout,
     DepositPayoutItem,
     Kiosk,
     Product,
     RefundMethod,
 )
-
-
-class _MockSFTP:
-    def __init__(self, sftp_url: str):
-        self._path = "/srv/media/deposit_payouts/"
-
-    def get_new_files(self):
-        return os.listdir(self._path)
-
-    def open(self, filename):
-        return open(os.path.join(self._path, filename))
 
 
 class TestImportDepositPayouts(TestCase):
@@ -85,10 +79,6 @@ class TestImportDepositPayouts(TestCase):
             defaults=defaults,
         )
 
-    @patch(
-        "esani_pantportal.management.commands.import_deposit_payouts.SFTP",
-        new=_MockSFTP,
-    )
     def test_import_creates_expected_objects(self):
         def item(**kwargs):
             default = {
@@ -219,8 +209,50 @@ class TestImportDepositPayouts(TestCase):
         )
 
 
+class _SourceSubclass(Source):
+    """Concrete subclass of `Source`, used for testing the concrete method(s) defined by
+    `Source`.
+    """
+
+    def listdir(self):
+        pass
+
+    def open(self, filename):
+        pass
+
+
+class TestSource(TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        DepositPayout.objects.create(
+            filename="already_processed.csv",
+            from_date=datetime.date.today(),
+            to_date=datetime.date.today(),
+            item_count=0,
+        )
+        self._instance = _SourceSubclass()
+
+    def test_get_new_files(self):
+        # Arrange
+        with patch.object(self._instance, "listdir", return_value=["foo.csv"]):
+            # Act
+            result = self._instance.get_new_files()
+            # Assert
+            self.assertEqual(result, {"foo.csv"})
+
+    def test_get_new_files_already_processed(self):
+        # Arrange
+        with patch.object(
+            self._instance, "listdir", return_value=["already_processed.csv"]
+        ):
+            # Act
+            result = self._instance.get_new_files()
+            # Assert
+            self.assertEqual(result, set())
+
+
 class TestSFTP(TestCase):
-    """Test the `SFTP` wrapper class"""
+    """Test the `SFTP` source class"""
 
     _get_ssh_client = (
         "esani_pantportal.management.commands.import_deposit_payouts.SFTP."
@@ -247,15 +279,15 @@ class TestSFTP(TestCase):
             # Assert: calls to methods on `paramiko.SFTPClient`
             instance._ftp.chdir.assert_called_once_with("/path/")
 
-    def test_get_new_files(self):
+    def test_listdir(self):
         # Arrange
         with patch(self._get_ssh_client):
             instance = SFTP(self._sftp_url)
             with patch.object(instance._ftp, "listdir", return_value=["foo.csv"]):
                 # Act
-                result = instance.get_new_files()
+                result = instance.listdir()
                 # Assert
-                self.assertSetEqual(result, {"foo.csv"})
+                self.assertEqual(result, ["foo.csv"])
 
     def test_open(self):
         # Arrange
@@ -265,3 +297,28 @@ class TestSFTP(TestCase):
             instance.open("filename.csv")
             # Assert
             instance._ftp.open.assert_called_once_with("filename.csv")
+
+
+class TestLocalFileSystem(TestCase):
+    """Test the `LocalFilesystem` source class"""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self._instance = LocalFilesystem("path")
+
+    def test_listdir(self):
+        # Arrange
+        with patch("os.listdir", return_value=["foo.csv"]) as mock_listdir:
+            # Act
+            result = self._instance.listdir()
+            # Assert
+            self.assertEqual(result, ["foo.csv"])
+            mock_listdir.assert_called_once_with(self._instance._path)
+
+    def test_open(self):
+        # Arrange
+        with patch("builtins.open", new_callable=mock_open, read_data="data"):
+            # Act
+            result = self._instance.open("filename.csv")
+            # Assert
+            self.assertEqual(result.read(), "data")
