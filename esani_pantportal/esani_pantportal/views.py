@@ -43,9 +43,12 @@ from esani_pantportal.forms import (
     ProductUpdateForm,
     RefundMethodFilterForm,
     RefundMethodRegisterForm,
+    RegisterBranchForm,
     RegisterBranchUserMultiForm,
+    RegisterCompanyForm,
     RegisterCompanyUserMultiForm,
     RegisterEsaniUserForm,
+    RegisterKioskForm,
     RegisterKioskUserMultiForm,
     SetPasswordForm,
     UserFilterForm,
@@ -491,6 +494,52 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
         if user_ids:
             qs = qs.filter(pk__in=user_ids)
         return qs
+
+
+class BaseCompanyUpdateView(PermissionRequiredMixin, UpdateView):
+    template_name = "esani_pantportal/company/form.html"
+
+    def get_success_url(self):
+        return unquote(self.request.GET.get("back", ""))
+
+
+class CompanyUpdateView(BaseCompanyUpdateView):
+    required_permissions = ["esani_pantportal.change_company"]
+    model = Company
+    form_class = RegisterCompanyForm
+
+    def check_permissions(self):
+        if self.request.user.is_esani_admin or self.same_company:
+            return super().check_permissions()
+        else:
+            return self.access_denied
+
+
+class CompanyBranchUpdateView(BaseCompanyUpdateView):
+    required_permissions = ["esani_pantportal.change_companybranch"]
+    model = CompanyBranch
+    form_class = RegisterBranchForm
+
+    def check_permissions(self):
+        company = self.request.user.company
+        if self.request.user.is_esani_admin or self.same_branch:
+            return super().check_permissions()
+        elif company and self.get_object() in company.branches.all():
+            return super().check_permissions()
+        else:
+            return self.access_denied
+
+
+class KioskUpdateView(BaseCompanyUpdateView):
+    required_permissions = ["esani_pantportal.change_kiosk"]
+    model = Kiosk
+    form_class = RegisterKioskForm
+
+    def check_permissions(self):
+        if self.request.user.is_esani_admin or self.same_branch:
+            return super().check_permissions()
+        else:
+            return self.access_denied
 
 
 class UpdateViewMixin(PermissionRequiredMixin, UpdateView):

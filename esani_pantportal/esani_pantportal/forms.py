@@ -326,6 +326,10 @@ class RegisterBranchForm(forms.ModelForm, BootstrapForm):
             "municipality",
         )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.object_name = _("Butik")
+
 
 class RegisterKioskForm(forms.ModelForm, BootstrapForm):
     class Meta:
@@ -346,6 +350,10 @@ class RegisterKioskForm(forms.ModelForm, BootstrapForm):
             "cvr",
         )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.object_name = _("Butik")
+
 
 class RegisterCompanyForm(forms.ModelForm, BootstrapForm):
     class Meta:
@@ -364,6 +372,10 @@ class RegisterCompanyForm(forms.ModelForm, BootstrapForm):
             "country",
             "municipality",
         )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.object_name = _("Virksomhed")
 
 
 class RegisterUserMultiForm(MultiModelForm, BootstrapForm):

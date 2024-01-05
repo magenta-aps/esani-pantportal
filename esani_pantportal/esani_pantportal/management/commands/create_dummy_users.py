@@ -187,6 +187,8 @@ class Command(BaseCommand):
                 "phone": "+299 32 11 22",
                 "location_id": "2",
                 "customer_id": "22",
+                "branch_type": "A",
+                "municipality": "Sermersooq",
             },
         )
 

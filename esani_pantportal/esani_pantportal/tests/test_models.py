@@ -105,6 +105,37 @@ class KioskTest(TestCase):
     def test_str(self):
         self.assertEqual(str(self.kiosk), "my kiosk - cvr: 11221122")
 
+    def test_get_branch(self):
+        self.assertEqual(self.kiosk.get_branch(), self.kiosk)
+
+    def test_get_company(self):
+        self.assertEqual(self.kiosk.get_company(), None)
+
+
+class CompanyTest(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name="my company", cvr=11221122)
+
+    def test_get_branch(self):
+        self.assertEqual(self.company.get_branch(), None)
+
+    def test_get_company(self):
+        self.assertEqual(self.company.get_company(), self.company)
+
+
+class CompanyBranchTest(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name="my company", cvr=11221122)
+        self.branch = CompanyBranch.objects.create(
+            name="my branch", company=self.company
+        )
+
+    def test_get_branch(self):
+        self.assertEqual(self.branch.get_branch(), self.branch)
+
+    def test_get_company(self):
+        self.assertEqual(self.branch.get_company(), self.company)
+
 
 class DepositPayoutTest(TestCase):
     def setUp(self):
