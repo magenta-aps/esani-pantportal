@@ -513,7 +513,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             reverse("pant:product_history", kwargs={"pk": self.prod1.pk})
             + "?login_bypass=1"
         )
-        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+        self.assertEquals(response.status_code, HTTPStatus.OK)
         data = self.get_html_data(response.content)
         self.assertIn(
             "Godkendt",
