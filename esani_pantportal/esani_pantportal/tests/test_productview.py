@@ -281,7 +281,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         )
         self.assertIn(
             "Produkthistorik",
-            response.content,
+            response.content.decode(),
         )
 
     def test_disapprove(self):
