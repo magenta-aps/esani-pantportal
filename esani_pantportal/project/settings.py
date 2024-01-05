@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "ninja_jwt",
     "django_bootstrap_icons",
     "betterforms",
+    "debug_toolbar",
     "simple_history",
     # "anymail",
 ]
@@ -70,6 +71,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 ROOT_URLCONF = "project.urls"
@@ -264,3 +266,12 @@ PRODUCT_CONSTRAINTS = {
 }
 
 DATE_FORMAT = "j. N Y"
+
+if DEBUG:
+    import socket
+
+    hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+    INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips] + [
+        "127.0.0.1",
+        "10.0.2.2",
+    ]

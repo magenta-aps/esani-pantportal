@@ -31,6 +31,7 @@ urlpatterns = [
     path("", include("esani_pantportal.urls", namespace="pant")),
     path("barcode/", include("barcode_scanner.urls", namespace="barcode")),
     path("api/", api.urls),
+    path("__debug__/", include("debug_toolbar.urls")),
 ]
 
 if settings.DEBUG:
