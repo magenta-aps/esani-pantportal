@@ -277,32 +277,6 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             reverse("pant:product_list") + "?product_name=prod1",
         )
 
-        # TODO: Check how history changes things
-        response = self.client.get(
-            reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
-            + "?login_bypass=1"
-        )
-        # data = self.get_html_data(response.content)
-        # self.assertEquals(
-        #    data,
-        #    [
-        #        {
-        #            "Produktnavn": "prod1",
-        #            "Stregkode": "00101122",
-        #            "Godkendt": "Nej",
-        #            "Dansk pant": "Ja",
-        #        },
-        #        {
-        #            "Materiale": "Aluminium",
-        #            "Højde": "100 mm",
-        #            "Diameter": "60 mm",
-        #            "Vægt": "20 g",
-        #            "Volumen": "500 ml",
-        #            "Form": "Flaske",
-        #        },
-        #    ],
-        # )
-
     def test_approve_forbidden(self):
         self.client.login(username="branch_user", password="12345")
         form_data = self.get_form_data()
