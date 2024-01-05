@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import json
 from time import sleep
+from unittest.mock import patch
 
 from django.test import TestCase
 
@@ -10,6 +11,10 @@ from esani_pantportal.models import Product
 
 from ..models import CompanyBranch, Kiosk, QRBag, QRStatus
 from .conftest import LoginMixin
+
+
+def mock_qr_exists(qr):
+    return True
 
 
 class ProductViewGuiTest(LoginMixin, TestCase):
@@ -91,6 +96,7 @@ class QRBagTest(LoginMixin, TestCase):
         )
         self.assertEqual(response.status_code, 403)
 
+    @patch("esani_pantportal.models.QRCodeGenerator.qr_code_exists", mock_qr_exists)
     def test_create(self):
         code = "00000000005001d199"
         response = self.client.post(
@@ -122,6 +128,7 @@ class QRBagTest(LoginMixin, TestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    @patch("esani_pantportal.models.QRCodeGenerator.qr_code_exists", mock_qr_exists)
     def test_create_as_kiosk_user(self):
         self.user = self.login("KioskUsers")
         code = "00000000005001d19x"
@@ -133,6 +140,19 @@ class QRBagTest(LoginMixin, TestCase):
         )
         self.assertEqual(response.status_code, 200)
 
+    @patch("esani_pantportal.models.QRCodeGenerator.qr_code_exists", lambda qr: False)
+    def test_qr_doesnt_exist(self):
+        self.user = self.login("KioskUsers")
+        code = "00000000005001d19x"
+        response = self.client.post(
+            f"/api/qrbag/{code}",
+            data=json.dumps({"active": True, "status": "oprettet"}),
+            content_type="application/json",
+            headers=self.headers,
+        )
+        self.assertEqual(response.status_code, 400)
+
+    @patch("esani_pantportal.models.QRCodeGenerator.qr_code_exists", mock_qr_exists)
     def test_update(self):
         code = "00000000005001d200"
         response = self.client.patch(
@@ -270,6 +290,7 @@ class QRBagTest(LoginMixin, TestCase):
         self.assertEqual(h3["status"], "afsluttet")
         self.assertEqual(h3["owner"], self.user.username)
 
+    @patch("esani_pantportal.models.QRCodeGenerator.qr_code_exists", mock_qr_exists)
     def test_history_from_update(self):
         code = "00000000005001d202"
         self.client.post(
