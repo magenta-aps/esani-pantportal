@@ -584,7 +584,6 @@ class ProductUpdateView(UpdateViewMixin):
             )
         )
 
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if context["object"].approved and not self.request.user.is_esani_admin:
@@ -610,9 +609,9 @@ class ProductUpdateView(UpdateViewMixin):
         approved = self.get_object().approved
         latest_history_qs = self.get_latest_relevant_history()
         recently_approved = bool(
-            latest_history_qs and latest_history_qs.order_by(
-                "-history_date"
-            )[0].history_change_reason == "Godkendt"
+            latest_history_qs
+            and latest_history_qs.order_by("-history_date")[0].history_change_reason
+            == "Godkendt"
         )
         if approved:
             if recently_approved:
