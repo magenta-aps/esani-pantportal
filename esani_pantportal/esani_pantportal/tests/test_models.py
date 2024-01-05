@@ -83,6 +83,10 @@ class QRCodeGeneratorTest(TestCase):
         generator_str = f"{generator.name} - {generator.prefix} ({generator.count})"
         self.assertEqual(str(generator), generator_str)
 
+    def test_qr_code_exists(self):
+        ok = QRCodeGenerator.qr_code_exists("00000000004cd04636")
+        self.assertEqual(ok, False)
+
 
 class QRCodeIntervalTest(TestCase):
     def setUp(self):

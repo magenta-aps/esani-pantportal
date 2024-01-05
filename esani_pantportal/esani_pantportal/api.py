@@ -14,7 +14,14 @@ from ninja_extra.pagination import paginate
 from ninja_extra.schemas import NinjaPaginationResponseSchema
 from ninja_jwt.authentication import JWTAuth
 
-from esani_pantportal.models import CompanyBranch, Kiosk, Product, QRBag, QRStatus
+from esani_pantportal.models import (
+    CompanyBranch,
+    Kiosk,
+    Product,
+    QRBag,
+    QRCodeGenerator,
+    QRStatus,
+)
 
 
 class DjangoPermission(permissions.BasePermission):
@@ -149,6 +156,14 @@ class QRBagAPI:
             branch = user.branch
             companybranch = branch if isinstance(branch, CompanyBranch) else None
             kiosk = branch if isinstance(branch, Kiosk) else None
+
+            found = QRCodeGenerator.qr_code_exists(qr)
+
+            if not found:
+                return HttpResponseBadRequest(
+                    json.dumps({"error": f"invalid QR code {qr}"})
+                )
+
             return QRBag.objects.create(
                 **payload.dict(),
                 qr=qr,
