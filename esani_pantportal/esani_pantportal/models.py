@@ -231,8 +231,8 @@ class Branch(AbstractCompany):
 
 class CompanyBranch(Branch):
     class Meta:
-        verbose_name = "companybranch"
-        verbose_name_plural = "companybranches"
+        verbose_name = _("Butik")
+        verbose_name_plural = _("Butikker")
         abstract = False
 
     company = models.ForeignKey(
@@ -254,8 +254,8 @@ class CompanyBranch(Branch):
 
 class Kiosk(Branch):
     class Meta:
-        verbose_name = "kiosk"
-        verbose_name_plural = "kiosks"
+        verbose_name = _("Kiosk")
+        verbose_name_plural = _("Kiosker")
         abstract = False
 
     cvr = models.PositiveIntegerField(
@@ -275,8 +275,8 @@ class Kiosk(Branch):
 
 class RefundMethod(models.Model):
     class Meta:
-        verbose_name = "refundmethod"
-        verbose_name_plural = "refundmethods"
+        verbose_name = _("Pant metode")
+        verbose_name_plural = _("Pant metoder")
         abstract = False
         ordering = ["serial_number"]
 
@@ -620,8 +620,8 @@ class QRCodeInterval(models.Model):
 
 class User(AbstractUser):
     class Meta:
-        verbose_name = "user"
-        verbose_name_plural = "users"
+        verbose_name = _("Bruger")
+        verbose_name_plural = _("Brugere")
         abstract = False
         ordering = ["username"]
 
@@ -699,8 +699,8 @@ class User(AbstractUser):
 
 class EsaniUser(User):
     class Meta:
-        verbose_name = "esaniuser"
-        verbose_name_plural = "esaniusers"
+        verbose_name = _("Esani bruger")
+        verbose_name_plural = _("Esani brugere")
         abstract = False
 
     def save(self, *args, **kwargs):
@@ -715,8 +715,8 @@ class EsaniUser(User):
 
 class BranchUser(User):
     class Meta:
-        verbose_name = "branchuser"
-        verbose_name_plural = "branchusers"
+        verbose_name = _("Butiks bruger")
+        verbose_name_plural = _("Butiks brugere")
         abstract = False
 
     branch = models.ForeignKey(
@@ -738,8 +738,8 @@ class BranchUser(User):
 
 class CompanyUser(User):
     class Meta:
-        verbose_name = "companyuser"
-        verbose_name_plural = "companyusers"
+        verbose_name = _("Virksomheds bruger")
+        verbose_name_plural = _("Virksomheds brugere")
         abstract = False
 
     company = models.ForeignKey(
@@ -761,8 +761,8 @@ class CompanyUser(User):
 
 class KioskUser(User):
     class Meta:
-        verbose_name = "kioskuser"
-        verbose_name_plural = "kioskusers"
+        verbose_name = _("Kiosk bruger")
+        verbose_name_plural = _("Kiosk brugere")
         abstract = False
 
     branch = models.ForeignKey(
@@ -921,7 +921,7 @@ class QRStatus(models.Model):
 
 class SentEmail(models.Model):
     class Meta:
-        verbose_name = "sentemail"
+        verbose_name = _("Sendte emails")
         abstract = False
 
     to = models.CharField(
