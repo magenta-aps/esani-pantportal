@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import csv
+import os
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from urllib.parse import urlparse
@@ -56,11 +58,11 @@ class Command(BaseCommand):
     csv_delimiter = ";"
 
     def handle(self, **kwargs):
-        sftp = SFTP(settings.TOMRA_SFTP_URL)
+        source = LocalFilesystem(settings.TOMRA_PATH)
 
-        for new_file in sftp.get_new_files():
+        for new_file in source.get_new_files():
             self.stdout.write(f"Processing new file {new_file}")
-            with sftp.open(new_file) as input_stream:
+            with source.open(new_file) as input_stream:
                 tomra_file = self._read_csv(input_stream)
                 self._import_data(new_file, tomra_file)
 
@@ -151,7 +153,23 @@ class Command(BaseCommand):
             self.stderr.write(f"Encountered unknown barcode {barcode}")
 
 
-class SFTP:
+class Source(ABC):
+    @abstractmethod
+    def listdir(self):
+        pass  # pragma: nocover
+
+    @abstractmethod
+    def open(self, filename):
+        pass  # pragma: nocover
+
+    def get_new_files(self):
+        filenames = set(self.listdir())
+        known_filenames = set(DepositPayout.objects.values_list("filename", flat=True))
+        unknown_filenames = filenames - known_filenames
+        return unknown_filenames
+
+
+class SFTP(Source):
     def __init__(self, sftp_url: str):
         url = urlparse(sftp_url)
         ssh = self._get_ssh_client()
@@ -167,14 +185,22 @@ class SFTP:
         ftp.chdir(url.path)
         self._ftp = ftp
 
-    def get_new_files(self):
-        filenames = set(self._ftp.listdir())
-        known_filenames = set(DepositPayout.objects.values_list("filename", flat=True))
-        unknown_filenames = filenames - known_filenames
-        return unknown_filenames
+    def listdir(self):
+        return self._ftp.listdir()
 
     def open(self, filename):
         return self._ftp.open(filename)
 
     def _get_ssh_client(self):
         return paramiko.SSHClient()  # pragma: nocover
+
+
+class LocalFilesystem(Source):
+    def __init__(self, path: str):
+        self._path = path
+
+    def listdir(self):
+        return os.listdir(self._path)
+
+    def open(self, filename):
+        return open(os.path.join(self._path, filename))
