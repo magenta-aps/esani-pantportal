@@ -100,13 +100,13 @@ SPDX-License-Identifier: MPL-2.0
             </div>
 
             <div class="col-6">
-                {% if object.user_type == 2 or object.user_type == 4  %}
+                {% if object.get_user_type_display == "Butiksbruger" or object.get_user_type_display == "Kioskbruger"  %}
                 <h2>
                     {% translate "Butik" %}
                     {% if object.get_user_type_display == "Butiksbruger" %}
-                        <a href="{% url 'pant:update_company_branch' profile.branch.id %}?back={{request.get_full_path|quote_url}}">{% bs_icon "pencil-square" color="blue" %}</a>
+                        <a href="{% url 'pant:update_company_branch' profile.branch.id %}?back={{request.get_full_path|quote_url}}">{% bs_icon "pencil-square" %}</a>
                     {% elif object.get_user_type_display == "Kioskbruger" %}
-                        <a href="{% url 'pant:update_kiosk' profile.branch.id %}?back={{request.get_full_path|quote_url}}">{% bs_icon "pencil-square" color="blue" %}</a>
+                        <a href="{% url 'pant:update_kiosk' profile.branch.id %}?back={{request.get_full_path|quote_url}}">{% bs_icon "pencil-square" %}</a>
                     {% endif %}
                 </h2>
                 <table class="table table-bordered">
@@ -120,22 +120,17 @@ SPDX-License-Identifier: MPL-2.0
                     </tbody>
                 </table>
                 {% endif %}
-                {% if object.user_type  == 2 or object.user_type  == 3 %}
+                {% if object.get_user_type_display == "Butiksbruger" or object.get_user_type_display == "Virksomhedsbruger"  %}
                 <h2>
                     {% translate "Virksomhed" %}
-                    <a href="{% url 'pant:update_company' profile.company.id %}?back={{request.get_full_path|quote_url}}">{% bs_icon "pencil-square" color="blue" %}</a>
+                    <a href="{% url 'pant:update_company' profile.company.id %}?back={{request.get_full_path|quote_url}}">{% bs_icon "pencil-square" %}</a>
                 </h2>
                 <table class="table table-bordered">
                     <tbody>
                     {% for attr in company_info_attributes %}
                     <tr>
-                        {% if object.user_type == 2 %}
-                            <th>{{profile.branch.company|verbose_name:attr}}</th>
-                            <td>{{profile.branch.company|get_display_name:attr}}</td>
-                        {% else %}
-                            <th>{{profile.company|verbose_name:attr}}</th>
-                            <td>{{profile.company|get_display_name:attr}}</td>
-                        {% endif %}
+                        <th>{{profile.company|verbose_name:attr}}</th>
+                        <td>{{profile.company|get_display_name:attr}}</td>
                     </tr>
                     {% endfor %}
                     </tbody>
