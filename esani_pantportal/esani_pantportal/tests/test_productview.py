@@ -499,23 +499,34 @@ class ProductViewGuiTest(LoginMixin, TestCase):
 
     def test_history(self):
         self.login()
+
+        # Before approval, history should reflect no approval
+        response = self.client.get(
+            reverse("pant:product_history", kwargs={"pk": self.prod1.pk})
+            + "?login_bypass=1"
+        )
+        self.assertEquals(response.status_code, HTTPStatus.OK)
+        self.assertNotIn(
+            "Godkendt",
+            response.content.decode(),
+        )
+
+        # Approve the product
         form_data = self.get_form_data()
         form_data["approved"] = True
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
             form_data,
         )
-
         self.prod1.refresh_from_db()
 
-        # TODO: Check how history changes things
+        # History should now show approval of product
         response = self.client.get(
             reverse("pant:product_history", kwargs={"pk": self.prod1.pk})
             + "?login_bypass=1"
         )
         self.assertEquals(response.status_code, HTTPStatus.OK)
-        data = self.get_html_data(response.content)
         self.assertIn(
             "Godkendt",
-            data,
+            response.content.decode(),
         )
