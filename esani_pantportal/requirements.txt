@@ -19,3 +19,4 @@ django-betterforms==2.0.0
 whitenoise==6.0.0
 paramiko==3.3.1
 django-simple-history==3.4.0
+django-debug-toolbar==3.6.0
