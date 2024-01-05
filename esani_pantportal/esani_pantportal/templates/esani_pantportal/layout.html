@@ -66,6 +66,8 @@ SPDX-License-Identifier: MPL-2.0
         {% if user.is_admin%}
         <a class="p-2 text-muted" href="{% url 'pant:refund_method_list' %}">{% translate "Pantmaskiner" %}</a>
         <a class="p-2 text-muted" href="{% url 'pant:user_list' %}">{% translate "Brugere" %}</a>
+        {% endif %}
+        {% if user.is_esani_admin %}
         <a class="p-2 text-muted" href="{% url 'pant:send_newsletter' %}">{% translate "Send Nyhedsbrev" %}</a>
         {% endif %}
 
