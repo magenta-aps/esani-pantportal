@@ -237,7 +237,7 @@ Configure Test:
 Configure Prod:
   stage: configure
   extends:
-    - .rules:semver-all
+    - .rules:semver-core
     - .config:endpoint-with-tag
   needs: ["Release ESANI-Pantportal image"]
   variables:
