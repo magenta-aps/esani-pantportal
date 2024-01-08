@@ -20,6 +20,7 @@ Including another URLconf
 """
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.auth import views as auth_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path
 from project.admin import pantadmin
@@ -32,6 +33,34 @@ urlpatterns = [
     path("barcode/", include("barcode_scanner.urls", namespace="barcode")),
     path("api/", api.urls),
     path("__debug__/", include("debug_toolbar.urls")),
+    path(
+        "bruger/adgangskode/nulstil",
+        auth_views.PasswordResetView.as_view(
+            template_name="esani_pantportal/user/password/reset_begin.html",
+        ),
+        name="reset_password",
+    ),
+    path(
+        "bruger/adgangskode/nulstil/sendt",
+        auth_views.PasswordResetDoneView.as_view(
+            template_name="esani_pantportal/user/password/reset_done.html",
+        ),
+        name="password_reset_done",
+    ),
+    path(
+        "bruger/adgangskode/nulstil/<uidb64>/<token>",
+        auth_views.PasswordResetConfirmView.as_view(
+            template_name="esani_pantportal/user/password/reset_confirm.html",
+        ),
+        name="password_reset_confirm",
+    ),
+    path(
+        "bruger/adgangskode/nulstil/komplet",
+        auth_views.PasswordResetCompleteView.as_view(
+            template_name="esani_pantportal/user/password/reset_complete.html",
+        ),
+        name="password_reset_complete",
+    ),
 ]
 
 if settings.DEBUG:
