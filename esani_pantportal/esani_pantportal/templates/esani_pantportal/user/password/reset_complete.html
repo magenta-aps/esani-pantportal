@@ -1,0 +1,22 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% extends "esani_pantportal/layout.html" %}
+{% load i18n %}
+
+{% block title %}{% translate 'Password reset' %}{% endblock %}
+{% block header %}
+{% endblock %}
+{% block content %}
+    <div class="justify-content-md-center d-flex align-items-center vh-100">
+        <div class="card" style="width: 40rem;">
+            <h5 class="card-header">{% translate 'Password reset' %}</h5>
+            <div class="card-body">
+                <p>{% translate "Your password has been set.  You may go ahead and log in now." %}</p>
+                <a href="{% url 'pant:login' %}" class="btn btn-primary">{% translate 'Log in' %}</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
