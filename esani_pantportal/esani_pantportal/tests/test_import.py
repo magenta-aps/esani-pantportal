@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from esani_pantportal.forms import MultipleProductRegisterForm, ProductRegisterForm
@@ -52,7 +52,7 @@ invalid_diameters = [
 ]
 
 
-class MultipleProductRegisterFormTests(LoginMixin, TestCase):
+class MultipleProductRegisterFormTests(SimpleTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.defaults = {
@@ -305,6 +305,10 @@ class MultipleProductRegisterFormTests(LoginMixin, TestCase):
         self.assertEquals(len(form.errors), 1)
         self.assertIn("file", form.errors)
 
+
+class MultipleProductRegisterFormIntegrationTests(
+    LoginMixin, TestCase, MultipleProductRegisterFormTests
+):
     def test_view_post(self):
         self.login()
         df = default_dataframe()

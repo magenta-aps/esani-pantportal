@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import SimpleTestCase
 from project.util import json_dump
 
 from esani_pantportal.util import (
@@ -16,7 +16,7 @@ from esani_pantportal.util import (
 )
 
 
-class UtilTest(TestCase):
+class UtilTest(SimpleTestCase):
     def test_json_dump(self):
         class NonSerializable:
             pass
