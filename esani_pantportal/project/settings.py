@@ -182,7 +182,7 @@ EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.eu.mailgun.org")
 EMAIL_PORT = os.environ.get("EMAIL_PORT", 587)
 EMAIL_HOST_USER = os.environ.get("MAILGUN_SMTP_USERNAME", "pant@pant.gl")
-EMAIL_HOST_USER_PASSWORD = os.environ.get("MAILGUN_SMTP_PASSWORD", "")
+EMAIL_HOST_PASSWORD = os.environ.get("MAILGUN_SMTP_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", False)
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "pant@pant.gl")
 
