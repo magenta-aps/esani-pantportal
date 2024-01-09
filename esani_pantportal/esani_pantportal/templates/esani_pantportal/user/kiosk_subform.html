@@ -5,7 +5,8 @@ SPDX-License-Identifier: MPL-2.0
 -->
 <div class="input-group my-0" id="branch_form" style="display:none">
     {% include "./form_field.html" with field=form.name colsize=3 link_id="show_branch_dropdown" %}
-    {% include "./form_field.html" with field=form.phone colsize=3 %}
+    {% include "./form_field.html" with field=form.prefix colsize=1 %}
+    {% include "./form_field.html" with field=form.phone colsize=2 %}
     {% include "./form_field.html" with field=form.branch_type colsize=3 %}
     {% include "./form_field.html" with field=form.location_id help_text=True colsize=3 %}
     {% include "./form_field.html" with field=form.address colsize=3 %}
