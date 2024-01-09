@@ -18,8 +18,9 @@ def mock_qr_exists(qr):
 
 
 class ProductViewGuiTest(LoginMixin, TestCase):
-    def setUp(self) -> None:
-        self.prod1 = Product.objects.create(
+    @classmethod
+    def setUpTestData(cls):
+        cls.prod1 = Product.objects.create(
             product_name="prod1",
             barcode="00101122",
             refund_value=3,
@@ -32,7 +33,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             shape="F",
             danish="J",
         )
-        self.prod2 = Product.objects.create(
+        cls.prod2 = Product.objects.create(
             product_name="prod2",
             barcode="00020002",
             refund_value=3,

@@ -438,8 +438,7 @@ class RegisterNewEsaniAdminTest(TestCase):
         cls.branch_admin.groups.add(Group.objects.get(name="BranchAdmins"))
         cls.esani_admin.groups.add(Group.objects.get(name="EsaniAdmins"))
 
-    def setUp(self):
-        self.user_data = {
+        cls.user_data = {
             "username": "john_doe",
             "password": "strong_password123",
             "password2": "strong_password123",

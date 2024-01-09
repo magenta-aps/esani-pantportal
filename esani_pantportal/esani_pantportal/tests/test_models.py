@@ -41,7 +41,8 @@ class ValidationTest(TestCase):
 
 
 class QRCodeGeneratorTest(TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         QRCodeGenerator.objects.create(name="Små sække", prefix=0)
         QRCodeGenerator.objects.create(name="Store sække", prefix=1)
 
@@ -89,8 +90,9 @@ class QRCodeGeneratorTest(TestCase):
 
 
 class QRCodeIntervalTest(TestCase):
-    def setUp(self):
-        self.generator = QRCodeGenerator.objects.create(name="Små sække", prefix=0)
+    @classmethod
+    def setUpTestData(cls):
+        cls.generator = QRCodeGenerator.objects.create(name="Små sække", prefix=0)
 
     def test_str(self):
         self.generator.generate_qr_codes(1, salt="foo")
@@ -99,8 +101,9 @@ class QRCodeIntervalTest(TestCase):
 
 
 class KioskTest(TestCase):
-    def setUp(self):
-        self.kiosk = Kiosk.objects.create(name="my kiosk", cvr=11221122)
+    @classmethod
+    def setUpTestData(cls):
+        cls.kiosk = Kiosk.objects.create(name="my kiosk", cvr=11221122)
 
     def test_str(self):
         self.assertEqual(str(self.kiosk), "my kiosk - cvr: 11221122")
@@ -113,8 +116,9 @@ class KioskTest(TestCase):
 
 
 class CompanyTest(TestCase):
-    def setUp(self):
-        self.company = Company.objects.create(name="my company", cvr=11221122)
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = Company.objects.create(name="my company", cvr=11221122)
 
     def test_get_branch(self):
         self.assertEqual(self.company.get_branch(), None)
@@ -124,11 +128,10 @@ class CompanyTest(TestCase):
 
 
 class CompanyBranchTest(TestCase):
-    def setUp(self):
-        self.company = Company.objects.create(name="my company", cvr=11221122)
-        self.branch = CompanyBranch.objects.create(
-            name="my branch", company=self.company
-        )
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = Company.objects.create(name="my company", cvr=11221122)
+        cls.branch = CompanyBranch.objects.create(name="my branch", company=cls.company)
 
     def test_get_branch(self):
         self.assertEqual(self.branch.get_branch(), self.branch)
@@ -138,8 +141,9 @@ class CompanyBranchTest(TestCase):
 
 
 class DepositPayoutTest(TestCase):
-    def setUp(self):
-        self.deposit_payout = DepositPayout.objects.create(
+    @classmethod
+    def setUpTestData(cls):
+        cls.deposit_payout = DepositPayout.objects.create(
             filename="hello", from_date="20230101", to_date="20240101", item_count=127
         )
 
@@ -148,11 +152,12 @@ class DepositPayoutTest(TestCase):
 
 
 class DepositPayoutItemTest(TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         deposit_payout = DepositPayout.objects.create(
             filename="hello", from_date="20230101", to_date="20240101", item_count=127
         )
-        self.deposit_payout_item = DepositPayoutItem.objects.create(
+        cls.deposit_payout_item = DepositPayoutItem.objects.create(
             deposit_payout=deposit_payout,
             location_id=1,
             rvm_serial=2,
