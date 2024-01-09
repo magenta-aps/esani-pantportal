@@ -5,6 +5,7 @@ import os
 
 import pandas as pd
 from betterforms.multiform import MultiModelForm
+from captcha.fields import CaptchaField
 from django import forms
 from django.conf import settings
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
@@ -246,6 +247,7 @@ class RegisterAdminUserForm(RegisterUserForm):
         ),
         required=False,
     )
+    captcha = CaptchaField()
 
 
 class RegisterBranchUserForm(RegisterAdminUserForm):
@@ -472,6 +474,7 @@ class RegisterUserMultiForm(MultiModelForm, BootstrapForm):
         company=None,
         branch=None,
         show_admin_flag=False,
+        show_captcha=True,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -508,6 +511,10 @@ class RegisterUserMultiForm(MultiModelForm, BootstrapForm):
         self.company = company
         self.branch = branch
         self.show_admin_flag = show_admin_flag
+        self.show_captcha = show_captcha
+
+        if not show_captcha:
+            self.forms["user"].fields["captcha"].required = False
 
         if company:
             parent_form = self.parent_form_dict["company"]

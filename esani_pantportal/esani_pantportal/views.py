@@ -197,6 +197,7 @@ class RegisterBranchUserAdminView(PermissionRequiredMixin, RegisterBranchUserVie
         kwargs = super().get_form_kwargs()
         kwargs["show_admin_flag"] = True
         kwargs["allow_multiple_admins"] = True
+        kwargs["show_captcha"] = False
         kwargs["approved"] = True
         if self.request.user.user_type == BRANCH_USER:
             kwargs["company"] = self.request.user.branch.company
@@ -226,6 +227,7 @@ class RegisterCompanyUserAdminView(PermissionRequiredMixin, RegisterCompanyUserV
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["show_admin_flag"] = True
+        kwargs["show_captcha"] = False
         kwargs["allow_multiple_admins"] = True
         kwargs["approved"] = True
         if self.request.user.user_type == COMPANY_USER:
@@ -253,6 +255,7 @@ class RegisterKioskUserAdminView(PermissionRequiredMixin, RegisterKioskUserView)
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["show_admin_flag"] = True
+        kwargs["show_captcha"] = False
         kwargs["allow_multiple_admins"] = True
         kwargs["approved"] = True
         if self.request.user.user_type == KIOSK_USER:

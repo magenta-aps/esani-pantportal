@@ -62,7 +62,8 @@ INSTALLED_APPS = [
     "betterforms",
     "debug_toolbar",
     "simple_history",
-    "phonenumber_field"
+    "phonenumber_field",
+    "captcha"
     # "anymail",
 ]
 
@@ -281,3 +282,14 @@ if DEBUG:
         "127.0.0.1",
         "10.0.2.2",
     ]
+
+CAPTCHA_CHALLENGE_FUNCT = "captcha.helpers.math_challenge"
+CAPTCHA_LETTER_ROTATION = None
+CAPTCHA_NOISE_FUNCTIONS = ("captcha.helpers.noise_dots",)
+CAPTCHA_MATH_CHALLENGE_OPERATOR = "x"
+CAPTCHA_FONT_SIZE = 33
+
+# Allow to detect if test are running or not
+TESTING = bool(len(sys.argv) > 1 and sys.argv[1] == "test")
+# When set to True, the string “PASSED” (any case) will be accepted as a valid response to any CAPTCHA. Use this for testing purposes.
+CAPTCHA_TEST_MODE = TESTING
