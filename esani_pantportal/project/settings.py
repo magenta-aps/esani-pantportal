@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "betterforms",
     "debug_toolbar",
     "simple_history",
+    "phonenumber_field"
     # "anymail",
 ]
 

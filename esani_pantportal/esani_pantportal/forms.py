@@ -14,6 +14,8 @@ from django.core.exceptions import ValidationError
 from django.core.validators import EMPTY_VALUES
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
+from phonenumber_field.widgets import PhonePrefixSelect
+from phonenumbers import country_code_for_region
 
 from esani_pantportal.form_mixins import BootstrapForm, MaxSizeFileField
 from esani_pantportal.models import (
@@ -172,7 +174,20 @@ class RefundMethodRegisterForm(forms.ModelForm, BootstrapForm):
         return serial_number
 
 
-class RegisterUserForm(forms.ModelForm, BootstrapForm):
+class PhoneForm(forms.Form):
+    prefix = forms.CharField(
+        label=_("Landekode"),
+        widget=PhonePrefixSelect(initial="GL"),
+    )
+
+    def clean_phone(self):
+        data = self.cleaned_data
+        prefix = country_code_for_region(data.pop("prefix"))
+        phone_number = data["phone"].replace(" ", "")
+        return f"(+{prefix}) {phone_number}" if phone_number else ""
+
+
+class PasswordForm(forms.ModelForm):
     password2 = forms.CharField(
         widget=forms.PasswordInput(render_value=True),
         label=_("Gentag Adgangskode"),
@@ -193,7 +208,11 @@ class RegisterUserForm(forms.ModelForm, BootstrapForm):
         return password2
 
 
-class SetPasswordForm(RegisterUserForm):
+class RegisterUserForm(PasswordForm, PhoneForm, BootstrapForm):
+    pass
+
+
+class SetPasswordForm(PasswordForm, BootstrapForm):
     class Meta:
         model = User
         fields = (
@@ -236,6 +255,7 @@ class RegisterBranchUserForm(RegisterAdminUserForm):
             "username",
             "password",
             "password2",
+            "prefix",
             "phone",
             "first_name",
             "last_name",
@@ -256,6 +276,7 @@ class RegisterKioskUserForm(RegisterAdminUserForm):
             "username",
             "password",
             "password2",
+            "prefix",
             "phone",
             "first_name",
             "last_name",
@@ -276,6 +297,7 @@ class RegisterCompanyUserForm(RegisterAdminUserForm):
             "username",
             "password",
             "password2",
+            "prefix",
             "phone",
             "first_name",
             "last_name",
@@ -296,6 +318,7 @@ class RegisterEsaniUserForm(RegisterUserForm):
             "username",
             "password",
             "password2",
+            "prefix",
             "phone",
             "first_name",
             "last_name",
@@ -307,7 +330,28 @@ class RegisterEsaniUserForm(RegisterUserForm):
         }
 
 
-class RegisterBranchForm(forms.ModelForm, BootstrapForm):
+class RegisterBranchForm(forms.ModelForm, BootstrapForm, PhoneForm):
+    class Meta:
+        model = CompanyBranch
+        fields = (
+            "name",
+            "address",
+            "postal_code",
+            "city",
+            "prefix",
+            "phone",
+            "location_id",
+            "customer_id",
+            "company",
+            "branch_type",
+            "registration_number",
+            "account_number",
+            "invoice_mail",
+            "municipality",
+        )
+
+
+class UpdateBranchForm(forms.ModelForm, BootstrapForm):
     class Meta:
         model = CompanyBranch
         fields = (
@@ -331,7 +375,28 @@ class RegisterBranchForm(forms.ModelForm, BootstrapForm):
         self.object_name = _("Butik")
 
 
-class RegisterKioskForm(forms.ModelForm, BootstrapForm):
+class RegisterKioskForm(forms.ModelForm, BootstrapForm, PhoneForm):
+    class Meta:
+        model = Kiosk
+        fields = (
+            "name",
+            "address",
+            "postal_code",
+            "city",
+            "prefix",
+            "phone",
+            "location_id",
+            "customer_id",
+            "branch_type",
+            "registration_number",
+            "account_number",
+            "invoice_mail",
+            "municipality",
+            "cvr",
+        )
+
+
+class UpdateKioskForm(forms.ModelForm, BootstrapForm):
     class Meta:
         model = Kiosk
         fields = (
@@ -355,7 +420,27 @@ class RegisterKioskForm(forms.ModelForm, BootstrapForm):
         self.object_name = _("Butik")
 
 
-class RegisterCompanyForm(forms.ModelForm, BootstrapForm):
+class RegisterCompanyForm(forms.ModelForm, BootstrapForm, PhoneForm):
+    class Meta:
+        model = Company
+        fields = (
+            "name",
+            "address",
+            "postal_code",
+            "city",
+            "prefix",
+            "phone",
+            "cvr",
+            "company_type",
+            "registration_number",
+            "account_number",
+            "invoice_mail",
+            "country",
+            "municipality",
+        )
+
+
+class UpdateCompanyForm(forms.ModelForm, BootstrapForm):
     class Meta:
         model = Company
         fields = (

@@ -5,7 +5,8 @@ SPDX-License-Identifier: MPL-2.0
 -->
 <div class="input-group  my-0" id="company_form" style="display:none" >
     {% include "./form_field.html" with field=form.name colsize=3 link_id="show_company_dropdown" %}
-    {% include "./form_field.html" with field=form.phone colsize=3 %}
+    {% include "./form_field.html" with field=form.prefix colsize=1 %}
+    {% include "./form_field.html" with field=form.phone colsize=2 %}
     {% include "./form_field.html" with field=form.company_type colsize=3 %}
     {% include "./form_field.html" with field=form.cvr colsize=3 %}
     {% include "./form_field.html" with field=form.address colsize=3 %}
