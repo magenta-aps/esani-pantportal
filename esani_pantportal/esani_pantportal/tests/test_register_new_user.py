@@ -118,6 +118,8 @@ class RegisterNewUserFormTest(TestCase):
             "user-email": "angus@dundee.com",
             "user-branch": "",
             "user-admin": True,
+            "user-captcha_0": "8e10ebf60c5f23fd6e6a9959853730cd69062a15",
+            "user-captcha_1": "PASSED",
         }
 
         cls.branch_data = {

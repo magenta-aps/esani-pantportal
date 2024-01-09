@@ -12,9 +12,17 @@ SPDX-License-Identifier: MPL-2.0
     {% include "./form_field.html" with field=form.first_name %}
     {% include "./form_field.html" with field=form.last_name %}
     {% include "./form_field.html" with field=form.email %}
-    {% if show_admin_flag %}
+    {% if flags.show_admin_flag %}
         {% include "./form_field.html" with field=form.admin help_text=True %}
     {% else %}
         <div style="display:none"> {{form.admin}} </div>
+    {% endif %}
+    {% if flags.show_captcha %}
+        <div class="col-6">
+            <label class="mx-1">Captcha</label>
+            <div class="d-flex flex-row bd-highlight mb-3">
+                {{ form.captcha }}
+            </div>
+        </div>
     {% endif %}
 </div>
