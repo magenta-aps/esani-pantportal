@@ -16,7 +16,7 @@ SPDX-License-Identifier: MPL-2.0
     <h1>{% translate "Registrer ny virksomhedsadministrator" %}</h1>
     <form method="POST" class="row g-3">
         {% csrf_token %}
-    {% include "../user_subform.html" with form=form.user %}
+    {% include "../user_subform.html" with form=form.user show_admin_flag=form.show_admin_flag %}
     <div class="col-12 my-4">
         <h4>{% translate "Virksomhed" %}</h4>
     </div>

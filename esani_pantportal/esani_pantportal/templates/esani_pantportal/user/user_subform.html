@@ -12,9 +12,9 @@ SPDX-License-Identifier: MPL-2.0
     {% include "./form_field.html" with field=form.first_name %}
     {% include "./form_field.html" with field=form.last_name %}
     {% include "./form_field.html" with field=form.email %}
-    {% if form.show_admin_flag %}
-        {% include "./form_field.html" with field=form.user.admin help_text=True %}
+    {% if show_admin_flag %}
+        {% include "./form_field.html" with field=form.admin help_text=True %}
     {% else %}
-        <div style="display:none"> {{form.user.admin}} </div>
+        <div style="display:none"> {{form.admin}} </div>
     {% endif %}
 </div>
