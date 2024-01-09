@@ -944,8 +944,9 @@ class NewsEmailView(PermissionRequiredMixin, FormView):
             reply_to=[DEFAULT_FROM_EMAIL],
         )
         if settings.ENVIRONMENT != "production":
-            msg.metadata = {"o:testmode": True}
-            msg.headers = {"o:testmode": True}
+            msg.subject += " NOTE: THIS IS A TEST!"
+        #    msg.metadata = {"o:testmode": True}
+        #    msg.headers = {"o:testmode": True}
         msg.tags = ["newsletter"]
         # NOTE: To include html images
         # Include an inline image in the html:
