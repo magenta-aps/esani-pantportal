@@ -16,6 +16,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import json
 import os
+import sys
 from pathlib import Path
 
 from project.util import strtobool
@@ -32,6 +33,10 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(strtobool(os.environ.get("DJANGO_DEBUG", "False")))
+
+TESTING = bool(len(sys.argv) > 1 and sys.argv[1] == "test")
+if TESTING:
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 ALLOWED_HOSTS = json.loads(os.environ.get("ALLOWED_HOSTS", "[]"))
 
