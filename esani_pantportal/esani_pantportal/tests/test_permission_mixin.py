@@ -80,10 +80,9 @@ class PermissionTest(TestCase):
             phone="+4542457845",
         )
 
-    def setUp(self):
-        self.mixin = PermissionRequiredMixin()
-        self.mixin.request = MagicMock()
-        self.mixin.request.user = MagicMock()
+        cls.mixin = PermissionRequiredMixin()
+        cls.mixin.request = MagicMock()
+        cls.mixin.request.user = MagicMock()
 
     def test_permissions_ok(self):
         self.mixin.request.user.get_all_permissions.return_value = [

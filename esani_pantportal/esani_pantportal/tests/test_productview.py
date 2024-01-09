@@ -91,8 +91,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         cls.branch_user_from_other_branch.groups.add(branch_admin_group)
         cls.company_user.groups.add(company_admin_group)
 
-    def setUp(self) -> None:
-        self.prod1 = Product.objects.create(
+        cls.prod1 = Product.objects.create(
             product_name="prod1",
             barcode="00101122",
             refund_value=3,
@@ -104,9 +103,9 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
             danish="J",
-            created_by=self.admin_user,
+            created_by=cls.admin_user,
         )
-        self.prod2 = Product.objects.create(
+        cls.prod2 = Product.objects.create(
             product_name="prod2",
             barcode="00020002",
             refund_value=3,
@@ -117,9 +116,9 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            created_by=self.branch_user,
+            created_by=cls.branch_user,
         )
-        self.prod3 = Product.objects.create(
+        cls.prod3 = Product.objects.create(
             product_name="prod3",
             barcode="00020003",
             refund_value=3,
@@ -130,9 +129,9 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            created_by=self.branch_user,
+            created_by=cls.branch_user,
         )
-        self.prod4 = Product.objects.create(
+        cls.prod4 = Product.objects.create(
             product_name="prod4",
             barcode="00020004",
             refund_value=3,
@@ -143,9 +142,9 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            created_by=self.another_branch_user,
+            created_by=cls.another_branch_user,
         )
-        self.prod5 = Product.objects.create(
+        cls.prod5 = Product.objects.create(
             product_name="prod5",
             barcode="00020005",
             refund_value=3,
@@ -156,7 +155,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            created_by=self.branch_user_from_other_branch,
+            created_by=cls.branch_user_from_other_branch,
         )
 
     @staticmethod

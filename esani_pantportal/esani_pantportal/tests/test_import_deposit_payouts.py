@@ -36,10 +36,6 @@ class TestImportDepositPayouts(TestCase):
     product_barcode_1 = "839728179970"
     product_barcode_2 = "3662195622914"
 
-    def setUp(self):
-        super().setUp()
-        self._command = Command()
-
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
@@ -222,15 +218,15 @@ class _SourceSubclass(Source):
 
 
 class TestSource(TestCase):
-    def setUp(self) -> None:
-        super().setUp()
+    @classmethod
+    def setUpTestData(cls):
         DepositPayout.objects.create(
             filename="already_processed.csv",
             from_date=datetime.date.today(),
             to_date=datetime.date.today(),
             item_count=0,
         )
-        self._instance = _SourceSubclass()
+        cls._instance = _SourceSubclass()
 
     def test_get_new_files(self):
         # Arrange
@@ -302,9 +298,9 @@ class TestSFTP(TestCase):
 class TestLocalFileSystem(TestCase):
     """Test the `LocalFilesystem` source class"""
 
-    def setUp(self) -> None:
-        super().setUp()
-        self._instance = LocalFilesystem("path")
+    @classmethod
+    def setUpTestData(cls):
+        cls._instance = LocalFilesystem("path")
 
     def test_listdir(self):
         # Arrange

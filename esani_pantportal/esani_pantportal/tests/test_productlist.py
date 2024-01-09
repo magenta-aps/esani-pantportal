@@ -12,7 +12,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from esani_pantportal.forms import ProductFilterForm
-from esani_pantportal.models import Product
+from esani_pantportal.models import EsaniUser, Product
 from esani_pantportal.views import ProductSearchView
 
 from .conftest import LoginMixin
@@ -54,8 +54,9 @@ class ProductListSearchDataTest(TestCase):
 
 
 class ProductListGetQuerysetTest(LoginMixin, TestCase):
-    def setUp(self) -> None:
-        self.prod1 = Product.objects.create(
+    @classmethod
+    def setUpTestData(cls):
+        cls.prod1 = Product.objects.create(
             product_name="prod1",
             barcode="0010",
             refund_value=3,
@@ -67,7 +68,7 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
         )
-        self.prod2 = Product.objects.create(
+        cls.prod2 = Product.objects.create(
             product_name="prod2",
             barcode="0002",
             refund_value=3,
@@ -229,9 +230,14 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
 
 
 class ProductListFormValidTest(LoginMixin, TestCase):
-    def setUp(self) -> None:
-        self.user = self.login()
-        self.prod1 = Product.objects.create(
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = EsaniUser.objects.create_user(
+            username="testuser_EsaniAdmins",
+            password="12345",
+            email="test@test.com",
+        )
+        cls.prod1 = Product.objects.create(
             product_name="prod1",
             barcode="0010",
             refund_value=3,
@@ -243,9 +249,9 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
             id=1,
-            created_by=self.user,
+            created_by=cls.user,
         )
-        self.prod2 = Product.objects.create(
+        cls.prod2 = Product.objects.create(
             product_name="prod2",
             barcode="0002",
             refund_value=3,
@@ -257,7 +263,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
             id=2,
-            created_by=self.user,
+            created_by=cls.user,
         )
 
     def test_form_invalid(self):
@@ -379,9 +385,12 @@ class ProductListFormValidTest(LoginMixin, TestCase):
 
 
 class ProductListGuiTest(LoginMixin, TestCase):
-    def setUp(self) -> None:
+    def setUp(self):
         self.login()
-        self.prod1 = Product.objects.create(
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.prod1 = Product.objects.create(
             product_name="prod1",
             barcode="0010",
             refund_value=3,
@@ -393,7 +402,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
         )
-        self.prod2 = Product.objects.create(
+        cls.prod2 = Product.objects.create(
             product_name="prod2",
             barcode="0002",
             refund_value=3,
@@ -406,31 +415,31 @@ class ProductListGuiTest(LoginMixin, TestCase):
             shape="F",
         )
 
-        self.prod1_expected_response = {
-            "Produktnavn": self.prod1.product_name,
-            "Stregkode": self.prod1.barcode,
+        cls.prod1_expected_response = {
+            "Produktnavn": cls.prod1.product_name,
+            "Stregkode": cls.prod1.barcode,
             "Godkendt": "Nej",
             "Godkendt dato": "-",
-            "Volumen": str(self.prod1.capacity),
+            "Volumen": str(cls.prod1.capacity),
             "Materiale": "Aluminium",
-            "Højde": str(self.prod1.height),
-            "Diameter": str(self.prod1.diameter),
-            "Vægt": str(self.prod1.weight),
+            "Højde": str(cls.prod1.height),
+            "Diameter": str(cls.prod1.diameter),
+            "Vægt": str(cls.prod1.weight),
             "Form": "Flaske",
             "Dansk pant": "Ukendt",
             "Handlinger": "Vis",
         }
 
-        self.prod2_expected_response = {
-            "Produktnavn": self.prod2.product_name,
-            "Stregkode": self.prod2.barcode,
+        cls.prod2_expected_response = {
+            "Produktnavn": cls.prod2.product_name,
+            "Stregkode": cls.prod2.barcode,
             "Godkendt": "Ja",
             "Godkendt dato": datetime.date.today().strftime("%-d. %b %Y"),
-            "Volumen": str(self.prod2.capacity),
+            "Volumen": str(cls.prod2.capacity),
             "Materiale": "Aluminium",
-            "Højde": str(self.prod2.height),
-            "Diameter": str(self.prod2.diameter),
-            "Vægt": str(self.prod2.weight),
+            "Højde": str(cls.prod2.height),
+            "Diameter": str(cls.prod2.diameter),
+            "Vægt": str(cls.prod2.weight),
             "Form": "Flaske",
             "Dansk pant": "Ukendt",
             "Handlinger": "Vis",

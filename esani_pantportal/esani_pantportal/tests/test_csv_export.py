@@ -27,8 +27,9 @@ class ExportProductsToCSVTests(TestCase):
         call_command("export_approved_products_to_csv", *args, **kwargs, stdout=out)
         return out.getvalue().strip()
 
-    def setUp(self) -> None:
-        self.prod1 = Product.objects.create(
+    @classmethod
+    def setUpTestData(cls):
+        cls.prod1 = Product.objects.create(
             product_name="prod1",
             barcode="0010",
             refund_value=3,
@@ -40,7 +41,7 @@ class ExportProductsToCSVTests(TestCase):
             capacity=500,
             shape="F",
         )
-        self.prod2 = Product.objects.create(
+        cls.prod2 = Product.objects.create(
             product_name="prod2",
             barcode="0002",
             refund_value=3,
@@ -53,7 +54,7 @@ class ExportProductsToCSVTests(TestCase):
             shape="F",
         )
 
-        self.prod3 = Product.objects.create(
+        cls.prod3 = Product.objects.create(
             product_name="prod3",
             barcode="0003",
             refund_value=3,
@@ -66,6 +67,7 @@ class ExportProductsToCSVTests(TestCase):
             shape="F",
         )
 
+    def setUp(self):
         for file in os.listdir("."):
             if file.endswith(".csv"):
                 os.remove(file)
