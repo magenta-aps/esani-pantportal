@@ -227,6 +227,8 @@ Release Generate changelog:
 
 Docs Export changelog:
   extends: .docs:export-changelog
+  variables:
+    CHANGELOG_EXTRA_FLAGS: "--merge-prerelease"
 
 # Configure stage
 #################
