@@ -4,6 +4,9 @@ SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 SPDX-License-Identifier: MPL-2.0
 -->
 
+# Changelog
+You can download the changelog [here][changelog].
+
 # Testing
 To run the tests run
 ```
@@ -72,3 +75,5 @@ Firmaoplysninger Modtager:
 
 Produktoplysninger:
   - Antal (IntegerField)
+
+[changelog]:https://git.magenta.dk/api/v4/projects/647/jobs/artifacts/master/raw/.changelog.md?job=Docs+Export+changelog
