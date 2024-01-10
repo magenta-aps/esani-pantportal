@@ -580,7 +580,14 @@ class ProductUpdateView(UpdateViewMixin):
     model = Product
     template_name = "esani_pantportal/product/view.html"
     form_class = ProductUpdateForm
-    required_permissions = ["esani_pantportal.change_product"]
+
+    def check_permissions(self):
+        if self.request.method == "GET":
+            self.required_permissions = ["esani_pantportal.view_product"]
+        else:
+            self.required_permissions = ["esani_pantportal.change_product"]
+
+        return super().check_permissions()
 
     def get_latest_relevant_history(self):
         return self.object.history.filter(
