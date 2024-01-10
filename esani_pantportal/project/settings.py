@@ -215,6 +215,7 @@ QR_HASH_LENGTH = 8  # Length of QR control code, default 8
 QR_GENERATOR_SERIES = {
     "small": {"name": "Små sække", "prefix": 0},
     "large": {"name": "Store sække", "prefix": 1},
+    "test": {"name": "QR-koder til test", "prefix": 9},
 }
 QR_OUTPUT_DIR = "/srv/media/qr_codes"
 
