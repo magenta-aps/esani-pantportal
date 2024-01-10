@@ -559,7 +559,11 @@ class UpdateViewMixin(PermissionRequiredMixin, UpdateView):
             context["can_edit"] = True
         else:
             context["can_approve"] = False
-            context["can_edit"] = self.same_workplace and self.has_permissions
+            context["can_edit"] = (
+                self.same_workplace
+                and self.has_permissions
+                and self.request.user.is_admin
+            )
         return context
 
     def form_invalid(self, form):
@@ -657,7 +661,12 @@ class SameCompanyMixin(PermissionRequiredMixin):
                 return self.access_denied
 
         user_model_name = user.user_profile._meta.model_name
-        self.required_permissions = [f"esani_pantportal.change_{user_model_name}"]
+
+        if self.request.method == "GET":
+            self.required_permissions = [f"esani_pantportal.view_{user_model_name}"]
+        else:
+            self.required_permissions = [f"esani_pantportal.change_{user_model_name}"]
+
         return super().check_permissions()
 
 
