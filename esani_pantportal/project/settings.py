@@ -33,8 +33,8 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(strtobool(os.environ.get("DJANGO_DEBUG", "False")))
-
 TESTING = bool(len(sys.argv) > 1 and sys.argv[1] == "test")
+
 if TESTING:
     PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
@@ -289,7 +289,5 @@ CAPTCHA_NOISE_FUNCTIONS = ("captcha.helpers.noise_dots",)
 CAPTCHA_MATH_CHALLENGE_OPERATOR = "x"
 CAPTCHA_FONT_SIZE = 33
 
-# Allow to detect if test are running or not
-TESTING = bool(len(sys.argv) > 1 and sys.argv[1] == "test")
 # When set to True, the string “PASSED” (any case) will be accepted as a valid response to any CAPTCHA. Use this for testing purposes.
 CAPTCHA_TEST_MODE = TESTING
