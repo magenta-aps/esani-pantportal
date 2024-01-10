@@ -177,7 +177,6 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         self.login()
         response = self.client.get(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
-            + "?login_bypass=1"
         )
         data = self.get_html_data(response.content)
         self.assertEquals(
@@ -206,7 +205,6 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         self.login("BranchAdmins")
         response = self.client.get(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
-            + "?login_bypass=1"
         )
         data = self.get_html_data(response.content)
         self.assertEquals(
@@ -241,9 +239,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
     def get_form_data(self, pk=None):
         if not pk:
             pk = self.prod1.pk
-        response = self.client.get(
-            reverse("pant:product_view", kwargs={"pk": pk}) + "?login_bypass=1"
-        )
+        response = self.client.get(reverse("pant:product_view", kwargs={"pk": pk}))
 
         form = response.context_data["form"]
 
@@ -486,7 +482,6 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         self.login()
         response = self.client.get(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
-            + "?login_bypass=1"
         )
 
         form = response.context_data["form"]
@@ -525,7 +520,6 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         # Before approval, history should reflect no approval
         response = self.client.get(
             reverse("pant:product_history", kwargs={"pk": self.prod1.pk})
-            + "?login_bypass=1"
         )
         self.assertEquals(response.status_code, HTTPStatus.OK)
         self.assertNotIn(
@@ -545,7 +539,6 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         # History should now show approval of product
         response = self.client.get(
             reverse("pant:product_history", kwargs={"pk": self.prod1.pk})
-            + "?login_bypass=1"
         )
         self.assertEquals(response.status_code, HTTPStatus.OK)
         self.assertIn(
