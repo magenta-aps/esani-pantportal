@@ -56,26 +56,32 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             password="12345",
             email="test@test.com",
         )
+        cls.branch_admin = BranchUser.objects.create_user(
+            username="branch_admin",
+            password="12345",
+            email="test@test.com",
+            branch=cls.branch,
+        )
         cls.branch_user = BranchUser.objects.create_user(
             username="branch_user",
             password="12345",
             email="test@test.com",
             branch=cls.branch,
         )
-        cls.another_branch_user = BranchUser.objects.create_user(
+        cls.another_branch_admin = BranchUser.objects.create_user(
             username="favorite_colleague",
             password="12345",
             email="test@test.com",
             branch=cls.branch,
         )
-        cls.branch_user_from_other_branch = BranchUser.objects.create_user(
+        cls.branch_admin_from_other_branch = BranchUser.objects.create_user(
             username="rival_colleague",
             password="12345",
             email="test@test.com",
             branch=cls.branch2,
         )
-        cls.company_user = CompanyUser.objects.create_user(
-            username="company_user",
+        cls.company_admin = CompanyUser.objects.create_user(
+            username="company_admin",
             password="12345",
             email="test@test.com",
             company=cls.company,
@@ -84,12 +90,14 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         call_command("create_groups")
         company_admin_group = Group.objects.get(name="CompanyAdmins")
         branch_admin_group = Group.objects.get(name="BranchAdmins")
+        branch_user_group = Group.objects.get(name="BranchUsers")
         esani_admin_group = Group.objects.get(name="EsaniAdmins")
         cls.admin_user.groups.add(esani_admin_group)
-        cls.branch_user.groups.add(branch_admin_group)
-        cls.another_branch_user.groups.add(branch_admin_group)
-        cls.branch_user_from_other_branch.groups.add(branch_admin_group)
-        cls.company_user.groups.add(company_admin_group)
+        cls.branch_admin.groups.add(branch_admin_group)
+        cls.branch_user.groups.add(branch_user_group)
+        cls.another_branch_admin.groups.add(branch_admin_group)
+        cls.branch_admin_from_other_branch.groups.add(branch_admin_group)
+        cls.company_admin.groups.add(company_admin_group)
 
         cls.prod1 = Product.objects.create(
             product_name="prod1",
@@ -116,7 +124,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            created_by=cls.branch_user,
+            created_by=cls.branch_admin,
         )
         cls.prod3 = Product.objects.create(
             product_name="prod3",
@@ -129,7 +137,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            created_by=cls.branch_user,
+            created_by=cls.branch_admin,
         )
         cls.prod4 = Product.objects.create(
             product_name="prod4",
@@ -142,7 +150,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            created_by=cls.another_branch_user,
+            created_by=cls.another_branch_admin,
         )
         cls.prod5 = Product.objects.create(
             product_name="prod5",
@@ -155,7 +163,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
-            created_by=cls.branch_user_from_other_branch,
+            created_by=cls.branch_admin_from_other_branch,
         )
 
     @staticmethod
@@ -201,7 +209,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             ],
         )
 
-    def test_render_branch_user(self):
+    def test_render_branch_admin(self):
         self.login("BranchAdmins")
         response = self.client.get(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
@@ -322,7 +330,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         )
 
     def test_approve_forbidden(self):
-        self.client.login(username="branch_user", password="12345")
+        self.client.login(username="branch_admin", password="12345")
         form_data = self.get_form_data()
         form_data["approved"] = True
 
@@ -350,9 +358,25 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             response, reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
         )
 
-    def test_edit_forbidden_branch_user(self):
-        # A branch user should not be able to edit products created by esani admins
+    def test_view_as_branch_user(self):
         self.client.login(username="branch_user", password="12345")
+        response = self.client.get(
+            reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+        form_data = self.get_form_data()
+        form_data["weight"] = 1223
+
+        response = self.client.post(
+            reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
+            form_data,
+        )
+        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_edit_forbidden_branch_admin(self):
+        # A branch user should not be able to edit products created by esani admins
+        self.client.login(username="branch_admin", password="12345")
         form_data = self.get_form_data()
         form_data["weight"] = 1223
 
@@ -367,7 +391,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         form_data = self.get_form_data(self.prod2.pk)
         form_data["weight"] = 1223
 
-        self.assertEqual(self.prod2.created_by.username, "branch_user")
+        self.assertEqual(self.prod2.created_by.username, "branch_admin")
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod2.pk}),
             form_data,
@@ -378,7 +402,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         form_data = self.get_form_data(self.prod2.pk)
         form_data["approved"] = True
 
-        self.assertEqual(self.prod2.created_by.username, "branch_user")
+        self.assertEqual(self.prod2.created_by.username, "branch_admin")
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod2.pk}),
             form_data,
@@ -425,7 +449,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         self.login()
         expected_status_dict = {
             "esani_admin": HTTPStatus.FOUND,
-            "branch_user": HTTPStatus.FORBIDDEN,
+            "branch_admin": HTTPStatus.FORBIDDEN,
         }
         form_data = self.get_form_data(self.prod3.pk)
         form_data["weight"] = 1223
@@ -439,9 +463,9 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             )
             self.assertEquals(response.status_code, expected_status)
 
-    def test_edit_forbidden_company_user(self):
+    def test_edit_forbidden_company_admin(self):
         # A company user should not be able to edit products created by esani admins
-        self.client.login(username="company_user", password="12345")
+        self.client.login(username="company_admin", password="12345")
         form_data = self.get_form_data()
         form_data["weight"] = 1223
 
@@ -456,7 +480,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         form_data = self.get_form_data(self.prod2.pk)
         form_data["weight"] = 1223
 
-        self.assertEqual(self.prod2.created_by.username, "branch_user")
+        self.assertEqual(self.prod2.created_by.username, "branch_admin")
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod2.pk}),
             form_data,
@@ -501,9 +525,9 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             self.assertDictEqual(model_to_dict(self.prod1), original)
 
     def test_remove(self):
-        self.client.login(username="branch_user", password="12345")
+        self.client.login(username="branch_admin", password="12345")
         self.assertEqual(self.prod1.created_by.username, "esani_admin")
-        self.assertEqual(self.prod2.created_by.username, "branch_user")
+        self.assertEqual(self.prod2.created_by.username, "branch_admin")
 
         url_prod1 = reverse("pant:product_delete", kwargs={"pk": self.prod1.pk})
         url_prod2 = reverse("pant:product_delete", kwargs={"pk": self.prod2.pk})
