@@ -14,3 +14,5 @@ omit =
     */management/commands/create_qr_status.py
     */management/commands/generate_qr_codes.py
     */management/commands/wait_for_db.py
+parallel = true
+concurrency=multiprocessing

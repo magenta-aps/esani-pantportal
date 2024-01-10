@@ -7,7 +7,7 @@ SPDX-License-Identifier: MPL-2.0
 # Testing
 To run the tests run
 ```
-docker exec esani_pantportal bash -c 'coverage run manage.py test ; coverage report --show-missing'
+docker exec esani_pantportal bash -c 'coverage run manage.py test --parallel 4 ; coverage combine ; coverage report --show-missing'
 ```
 
 To run tests only in a specific file run
