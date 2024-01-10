@@ -3,6 +3,7 @@ stages:
   - build
   - test
   - release
+  - docs
   - configure
   - deploy
 
@@ -39,6 +40,7 @@ include:
       - "/gitlab-ci-templates/common/docker-release-meta.v1.yml"
       - "/gitlab-ci-templates/common/config-updater-meta.v1.yml"
       - "/gitlab-ci-templates/common/conventional-commits-meta.v1.yml"
+      - "/gitlab-ci-templates/common/conventional-commits-changelog-meta.v1.yml"
 
 .releaserc:
   before_script:
@@ -222,6 +224,9 @@ Release Semantic commit:
 
 Release Generate changelog:
   extends: .release:generate-changelog
+
+Docs Export changelog:
+  extends: .docs:export-changelog
 
 # Configure stage
 #################
