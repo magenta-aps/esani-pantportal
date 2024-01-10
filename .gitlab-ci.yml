@@ -226,7 +226,9 @@ Release Generate changelog:
   extends: .release:generate-changelog
 
 Docs Export changelog:
-  extends: .docs:export-changelog
+  extends:
+    - .rules:semver-all
+    - .docs:export-changelog
   variables:
     CHANGELOG_EXTRA_FLAGS: "--merge-prerelease"
 
