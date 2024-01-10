@@ -103,10 +103,12 @@ SPDX-License-Identifier: MPL-2.0
                 {% if object.get_user_type_display == "Butiksbruger" or object.get_user_type_display == "Kioskbruger"  %}
                 <h2>
                     {% translate "Butik" %}
+                    {% if can_edit %}
                     {% if object.get_user_type_display == "Butiksbruger" %}
                         <a href="{% url 'pant:update_company_branch' profile.branch.id %}?back={{request.get_full_path|quote_url}}">{% bs_icon "pencil-square" %}</a>
                     {% elif object.get_user_type_display == "Kioskbruger" %}
                         <a href="{% url 'pant:update_kiosk' profile.branch.id %}?back={{request.get_full_path|quote_url}}">{% bs_icon "pencil-square" %}</a>
+                    {% endif %}
                     {% endif %}
                 </h2>
                 <table class="table table-bordered">
@@ -123,7 +125,9 @@ SPDX-License-Identifier: MPL-2.0
                 {% if object.get_user_type_display == "Butiksbruger" or object.get_user_type_display == "Virksomhedsbruger"  %}
                 <h2>
                     {% translate "Virksomhed" %}
+                    {% if can_edit %}
                     <a href="{% url 'pant:update_company' profile.company.id %}?back={{request.get_full_path|quote_url}}">{% bs_icon "pencil-square" %}</a>
+                    {% endif %}
                 </h2>
                 <table class="table table-bordered">
                     <tbody>

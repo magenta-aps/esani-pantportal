@@ -208,6 +208,27 @@ class UserListTest(BaseUserTest):
         self.assertEqual(len(ids), 1)
 
 
+class NonAdminUserUpdateViewTest(BaseUserTest):
+    def setUp(self):
+        self.facebook_branch_user_url = reverse(
+            "pant:user_view",
+            kwargs={"pk": self.facebook_branch_user.pk},
+        )
+
+    def test_facebook_branch_user_view(self):
+        self.client.login(username="facebook_branch_user", password="12345")
+        response = self.client.get(self.facebook_branch_user_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context_data["object"].username, "facebook_branch_user"
+        )
+
+        form_data = self.make_form_data(response.context_data["form"])
+        form_data["first_name"] = "Mark"
+        response = self.client.post(self.facebook_branch_user_url, form_data)
+        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
+
+
 class EsaniAdminUserUpdateViewTest(BaseUserTest):
     def setUp(self):
         self.facebook_admin_url = reverse(
