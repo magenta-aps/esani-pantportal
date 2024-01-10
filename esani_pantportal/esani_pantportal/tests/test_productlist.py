@@ -479,63 +479,49 @@ class ProductListGuiTest(LoginMixin, TestCase):
 
     def test_render(self):
         expected = [self.prod1_expected_response, self.prod2_expected_response]
-        response = self.client.get(reverse("pant:product_list") + "?login_bypass=1")
+        response = self.client.get(reverse("pant:product_list"))
         data = self.get_html_items(response.content)
         self.assertEquals(data, expected)
-        response = self.client.get(
-            reverse("pant:product_list") + "?login_bypass=1&json=1"
-        )
+        response = self.client.get(reverse("pant:product_list") + "?json=1")
         data = self.get_json_items(response.content)
         self.assertEquals(data, expected)
 
     def test_render_paginated(self):
         expected = [self.prod2_expected_response]
-        response = self.client.get(
-            reverse("pant:product_list") + "?login_bypass=1&offset=1"
-        )
+        response = self.client.get(reverse("pant:product_list") + "?offset=1")
         data = self.get_html_items(response.content)
         self.assertEquals(data, expected)
-        response = self.client.get(
-            reverse("pant:product_list") + "?login_bypass=1&json=1&offset=1"
-        )
+        response = self.client.get(reverse("pant:product_list") + "?json=1&offset=1")
         data = self.get_json_items(response.content)
         self.assertEquals(data, expected)
 
     def test_filter_name(self):
         expected = [self.prod1_expected_response]
-        response = self.client.get(
-            reverse("pant:product_list") + "?login_bypass=1&product_name=p+1"
-        )
+        response = self.client.get(reverse("pant:product_list") + "?product_name=p+1")
         data = self.get_html_items(response.content)
         self.assertEquals(data, expected)
         response = self.client.get(
-            reverse("pant:product_list") + "?login_bypass=1&json=1&product_name=p+1"
+            reverse("pant:product_list") + "?json=1&product_name=p+1"
         )
         data = self.get_json_items(response.content)
         self.assertEquals(data, expected)
 
     def test_filter_barcode(self):
         expected = [self.prod2_expected_response]
-        response = self.client.get(
-            reverse("pant:product_list") + "?login_bypass=1&barcode=2"
-        )
+        response = self.client.get(reverse("pant:product_list") + "?barcode=2")
         data = self.get_html_items(response.content)
         self.assertEquals(data, expected)
-        response = self.client.get(
-            reverse("pant:product_list") + "?login_bypass=1&json=1&barcode=2"
-        )
+        response = self.client.get(reverse("pant:product_list") + "?json=1&barcode=2")
         data = self.get_json_items(response.content)
         self.assertEquals(data, expected)
 
     def test_filter_approved(self):
         expected = [self.prod2_expected_response]
-        response = self.client.get(
-            reverse("pant:product_list") + "?login_bypass=1&approved=true"
-        )
+        response = self.client.get(reverse("pant:product_list") + "?approved=true")
         data = self.get_html_items(response.content)
         self.assertEquals(data, expected)
         response = self.client.get(
-            reverse("pant:product_list") + "?login_bypass=1&json=1&approved=true"
+            reverse("pant:product_list") + "?json=1&approved=true"
         )
         data = self.get_json_items(response.content)
         self.assertEquals(data, expected)
@@ -543,14 +529,12 @@ class ProductListGuiTest(LoginMixin, TestCase):
     def test_filter_approved_name(self):
         expected = []
         response = self.client.get(
-            reverse("pant:product_list")
-            + "?login_bypass=1&approved=true&product_name=1"
+            reverse("pant:product_list") + "?approved=true&product_name=1"
         )
         data = self.get_html_items(response.content)
         self.assertEquals(data, expected)
         response = self.client.get(
-            reverse("pant:product_list")
-            + "?login_bypass=1&json=1&approved=true&product_name=1"
+            reverse("pant:product_list") + "?json=1&approved=true&product_name=1"
         )
         data = self.get_json_items(response.content)
         self.assertEquals(data, expected)
