@@ -7,7 +7,7 @@ from io import StringIO
 from unittest.mock import ANY, MagicMock, mock_open, patch
 
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 
 from esani_pantportal.management.commands.import_deposit_payouts import (
     SFTP,
@@ -247,7 +247,7 @@ class TestSource(TestCase):
             self.assertEqual(result, set())
 
 
-class TestSFTP(TestCase):
+class TestSFTP(SimpleTestCase):
     """Test the `SFTP` source class"""
 
     _get_ssh_client = (

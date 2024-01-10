@@ -4,7 +4,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 
 from esani_pantportal.models import (
     BranchUser,
@@ -24,7 +24,7 @@ from esani_pantportal.models import (
 )
 
 
-class ValidationTest(TestCase):
+class ValidationTest(SimpleTestCase):
     def test_barcode_length(self):
         self.assertRaises(
             ValidationError,

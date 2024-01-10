@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 from bs4 import BeautifulSoup
 from django import forms
 from django.http import HttpRequest
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from esani_pantportal.forms import ProductFilterForm
@@ -18,7 +18,7 @@ from esani_pantportal.views import ProductSearchView
 from .conftest import LoginMixin
 
 
-class ProductListSearchDataTest(TestCase):
+class ProductListSearchDataTest(SimpleTestCase):
     def test_search_data_pagination_int(self):
         view = ProductSearchView()
         view.paginate_by = 20
