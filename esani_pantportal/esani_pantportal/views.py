@@ -30,6 +30,7 @@ from django.views.generic import (
     DetailView,
     FormView,
     ListView,
+    TemplateView,
     UpdateView,
     View,
 )
@@ -87,6 +88,15 @@ from esani_pantportal.util import (
 from esani_pantportal.view_mixins import PermissionRequiredMixin
 
 logger = logging.getLogger(__name__)
+
+
+class AboutView(TemplateView):
+    template_name = "esani_pantportal/about.html"
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context["version"] = settings.VERSION
+        return context
 
 
 class PantportalLoginView(LoginView):

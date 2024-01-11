@@ -1,0 +1,30 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% extends "esani_pantportal/layout.html" %}
+{% load i18n %}
+{% block content %}
+<div class="justify-content-md-center d-flex align-items-center vh-100">
+    <div class="card" style="width: 40rem;">
+        <h5 class="card-header">{% translate 'Om Pantportal' %}</h5>
+        <div class="card-body">
+            <p>
+            <table>
+                <tr>
+                    <td>{% translate 'Version' %}</td>
+                    <td>: {{version}}</td>
+                </tr>
+                <tr>
+                    <td>{% translate 'Kildekode' %}</td>
+                    <td>: <a href="https://github.com/magenta-aps/esani-pantportal">https://github.com/magenta-aps/esani-pantportal</a></td>
+                </tr>
+            </table>
+            </p><p>
+            <a class="btn btn-primary" href="javascript:history.back()">{% translate 'Tilbage' %}</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

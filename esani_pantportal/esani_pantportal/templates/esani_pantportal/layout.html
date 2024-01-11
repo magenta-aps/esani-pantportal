@@ -78,6 +78,7 @@ SPDX-License-Identifier: MPL-2.0
         <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="{% url 'pant:user_view' user.id %}">{% translate "Brugerprofil" %}</a></li>
             <li><a class="dropdown-item" href="{% url 'pant:change_password' user.id %}">{% translate "Skift adgangskode" %}</a></li>
+            <li><a class="dropdown-item" href="{% url 'pant:about' %}">{% translate "Om pantportal" %}</a></li>
         </ul>
         </div>
         <a href="{% url 'pant:logout' %}" class="m-1 btn btn-sm btn-primary" id="logout-link">{% translate "Log ud" %}</a>
