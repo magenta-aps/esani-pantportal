@@ -6,6 +6,7 @@ from django.urls import path, reverse_lazy
 from django.views.generic import RedirectView, TemplateView
 
 from esani_pantportal.views import (
+    AboutView,
     ChangePasswordView,
     CompanyBranchUpdateView,
     CompanyUpdateView,
@@ -155,4 +156,5 @@ urlpatterns = [
         name="update_company_branch",
     ),
     path("kiosk/<int:pk>/ret", KioskUpdateView.as_view(), name="update_kiosk"),
+    path("about/", AboutView.as_view(), name="about"),
 ]
