@@ -6,6 +6,13 @@ SPDX-License-Identifier: MPL-2.0
 {% extends "esani_pantportal/layout.html" %}
 {% load i18n %}
 {% block header %}
+<header>
+    {% if environment == "staging" %}
+    <nav class="bg-warning">
+        <p class="text-center fw-bold my-0">TEST</p>
+    </nav>
+    {% endif %}
+</header>
 {% endblock %}
 {% block content %}
 {% if form.non_field_errors %}

@@ -22,6 +22,11 @@ SPDX-License-Identifier: MPL-2.0
 {% block header %}
 {% if user.is_authenticated %}
 <header>
+    {% if environment == "staging" %}
+    <nav class="bg-warning">
+        <p class="text-center fw-bold my-0">TEST</p>
+    </nav>
+    {% endif %}
     <nav class="nav flex-column flex-sm-row p-1">
         {% if user.is_admin %}
         <div class="dropdown p-2">
