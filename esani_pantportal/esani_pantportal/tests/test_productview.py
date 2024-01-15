@@ -267,8 +267,9 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         form_data = self.get_form_data()
         form_data["approved"] = True
         self.assertFalse(self.prod1.approved)
+        prod1_url = reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
         response = self.client.post(
-            reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
+            prod1_url,
             form_data,
         )
 
@@ -277,6 +278,20 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         self.assertTrue(self.prod1.approved)
         self.assertRedirects(response, reverse("pant:product_list"))
 
+        form_data["product_name"] = "foo"
+
+        response = self.client.post(
+            reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
+            form_data,
+        )
+        self.prod1.refresh_from_db()
+        self.assertEqual(self.prod1.product_name, "foo")
+        self.assertRedirects(response, prod1_url)
+
+    def test_approve_with_back_url(self):
+        self.login()
+        form_data = self.get_form_data()
+        form_data["approved"] = True
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
             + "?back=/produkt/%3Fproduct_name%3Dprod1",
