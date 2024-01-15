@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: MPL-2.0
 
 import random
+from datetime import datetime, timedelta
+from random import randrange
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -13,6 +15,18 @@ from esani_pantportal.models import (
     EsaniUser,
     Product,
 )
+
+
+def random_date():
+    """
+    This function will return a random datetime between 2020 and 2024
+    """
+    start = datetime(2020, 1, 1)
+    end = datetime(2024, 1, 1)
+    delta = end - start
+    int_delta = (delta.days * 24 * 60 * 60) + delta.seconds
+    random_second = randrange(int_delta)
+    return start + timedelta(seconds=random_second)
 
 
 class Command(BaseCommand):
@@ -46,10 +60,11 @@ class Command(BaseCommand):
                 ]
             )
 
+            approved = random.choice([True, False])
             Product.objects.create(
                 product_name=product_name,
                 barcode=barcode,
-                approved=random.choice([True, False]),
+                approved=approved,
                 material=random.choice(PRODUCT_MATERIAL_CHOICES)[0],
                 height=random.randint(85, 200),
                 diameter=random.randint(50, 100),
@@ -57,4 +72,6 @@ class Command(BaseCommand):
                 capacity=random.randint(150, 1000),
                 shape=random.choice(PRODUCT_SHAPE_CHOICES)[0],
                 created_by=user,
+                approval_date=random_date() if approved else None,
+                creation_date=random_date(),
             )

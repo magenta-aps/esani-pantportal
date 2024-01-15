@@ -421,7 +421,7 @@ class ProductSearchView(SearchView):
             value = shape(value)
         elif key == "danish":
             value = danish(value)
-        elif key == "approval_date" and value:
+        elif "_date" in key and value:
             value = value.strftime("%-d. %b %Y")
 
         return value or "-"

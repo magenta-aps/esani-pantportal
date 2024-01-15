@@ -438,6 +438,13 @@ class Product(models.Model):
         null=True,
         blank=True,
     )
+    creation_date = models.DateField(
+        verbose_name=_("Oprettelsesdato"),
+        help_text=_("Dato som dette produkt blev oprettet på"),
+        default=None,
+        null=True,
+        blank=True,
+    )
     material = models.CharField(
         verbose_name=_("Materiale"),
         help_text=_("Kategori for emballagens materiale."),
@@ -474,6 +481,8 @@ class Product(models.Model):
     def save(self, *args, **kwargs):
         if self.approved and not self.approval_date:
             self.approval_date = datetime.date.today()
+        if not self.creation_date:
+            self.creation_date = datetime.date.today()
         super().save(*args, **kwargs)
 
     def get_branch(self):
