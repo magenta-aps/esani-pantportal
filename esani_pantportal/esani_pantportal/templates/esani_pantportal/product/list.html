@@ -90,6 +90,7 @@ SPDX-License-Identifier: MPL-2.0
                 {% include "./filter.html" with verbose_name="Vægt" name="weight" show=False  %}
                 {% include "./filter.html" with verbose_name="Volumen" name="capacity" show=False  %}
                 {% include "./filter.html" with verbose_name="Godkendt dato" name="approval_date" show=False  %}
+                {% include "./filter.html" with verbose_name="Oprettelsesdato" name="creation_date" show=False  %}
             </ul>
         </div>
     </div>
@@ -126,6 +127,7 @@ SPDX-License-Identifier: MPL-2.0
             <th data-sortable="true" data-field="weight" class="col-3" data-visible="false">Vægt</th>
             <th data-sortable="true" data-field="capacity" class="col-3" data-visible="false">Volumen</th>
             <th data-sortable="true" data-field="approval_date" class="col-3" data-visible="false">Godkendt dato</th>
+            <th data-sortable="true" data-field="creation_date" class="col-3" data-visible="false">Oprettelsesdato</th>
             <th data-field="actions" class="col-3">Handlinger</th>
         </tr>
         </thead>
@@ -143,6 +145,7 @@ SPDX-License-Identifier: MPL-2.0
             <td>{{item.weight}}</td>
             <td>{{item.capacity}}</td>
             <td>{{item.approval_date}}</td>
+            <td>{{item.creation_date}}</td>
             <td>
                 {% include actions_template with item=item %}
             </td>

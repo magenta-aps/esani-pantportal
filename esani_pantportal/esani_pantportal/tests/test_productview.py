@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
+import datetime
+import locale
 from http import HTTPStatus
 
 from bs4 import BeautifulSoup
@@ -9,6 +11,7 @@ from django.core.management import call_command
 from django.forms import model_to_dict
 from django.test import TestCase
 from django.urls import reverse
+from django.utils.translation import get_language, to_locale
 
 from esani_pantportal.models import (
     BranchUser,
@@ -20,6 +23,9 @@ from esani_pantportal.models import (
 )
 
 from .conftest import LoginMixin
+
+locale_name = to_locale(get_language())
+locale.setlocale(locale.LC_ALL, locale_name + ".UTF-8")
 
 
 class ProductViewGuiTest(LoginMixin, TestCase):
@@ -197,6 +203,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
                     "Dansk pant": "Ja",
                     "Oprettet af": "esani_admin (test@test.com)",
                     "Godkendt dato": "-",
+                    "Oprettelsesdato": datetime.date.today().strftime("%-d. %B %Y"),
                 },
                 {
                     "Materiale": "Aluminium",
@@ -224,6 +231,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
                     "Godkendt": "Nej",
                     "Dansk pant": "Ja",
                     "Godkendt dato": "-",
+                    "Oprettelsesdato": datetime.date.today().strftime("%-d. %B %Y"),
                 },
                 {
                     "Materiale": "Aluminium",

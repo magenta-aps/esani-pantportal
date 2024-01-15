@@ -45,6 +45,10 @@ SPDX-License-Identifier: MPL-2.0
                         <th>{{object|verbose_name:"approval_date"}}</th>
                         <td>{{object.approval_date|default_if_none:"-"}}</td>
                     </tr>
+                    <tr>
+                        <th>{{object|verbose_name:"creation_date"}}</th>
+                        <td>{{object.creation_date|default_if_none:"-"}}</td>
+                    </tr>
                     {% if latest_history %}
                     <tr>
                         <th>
