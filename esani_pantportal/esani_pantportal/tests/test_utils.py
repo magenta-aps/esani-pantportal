@@ -6,6 +6,7 @@ from django.test import SimpleTestCase
 from project.util import json_dump
 
 from esani_pantportal.util import (
+    add_parameters_to_url,
     default_dataframe,
     float_to_string,
     join_strings_human_readable,
@@ -74,3 +75,11 @@ class UtilTest(SimpleTestCase):
     def test_float_to_string(self):
         self.assertEqual(float_to_string(2.1), "2,1")
         self.assertEqual(float_to_string(2.0), "2")
+
+    def test_add_parameters_to_url(self):
+        url = "http://foo.com/"
+        params = {"s": 1}
+        self.assertEqual(add_parameters_to_url(url, params), "http://foo.com/?s=1")
+
+        url = "http://foo.com/?m=2"
+        self.assertEqual(add_parameters_to_url(url, params), "http://foo.com/?m=2&s=1")

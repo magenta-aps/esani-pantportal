@@ -81,6 +81,7 @@ from esani_pantportal.templatetags.pant_tags import (
     user_type,
 )
 from esani_pantportal.util import (
+    add_parameters_to_url,
     default_dataframe,
     float_to_string,
     remove_parameter_from_url,
@@ -625,6 +626,7 @@ class ProductUpdateView(UpdateViewMixin):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["back_url"] = self.request.GET.get("back", "")
         if context["object"].approved and not self.request.user.is_esani_admin:
             context["can_edit"] = False
         qs = self.get_latest_relevant_history()
@@ -956,7 +958,13 @@ class ProductDeleteView(PermissionRequiredMixin, DeleteView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse("pant:product_list") + "?delete_success=1"
+        back_url = unquote(self.request.GET.get("back", ""))
+        return_url = (
+            remove_parameter_from_url(back_url, "json")
+            if back_url
+            else reverse("pant:product_list")
+        )
+        return add_parameters_to_url(return_url, {"delete_success": 1})
 
 
 class RefundMethodDeleteView(PermissionRequiredMixin, DeleteView):
