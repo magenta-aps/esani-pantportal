@@ -655,6 +655,7 @@ class ProductUpdateView(UpdateViewMixin):
         if approved:
             if recently_approved:
                 update_change_reason(self.get_object(), "Ændret")
+                return self.request.get_full_path()
             else:
                 update_change_reason(self.get_object(), "Godkendt")
             if back_url:
