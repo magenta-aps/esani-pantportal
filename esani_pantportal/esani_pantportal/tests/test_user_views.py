@@ -22,6 +22,61 @@ from esani_pantportal.models import (
 from .conftest import LoginMixin
 
 
+class TestPrevalidateCreateView(TestCase):
+    def test_form_prevalidation_invalid_data(self):
+        """Verify that POSTing a 'prevalidate' payload to a view inheriting from `
+        _PrevalidateCreateView` returns a JSON response listing the form validation
+        errors.
+        """
+        response = self.client.post(
+            reverse("pant:branch_user_register"),
+            # Prevalidate the 'branch' subform, but don't provide any other form data,
+            # in order to trigger form validation errors.
+            data={"prevalidate": "branch"},
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertIn("errors", response.json())
+        self.assertSetEqual(
+            set(response.json()["errors"]),
+            {
+                "city",
+                "address",
+                "branch_type",
+                "name",
+                "phone",
+                "company",
+                "postal_code",
+                "municipality",
+                "prefix",
+            },
+        )
+
+    def test_form_prevalidation_valid_data(self):
+        """Verify that POSTing a 'prevalidate' payload to a view inheriting from `
+        _PrevalidateCreateView` returns a JSON response without errors, if the provided
+        form data is indeed valid.
+        """
+        response = self.client.post(
+            reverse("pant:branch_user_register"),
+            # Prevalidate the 'company' subform, providing all the necessary data
+            data={
+                "prevalidate": "company",
+                "company-address": "Adresse",
+                "company-city": "By",
+                "company-company_type": "A",
+                "company-country": "GL",
+                "company-cvr": "123",
+                "company-name": "Navn",
+                "company-phone": "Telefon",
+                "company-postal_code": "Postnummer",
+                "company-prefix": "Landekode",
+            },
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertIn("errors", response.json())
+        self.assertDictEqual(response.json()["errors"], {})
+
+
 class BaseUserTest(LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls) -> None:

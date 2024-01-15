@@ -53,6 +53,13 @@ urlpatterns = [
         name="refund_method_register",
     ),
     path(
+        "bruger/opret",
+        TemplateView.as_view(
+            template_name="esani_pantportal/user/user_register_begin.html",
+        ),
+        name="user_register_begin",
+    ),
+    path(
         "butik_bruger/opret/offentlig",
         RegisterBranchUserPublicView.as_view(),
         name="branch_user_register",

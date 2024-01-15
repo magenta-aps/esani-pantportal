@@ -54,9 +54,7 @@ SPDX-License-Identifier: MPL-2.0
                 <button type="submit" class="btn btn-primary float-end">{% translate 'Login' %}</button>
                 <a href="{% url 'reset_password' %}">{% translate "Glemt password?" %}</a>
             </div>
-            <a href="{% url 'pant:branch_user_register' %}">{% translate "Ny butiksbruger" %}</a>
-            <a href="{% url 'pant:company_user_register' %}">{% translate "Ny virksomhedsbruger" %}</a>
-            <a href="{% url 'pant:kiosk_user_register' %}">{% translate "Ny kioskbruger" %}</a>
+            <a href="{% url 'pant:user_register_begin' %}">{% translate "Opret bruger" %}</a>
             <a href="{% url 'barcode:scan' %}">{% translate "Scan stregkode" %}</a>
         </div>
         <input type="hidden" name="next" value="{{ next }}">

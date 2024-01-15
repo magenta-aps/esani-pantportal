@@ -1,0 +1,78 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% extends "esani_pantportal/layout.html" %}
+{% load i18n %}
+{% block header %}
+{% endblock %}
+{% block content %}
+    <div class="justify-content-md-center d-flex align-items-center vh-100">
+        <div class="card" style="width: 40rem;">
+            <h5 class="card-header">{% translate "Opret bruger" %}</h5>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12">
+                        <p class="mb-0">
+                            {% blocktrans trimmed %}
+                            Jeg vil gerne oprette en bruger, der arbejder i en afdeling af en kæde.
+                            {% endblocktrans %}
+                        </p>
+                        <p>
+                            <small>
+                                {% blocktrans trimmed %}
+                                Det kan fx være en butik, der er del af en butikskæde, eller et hotel, der er del af en hotelkæde.
+                                Det vil sige, at salgsstedet er et blandt flere salgssteder i samme virksomhed.
+                                {% endblocktrans %}
+                            </small>
+                        </p>
+                        <p>
+                            <a href="{% url 'pant:branch_user_register' %}" class="btn btn-primary">{% translate "Opret" %}</a>
+                        </p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <p class="mb-0">
+                            {% blocktrans trimmed %}
+                            Jeg vil gerne oprette en bruger, der arbejder i en kiosk, et hotel, en bar, sportsklub, frisør, el. lign.
+                            {% endblocktrans %}
+                        </p>
+                        <p>
+                            <small>
+                                {% blocktrans trimmed %}
+                                Det vil sige, at salgsstedet er selvstændigt, og ikke en del af fx en butikskæde eller hotelkæde.
+                                {% endblocktrans %}
+                            </small>
+                        </p>
+                        <p>
+                            <a href="{% url 'pant:kiosk_user_register' %}" class="btn btn-primary">{% translate "Opret" %}</a>
+                        </p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <p class="mb-0">
+                            {% blocktrans trimmed %}
+                            Jeg vil gerne oprette en bruger, der arbejder i en virksomheds hovedkontor, eller hos en importør/eksportør.
+                            {% endblocktrans %}
+                        </p>
+                        <p>
+                            <small>
+                                {% blocktrans trimmed %}
+                                Det vil sige, at brugeren arbejder på et hovedkontor i en virksomhed, og ikke ude i fx en butik, der er del af en butikskæde.
+                                {% endblocktrans %}
+                            </small>
+                        </p>
+                        <p>
+                            <a href="{% url 'pant:company_user_register' %}" class="btn btn-primary">{% translate "Opret" %}</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
