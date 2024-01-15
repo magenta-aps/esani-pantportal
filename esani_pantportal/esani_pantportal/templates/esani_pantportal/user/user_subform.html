@@ -17,12 +17,4 @@ SPDX-License-Identifier: MPL-2.0
     {% else %}
         <div style="display:none"> {{form.admin}} </div>
     {% endif %}
-    {% if flags.show_captcha %}
-        <div class="col-6">
-            <label class="mx-1">Captcha</label>
-            <div class="d-flex flex-row bd-highlight mb-3">
-                {{ form.captcha }}
-            </div>
-        </div>
-    {% endif %}
 </div>

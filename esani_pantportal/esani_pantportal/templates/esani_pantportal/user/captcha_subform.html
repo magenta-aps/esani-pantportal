@@ -1,0 +1,17 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% load i18n %}
+<div class="col-6">
+    <label class="mx-1 mr-3">{% translate "Hvad giver regnestykket nedenfor?" %}</label>
+    <div class="d-flex flex-row bd-highlight mb-3">
+        {{ form.captcha }}
+    </div>
+    <small>
+        {% blocktrans trimmed %}
+        Dette skridt er med til at forhindre, at automatiserede programmer ikke opretter massevis af brugere.
+        {% endblocktrans %}
+    </small>
+</div>

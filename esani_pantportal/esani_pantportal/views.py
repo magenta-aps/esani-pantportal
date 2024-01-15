@@ -173,7 +173,22 @@ class RegisterEsaniUserView(PermissionRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class RegisterBranchUserView(CreateView):
+class _PrevalidateCreateView(CreateView):
+    def post(self, request, *args, **kwargs):
+        subform_name = request.POST.get("prevalidate")
+        if subform_name:
+            subform_class = self.form_class.form_classes.get(subform_name)
+            if subform_class:
+                form_data = {
+                    key.replace("%s-" % subform_name, ""): val
+                    for key, val in request.POST.items()
+                }
+                subform = subform_class(form_data)
+                return JsonResponse({"errors": subform.errors})
+        return super().post(request, *args, **kwargs)
+
+
+class RegisterBranchUserView(_PrevalidateCreateView):
     model = BranchUser
     form_class = RegisterBranchUserMultiForm
     template_name = "esani_pantportal/user/branch_user/form.html"
@@ -217,7 +232,7 @@ class RegisterBranchUserAdminView(PermissionRequiredMixin, RegisterBranchUserVie
         return kwargs
 
 
-class RegisterCompanyUserView(CreateView):
+class RegisterCompanyUserView(_PrevalidateCreateView):
     model = CompanyUser
     form_class = RegisterCompanyUserMultiForm
     template_name = "esani_pantportal/user/company_user/form.html"
@@ -245,7 +260,7 @@ class RegisterCompanyUserAdminView(PermissionRequiredMixin, RegisterCompanyUserV
         return kwargs
 
 
-class RegisterKioskUserView(CreateView):
+class RegisterKioskUserView(_PrevalidateCreateView):
     model = KioskUser
     form_class = RegisterKioskUserMultiForm
     template_name = "esani_pantportal/user/kiosk_user/form.html"

@@ -10,28 +10,81 @@ SPDX-License-Identifier: MPL-2.0
 
 {% block extra_headers %}
 <script src="{% static 'jquery/pantportal.js' %}"></script>
+<script src="{% static 'jquery/wizard.js' %}"></script>
 {% endblock %}
 
 {% block content %}
 
 <div class="mx-5">
-    <h1>{% translate "Registrer ny butiksadministrator" %}</h1>
-    <form method="POST" class="row g-3">
-        {% csrf_token %}
-    {% include "../user_subform.html" with form=form.user flags=form %}
-    <div class="col-12 my-4">
-        <h4>{% translate "Virksomhed" %}</h4>
+    <div class="row mb-3">
+        <div class="col-12">
+            <h1>{% translate "Registrer ny butiksadministrator" %}</h1>
+            <p>
+                {% translate "Her kan du oprette en bruger, der arbejder i en afdeling af en kæde." %}
+            </p>
+            <p>
+                {% translate "Hvis kæden ikke allerede er oprettet, kan du oprette den i trin 2." %}
+            </p>
+            <p>
+                {% translate "Hvis afdelingen ikke allerede er oprettet, kan du oprette den i trin 3." %}
+            </p>
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
     </div>
-    {% include "../company_dropdown.html" with subform=form.branch mainform=form %}
-    {% include "../company_subform.html" with form=form.company %}
-    <div class="col-12 my-4"  style="display:none" id="branch_header">
-        <h4>{% translate "Butik" %}</h4>
+
+    <div class="row">
+        <div class="col-12">
+            {% for error in form.crossform_errors %}
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
+            {% endfor %}
+
+            <form method="POST" novalidate data-abort-message="{% translate "Er du sikker på, at du vil forlade siden? Dine indtastede data bliver ikke gemt." %}">
+                {% csrf_token %}
+
+                <div class="card">
+                    <div class="card-body">
+                        <h4>{% translate "1. Bruger" %}</h4>
+                        {% include "../user_subform.html" with form=form.user flags=form %}
+                    </div>
+                </div>
+
+                <div class="card d-none">
+                    <div class="card-body">
+                        <h4>{% translate "2. Virksomhed" %}</h4>
+                        {% include "../company_dropdown.html" with subform=form.branch mainform=form %}
+                        {% include "../company_subform.html" with form=form.company %}
+                    </div>
+                </div>
+
+                <div class="card d-none">
+                    <div class="card-body">
+                        <h4>{% translate "3. Salgssted (butik, afdeling, mv.)" %}</h4>
+                        {% include "../branch_dropdown.html" with subform=form.user mainform=form %}
+                        {% include "../branch_subform.html" with form=form.branch %}
+                    </div>
+                </div>
+
+                {% if form.show_captcha %}
+                <div class="card d-none">
+                    <div class="card-body">
+                        <h4>{% translate "4. Bekræft, at du ikke er en robot" %}</h4>
+                        {% include "../captcha_subform.html" with form=form.user %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <button class="btn btn-secondary" id="prev" type="button">{% translate 'Tilbage' %}</button>
+                        <button class="btn btn-primary" id="next" type="button">{% translate 'Næste' %}</button>
+                        <button class="btn btn-primary float-end d-none" id="submit" type="submit">{% translate 'Opret' %}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
-    {% include "../branch_dropdown.html" with subform=form.user mainform=form %}
-    {% include "../branch_subform.html" with form=form.branch %}
-    {% include "../crossform_errors.html" with form=form %}
-    {% include "../form_buttons.html" with user=user %}
-    </form>
 </div>
 
 {{ branch_dict|json_script:"branch_dict" }}
