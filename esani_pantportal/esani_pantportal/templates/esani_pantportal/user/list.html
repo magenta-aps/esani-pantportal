@@ -83,6 +83,7 @@ SPDX-License-Identifier: MPL-2.0
         <tr>
             <th data-sortable="true" data-field="username" class="col-3">Brugernavn</th>
             <th data-sortable="true" data-field="user_type" class="col-3">Brugertype</th>
+            <th data-sortable="true" data-field="approved" class="col-3">{% translate "Har admin-rettigheder" %}</th>
             <th data-sortable="true" data-field="approved" class="col-3">Godkendt</th>
             <th data-field="actions" class="col-3">Handlinger</th>
         </tr>
@@ -92,6 +93,7 @@ SPDX-License-Identifier: MPL-2.0
         <tr>
             <td>{{item.username}}</td>
             <td>{{item.user_type}}</td>
+            <td>{{item.is_admin}}</td>
             <td>{{item.approved}}</td>
             <td>
                 {% include actions_template with item=item %}
