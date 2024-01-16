@@ -34,6 +34,7 @@ from esani_pantportal.views import (
     RegisterKioskUserAdminView,
     RegisterKioskUserPublicView,
     SetPasswordView,
+    UpdateProductViewPreferences,
     UserDeleteView,
     UserSearchView,
     UserUpdateView,
@@ -130,6 +131,11 @@ urlpatterns = [
         "bruger/<int:pk>/adgangskode/skift",
         ChangePasswordView.as_view(),
         name="change_password",
+    ),
+    path(
+        "produkt/bruger/<int:pk>/indstillinger",
+        UpdateProductViewPreferences.as_view(),
+        name="update_preferences",
     ),
     path(
         "produkt/opret/multiple",

@@ -96,3 +96,8 @@ def constraints_string(key, unit):
         if shape != "A":
             output += [product_shape_dict[shape] + f": [{minv}-{maxv}{unit}]"]
     return ", ".join(output)
+
+
+@register.filter
+def truefalse(boolean):
+    return "true" if boolean else "false"
