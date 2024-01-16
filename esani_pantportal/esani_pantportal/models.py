@@ -629,7 +629,22 @@ class QRCodeInterval(models.Model):
         return f"{gen_name}[{start}:{end}] - {self.salt}"
 
 
-class User(AbstractUser):
+class ProductViewPreferences(models.Model):
+    class Meta:
+        abstract = True
+
+    show_material = models.BooleanField(default=True)
+    show_shape = models.BooleanField(default=True)
+    show_danish = models.BooleanField(default=True)
+    show_height = models.BooleanField(default=False)
+    show_diameter = models.BooleanField(default=False)
+    show_weight = models.BooleanField(default=False)
+    show_capacity = models.BooleanField(default=False)
+    show_approval_date = models.BooleanField(default=False)
+    show_creation_date = models.BooleanField(default=False)
+
+
+class User(AbstractUser, ProductViewPreferences):
     class Meta:
         verbose_name = _("Bruger")
         verbose_name_plural = _("Brugere")

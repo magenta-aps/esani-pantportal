@@ -389,7 +389,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
 
 class ProductListGuiTest(LoginMixin, TestCase):
     def setUp(self):
-        self.login()
+        self.user = self.login()
 
     @classmethod
     def setUpTestData(cls):
@@ -449,6 +449,16 @@ class ProductListGuiTest(LoginMixin, TestCase):
             "Dansk pant": "Ukendt",
             "Handlinger": "Vis",
         }
+
+    @staticmethod
+    def get_table_headers(html):
+        soup = BeautifulSoup(html, "html.parser")
+        table = soup.find("table")
+        return [
+            cell.attrs.get("data-field")
+            for cell in table.thead.tr.find_all("th")
+            if cell.attrs.get("data-visible", "true") == "true"
+        ]
 
     @staticmethod
     def get_html_items(html):
@@ -544,3 +554,20 @@ class ProductListGuiTest(LoginMixin, TestCase):
         )
         data = self.get_json_items(response.content)
         self.assertEquals(data, expected)
+
+    def test_column_preferences(self):
+        # Load the page with default settings
+        response = self.client.get(reverse("pant:product_list"))
+        data = self.get_table_headers(response.content)
+        self.assertIn("material", data)
+
+        # Edit preferences
+        self.client.post(
+            reverse("pant:update_preferences", kwargs={"pk": self.user.pk}),
+            data={"show_material": "false"},
+        )
+
+        # Reload the page
+        response = self.client.get(reverse("pant:product_list"))
+        data = self.get_table_headers(response.content)
+        self.assertNotIn("material", data)

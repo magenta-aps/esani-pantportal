@@ -1019,3 +1019,32 @@ class NewsEmailView(PermissionRequiredMixin, FormView):
 
     def get_success_url(self):
         return reverse("pant:send_newsletter")
+
+
+class UpdateProductViewPreferences(UpdateView):
+    model = User
+    fields = [
+        "show_material",
+        "show_shape",
+        "show_danish",
+        "show_height",
+        "show_diameter",
+        "show_weight",
+        "show_capacity",
+        "show_approval_date",
+        "show_creation_date",
+    ]
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        obj = self.get_object()
+
+        # Set initial values
+        data = kwargs["data"].copy()
+        for field in [f for f in self.fields if f not in data]:
+            data[field] = getattr(obj, field)
+        kwargs["data"] = data
+        return kwargs
+
+    def get_success_url(self):
+        return reverse("pant:product_list")

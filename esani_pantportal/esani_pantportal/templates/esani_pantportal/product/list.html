@@ -82,15 +82,15 @@ SPDX-License-Identifier: MPL-2.0
             {% bs_icon "funnel" size="1em" %}
             </a>
             <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                {% include "./filter.html" with verbose_name="Materiale" name="material" %}
-                {% include "./filter.html" with verbose_name="Form" name="shape" %}
-                {% include "./filter.html" with verbose_name="Dansk pant" name="danish" %}
-                {% include "./filter.html" with verbose_name="Højde" name="height" show=False  %}
-                {% include "./filter.html" with verbose_name="Diameter" name="diameter" show=False %}
-                {% include "./filter.html" with verbose_name="Vægt" name="weight" show=False  %}
-                {% include "./filter.html" with verbose_name="Volumen" name="capacity" show=False  %}
-                {% include "./filter.html" with verbose_name="Godkendt dato" name="approval_date" show=False  %}
-                {% include "./filter.html" with verbose_name="Oprettelsesdato" name="creation_date" show=False  %}
+                {% include "./filter.html" with verbose_name="Materiale" name="material" show=request.user.show_material %}
+                {% include "./filter.html" with verbose_name="Form" name="shape" show=request.user.show_shape %}
+                {% include "./filter.html" with verbose_name="Dansk pant" name="danish" show=request.user.show_danish %}
+                {% include "./filter.html" with verbose_name="Højde" name="height" show=request.user.show_height %}
+                {% include "./filter.html" with verbose_name="Diameter" name="diameter" show=request.user.show_diameter %}
+                {% include "./filter.html" with verbose_name="Vægt" name="weight" show=request.user.show_weight %}
+                {% include "./filter.html" with verbose_name="Volumen" name="capacity" show=request.user.show_capacity %}
+                {% include "./filter.html" with verbose_name="Godkendt dato" name="approval_date" show=request.user.show_approval_date %}
+                {% include "./filter.html" with verbose_name="Oprettelsesdato" name="creation_date" show=request.user.show_creation_date %}
             </ul>
         </div>
     </div>
@@ -119,15 +119,15 @@ SPDX-License-Identifier: MPL-2.0
             <th data-sortable="true" data-field="product_name" class="col-3">Produktnavn</th>
             <th data-sortable="true" data-field="barcode" class="col-3">Stregkode</th>
             <th data-sortable="true" data-field="approved" class="col-3">Godkendt</th>
-            <th data-sortable="true" data-field="material" class="col-3">Materiale</th>
-            <th data-sortable="true" data-field="shape" class="col-3">Form</th>
-            <th data-sortable="true" data-field="danish" class="col-3">Dansk pant</th>
-            <th data-sortable="true" data-field="height" class="col-3" data-visible="false">Højde</th>
-            <th data-sortable="true" data-field="diameter" class="col-3" data-visible="false">Diameter</th>
-            <th data-sortable="true" data-field="weight" class="col-3" data-visible="false">Vægt</th>
-            <th data-sortable="true" data-field="capacity" class="col-3" data-visible="false">Volumen</th>
-            <th data-sortable="true" data-field="approval_date" class="col-3" data-visible="false">Godkendt dato</th>
-            <th data-sortable="true" data-field="creation_date" class="col-3" data-visible="false">Oprettelsesdato</th>
+            <th data-sortable="true" data-field="material" class="col-3" data-visible={{request.user.show_material|truefalse}}>Materiale</th>
+            <th data-sortable="true" data-field="shape" class="col-3" data-visible={{request.user.show_shape|truefalse}}>Form</th>
+            <th data-sortable="true" data-field="danish" class="col-3" data-visible={{request.user.show_danish|truefalse}}>Dansk pant</th>
+            <th data-sortable="true" data-field="height" class="col-3" data-visible={{request.user.show_height|truefalse}}>Højde</th>
+            <th data-sortable="true" data-field="diameter" class="col-3" data-visible={{request.user.show_diameter|truefalse}}>Diameter</th>
+            <th data-sortable="true" data-field="weight" class="col-3" data-visible={{request.user.show_weight|truefalse}}>Vægt</th>
+            <th data-sortable="true" data-field="capacity" class="col-3" data-visible={{request.user.show_capacity|truefalse}}>Volumen</th>
+            <th data-sortable="true" data-field="approval_date" class="col-3" data-visible={{request.user.show_approval_date|truefalse}}>Godkendt dato</th>
+            <th data-sortable="true" data-field="creation_date" class="col-3" data-visible={{request.user.show_creation_date|truefalse}}>Oprettelsesdato</th>
             <th data-field="actions" class="col-3">Handlinger</th>
         </tr>
         </thead>
@@ -181,6 +181,14 @@ $('[id$=Toggle]').click(function() {
     } else {
         hideItem(item_name);
     }
+
+    var data ={csrfmiddlewaretoken: '{{ csrf_token }}'};
+    data["show_" + item_name] = $this.is(":checked");
+    $.ajax({
+        type: 'POST',
+        url: 'bruger/'+'{{ request.user.id }}'+'/indstillinger',
+        data: data,
+    });
    });
 </script>
 
