@@ -34,6 +34,7 @@ SPDX-License-Identifier: MPL-2.0
               </div>
           {% endif %}
         </div>
+        <div class="col-6"></div>
         <div class="col-6">
           <label for="{{form.new_password2.id_for_label}}">{{form.new_password2.label}}</label>
           {{form.new_password2}}
@@ -42,6 +43,9 @@ SPDX-License-Identifier: MPL-2.0
                   {{form.new_password2.errors}}
               </div>
           {% endif %}
+            <small>
+                {% include "./password_requirements.html" %}
+            </small>
         </div>
         <div class="col-12">
             <input class="btn btn-success float-right my-2" type="submit" value="{% translate 'Gem' %}"/>

@@ -23,7 +23,11 @@ SPDX-License-Identifier: MPL-2.0
                   {{form.password.errors}}
               </div>
           {% endif %}
+            <small>
+                {% include "./password_requirements.html" %}
+            </small>
         </div>
+        <div class="col-6"></div>
         <div class="col-6">
           <label for="{{form.password2.id_for_label}}">{{form.password2.label}}</label>
           {{form.password2}}

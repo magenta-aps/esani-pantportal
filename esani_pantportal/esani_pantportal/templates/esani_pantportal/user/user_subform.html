@@ -9,6 +9,11 @@ SPDX-License-Identifier: MPL-2.0
     {% include "./form_field.html" with field=form.phone colsize=4 %}
     {% include "./form_field.html" with field=form.password %}
     {% include "./form_field.html" with field=form.password2 %}
+    <div class="col-12">
+        <div class="form-text mt-0 mb-3 pb-3">
+            {% include "./password/password_requirements.html" %}
+        </div>
+    </div>
     {% include "./form_field.html" with field=form.first_name %}
     {% include "./form_field.html" with field=form.last_name %}
     {% include "./form_field.html" with field=form.email %}
