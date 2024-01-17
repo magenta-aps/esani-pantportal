@@ -56,6 +56,8 @@ REFUND_METHOD_CHOICES = [
     ("A", "Anden"),
 ]
 
+ADMIN_GROUPS = ["EsaniAdmins", "CompanyAdmins", "BranchAdmins", "KioskAdmins"]
+
 
 ESANI_USER = 1
 BRANCH_USER = 2
@@ -713,8 +715,7 @@ class User(AbstractUser, ProductViewPreferences):
 
     @property
     def is_admin(self):
-        admin_groups = ["EsaniAdmins", "CompanyAdmins", "BranchAdmins", "KioskAdmins"]
-        return self.groups.filter(name__in=admin_groups)
+        return self.groups.filter(name__in=ADMIN_GROUPS).exists()
 
     def get_branch(self):
         return self.branch
