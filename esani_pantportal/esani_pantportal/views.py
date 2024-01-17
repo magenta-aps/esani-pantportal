@@ -59,6 +59,7 @@ from esani_pantportal.forms import (
     UserUpdateForm,
 )
 from esani_pantportal.models import (
+    ADMIN_GROUPS,
     BRANCH_USER,
     COMPANY_USER,
     KIOSK_USER,
@@ -323,9 +324,9 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
         search_data["page_number"] = (search_data["offset"] // search_data["limit"]) + 1
         return search_data
 
-    def get_queryset(self):
+    def get_queryset(self, annotations={}):
         data = self.search_data
-        qs = self.model.objects.all()
+        qs = self.model.objects.all().annotate(**annotations)
 
         # django-filter kan gøre det samme, men der er ingen grund til at
         # overkomplicere tingene
@@ -347,6 +348,7 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
 
         sort = data.get("sort", None)
         if sort:
+            sort = sort + "_annotation" if sort + "_annotation" in annotations else sort
             reverse = "-" if data.get("order", None) == "desc" else ""
             order_args = [f"{reverse}{s}" for s in sort.split("_or_")]
             qs = qs.order_by(*order_args)
@@ -508,6 +510,12 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
     search_fields = ["username", "user_type"]
     search_fields_exact = ["approved"]
 
+    def item_to_json_dict(self, *args, **kwargs):
+        json_dict = super().item_to_json_dict(*args, **kwargs)
+        user_is_admin = User.objects.get(id=json_dict["id"]).is_admin
+        json_dict["is_admin"] = _("Ja") if user_is_admin else _("Nej")
+        return json_dict
+
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)
 
@@ -520,7 +528,9 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
         return value
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = super().get_queryset(
+            {"is_admin_annotation": Q(groups__name__in=ADMIN_GROUPS)}
+        )
 
         # Only allow branch/company/kiosk users to see users of their own branch/company
         user_ids = self.users_in_same_company
