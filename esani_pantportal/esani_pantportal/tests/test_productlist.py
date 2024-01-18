@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import datetime
 import json
+from http import HTTPStatus
 from unittest.mock import MagicMock
 
 from bs4 import BeautifulSoup
@@ -317,6 +318,8 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "weight": 20,
                         "danish": "Ukendt",
                         "created_by": self.user.pk,
+                        "select": '<input type="checkbox" id="select_1" '
+                        'name="id" value="1"/>\n',
                     },
                     {
                         "actions": '<a href="/produkt/2?back=" class="btn btn-sm '
@@ -336,6 +339,8 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "weight": 20,
                         "danish": "Ukendt",
                         "created_by": self.user.pk,
+                        "select": '<input type="checkbox" id="select_2" '
+                        'name="id" value="2"/>\n',
                     },
                 ],
                 "total": 2,
@@ -380,6 +385,8 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "weight": 20,
                         "danish": "Ukendt",
                         "created_by": self.user.pk,
+                        "select": '<input type="checkbox" id="select_1" '
+                        'name="id" value="1"/>\n',
                     }
                 ],
                 "total": 1,
@@ -468,7 +475,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
         output = []
         for row in table.tbody.find_all("tr"):
             rowdata = [cell.text.strip() for cell in row.find_all("td")]
-            output.append(dict(zip(headers, rowdata)))
+            output.append({k: v for k, v in dict(zip(headers, rowdata)).items() if k})
         return output
 
     @staticmethod
@@ -571,3 +578,55 @@ class ProductListGuiTest(LoginMixin, TestCase):
         response = self.client.get(reverse("pant:product_list"))
         data = self.get_table_headers(response.content)
         self.assertNotIn("material", data)
+
+
+class ProductListBulkApprovalTest(LoginMixin, TestCase):
+    def setUp(self):
+        self.user = self.login()
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.prod1 = Product.objects.create(
+            product_name="prod1",
+            barcode="0010",
+            refund_value=3,
+            approved=False,
+            material="A",
+            height=100,
+            diameter=60,
+            weight=20,
+            capacity=500,
+            shape="F",
+        )
+        cls.prod2 = Product.objects.create(
+            product_name="prod2",
+            barcode="0002",
+            refund_value=3,
+            approved=False,
+            material="A",
+            height=100,
+            diameter=60,
+            weight=20,
+            capacity=500,
+            shape="F",
+        )
+
+    def test_bulk_approval(self):
+        self.user = self.login("EsaniAdmins")
+        data = {"ids[]": [self.prod1.id, self.prod2.id]}
+        response = self.client.post(reverse("pant:product_multiple_approve"), data)
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+        self.prod1.refresh_from_db()
+        self.prod2.refresh_from_db()
+
+        self.assertTrue(self.prod1.approved)
+        self.assertTrue(self.prod2.approved)
+
+    def test_bulk_approval_access_denied(self):
+        self.user = self.login("BranchAdmins")
+        data = {"ids[]": [self.prod1.id, self.prod2.id]}
+        response = self.client.post(reverse("pant:product_multiple_approve"), data)
+
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)

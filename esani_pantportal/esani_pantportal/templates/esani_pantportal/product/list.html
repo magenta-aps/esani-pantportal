@@ -20,6 +20,7 @@ SPDX-License-Identifier: MPL-2.0
 <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
 <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
 <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/defer-url/bootstrap-table-defer-url.min.js"></script>
+<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/cookie/bootstrap-table-cookie.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -47,8 +48,8 @@ SPDX-License-Identifier: MPL-2.0
                     <div class="col-4">
                 	{% translate "Godkendt" %}
              	  	{% if user.is_esani_admin %}
-                	({% bs_icon "bag-check" size="1em" color="green" %}: {{approved_products}},
-                	{% bs_icon "bag-x" size="1em" color="red" %}: {{pending_products}})
+                	({% bs_icon "bag-check" size="1em" color="green" %}: <span id="approved_count">{{approved_products}}</span>,
+                	{% bs_icon "bag-x" size="1em" color="red" %}: <span id="pending_count">{{pending_products}}</span>)
                 	{% endif %}
        		    </div>
                     <div class="col-8">{{form.approved}}</div>
@@ -76,6 +77,9 @@ SPDX-License-Identifier: MPL-2.0
         </a>
         <a class="btn btn-primary" href="{% url 'pant:registered_products_csv' 0 %}">{% translate "Download .csv-fil med alle produkter" %}
         </a>
+        {% if can_edit_multiple %}
+        <a id="approve_button" class="btn btn-primary disabled" href="#">{% translate "Godkend alle markerede produkter" %}</a>
+        {% endif %}
         <div class="dropdown float-end">
             <a class="btn btn-primary dropdown-toggle" role="button" id="dropdownMenuButton"
             data-bs-toggle="dropdown" aria-expanded="false">
@@ -113,9 +117,13 @@ SPDX-License-Identifier: MPL-2.0
            data-total-rows="{{total}}"
            data-silent-sort="true" {# vil vi vise en loading-boks? #}
            data-remember-order="true"
+           data-cookie="true" {# Handles table refresh after bulk-approval properly #}
     >
         <thead>
         <tr>
+            {% if can_edit_multiple %}
+            <th data-field="select"><input type="checkbox" id="select_all"/></th>
+            {% endif %}
             <th data-sortable="true" data-field="product_name" class="col-3">Produktnavn</th>
             <th data-sortable="true" data-field="barcode" class="col-3">Stregkode</th>
             <th data-sortable="true" data-field="approved" class="col-3">Godkendt</th>
@@ -134,6 +142,9 @@ SPDX-License-Identifier: MPL-2.0
         <tbody>
         {% for item in items %}
         <tr>
+            {% if can_edit_multiple %}
+            <td>{% include select_template with item=item %}</td>
+            {% endif %}
             <td>{{item.product_name}}</td>
             <td>{{item.barcode}}</td>
             <td>{{item.approved}}</td>
@@ -191,5 +202,127 @@ $('[id$=Toggle]').click(function() {
     });
    });
 </script>
+
+
+{% if can_edit_multiple %}
+<script>
+let shiftPressed = false;
+$(document).on("keydown", function (event){
+    if (event.originalEvent.key === "Shift") {
+        shiftPressed = true;
+    }
+});
+$(document).on("keyup", function (event){
+    if (event.originalEvent.key === "Shift") {
+        shiftPressed = false;
+    }
+});
+
+let latestClicked;
+let latestRange;
+const activeClass = "table-active";
+const approveButton = $("#approve_button");
+
+function getUnapprovedRows(){
+    const selectedRows = $("table tr."+activeClass);
+    const rowIds = [];
+    selectedRows.each(function (){
+        if ($(this).find('td:eq(3)').text()==='{{ _("Nej") }}') {
+            rowIds.push($(this).find('td:first').find('input:first').val());
+        }
+    });
+    return rowIds
+};
+
+const onUpdateSelected = function () {
+    rowIds = getUnapprovedRows();
+    if (rowIds.length > 0){
+        approveButton.removeClass("disabled");
+    } else {
+        approveButton.addClass("disabled");
+    }
+};
+
+$("#approve_button").on("click", function() {
+    rowIds = getUnapprovedRows();
+    if (rowIds.length > 0){
+        confirmed = confirm("{% translate 'Er du sikker på at du vil godkende ' %}" + rowIds.length + "{% translate ' produkter?' %}");
+        if (confirmed){
+            $.ajax({
+                type: 'POST',
+                url: 'multiple/approve',
+                data: {csrfmiddlewaretoken : '{{ csrf_token }}',
+                       ids : rowIds },
+                success: function(){
+                    $table.bootstrapTable('refresh')
+                    let approved_count = parseInt($("#approved_count").text());
+                    let pending_count = parseInt($("#pending_count").text());
+                    $("#approved_count").text(approved_count+rowIds.length);
+                    $("#pending_count").text(pending_count-rowIds.length);
+                }
+            });
+        }
+    }
+});
+
+{# Klikbare rækker efter følgende regler: #}
+{#   Klik på en række aktiverer / deaktiverer #}
+{#   Klik på række A, hold shift nede og klik på række B: aktiverer / deaktiverer alle rækker mellem A og B, så de får samme tilstand som A #}
+$("table").on("click-row.bs.table", function (event, data, row, field) {
+    if (shiftPressed && latestClicked) {
+        const index1 = row.index();
+        const index2 = latestClicked.index();
+        const range = row.siblings().slice(Math.min(index1, index2), Math.max(index1, index2)).add(row);
+        const firstActive = latestClicked.hasClass(activeClass);
+        if (latestRange) {
+            // Hvis vi lige har valgt en range og vælger en ny, skal den første range flippes
+            if (firstActive) {
+                latestRange.removeClass(activeClass);
+                latestRange.find("[name=id]").prop("checked", false);
+            } else {
+                latestRange.addClass(activeClass);
+                latestRange.find("[name=id]").prop("checked", true);
+            }
+        }
+        // Sæt ny range's aktiv ud fra startpunktets aktivitet
+        if (firstActive) {
+            range.addClass(activeClass);
+            range.find("[name=id]").prop("checked", true);
+        } else {
+            range.removeClass(activeClass);
+            range.find("[name=id]").prop("checked", false);
+        }
+        latestRange = range;
+    } else {
+        const checkbox = row.find("[name=id]");
+        const activate = !row.hasClass(activeClass);//!checkbox.is(":checked");
+        latestClicked = row;
+        latestRange = null;
+        row.toggleClass(activeClass, activate);
+        checkbox.prop("checked", activate);
+    }
+    onUpdateSelected();
+});
+
+const setListeners = function () {
+    $("table a").on("click", function (event) {
+        event.stopPropagation();
+    });
+    $("#select_all").on("change", function () {
+        const checked = $(this).is(":checked");
+        $("[name=id]").prop("checked", checked);
+        $("table tbody tr").toggleClass(activeClass, checked);
+        onUpdateSelected();
+    });
+};
+
+$("table").on("reset-view.bs.table", function () {
+    setListeners();
+    onUpdateSelected();
+});
+setListeners();
+
+</script>
+{% endif %}
 
 {% endblock %}

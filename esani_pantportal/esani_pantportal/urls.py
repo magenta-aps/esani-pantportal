@@ -14,6 +14,7 @@ from esani_pantportal.views import (
     CsvTemplateView,
     ExcelTemplateView,
     KioskUpdateView,
+    MultipleProductApproveView,
     MultipleProductRegisterView,
     NewsEmailView,
     PantportalLoginView,
@@ -141,6 +142,11 @@ urlpatterns = [
         "produkt/opret/multiple",
         MultipleProductRegisterView.as_view(),
         name="multiple_product_register",
+    ),
+    path(
+        "produkt/multiple/approve",
+        MultipleProductApproveView.as_view(),
+        name="product_multiple_approve",
     ),
     path(
         "produkt/opret/multiple/excel_sample",

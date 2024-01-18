@@ -35,7 +35,7 @@ from django.views.generic import (
     View,
 )
 from project.settings import DEFAULT_FROM_EMAIL
-from simple_history.utils import update_change_reason
+from simple_history.utils import bulk_update_with_history, update_change_reason
 
 from esani_pantportal.forms import (
     ChangePasswordForm,
@@ -292,6 +292,7 @@ class RegisterKioskUserAdminView(PermissionRequiredMixin, RegisterKioskUserView)
 
 class SearchView(LoginRequiredMixin, FormView, ListView):
     paginate_by = 20
+    select_template = None
 
     def get(self, request, *args, **kwargs):
         self.form = self.get_form()
@@ -366,6 +367,7 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
             total=total,
             search_data=self.search_data,
             actions_template=self.actions_template,
+            select_template=self.select_template,
         )
         items = [
             self.item_to_json_dict(model_to_dict(item), context, index)
@@ -401,17 +403,29 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
                 {"item": item, **context},
                 self.request,
             )
+        if key == "select":
+            return loader.render_to_string(
+                self.select_template,
+                {"item": item, **context},
+                self.request,
+            )
         return item[key]
 
 
 class ProductSearchView(SearchView):
     template_name = "esani_pantportal/product/list.html"
     actions_template = "esani_pantportal/product/actions.html"
+    select_template = "esani_pantportal/product/select.html"
     model = Product
     form_class = ProductFilterForm
 
     search_fields = ["product_name", "barcode"]
     search_fields_exact = ["approved"]
+
+    def item_to_json_dict(self, item, context, index):
+        json_dict = super().item_to_json_dict(item, context, index)
+        json_dict["select"] = self.map_value(item, "select", context)
+        return json_dict
 
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)
@@ -436,6 +450,7 @@ class ProductSearchView(SearchView):
             # Other users don't need to see this because they cannot approve anyway.
             context["approved_products"] = Product.objects.filter(approved=True).count()
             context["pending_products"] = Product.objects.filter(approved=False).count()
+            context["can_edit_multiple"] = True
         return context
 
 
@@ -1058,3 +1073,20 @@ class UpdateProductViewPreferences(UpdateView):
 
     def get_success_url(self):
         return reverse("pant:product_list")
+
+
+class MultipleProductApproveView(View, PermissionRequiredMixin):
+    def post(self, request, *args, **kwargs):
+        if not self.request.user.is_esani_admin:
+            return self.access_denied
+
+        ids = [int(id) for id in self.request.POST.getlist("ids[]")]
+        products = Product.objects.filter(id__in=ids)
+        for product in products:
+            product.approved = True
+
+        bulk_update_with_history(
+            products, Product, ["approved"], default_change_reason="Godkendt"
+        )
+
+        return JsonResponse({"status_code": 200})
