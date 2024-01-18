@@ -6,8 +6,10 @@ import random
 from datetime import datetime, timedelta
 from random import randrange
 
+import pytz
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from simple_history.utils import update_change_reason
 
 from esani_pantportal.models import (
     PRODUCT_MATERIAL_CHOICES,
@@ -17,16 +19,17 @@ from esani_pantportal.models import (
 )
 
 
-def random_date():
+def random_date(start_year, end_year):
     """
     This function will return a random datetime between 2020 and 2024
     """
-    start = datetime(2020, 1, 1)
-    end = datetime(2024, 1, 1)
+    start = datetime(start_year, 1, 1)
+    end = datetime(end_year, 1, 1)
     delta = end - start
     int_delta = (delta.days * 24 * 60 * 60) + delta.seconds
     random_second = randrange(int_delta)
-    return start + timedelta(seconds=random_second)
+    tz = pytz.timezone("Europe/Copenhagen")
+    return tz.localize(start + timedelta(seconds=random_second))
 
 
 class Command(BaseCommand):
@@ -61,10 +64,13 @@ class Command(BaseCommand):
             )
 
             approved = random.choice([True, False])
-            Product.objects.create(
+            creation_date = random_date(2020, 2022)
+            approval_date = random_date(2022, 2024)
+
+            product = Product.objects.create(
                 product_name=product_name,
                 barcode=barcode,
-                approved=approved,
+                approved=False,
                 material=random.choice(PRODUCT_MATERIAL_CHOICES)[0],
                 height=random.randint(85, 200),
                 diameter=random.randint(50, 100),
@@ -72,6 +78,21 @@ class Command(BaseCommand):
                 capacity=random.randint(150, 1000),
                 shape=random.choice(PRODUCT_SHAPE_CHOICES)[0],
                 created_by=user,
-                approval_date=random_date() if approved else None,
-                creation_date=random_date(),
+                approval_date=None,
+                creation_date=creation_date,
             )
+
+            update_change_reason(product, "Oprettet")
+            creation_record = product.history.get(history_change_reason="Oprettet")
+            creation_record.history_date = creation_date
+            creation_record.history_user = user
+            creation_record.save()
+            if approved:
+                product.approved = True
+                product.approval_date = approval_date
+                product.save()
+                update_change_reason(product, "Godkendt")
+                approval_record = product.history.get(history_change_reason="Godkendt")
+                approval_record.history_date = approval_date
+                approval_record.history_user = user
+                approval_record.save()
