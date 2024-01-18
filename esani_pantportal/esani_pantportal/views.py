@@ -17,7 +17,7 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
-from django.db.models import Q
+from django.db.models import F, Q
 from django.forms import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
@@ -68,6 +68,7 @@ from esani_pantportal.models import (
     CompanyBranch,
     CompanyUser,
     EsaniUser,
+    ImportJob,
     Kiosk,
     KioskUser,
     Product,
@@ -323,7 +324,7 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
             search_data["limit"] = 1
         # // = Python floor division
         search_data["page_number"] = (search_data["offset"] // search_data["limit"]) + 1
-        return search_data
+        return {k: getattr(v, "pk", v) for k, v in search_data.items()}
 
     def get_queryset(self, annotations={}):
         data = self.search_data
@@ -370,7 +371,7 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
             select_template=self.select_template,
         )
         items = [
-            self.item_to_json_dict(model_to_dict(item), context, index)
+            self.item_to_json_dict(item, context, index)
             for index, item in enumerate(items)
         ]
         context["items"] = items
@@ -389,8 +390,9 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
         )
 
     def item_to_json_dict(
-        self, item: Dict[str, Any], context: Dict[str, Any], index: int
+        self, item_obj: Any, context: Dict[str, Any], index: int
     ) -> Dict[str, Any]:
+        item = model_to_dict(item_obj)
         return {
             key: self.map_value(item, key, context)
             for key in list(item.keys()) + ["actions"]
@@ -420,11 +422,16 @@ class ProductSearchView(SearchView):
     form_class = ProductFilterForm
 
     search_fields = ["product_name", "barcode"]
-    search_fields_exact = ["approved"]
+    search_fields_exact = ["approved", "import_job"]
 
-    def item_to_json_dict(self, item, context, index):
-        json_dict = super().item_to_json_dict(item, context, index)
-        json_dict["select"] = self.map_value(item, "select", context)
+    def get_queryset(self):
+        qs = super().get_queryset({"file_name": F("import_job__file_name")})
+        return qs
+
+    def item_to_json_dict(self, item_obj, context, index):
+        json_dict = super().item_to_json_dict(item_obj, context, index)
+        json_dict["select"] = self.map_value(model_to_dict(item_obj), "select", context)
+        json_dict["file_name"] = item_obj.file_name or "-"
         return json_dict
 
     def map_value(self, item, key, context):
@@ -827,6 +834,11 @@ class MultipleProductRegisterView(PermissionRequiredMixin, FormView):
 
         products = form.df.rename(form.rename_dict, axis=1).to_dict(orient="records")
         existing_barcodes = Product.objects.values_list("barcode", flat=True).distinct()
+        job = ImportJob(
+            imported_by=self.request.user,
+            file_name=form.filename,
+            date=datetime.datetime.now(),
+        )
         failures = []
         success_count = 0
         existing_products_count = 0
@@ -841,6 +853,7 @@ class MultipleProductRegisterView(PermissionRequiredMixin, FormView):
                 product_dict["approved"] = False
                 product = Product(**product_dict)
                 product.created_by = self.request.user
+                product.import_job = job
                 product.full_clean()
                 products_to_save.append(product)
                 success_count += 1
@@ -856,6 +869,7 @@ class MultipleProductRegisterView(PermissionRequiredMixin, FormView):
         context["total_count"] = failure_count + success_count + existing_products_count
         context["filename"] = form.filename
 
+        job.save()
         for product in products_to_save:
             product._change_reason = "Oprettet"
             product.save()
@@ -1058,6 +1072,7 @@ class UpdateProductViewPreferences(UpdateView):
         "show_capacity",
         "show_approval_date",
         "show_creation_date",
+        "show_file_name",
     ]
 
     def get_form_kwargs(self):

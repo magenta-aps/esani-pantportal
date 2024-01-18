@@ -30,6 +30,7 @@ from esani_pantportal.models import (
     CompanyBranch,
     CompanyUser,
     EsaniUser,
+    ImportJob,
     Kiosk,
     KioskUser,
     Product,
@@ -772,9 +773,14 @@ class SortPaginateForm(BootstrapForm):
 class ProductFilterForm(SortPaginateForm):
     product_name = forms.CharField(required=False)
     barcode = forms.CharField(required=False)
+    import_job = forms.ModelChoiceField(
+        queryset=ImportJob.objects.all(), required=False
+    )
     approved = forms.NullBooleanField(
         required=False,
-        widget=forms.Select(choices=((None, "-"), (True, _("Ja")), (False, _("Nej")))),
+        widget=forms.Select(
+            choices=((None, "---------"), (True, _("Ja")), (False, _("Nej")))
+        ),
     )
 
 

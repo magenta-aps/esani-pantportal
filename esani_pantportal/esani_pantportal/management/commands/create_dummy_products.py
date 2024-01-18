@@ -15,6 +15,7 @@ from esani_pantportal.models import (
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
     EsaniUser,
+    ImportJob,
     Product,
 )
 
@@ -45,6 +46,15 @@ class Command(BaseCommand):
         vowels = "aeiouyæøå"
         consonants = "bcdfghjklmnpqrstvwxz"
         user = EsaniUser.objects.get(username="admin")
+
+        jobs = [
+            ImportJob.objects.create(
+                imported_by=user,
+                file_name=f"dummy_products_{job}.csv",
+                date=random_date(2020, 2024),
+            )
+            for job in range(10)
+        ]
 
         for i in range(100):
             barcode = ""
@@ -80,6 +90,7 @@ class Command(BaseCommand):
                 created_by=user,
                 approval_date=None,
                 creation_date=creation_date,
+                import_job=random.choice(jobs + [None]),
             )
 
             update_change_reason(product, "Oprettet")

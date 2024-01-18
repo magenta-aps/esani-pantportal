@@ -38,7 +38,12 @@ SPDX-License-Identifier: MPL-2.0
                     {% if can_approve %}
                     <tr>
                         <th>{{object|verbose_name:"created_by"}}</th>
-                        <td>{{object.created_by.username}} (<a href="mailto:{{object.created_by.email}}">{{object.created_by.email}}</a>)</td>
+                        <td>
+                            {{object.created_by.username}} (<a href="mailto:{{object.created_by.email}}">{{object.created_by.email}}</a>)
+                            {% if object.import_job %}
+                                ("{{object.import_job.file_name}}")
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endif %}
                     <tr>
