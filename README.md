@@ -4,6 +4,41 @@ SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 SPDX-License-Identifier: MPL-2.0
 -->
 
+# Overview
+
+This directory contains the Pantportal system  (we may think of a better
+name in the future).
+
+The Pantportal system implements a deposit refund system for beverage
+containers (mainly bottles and cans).
+
+The system allows users to register products eligible for deposit
+refunds (identified by their barcodes). It is able to import data about
+returned containers from
+[reverse vending machines](https://en.wikipedia.org/wiki/Reverse_vending_machine)
+and connect these imports to the vendors (shops and other businesses) that will
+receive the refunds. Payments may be made to these businesses by integrating
+with the deposit administrator's accounts payable system.
+
+The Pantportal system was created by [Magenta ApS](https://www.magenta.dk/)
+for [Esani](https://esani.gl/), Greenland's national waste management company.
+
+The Pantportal system is free software, and you are welcome to use,
+study, modify and share it under the terms of the
+[Mozilla Public License](https://www.mozilla.org/en-US/MPL/2.0/), version 2.0.
+
+Copyright (c) 2023-204 Magenta ApS.
+
+# Technology
+
+The Pantportal system was built using Python and Django with a
+Postgresql database.
+
+The development environment uses Docker and `docker compose` - please
+see the `docker` directory and the `docker-compose.yml` file for
+details.
+
+
 # Testing
 To run the tests run
 ```
@@ -46,7 +81,7 @@ ESANI brugere kan oprette brugere af alle slags:
 | Kioskejer               |   |   |    | x  |
 | Uregistreret bruger     |   | x | x  | x  |
 
-Når en uregistreret bruger opretter sig selv, skan han først godkendes af en ESANI
+Når en uregistreret bruger opretter sig selv, skal han først godkendes af en ESANI
 bruger, før han kan logge ind. Alle andre bruger typer er automatisk godkendt når de
 bliver oprettet.
 
