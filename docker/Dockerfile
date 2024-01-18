@@ -46,6 +46,11 @@ ENV LANG kl_GL.UTF-8
 ENV LANGUAGE kl_GL:da
 ENV LC_ALL kl_GL.UTF-8
 
+# Source:
+# https://git.magenta.dk/rammearkitektur/os2mo/-/blob/master/Dockerfile?ref_type=heads#L61-65
+ARG COMMIT_TAG
+ENV COMMIT_TAG=${COMMIT_TAG:-HEAD}
+
 USER pant
 COPY ./docker/entrypoint.sh /entrypoint.sh
 COPY --chown=pant:pant ./esani_pantportal /app
