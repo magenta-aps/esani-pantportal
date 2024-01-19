@@ -16,6 +16,7 @@ from esani_pantportal.forms import MultipleProductRegisterForm, ProductRegisterF
 from esani_pantportal.models import (
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
+    ImportJob,
     Product,
 )
 from esani_pantportal.util import default_dataframe
@@ -316,9 +317,11 @@ class MultipleProductRegisterFormIntegrationTests(
         url = reverse("pant:multiple_product_register")
         data = self.defaults
         data["file"] = file["file"]
+        self.assertFalse(ImportJob.objects.filter(file_name=file["file"]).exists())
         response = self.client.post(url, data=data)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.context_data["success_count"], len(df))
+        self.assertTrue(ImportJob.objects.filter(file_name=file["file"]).exists())
 
     def test_view_get(self):
         self.login("BranchAdmins")

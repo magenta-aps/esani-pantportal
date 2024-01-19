@@ -46,14 +46,20 @@ SPDX-License-Identifier: MPL-2.0
                 </div>
                 <div class="row">
                     <div class="col-4">
-                	{% translate "Godkendt" %}
-             	  	{% if user.is_esani_admin %}
-                	({% bs_icon "bag-check" size="1em" color="green" %}: <span id="approved_count">{{approved_products}}</span>,
-                	{% bs_icon "bag-x" size="1em" color="red" %}: <span id="pending_count">{{pending_products}}</span>)
-                	{% endif %}
-       		    </div>
+                        {% translate "Godkendt" %}
+                        {% if user.is_esani_admin %}
+                        ({% bs_icon "bag-check" size="1em" color="green" %}: <span id="approved_count">{{approved_products}}</span>,
+                        {% bs_icon "bag-x" size="1em" color="red" %}: <span id="pending_count">{{pending_products}}</span>)
+                        {% endif %}
+                    </div>
                     <div class="col-8">{{form.approved}}</div>
                 </div>
+                {% if user.is_esani_admin %}
+                <div class="row">
+                    <div class="col-4">{% translate "Import job" %}</div>
+                    <div class="col-8">{{form.import_job}}</div>
+                </div>
+            	{% endif %}
                 <div class="row">
                     <div class="col-4">{% translate "Produkter pr. side" %}</div>
                     <div class="col-8">{{form.limit}}</div>
@@ -95,6 +101,7 @@ SPDX-License-Identifier: MPL-2.0
                 {% include "./filter.html" with verbose_name="Volumen" name="capacity" show=request.user.show_capacity %}
                 {% include "./filter.html" with verbose_name="Godkendt dato" name="approval_date" show=request.user.show_approval_date %}
                 {% include "./filter.html" with verbose_name="Oprettelsesdato" name="creation_date" show=request.user.show_creation_date %}
+                {% include "./filter.html" with verbose_name="Filnavn" name="file_name" show=request.user.show_file_name %}
             </ul>
         </div>
     </div>
@@ -136,6 +143,7 @@ SPDX-License-Identifier: MPL-2.0
             <th data-sortable="true" data-field="capacity" class="col-3" data-visible={{request.user.show_capacity|truefalse}}>Volumen</th>
             <th data-sortable="true" data-field="approval_date" class="col-3" data-visible={{request.user.show_approval_date|truefalse}}>Godkendt dato</th>
             <th data-sortable="true" data-field="creation_date" class="col-3" data-visible={{request.user.show_creation_date|truefalse}}>Oprettelsesdato</th>
+            <th data-sortable="true" data-field="file_name" class="col-3" data-visible={{request.user.show_file_name|truefalse}}>Filnavn</th>
             <th data-field="actions" class="col-3">Handlinger</th>
         </tr>
         </thead>
@@ -157,6 +165,7 @@ SPDX-License-Identifier: MPL-2.0
             <td>{{item.capacity}}</td>
             <td>{{item.approval_date}}</td>
             <td>{{item.creation_date}}</td>
+            <td>{{item.file_name}}</td>
             <td>
                 {% include actions_template with item=item %}
             </td>

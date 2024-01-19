@@ -13,7 +13,7 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from esani_pantportal.forms import ProductFilterForm
-from esani_pantportal.models import EsaniUser, Product
+from esani_pantportal.models import EsaniUser, ImportJob, Product
 from esani_pantportal.views import ProductSearchView
 
 from .conftest import LoginMixin
@@ -238,6 +238,11 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             password="12345",
             email="test@test.com",
         )
+        cls.job = ImportJob.objects.create(
+            imported_by=cls.user,
+            file_name="dummy_products.csv",
+            date=datetime.datetime(2020, 1, 1),
+        )
         cls.prod1 = Product.objects.create(
             product_name="prod1",
             barcode="0010",
@@ -251,6 +256,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             shape="F",
             id=1,
             created_by=cls.user,
+            import_job=cls.job,
         )
         cls.prod2 = Product.objects.create(
             product_name="prod2",
@@ -317,6 +323,8 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "shape": "Flaske",
                         "weight": 20,
                         "danish": "Ukendt",
+                        "file_name": self.job.file_name,
+                        "import_job": self.job.pk,
                         "created_by": self.user.pk,
                         "select": '<input type="checkbox" id="select_1" '
                         'name="id" value="1"/>\n',
@@ -338,6 +346,8 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "shape": "Flaske",
                         "weight": 20,
                         "danish": "Ukendt",
+                        "file_name": "-",
+                        "import_job": "-",
                         "created_by": self.user.pk,
                         "select": '<input type="checkbox" id="select_2" '
                         'name="id" value="2"/>\n',
@@ -384,6 +394,8 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "shape": "Flaske",
                         "weight": 20,
                         "danish": "Ukendt",
+                        "file_name": self.job.file_name,
+                        "import_job": self.job.pk,
                         "created_by": self.user.pk,
                         "select": '<input type="checkbox" id="select_1" '
                         'name="id" value="1"/>\n',
@@ -400,6 +412,17 @@ class ProductListGuiTest(LoginMixin, TestCase):
 
     @classmethod
     def setUpTestData(cls):
+        importer = EsaniUser.objects.create_user(
+            username="importer",
+            password="12345",
+            email="test@test.com",
+        )
+
+        cls.job = ImportJob.objects.create(
+            imported_by=importer,
+            file_name="dummy_products.csv",
+            date=datetime.datetime(2020, 1, 1),
+        )
         cls.prod1 = Product.objects.create(
             product_name="prod1",
             barcode="0010",
@@ -411,6 +434,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
             weight=20,
             capacity=500,
             shape="F",
+            import_job=cls.job,
         )
         cls.prod2 = Product.objects.create(
             product_name="prod2",
@@ -438,6 +462,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
             "Vægt": str(cls.prod1.weight),
             "Form": "Flaske",
             "Dansk pant": "Ukendt",
+            "Filnavn": cls.job.file_name,
             "Handlinger": "Vis",
         }
 
@@ -454,6 +479,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
             "Vægt": str(cls.prod2.weight),
             "Form": "Flaske",
             "Dansk pant": "Ukendt",
+            "Filnavn": "-",
             "Handlinger": "Vis",
         }
 
@@ -495,6 +521,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
                 "Dansk pant": item["danish"],
                 "Godkendt dato": item["approval_date"],
                 "Oprettelsesdato": item["creation_date"],
+                "Filnavn": item["file_name"],
                 "Handlinger": "Vis",
             }
             for item in data["items"]

@@ -334,6 +334,37 @@ class RefundMethod(models.Model):
         return self.branch.company if self.branch else None
 
 
+class ImportJob(models.Model):
+    class Meta:
+        ordering = ["-date"]
+
+    imported_by = models.ForeignKey(
+        "User",
+        related_name="importjobs",
+        on_delete=models.SET_NULL,  # Vi kan slette brugere og beholde deres jobs
+        null=True,
+        verbose_name=_("Importeret af"),
+    )
+
+    file_name = models.CharField(
+        verbose_name=_("Filnavn"),
+        help_text=_("Navn på det importerede fil"),
+        max_length=200,
+    )
+
+    date = models.DateTimeField(
+        verbose_name=_("Importdato"),
+        help_text=_("Dato som filen blev importeret på"),
+    )
+
+    def __str__(self):
+        return "{date} ({user}): '{file_name}'".format(
+            file_name=self.file_name,
+            user=self.imported_by,
+            date=self.date.strftime("%Y-%m-%d %H:%M"),
+        )
+
+
 class Product(models.Model):
     class Meta:
         ordering = ["product_name", "barcode"]
@@ -478,6 +509,16 @@ class Product(models.Model):
         help_text=_("Der er Dansk pant på dette produkt"),
         default="U",
         choices=DANISH_PANT_CHOICES,
+    )
+    import_job = models.ForeignKey(
+        "ImportJob",
+        verbose_name=_("Fil"),
+        help_text=_("Fil import som blev brugt for at importere dette produkt"),
+        on_delete=models.SET_NULL,  # Vi kan slette jobs og beholde deres produkter
+        null=True,
+        default=None,
+        blank=True,
+        related_name="products",
     )
 
     def save(self, *args, **kwargs):
@@ -644,6 +685,7 @@ class ProductViewPreferences(models.Model):
     show_capacity = models.BooleanField(default=False)
     show_approval_date = models.BooleanField(default=False)
     show_creation_date = models.BooleanField(default=False)
+    show_file_name = models.BooleanField(default=False)
 
 
 class User(AbstractUser, ProductViewPreferences):
