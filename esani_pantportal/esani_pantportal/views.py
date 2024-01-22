@@ -532,9 +532,9 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
     search_fields = ["username", "user_type"]
     search_fields_exact = ["approved"]
 
-    def item_to_json_dict(self, *args, **kwargs):
-        json_dict = super().item_to_json_dict(*args, **kwargs)
-        user_is_admin = User.objects.get(id=json_dict["id"]).is_admin
+    def item_to_json_dict(self, item_obj, context, index):
+        json_dict = super().item_to_json_dict(item_obj, context, index)
+        user_is_admin = item_obj.is_admin_annotation
         json_dict["is_admin"] = _("Ja") if user_is_admin else _("Nej")
         return json_dict
 
