@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 from django.conf import settings
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 from esani_pantportal.models import REFUND_METHOD_CHOICES, Kiosk, Product, RefundMethod
@@ -50,3 +51,5 @@ class Command(BaseCommand):
             barcode="3662195622914",
             defaults=defaults,
         )
+
+        call_command("import_deposit_payouts")

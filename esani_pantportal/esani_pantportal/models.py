@@ -906,6 +906,7 @@ class DepositPayoutItem(models.Model):
         null=True,
         blank=True,
         verbose_name=_("Produkt"),
+        related_name="deposit_items",
     )
     """If the bar code matches a known product, we link this item to the product"""
 

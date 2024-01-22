@@ -13,7 +13,14 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from esani_pantportal.forms import ProductFilterForm
-from esani_pantportal.models import EsaniUser, ImportJob, Product
+from esani_pantportal.models import (
+    DepositPayout,
+    DepositPayoutItem,
+    EsaniUser,
+    ImportJob,
+    Kiosk,
+    Product,
+)
 from esani_pantportal.views import ProductSearchView
 
 from .conftest import LoginMixin
@@ -608,9 +615,6 @@ class ProductListGuiTest(LoginMixin, TestCase):
 
 
 class ProductListBulkApprovalTest(LoginMixin, TestCase):
-    def setUp(self):
-        self.user = self.login()
-
     @classmethod
     def setUpTestData(cls):
         cls.prod1 = Product.objects.create(
@@ -657,3 +661,104 @@ class ProductListBulkApprovalTest(LoginMixin, TestCase):
         response = self.client.post(reverse("pant:product_multiple_approve"), data)
 
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+
+class ProductListBulkDeleteTest(LoginMixin, TestCase):
+    def setUp(self):
+        self.user = self.login("EsaniAdmins")
+
+    @classmethod
+    def setUpTestData(cls):
+        kiosk = Kiosk.objects.create(cvr="123")
+
+        deposit_payout = DepositPayout.objects.create(
+            filename="already_processed.csv",
+            from_date=datetime.date.today(),
+            to_date=datetime.date.today(),
+            item_count=0,
+        )
+
+        # Product that can be deleted
+        cls.prod1 = Product.objects.create(
+            product_name="prod1",
+            barcode="0010",
+            refund_value=3,
+            approved=False,
+            material="A",
+            height=100,
+            diameter=60,
+            weight=20,
+            capacity=500,
+            shape="F",
+        )
+
+        # Approved product - cannot be deleted
+        cls.prod2 = Product.objects.create(
+            product_name="prod2",
+            barcode="0002",
+            refund_value=3,
+            approved=True,
+            material="A",
+            height=100,
+            diameter=60,
+            weight=20,
+            capacity=500,
+            shape="F",
+        )
+
+        # Product linked to DepositPayoutItem - cannot be deleted
+        cls.prod3 = Product.objects.create(
+            product_name="prod3",
+            barcode="0003",
+            refund_value=3,
+            approved=False,
+            material="A",
+            height=100,
+            diameter=60,
+            weight=20,
+            capacity=500,
+            shape="F",
+        )
+
+        DepositPayoutItem.objects.create(
+            deposit_payout=deposit_payout,
+            kiosk=kiosk,
+            product=cls.prod3,
+            location_id=1,
+            rvm_serial=2,
+            date=datetime.date.today(),
+            barcode="11221122",
+            count=200,
+        )
+
+        cls.delete_multiple_url = reverse("pant:product_multiple_delete")
+
+    def test_bulk_delete(self):
+        data = {"ids[]": [self.prod1.id]}
+
+        self.assertTrue(Product.objects.filter(id=self.prod1.id).exists())
+        response = self.client.post(self.delete_multiple_url, data)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertFalse(Product.objects.filter(id=self.prod1.id).exists())
+
+    def test_bulk_delete_as_company_user(self):
+        self.login("BranchAdmins")
+        data = {"ids[]": [self.prod1.id]}
+        response = self.client.post(self.delete_multiple_url, data)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_bulk_delete_approved_products(self):
+        data = {"ids[]": [self.prod1.id, self.prod2.id]}
+        response = self.client.post(self.delete_multiple_url, data)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_bulk_delete_payout_item_products(self):
+        data = {"ids[]": [self.prod1.id, self.prod3.id]}
+
+        self.assertTrue(Product.objects.filter(id=self.prod1.id).exists())
+        self.assertTrue(Product.objects.filter(id=self.prod3.id).exists())
+        response = self.client.post(self.delete_multiple_url, data)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertFalse(Product.objects.filter(id=self.prod1.id).exists())
+        self.assertTrue(Product.objects.filter(id=self.prod3.id).exists())
+        self.assertEqual(response.json()["protected_products"], 1)
