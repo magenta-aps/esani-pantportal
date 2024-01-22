@@ -806,6 +806,8 @@ class UserFilterForm(SortPaginateForm):
         required=False,
         widget=forms.Select(choices=((None, "-"), (True, _("Ja")), (False, _("Nej")))),
     )
+    branch = forms.CharField(required=False)
+    company = forms.CharField(required=False)
 
 
 def validate_file_extension(value, valid_extensions):
