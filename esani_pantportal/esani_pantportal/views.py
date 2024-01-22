@@ -17,7 +17,8 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
-from django.db.models import F, Q
+from django.db.models import Case, F, Q, Value, When
+from django.db.models.functions import Concat
 from django.forms import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
@@ -294,6 +295,7 @@ class RegisterKioskUserAdminView(PermissionRequiredMixin, RegisterKioskUserView)
 class SearchView(LoginRequiredMixin, FormView, ListView):
     paginate_by = 20
     select_template = None
+    annotations = {}
 
     def get(self, request, *args, **kwargs):
         self.form = self.get_form()
@@ -326,9 +328,15 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
         search_data["page_number"] = (search_data["offset"] // search_data["limit"]) + 1
         return {k: getattr(v, "pk", v) for k, v in search_data.items()}
 
-    def get_queryset(self, annotations={}):
+    def annotate_field(self, string):
+        if string + "_annotation" in self.annotations:
+            return string + "_annotation"
+        else:
+            return string
+
+    def get_queryset(self):
         data = self.search_data
-        qs = self.model.objects.all().annotate(**annotations)
+        qs = self.model.objects.all().annotate(**self.annotations)
 
         # django-filter kan gøre det samme, men der er ingen grund til at
         # overkomplicere tingene
@@ -342,7 +350,7 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
             if data.get(field, None) not in (None, ""):
                 qs = qs.filter(
                     **{
-                        field + "__icontains": part
+                        self.annotate_field(field) + "__icontains": part
                         for part in data[field].split()
                         if part
                     }
@@ -350,9 +358,10 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
 
         sort = data.get("sort", None)
         if sort:
-            sort = sort + "_annotation" if sort + "_annotation" in annotations else sort
             reverse = "-" if data.get("order", None) == "desc" else ""
-            order_args = [f"{reverse}{s}" for s in sort.split("_or_")]
+            order_args = [
+                f"{reverse}{s}" for s in self.annotate_field(sort).split("_or_")
+            ]
             qs = qs.order_by(*order_args)
 
         return qs
@@ -420,13 +429,10 @@ class ProductSearchView(SearchView):
     select_template = "esani_pantportal/product/select.html"
     model = Product
     form_class = ProductFilterForm
+    annotations = {"file_name": F("import_job__file_name")}
 
     search_fields = ["product_name", "barcode"]
     search_fields_exact = ["approved", "import_job"]
-
-    def get_queryset(self):
-        qs = super().get_queryset({"file_name": F("import_job__file_name")})
-        return qs
 
     def item_to_json_dict(self, item_obj, context, index):
         json_dict = super().item_to_json_dict(item_obj, context, index)
@@ -529,12 +535,41 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
     form_class = UserFilterForm
     required_permissions = ["esani_pantportal.view_user"]
 
-    search_fields = ["username", "user_type"]
+    search_fields = ["username", "user_type", "branch", "company"]
     search_fields_exact = ["approved"]
+    annotations = {
+        "is_admin_annotation": Q(groups__name__in=ADMIN_GROUPS),
+        "branch_annotation": Case(
+            When(
+                Q(user_type=BRANCH_USER),
+                then=F("branchuser__branch__name"),
+            ),
+            When(
+                Q(user_type=KIOSK_USER),
+                then=F("kioskuser__branch__name"),
+            ),
+            default=Value("-"),
+        ),
+        "company_annotation": Case(
+            When(
+                Q(user_type=COMPANY_USER),
+                then=F("companyuser__company__name"),
+            ),
+            When(
+                Q(user_type=BRANCH_USER),
+                then=F("branchuser__branch__company__name"),
+            ),
+            default=Value("-"),
+        ),
+        "full_name": Concat("first_name", Value(" "), "last_name"),
+    }
 
     def item_to_json_dict(self, item_obj, context, index):
         json_dict = super().item_to_json_dict(item_obj, context, index)
         user_is_admin = item_obj.is_admin_annotation
+        json_dict["full_name"] = item_obj.full_name
+        json_dict["branch"] = item_obj.branch_annotation
+        json_dict["company"] = item_obj.company_annotation
         json_dict["is_admin"] = _("Ja") if user_is_admin else _("Nej")
         return json_dict
 
@@ -550,9 +585,7 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
         return value
 
     def get_queryset(self):
-        qs = super().get_queryset(
-            {"is_admin_annotation": Q(groups__name__in=ADMIN_GROUPS)}
-        )
+        qs = super().get_queryset()
 
         # Only allow branch/company/kiosk users to see users of their own branch/company
         user_ids = self.users_in_same_company

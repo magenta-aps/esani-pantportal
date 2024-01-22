@@ -45,6 +45,16 @@ SPDX-License-Identifier: MPL-2.0
             <div class="col-2">{% translate "Godkendt af ESANI" %}</div>
             <div class="col-4">{{form.approved}}</div>
         </div>
+        {% if user.is_esani_admin %}
+        <div class="row">
+            <div class="col-2">{% translate "Butik" %}</div>
+            <div class="col-4">{{form.branch}}</div>
+        </div>
+        <div class="row">
+            <div class="col-2">{% translate "Virksomhed" %}</div>
+            <div class="col-4">{{form.company}}</div>
+        </div>
+    	{% endif %}
         <div class="row">
             <div class="col-6 clearfix"><button type="submit" class="btn btn-primary float-end">Søg</button></div>
         </div>
@@ -82,7 +92,10 @@ SPDX-License-Identifier: MPL-2.0
         <thead>
         <tr>
             <th data-sortable="true" data-field="username" class="col-3">Brugernavn</th>
+            <th data-sortable="true" data-field="full_name" class="col-3">Navn</th>
             <th data-sortable="true" data-field="user_type" class="col-3">Brugertype</th>
+            <th data-sortable="true" data-field="branch" class="col-3">Butik</th>
+            <th data-sortable="true" data-field="company" class="col-3">Virksomhed</th>
             <th data-sortable="true" data-field="is_admin" class="col-3">{% translate "Har admin-rettigheder" %}</th>
             <th data-sortable="true" data-field="approved" class="col-3">Godkendt</th>
             <th data-field="actions" class="col-3">Handlinger</th>
@@ -92,7 +105,10 @@ SPDX-License-Identifier: MPL-2.0
         {% for item in items %}
         <tr>
             <td>{{item.username}}</td>
+            <td>{{item.first_name}} {{item.last_name}}</td>
             <td>{{item.user_type}}</td>
+            <td>{{item.branch}}</td>
+            <td>{{item.company}}</td>
             <td>{{item.is_admin}}</td>
             <td>{{item.approved}}</td>
             <td>

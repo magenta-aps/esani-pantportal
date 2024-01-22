@@ -262,6 +262,26 @@ class UserListTest(BaseUserTest):
         self.assertIn(self.kiosk_admin.id, ids)
         self.assertEqual(len(ids), 1)
 
+    def test_branch_filter(self):
+        self.client.login(username="esani_admin", password="12345")
+        response = self.client.get(reverse("pant:user_list") + "?branch=facebook")
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+        branch_names = [i["branch"] for i in response.context_data["items"]]
+        self.assertGreater(len(branch_names), 0)
+        for branch_name in branch_names:
+            self.assertIn("facebook", branch_name)
+
+    def test_company_filter(self):
+        self.client.login(username="esani_admin", password="12345")
+        response = self.client.get(reverse("pant:user_list") + "?company=google")
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+        company_names = [i["company"] for i in response.context_data["items"]]
+        self.assertGreater(len(company_names), 0)
+        for company_name in company_names:
+            self.assertIn("google", company_name)
+
 
 class NonAdminUserUpdateViewTest(BaseUserTest):
     def setUp(self):
