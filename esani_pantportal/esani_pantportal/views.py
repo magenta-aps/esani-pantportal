@@ -1105,3 +1105,41 @@ class MultipleProductApproveView(View, PermissionRequiredMixin):
         )
 
         return JsonResponse({"status_code": 200})
+
+
+class MultipleProductDeleteView(View, PermissionRequiredMixin):
+    def post(self, request, *args, **kwargs):
+        if not self.request.user.is_esani_admin:
+            return self.access_denied
+
+        ids = [int(id) for id in self.request.POST.getlist("ids[]")]
+        products = Product.objects.filter(id__in=ids)
+
+        if products.filter(approved=True):
+            response = JsonResponse({"error": _("Godkendte produkter må ikke fjernes")})
+            response.status_code = 403
+            return response
+
+        products_to_delete = products.filter(deposit_items__isnull=True)
+        protected_products = products.difference(products_to_delete)
+
+        deleted_products_count = products_to_delete.count()
+        protected_products_count = protected_products.count()
+
+        protected_products_message = _(
+            "Kunne ikke fjerne følgende {amount} produkter: {products}; {reason}"
+        ).format(
+            amount=protected_products_count,
+            products=", ".join([p.product_name for p in protected_products]),
+            reason=_("Produkt er tilknyttet en eller flere udbetalings-objekter"),
+        )
+
+        products_to_delete.delete()
+        return JsonResponse(
+            {
+                "status_code": 200,
+                "deleted_products": deleted_products_count,
+                "protected_products": protected_products_count,
+                "protected_products_message": protected_products_message,
+            }
+        )

@@ -85,6 +85,7 @@ SPDX-License-Identifier: MPL-2.0
         </a>
         {% if can_edit_multiple %}
         <a id="approve_button" class="btn btn-primary disabled" href="#">{% translate "Godkend alle markerede produkter" %}</a>
+        <a id="delete_button" class="btn btn-danger disabled" href="#">{% translate "Fjern alle markerede produkter" %}</a>
         {% endif %}
         <div class="dropdown float-end">
             <a class="btn btn-primary dropdown-toggle" role="button" id="dropdownMenuButton"
@@ -231,39 +232,63 @@ let latestClicked;
 let latestRange;
 const activeClass = "table-active";
 const approveButton = $("#approve_button");
+const deleteButton = $("#delete_button");
+
+function getRowId(row){
+    return row.find('td:first').find('input:first').val()
+};
 
 function getUnapprovedRows(){
     const selectedRows = $("table tr."+activeClass);
     const rowIds = [];
     selectedRows.each(function (){
         if ($(this).find('td:eq(3)').text()==='{{ _("Nej") }}') {
-            rowIds.push($(this).find('td:first').find('input:first').val());
+            rowIds.push(getRowId($(this)));
         }
     });
     return rowIds
 };
 
+function getRows(){
+    const selectedRows = $("table tr."+activeClass);
+    const rowIds = [];
+    selectedRows.each(function (){
+        rowIds.push(getRowId($(this)));
+    });
+    return rowIds
+};
+
+
 const onUpdateSelected = function () {
-    rowIds = getUnapprovedRows();
-    if (rowIds.length > 0){
+    unapprovedRowIds = getUnapprovedRows();
+    rowIds = getRows();
+    if (unapprovedRowIds.length > 0){
         approveButton.removeClass("disabled");
     } else {
         approveButton.addClass("disabled");
     }
+    if (rowIds.length > 0){
+        deleteButton.removeClass("disabled");
+    } else {
+        deleteButton.addClass("disabled");
+    }
+
 };
 
-$("#approve_button").on("click", function() {
+approveButton.on("click", function() {
     rowIds = getUnapprovedRows();
     if (rowIds.length > 0){
-        confirmed = confirm("{% translate 'Er du sikker på at du vil godkende ' %}" + rowIds.length + "{% translate ' produkter?' %}");
+        confirmed = confirm('{% translate "Er du sikker på at du vil godkende " %}'
+                            + rowIds.length
+                            + '{% translate " produkter?" %}');
         if (confirmed){
             $.ajax({
                 type: 'POST',
-                url: 'multiple/approve',
+                url: '{% url "pant:product_multiple_approve" %}',
                 data: {csrfmiddlewaretoken : '{{ csrf_token }}',
                        ids : rowIds },
                 success: function(){
-                    $table.bootstrapTable('refresh')
+                    $table.bootstrapTable('refresh');
                     let approved_count = parseInt($("#approved_count").text());
                     let pending_count = parseInt($("#pending_count").text());
                     $("#approved_count").text(approved_count+rowIds.length);
@@ -271,6 +296,33 @@ $("#approve_button").on("click", function() {
                 }
             });
         }
+    }
+});
+
+deleteButton.on("click", function() {
+    rowIds = getRows();
+    confirmed = confirm('{% translate "Er du sikker på at du vil fjerne " %}'
+                        + rowIds.length
+                        + '{% translate " produkter?" %}');
+    if (confirmed){
+        $.ajax({
+            type: 'POST',
+            url: '{% url "pant:product_multiple_delete" %}',
+            data: {csrfmiddlewaretoken : '{{ csrf_token }}',
+                   ids : rowIds },
+            success: function(resp){
+                $table.bootstrapTable('refresh');
+                let pending_count = parseInt($("#pending_count").text());
+                $("#pending_count").text(pending_count-resp.deleted_products);
+
+                if (resp.protected_products>0) {
+                    alert(resp.protected_products_message);
+                }
+            },
+            error: function(resp){
+                alert(resp.responseJSON.error);
+                }
+        });
     }
 });
 
