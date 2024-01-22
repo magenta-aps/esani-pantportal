@@ -226,6 +226,10 @@ TOMRA_SFTP_URL = os.environ.get(
     "TOMRA_SFTP_URL", "sftp://sftp_tomra:foo@pantportal-sftp:22/deposit_payouts/"
 )
 TOMRA_PATH = os.environ.get("TOMRA_PATH", "/srv/media/deposit_payouts/")
+TOMRA_API_ENV = os.environ.get("TOMRA_API_ENV", "eu-sandbox")
+TOMRA_API_KEY = os.environ.get("TOMRA_API_KEY", "")
+TOMRA_API_CLIENT_ID = os.environ.get("TOMRA_API_CLIENT_ID", "")
+TOMRA_API_CLIENT_SECRET = os.environ.get("TOMRA_API_CLIENT_SECRET", "")
 
 # https://redmine.magenta.dk/issues/58865
 MIN_BOTTLE_DIAMETER = int(os.environ.get("MIN_BOTTLE_DIAMETER", 50))
