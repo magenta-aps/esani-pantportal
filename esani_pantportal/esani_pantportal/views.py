@@ -792,7 +792,7 @@ class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
             "city",
             "phone",
         ]
-        branch_attributes = ["customer_id"]
+        branch_attributes = ["customer_id", "qr_compensation"]
         company_attributes = ["cvr"]
         kiosk_attributes = ["cvr"]
 

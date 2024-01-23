@@ -227,6 +227,14 @@ class Branch(AbstractCompany):
         choices=BRANCH_TYPE_CHOICES,
     )
 
+    qr_compensation = models.FloatField(
+        verbose_name=_("Håndterings-godtgørelse for QR-poser"),
+        help_text=_(
+            "Håndterings-godtgørelse for QR-poser, angivet i øre (100=1DKK, 25=0.25DKK)"
+        ),
+        default=0,
+    )
+
     def get_branch(self):
         return self
 
