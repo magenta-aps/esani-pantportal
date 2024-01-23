@@ -18,9 +18,9 @@ from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.db.models import Case, F, Q, Value, When
-from django.db.models.functions import Concat
+from django.db.models.functions import Coalesce, Concat
 from django.forms import model_to_dict
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect
 from django.template import loader
 from django.urls import reverse
@@ -40,6 +40,7 @@ from simple_history.utils import bulk_update_with_history, update_change_reason
 
 from esani_pantportal.forms import (
     ChangePasswordForm,
+    DepositPayoutItemFilterForm,
     MultipleProductRegisterForm,
     NewsEmailForm,
     PantPortalAuthenticationForm,
@@ -68,6 +69,7 @@ from esani_pantportal.models import (
     Company,
     CompanyBranch,
     CompanyUser,
+    DepositPayoutItem,
     EsaniUser,
     ImportJob,
     Kiosk,
@@ -638,6 +640,79 @@ class KioskUpdateView(BaseCompanyUpdateView):
             return super().check_permissions()
         else:
             return self.access_denied
+
+
+class DepositPayoutSearchView(PermissionRequiredMixin, ListView, FormView):
+    template_name = "esani_pantportal/deposit_payout/list.html"
+    context_object_name = "items"
+    model = DepositPayoutItem
+    form_class = DepositPayoutItemFilterForm
+    required_permissions = ["esani_pantportal.view_depositpayout"]
+    paginate_by = 20
+
+    _reserved = ("sort", "order", "page", "size")
+
+    def post(self, request, *args, **kwargs):
+        # This is a dummy implementation which demonstrates how to process POST
+        # requests for this view.
+        # If POST contains "selection=all", process all objects in queryset.
+        # If POST contains one more item IDs in "id", process only the objects given by
+        # those IDs.
+        if request.POST.get("selection", "") == "all":
+            return JsonResponse({"all": True, "count": self.get_queryset().count()})
+        else:
+            ids = [int(id) for id in request.POST.getlist("id")]
+            return JsonResponse(
+                {"all": False, "count": self.get_queryset().filter(id__in=ids).count()}
+            )
+        return HttpResponseRedirect(".")  # pragma: no cover
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        qs = qs.select_related(
+            "company_branch__company", "kiosk", "product", "deposit_payout"
+        )
+
+        # Annotate queryset to enable sorting on expressions
+        qs = qs.annotate(
+            source=Coalesce("company_branch__company__name", "kiosk__name"),
+        )
+
+        # Apply filters
+        filters = {
+            name: val
+            for name, val in self.request.GET.items()
+            if (name not in self._reserved) and (val not in ("", None))
+        }
+        if filters:
+            qs = qs.filter(**filters)
+
+        # Apply sort order
+        sort_field = self.request.GET.get("sort")
+        sort_order = self.request.GET.get("order")
+        if sort_field and sort_order:
+            qs = qs.order_by("%s%s" % ("-" if sort_order == "desc" else "", sort_field))
+
+        return qs
+
+    def get_paginate_by(self, queryset):
+        return self._get_page_size()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_size"] = self._get_page_size()
+        context["page_number"] = self.request.GET.get("page", 1)
+        context["sort_name"] = self.request.GET.get("sort", "")
+        context["sort_order"] = self.request.GET.get("order", "")
+        return context
+
+    def get_form_kwargs(self):
+        form_kwargs = super().get_form_kwargs()
+        form_kwargs.update({"data": self.request.GET})
+        return form_kwargs
+
+    def _get_page_size(self):
+        return int(self.request.GET.get("size", self.paginate_by))
 
 
 class UpdateViewMixin(PermissionRequiredMixin, UpdateView):

@@ -12,6 +12,7 @@ from esani_pantportal.views import (
     CompanyUpdateView,
     CsvProductsView,
     CsvTemplateView,
+    DepositPayoutSearchView,
     ExcelTemplateView,
     KioskUpdateView,
     MultipleProductApproveView,
@@ -115,6 +116,7 @@ urlpatterns = [
         RefundMethodDeleteView.as_view(),
         name="refund_method_delete",
     ),
+    path("udbetaling/", DepositPayoutSearchView.as_view(), name="deposit_payout_list"),
     path("produkt/<int:pk>", ProductUpdateView.as_view(), name="product_view"),
     path(
         "produkt/<int:pk>/history",
