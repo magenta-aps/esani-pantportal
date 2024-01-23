@@ -810,6 +810,20 @@ class UserFilterForm(SortPaginateForm):
     company = forms.CharField(required=False)
 
 
+class DepositPayoutItemFilterForm(SortPaginateForm, BootstrapForm):
+    company_branch = forms.ModelChoiceField(
+        CompanyBranch.objects.all(),
+        required=False,
+    )
+    kiosk = forms.ModelChoiceField(
+        Kiosk.objects.all(),
+        required=False,
+    )
+    date = forms.DateField(
+        required=False,
+    )
+
+
 def validate_file_extension(value, valid_extensions):
     ext = os.path.splitext(value.name)[1]  # [0] returns path+filename
     if not ext.lower() in valid_extensions:

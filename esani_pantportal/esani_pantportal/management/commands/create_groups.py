@@ -9,6 +9,8 @@ from django.core.management.base import BaseCommand
 from esani_pantportal.models import (  # isort: skip
     BranchUser,
     CompanyUser,
+    DepositPayout,
+    DepositPayoutItem,
     EsaniUser,
     KioskUser,
     Product,
@@ -70,6 +72,12 @@ class Command(BaseCommand):
         refund_method_model = ContentType.objects.get_for_model(
             RefundMethod, for_concrete_model=False
         )
+        deposit_payout_model = ContentType.objects.get_for_model(
+            DepositPayout, for_concrete_model=False
+        )
+        deposit_payout_item_model = ContentType.objects.get_for_model(
+            DepositPayoutItem, for_concrete_model=False
+        )
         email_model = ContentType.objects.get_for_model(
             SentEmail, for_concrete_model=False
         )
@@ -82,9 +90,10 @@ class Command(BaseCommand):
             Company, for_concrete_model=False
         )
 
-        def get_permission(action, model):
+        def get_permission(action, content_type):
             return Permission.objects.get(
-                codename=f"{action}_{model.model}", content_type=model
+                codename=f"{action}_{content_type.model}",
+                content_type=content_type,
             )
 
         for action, model in (
@@ -225,5 +234,8 @@ class Command(BaseCommand):
             ("change", company_model),
             ("view", company_branch_model),
             ("change", company_branch_model),
+            ("view", deposit_payout_model),
+            ("view", deposit_payout_item_model),
+            ("change", deposit_payout_item_model),
         ):
             esani_admins.permissions.add(get_permission(action, model))

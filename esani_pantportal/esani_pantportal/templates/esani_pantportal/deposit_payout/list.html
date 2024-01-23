@@ -1,0 +1,202 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+{% load bootstrap_icons %}
+
+{# Docs for bootstrap-table: https://bootstrap-table.com/docs/ #}
+{% block extra_headers %}
+<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.css">
+<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.css">
+<style>
+    /* Prevent text highlighting in table when selecting multiple rows (using Shift key) */
+    #table { user-select: none }
+</style>
+<script src="{% static 'jquery/pantportal.js' %}"></script>
+{% endblock %}
+
+{% block extra_footers %}
+<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
+<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
+<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/defer-url/bootstrap-table-defer-url.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<div class="mx-5">
+    <div class="row">
+        <div class="col-6">
+            <h1>{% translate "Udbetalinger" %}</h1>
+        </div>
+    </div>
+
+    <form method="get">
+        <div class="row">
+            <div class="col-2">{% translate "Kæde" %}</div>
+            <div class="col-4">{{ form.company_branch }}</div>
+        </div>
+        <div class="row">
+            <div class="col-2">{% translate "Butik" %}</div>
+            <div class="col-4">{{ form.kiosk }}</div>
+        </div>
+        <div class="row">
+            <div class="col-2">{% translate "Dato" %}</div>
+            <div class="col-4">{{ form.date }}</div>
+        </div>
+        <div class="row">
+            <div class="col-6 clearfix"><button type="submit" class="btn btn-primary float-end">Søg</button></div>
+        </div>
+    </form>
+
+    <form method="post">
+        {% csrf_token %}
+        <table id="table" class="table table-bordered table-striped"
+               data-toggle="table"
+               data-sticky-header="true"
+               data-classes="table"
+               data-data-field="items"
+               data-click-to-select="true"
+               data-multiple-select-row="true"
+               data-id-field="id"
+               data-select-item-name="id"
+               data-sortable="true"
+               data-silent-sort="true"
+               data-sort-name="{{ sort_name }}"
+               data-sort-order="{{ sort_order }}"
+               data-pagination="true"
+               data-pagination-loop="false"
+               data-side-pagination="server"
+               data-page-list="[20, 50, 100]"
+               data-page-number="{{ page_number }}"
+               data-page-size="{{ page_size }}"
+               data-total-rows="{{ page_obj.paginator.count }}"
+        >
+            <thead>
+                <tr>
+                    <th data-checkbox="true" data-field="state"></th>
+                    <th data-visible="false" data-field="id">ID</th>
+                    <th data-sortable="true" data-field="source" class="col-3">Kæde, butik (eller RVM-serienummer)</th>
+                    <th data-sortable="true" data-field="product" class="col-3">Produkt (eller stregkode)</th>
+                    <th data-sortable="true" data-field="product__refund_value" class="col-3">Pantværdi (i øre)</th>
+                    <th data-sortable="true" data-field="count" data-width="1%" class="col-3">Antal</th>
+                    <th data-sortable="true" data-field="date" data-width="5%" class="col-3">Dato</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td></td> {# Bootstrap Table puts a checkbox here #}
+                    <td>{{ item.id }}</td> {# ID of `DepositPayoutItem` object - used when submitting form #}
+                    <td>
+                        {% if item.company_branch %}
+                            {{ item.company_branch.company }}, {{ item.company_branch.company.city }}
+                        {% elif item.kiosk %}
+                            {{ item.kiosk.name }}, {{ item.kiosk.city }}
+                        {% else %}
+                            <span class="text-danger" title="Ingen matchende kæde eller butik, viser RVM-serienummer">
+                                {{ item.rvm_serial }}
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.product %}
+                            {{ item.product.product_name }}
+                        {% else %}
+                            <span class="text-danger" title="Intet matchende produkt, viser stregkoden">
+                                {{ item.barcode }}
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ item.product.refund_value }}
+                    </td>
+                    <td>
+                        {{ item.count }}
+                    </td>
+                    <td>
+                        {{ item.date }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <!--
+        <button type="submit" class="btn btn-primary" name="selection" value="selected">
+            Marker valgte (<span>0</span>) som udbetalt
+        </button>
+        <button type="submit" class="btn btn-primary d-none" name="selection" value="all">
+            Marker alle ({{ page_obj.paginator.count }}) som udbetalt
+        </button>
+        -->
+    </form>
+</div>
+
+<script>
+(function () {
+    $(document).ready(function () {
+        // Update query parameters when switching page number or page size
+        $("#table").on("page-change.bs.table", function (evt, number, size) {
+            const url = new URL(location);
+            url.searchParams.set("page", number);
+            url.searchParams.set("size", size);
+            window.location = url;
+        });
+
+        // Update query parameters when the sort field and/or sort order is changed
+        $("#table").on("sort.bs.table", function (evt, name, order) {
+            const url = new URL(location);
+            url.searchParams.set("sort", name);
+            url.searchParams.set("order", order);
+            window.location = url;
+        });
+
+        // Update query parameters when the filters are updated
+        $("form[method=get]").submit(function (evt) {
+            evt.preventDefault();
+            const formVals = $(this).serializeArray();
+            const url = new URL(location);
+            $(formVals).each(function (index, elem) {
+                if (!!elem.value) {
+                    url.searchParams.set(elem.name, elem.value);
+                } else {
+                    url.searchParams.delete(elem.name);
+                }
+            });
+            window.location = url;
+        });
+
+        // Update count of selected rows on button whenever rows are selected (or unselected.)
+        $("#table").on(
+            "uncheck.bs.table uncheck-all.bs.table uncheck-some.bs.table check.bs.table check-some.bs.table check-all.bs.table",
+            function (evt) {
+                const selectedRows = $("#table").bootstrapTable("getSelections");
+                $("button[type=submit][value=selected] span").text(selectedRows.length);
+            },
+        );
+
+        // Prompt user when checking 'all' rows. If more rows are available, but not on screen, then allow user to
+        // select everything matching the current filters.
+        $("#table").on("check-all.bs.table", function (evt, rows) {
+            const totalRows = $("#table").bootstrapTable("getOptions")["totalRows"];
+            const selectedRows = rows.length;
+            if (totalRows >= selectedRows) {
+                $("button[type=submit][value=all]").removeClass("d-none");
+            }
+        });
+
+        // Hide button which can submit 'all' rows whenever only a subset of rows are selected
+        $("#table").on(
+            "uncheck.bs.table uncheck-all.bs.table uncheck-some.bs.table check.bs.table check-some.bs.table",
+            function (evt) {
+                $("button[type=submit][value=all]").addClass("d-none");
+            },
+        );
+    })
+})();
+</script>
+{% endblock %}
