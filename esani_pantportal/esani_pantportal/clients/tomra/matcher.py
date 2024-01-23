@@ -43,18 +43,19 @@ class Matcher:
 
         for session in self._consumer_sessions:
             if session.consumer_session.identity is not None:
-                bag_identity = session.consumer_session.identity.bag_identity
+                consumer_identity = session.consumer_session.identity.consumer_identity
                 for item in session.consumer_session.items:
                     product_code = item.product_code
                     if product_code:
-                        if product_code in product_map and bag_identity in bag_map:
+                        if product_code in product_map and consumer_identity in bag_map:
                             yield Match(
-                                bag_map[bag_identity],
+                                bag_map[consumer_identity],
                                 product_map[product_code],
                             )
                         else:
                             yield NoMatch(
-                                f"no match for {bag_identity=} and {product_code=}",
+                                f"no match for {consumer_identity=} "
+                                f"and {product_code=}",
                             )
                     else:
                         yield NoMatch(f"no product_code on {item=}")
