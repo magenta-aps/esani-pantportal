@@ -33,7 +33,7 @@ class TestMatcher(TestCase):
         )
 
         cls.bag = QRBag.objects.create(
-            qr="bag_identity",
+            qr="consumer_identity",
             active=True,
             # status="oprettet",
             # owner=user,
@@ -45,7 +45,7 @@ class TestMatcher(TestCase):
         # Arrange
         datum = Datum(
             consumer_session=ConsumerSession(
-                identity=Identity(bag_identity="bag_identity"),
+                identity=Identity(consumer_identity="consumer_identity"),
                 items=[Single(product_code="barcode")],
             )
         )
@@ -62,7 +62,7 @@ class TestMatcher(TestCase):
         # Arrange
         datum = Datum(
             consumer_session=ConsumerSession(
-                identity=Identity(bag_identity="unknown_bag_identity"),
+                identity=Identity(consumer_identity="unknown_consumer_identity"),
                 items=[Single(product_code="unknown_barcode")],
             )
         )
@@ -74,7 +74,7 @@ class TestMatcher(TestCase):
         self.assertIsInstance(matches[0], NoMatch)
         self.assertEqual(
             matches[0].message,
-            "no match for bag_identity='unknown_bag_identity' "
+            "no match for consumer_identity='unknown_consumer_identity' "
             "and product_code='unknown_barcode'",
         )
 
@@ -82,7 +82,7 @@ class TestMatcher(TestCase):
         # Arrange
         datum = Datum(
             consumer_session=ConsumerSession(
-                identity=Identity(bag_identity="unknown_bag_identity"),
+                identity=Identity(consumer_identity="unknown_consumer_identity"),
                 items=[Single(product_code=None)],
             )
         )
