@@ -57,6 +57,7 @@ class Command(BaseCommand):
                 "customer_id": "1234",
                 "company": brugseni,
                 "branch_type": "D",
+                "qr_compensation": 15,
             },
         )
 
@@ -72,6 +73,7 @@ class Command(BaseCommand):
                 "customer_id": "12345",
                 "company": brugseni,
                 "branch_type": "D",
+                "qr_compensation": 25,
             },
         )
 
@@ -189,6 +191,7 @@ class Command(BaseCommand):
                 "customer_id": "22",
                 "branch_type": "A",
                 "municipality": "Sermersooq",
+                "qr_compensation": 35,
             },
         )
 
