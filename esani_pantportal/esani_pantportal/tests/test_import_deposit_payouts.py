@@ -16,7 +16,6 @@ from esani_pantportal.management.commands.import_deposit_payouts import (
     Source,
 )
 from esani_pantportal.models import (
-    REFUND_METHOD_CHOICES,
     DepositPayout,
     DepositPayoutItem,
     Kiosk,
@@ -48,12 +47,10 @@ class TestImportDepositPayouts(TestCase):
         RefundMethod.objects.update_or_create(
             kiosk=kiosk,
             serial_number=cls.refund_method_1_serial_number,
-            defaults={"method": REFUND_METHOD_CHOICES[0]},
         )
         RefundMethod.objects.update_or_create(
             kiosk=kiosk,
             serial_number=cls.refund_method_2_serial_number,
-            defaults={"method": REFUND_METHOD_CHOICES[0]},
         )
 
         # Add `Product` objects matching the barcodes in `example_with_valid_ids.csv`

@@ -34,15 +34,6 @@ SPDX-License-Identifier: MPL-2.0
       </div>
     </div>
 
-    <div class="col-6">
-      <label for="{{form.method.id_for_label}}">{{form.method.label}}</label>
-      {{form.method}}
-      <div class="form-text">
-          {{form.method.help_text}}
-          {{form.method.errors}}
-      </div>
-    </div>
-
     {% if not form.hide_branch_dropdown %}
     <div class="col-12">
       <label for="{{form.branch.id_for_label}}">{{form.branch.label}}</label>

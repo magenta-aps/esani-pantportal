@@ -115,7 +115,6 @@ class BaseRefundMethodTest(LoginMixin, TestCase):
         cls.brugseni_nuuk_refund_method = RefundMethod.objects.create(
             compensation=100,
             serial_number="123",
-            method="FS",
             branch=cls.brugseni_nuuk,
         )
 
@@ -123,7 +122,6 @@ class BaseRefundMethodTest(LoginMixin, TestCase):
         cls.brugseni_sisimiut_refund_method = RefundMethod.objects.create(
             compensation=200,
             serial_number="123",
-            method="FK",
             branch=cls.brugseni_sisimiut,
         )
 
@@ -131,7 +129,6 @@ class BaseRefundMethodTest(LoginMixin, TestCase):
         cls.kiosk_refund_method = RefundMethod.objects.create(
             compensation=300,
             serial_number="",
-            method="M",
             kiosk=cls.kiosk,
         )
 
@@ -262,14 +259,12 @@ class CreateRefundMethodFormTest(BaseRefundMethodTest):
         self,
         compensation=200,
         serial_number="666",
-        method="FK",
         branch=None,
         kiosk=None,
     ):
         data = {
             "compensation": compensation,
             "serial_number": serial_number,
-            "method": method,
             "kiosk": kiosk.pk if kiosk else None,
             "branch": branch.pk if branch else None,
         }
@@ -313,17 +308,11 @@ class CreateRefundMethodFormTest(BaseRefundMethodTest):
         data = self.make_dummy_data(
             branch=self.brugseni_nuuk,
             serial_number="",
-            method="FK",
         )
 
         form = RefundMethodRegisterForm(data)
         self.assertFalse(form.is_valid())
         self.assertIn("serial_number", form.errors)
-
-        # If a shop sorts manually, they do not need to supply a serial number
-        data["method"] = "M"
-        form = RefundMethodRegisterForm(data)
-        self.assertTrue(form.is_valid())
 
 
 class DeleteRefundMethodTest(BaseRefundMethodTest):

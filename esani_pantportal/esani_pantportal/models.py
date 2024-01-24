@@ -47,15 +47,6 @@ DANISH_PANT_CHOICES = [
 ]
 
 
-REFUND_METHOD_CHOICES = [
-    ("FK", "Flaskeautomat m/komprimator"),
-    ("FS", "Flaskeautomat m/sikkerhedscontainer"),
-    ("FKS", "Flaskeautomat m/komprimator m/sikkerhedscontainer"),
-    ("S", "Sække"),
-    ("M", "Manuel sortering"),
-    ("A", "Anden"),
-]
-
 ADMIN_GROUPS = ["EsaniAdmins", "CompanyAdmins", "BranchAdmins", "KioskAdmins"]
 
 
@@ -305,12 +296,6 @@ class RefundMethod(models.Model):
         help_text=_("Maskinens serienummer"),
         null=True,
         blank=True,
-    )
-
-    method = models.CharField(
-        verbose_name=_("Pantmetode"),
-        help_text=_("Måden at pant bliver registreret på"),
-        choices=REFUND_METHOD_CHOICES,
     )
 
     branch = models.ForeignKey(
