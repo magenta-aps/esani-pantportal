@@ -4,7 +4,7 @@
 
 
 import locale
-from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
 
 import pandas as pd
 from django.conf import settings
@@ -111,3 +111,8 @@ def float_to_string(value):
         locale_name = to_locale(get_language())
         locale.setlocale(locale.LC_ALL, locale_name + ".UTF-8")
         return locale.format("%.1f", value)
+
+
+def get_back_url(request, fallback_url):
+    back_url = unquote(request.GET.get("back", ""))
+    return remove_parameter_from_url(back_url, "json") if back_url else fallback_url

@@ -6,6 +6,7 @@ from typing import Iterable, Optional
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.template.response import TemplateResponse
+from django.views.generic import UpdateView
 
 from esani_pantportal.models import (
     BRANCH_USER,
@@ -124,3 +125,30 @@ class PermissionRequiredMixin(LoginRequiredMixin):
             return self.same_branch
         elif self.request.user.user_type == COMPANY_USER:
             return self.same_company
+
+
+class UpdateViewMixin(PermissionRequiredMixin, UpdateView):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form_fields"] = list(context["form"].fields.keys())
+
+        if self.request.user.is_esani_admin:
+            context["can_approve"] = True
+            context["can_edit"] = True
+        else:
+            context["can_approve"] = False
+            context["can_edit"] = (
+                self.same_workplace
+                and self.has_permissions
+                and self.request.user.is_admin
+            )
+        return context
+
+    def form_invalid(self, form):
+        """
+        If the form is invalid, leave all input fields open.
+        This indicates that nothing was edited
+        """
+        context = self.get_context_data(form=form)
+        context["form_fields_to_show"] = form.changed_data
+        return self.render_to_response(context)

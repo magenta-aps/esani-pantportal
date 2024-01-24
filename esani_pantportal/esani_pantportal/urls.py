@@ -8,12 +8,16 @@ from django.views.generic import RedirectView, TemplateView
 from esani_pantportal.views import (
     AboutView,
     ChangePasswordView,
+    CompanyBranchDeleteView,
     CompanyBranchUpdateView,
+    CompanyDeleteView,
+    CompanySearchView,
     CompanyUpdateView,
     CsvProductsView,
     CsvTemplateView,
     DepositPayoutSearchView,
     ExcelTemplateView,
+    KioskDeleteView,
     KioskUpdateView,
     MultipleProductApproveView,
     MultipleProductDeleteView,
@@ -109,6 +113,7 @@ urlpatterns = [
         name="user_register_success",
     ),
     path("produkt/", ProductSearchView.as_view(), name="product_list"),
+    path("virksomhed/", CompanySearchView.as_view(), name="company_list"),
     path("bruger/", UserSearchView.as_view(), name="user_list"),
     path("pantmaskine/", RefundMethodSearchView.as_view(), name="refund_method_list"),
     path(
@@ -126,6 +131,15 @@ urlpatterns = [
     path("produkt/<int:pk>/fjern", ProductDeleteView.as_view(), name="product_delete"),
     path("bruger/<int:pk>", UserUpdateView.as_view(), name="user_view"),
     path("bruger/<int:pk>/fjern", UserDeleteView.as_view(), name="user_delete"),
+    path(
+        "virksomhed/<int:pk>/fjern", CompanyDeleteView.as_view(), name="company_delete"
+    ),
+    path(
+        "butik/<int:pk>/fjern",
+        CompanyBranchDeleteView.as_view(),
+        name="company_branch_delete",
+    ),
+    path("kiosk/<int:pk>/fjern", KioskDeleteView.as_view(), name="kiosk_delete"),
     path(
         "bruger/<int:pk>/adgangskode/nulstil",
         SetPasswordView.as_view(),
@@ -176,12 +190,12 @@ urlpatterns = [
         CsvProductsView.as_view(),
         name="registered_products_csv",
     ),
-    path("virksomhed/<int:pk>/ret", CompanyUpdateView.as_view(), name="update_company"),
+    path("virksomhed/<int:pk>", CompanyUpdateView.as_view(), name="update_company"),
     path(
-        "butik/<int:pk>/ret",
+        "butik/<int:pk>",
         CompanyBranchUpdateView.as_view(),
         name="update_company_branch",
     ),
-    path("kiosk/<int:pk>/ret", KioskUpdateView.as_view(), name="update_kiosk"),
+    path("kiosk/<int:pk>", KioskUpdateView.as_view(), name="update_kiosk"),
     path("about/", AboutView.as_view(), name="about"),
 ]

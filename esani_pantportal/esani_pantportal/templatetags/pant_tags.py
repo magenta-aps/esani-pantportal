@@ -18,7 +18,7 @@ from esani_pantportal.util import add_parameters_to_url
 
 @register.filter
 def add_back_url(url, back_url):
-    return add_parameters_to_url(url, {"back": back_url})
+    return add_parameters_to_url(url, {"back": quote(back_url)})
 
 
 @register.filter

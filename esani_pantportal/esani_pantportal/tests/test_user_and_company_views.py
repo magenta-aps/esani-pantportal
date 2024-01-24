@@ -3,7 +3,9 @@
 # SPDX-License-Identifier: MPL-2.0
 from http import HTTPStatus
 
+from bs4 import BeautifulSoup
 from django.contrib.auth.models import Group
+from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
@@ -604,6 +606,13 @@ class UpdateCompanyTest(BaseUserTest):
         self.facebook_branch.refresh_from_db()
         self.assertEqual(self.facebook_branch.name, "x")
 
+        # Only ESANI admins can update a branch's parent-company
+        response = self.client.get(url)
+        form_data = self.make_form_data(response.context_data["form"])
+        form_data["company"] = self.google.pk
+        with self.assertRaises(ValidationError):
+            self.client.post(url, form_data)
+
     def test_update_facebook_branch_by_facebook_branch_admin(self):
         self.client.login(username="facebook_branch_admin", password="12345")
         url = reverse(
@@ -640,3 +649,23 @@ class UpdateCompanyTest(BaseUserTest):
         self.client.login(username="facebook_admin", password="12345")
         url = reverse("pant:update_kiosk", kwargs={"pk": self.kiosk.pk})
         self.assert_forbidden(url)
+
+    @staticmethod
+    def get_back_button(html):
+        soup = BeautifulSoup(html, "html.parser")
+        button = soup.find(id="back_button")
+        return button
+
+    def test_back_url(self):
+        self.login()
+        kwargs = {"pk": self.facebook.pk}
+        url1 = reverse("pant:update_company", kwargs=kwargs)
+        url2 = reverse("pant:update_company", kwargs=kwargs) + "?back=foo"
+
+        response = self.client.get(url1)
+        back_button = self.get_back_button(response.content)
+        self.assertEqual(back_button, None)
+
+        response = self.client.get(url2)
+        back_button = self.get_back_button(response.content)
+        self.assertEqual(back_button["href"], "foo")

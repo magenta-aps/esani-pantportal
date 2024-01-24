@@ -27,4 +27,6 @@ class Command(BaseCommand):
                 city="Nuuk",
                 postal_code="1234",
                 phone="+299 36 35 " + str(random.randint(10, 99)),
+                country="Grønland",
+                company_type="A",
             )
