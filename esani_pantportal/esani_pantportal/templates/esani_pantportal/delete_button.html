@@ -8,8 +8,6 @@ SPDX-License-Identifier: MPL-2.0
 
 <form action={{url}} method="post">
     {% csrf_token %}
-    <div class="row">
-        <div class="col-6">
             <div class="card my-3">
                 <div class="card-body">
                     <h5 class="cart-title">{% translate "Fjern" %}</h5>
@@ -21,6 +19,4 @@ SPDX-License-Identifier: MPL-2.0
                     </button>
                 </div>
             </div>
-        </div>
-    </div>
 </form>
