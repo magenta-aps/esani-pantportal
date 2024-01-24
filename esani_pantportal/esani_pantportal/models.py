@@ -869,6 +869,9 @@ class DepositPayout(models.Model):
 class DepositPayoutItem(models.Model):
     """Represents a line in a CSV file of received bottle deposits."""
 
+    class Meta:
+        ordering = ["-date"]
+
     deposit_payout = models.ForeignKey(
         DepositPayout,
         on_delete=models.CASCADE,
