@@ -19,6 +19,7 @@ SPDX-License-Identifier: MPL-2.0
 <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
 <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
 <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/defer-url/bootstrap-table-defer-url.min.js"></script>
+<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/cookie/bootstrap-table-cookie.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -63,6 +64,7 @@ SPDX-License-Identifier: MPL-2.0
            data-total-rows="{{total}}"
            data-silent-sort="true" {# vil vi vise en loading-boks? #}
            data-remember-order="true"
+           data-cookie="true" {# Handles table refresh after item removal #}
     >
         <thead>
         <tr>
