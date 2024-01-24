@@ -347,6 +347,7 @@ class RegisterBranchForm(forms.ModelForm, BootstrapForm, PhoneForm):
             "account_number",
             "invoice_mail",
             "municipality",
+            "qr_compensation",
         )
 
 
@@ -367,6 +368,7 @@ class UpdateBranchForm(forms.ModelForm, BootstrapForm):
             "account_number",
             "invoice_mail",
             "municipality",
+            "qr_compensation",
         )
 
     def __init__(self, *args, **kwargs):
@@ -392,6 +394,7 @@ class RegisterKioskForm(forms.ModelForm, BootstrapForm, PhoneForm):
             "invoice_mail",
             "municipality",
             "cvr",
+            "qr_compensation",
         )
 
 
@@ -412,6 +415,7 @@ class UpdateKioskForm(forms.ModelForm, BootstrapForm):
             "invoice_mail",
             "municipality",
             "cvr",
+            "qr_compensation",
         )
 
     def __init__(self, *args, **kwargs):
