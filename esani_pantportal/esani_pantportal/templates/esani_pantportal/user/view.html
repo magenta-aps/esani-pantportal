@@ -15,12 +15,11 @@ SPDX-License-Identifier: MPL-2.0
 
 {% block content %}
 <div class="mx-5">
-    <form action="" method="post">
-        {% csrf_token %}
-        <h1>{% translate "Brugerdetaljer" %}</h1>
-
-        <div class="row">
-            <div class="col-6">
+    <h1>{% translate "Brugerdetaljer" %}</h1>
+    <div class="row">
+        <div class="col-6">
+            <form action="" method="post">
+                {% csrf_token %}
                 <h2>{% translate "Bruger" %}</h2>
                 <table class="table table-bordered">
                     <tbody>
@@ -84,7 +83,7 @@ SPDX-License-Identifier: MPL-2.0
             {% endif %}
             {% if not object.approved %}
             {% if can_approve %}
-                <div class="card">
+                <div class="card my-3">
                     <div class="card-body">
                         <h5 class="cart-title">Godkend</h5>
                         <p class="card-text">
@@ -95,58 +94,60 @@ SPDX-License-Identifier: MPL-2.0
                 </div>
             {% endif %}
             {% endif %}
-            </div>
-
-            <div class="col-6">
-                {% if object.get_user_type_display == "Butiksbruger" or object.get_user_type_display == "Kioskbruger"  %}
-                <h2>
-                    {% translate "Butik" %}
-                    {% if can_edit %}
-                    {% if object.get_user_type_display == "Butiksbruger" %}
-                        <a href="{% url 'pant:update_company_branch' profile.branch.id %}?back={{request.get_full_path|quote_url}}">{% bs_icon "pencil-square" %}</a>
-                    {% elif object.get_user_type_display == "Kioskbruger" %}
-                        <a href="{% url 'pant:update_kiosk' profile.branch.id %}?back={{request.get_full_path|quote_url}}">{% bs_icon "pencil-square" %}</a>
-                    {% endif %}
-                    {% endif %}
-                </h2>
-                <table class="table table-bordered">
-                    <tbody>
-                    {% for attr in branch_info_attributes %}
-                    <tr>
-                        <th>{{profile.branch|verbose_name:attr}}</th>
-                        <td>{{profile.branch|get_display_name:attr}}</td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-                {% endif %}
-                {% if object.get_user_type_display == "Butiksbruger" or object.get_user_type_display == "Virksomhedsbruger"  %}
-                <h2>
-                    {% translate "Virksomhed" %}
-                    {% if can_edit %}
-                    <a href="{% url 'pant:update_company' profile.company.id %}?back={{request.get_full_path|quote_url}}">{% bs_icon "pencil-square" %}</a>
-                    {% endif %}
-                </h2>
-                <table class="table table-bordered">
-                    <tbody>
-                    {% for attr in company_info_attributes %}
-                    <tr>
-                        <th>{{profile.company|verbose_name:attr}}</th>
-                        <td>{{profile.company|get_display_name:attr}}</td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-                {% endif %}
-            </div>
+            </form>
+        {% if can_edit %}
+            {% translate "Når man fjerner en bruger, fjernes den helt fra databasen." as delete_text %}
+            {% url 'pant:user_delete' object.id as delete_url %}
+            {% include "../delete_button.html" with url=delete_url text=delete_text %}
+        {% endif %}
         </div>
-    </form>
 
-    {% if can_edit %}
-        {% translate "Når man fjerner en bruger, fjernes den helt fra databasen." as delete_text %}
-        {% url 'pant:user_delete' object.id as delete_url %}
-        {% include "../delete_button.html" with url=delete_url text=delete_text %}
-    {% endif %}
+        <div class="col-6">
+            {% if object.get_user_type_display == "Butiksbruger" or object.get_user_type_display == "Kioskbruger"  %}
+            <h2>
+                {% translate "Butik" %}
+                {% if can_edit %}
+                {% if object.get_user_type_display == "Butiksbruger" %}
+                    <a href="{% url 'pant:update_company_branch' profile.branch.id %}?back={{request.get_full_path|quote_url}}">{% bs_icon "pencil-square" %}</a>
+                {% elif object.get_user_type_display == "Kioskbruger" %}
+                    <a href="{% url 'pant:update_kiosk' profile.branch.id %}?back={{request.get_full_path|quote_url}}">{% bs_icon "pencil-square" %}</a>
+                {% endif %}
+                {% endif %}
+            </h2>
+            <table class="table table-bordered">
+                <tbody>
+                {% for attr in branch_info_attributes %}
+                <tr>
+                    <th>{{profile.branch|verbose_name:attr}}</th>
+                    <td>{{profile.branch|get_display_name:attr}}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+            {% if object.get_user_type_display == "Butiksbruger" or object.get_user_type_display == "Virksomhedsbruger"  %}
+            <h2>
+                {% translate "Virksomhed" %}
+                {% if can_edit %}
+                <a href="{% url 'pant:update_company' profile.company.id %}?back={{request.get_full_path|quote_url}}">{% bs_icon "pencil-square" %}</a>
+                {% endif %}
+            </h2>
+            <table class="table table-bordered">
+                <tbody>
+                {% for attr in company_info_attributes %}
+                <tr>
+                    <th>{{profile.company|verbose_name:attr}}</th>
+                    <td>{{profile.company|get_display_name:attr}}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+    </div>
+
+
+
 
 </div>
 
