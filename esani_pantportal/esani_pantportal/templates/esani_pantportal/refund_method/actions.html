@@ -1,16 +1,24 @@
 {% load i18n %}
 {% load l10n %}
 
-<form method="POST" action="{% url 'pant:refund_method_delete' item.id %}">
-   {% csrf_token %}
-   <button id="delete_button_{{item.id}}" type="submit" class="btn btn-sm btn-danger">
-     {% translate "Fjern" %}
-   </button>
-</form>
+<a id="delete_button_{{item.id}}" class="btn btn-sm btn-danger">
+  {% translate "Fjern" %}
+</a>
 
 <script>
 $("#delete_button_{{item.id}}").on("click", function () {
-    return confirm("{% translate 'Er du sikker på at du vil fjerne denne pantmetode?' %}");
+    var $table = $("#table");
+    confirmed = confirm("{% translate 'Er du sikker på at du vil fjerne denne pantmetode?' %}");
+    if (confirmed){
+        $.ajax({
+            type: "POST",
+            url: "{% url 'pant:refund_method_delete' item.id %}",
+            data: {csrfmiddlewaretoken : "{{ csrf_token }}"},
+            success: function(){
+                $table.bootstrapTable("refresh");
+            }
+        });
+    }
 });
 </script>
 
