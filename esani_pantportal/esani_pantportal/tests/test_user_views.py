@@ -48,6 +48,7 @@ class TestPrevalidateCreateView(TestCase):
                 "postal_code",
                 "municipality",
                 "prefix",
+                "qr_compensation",
             },
         )
 

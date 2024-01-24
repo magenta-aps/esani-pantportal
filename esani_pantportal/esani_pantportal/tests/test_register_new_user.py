@@ -137,6 +137,7 @@ class RegisterNewUserFormTest(TestCase):
             "branch-account_number": 102010,
             "branch-invoice_mail": "pay_me@moneyplz.dk",
             "branch-municipality": "Scotland",
+            "branch-qr_compensation": 0.0,
         }
         cls.kiosk_data = {
             "branch-name": "The Unicorn fields",
@@ -154,6 +155,7 @@ class RegisterNewUserFormTest(TestCase):
             "branch-invoice_mail": "pay_me@moneyplz.dk",
             "branch-municipality": "Scotland",
             "branch-cvr": 1017196402,
+            "branch-qr_compensation": 0.0,
         }
 
         cls.company_data = {
