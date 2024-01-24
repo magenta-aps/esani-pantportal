@@ -78,13 +78,7 @@ from esani_pantportal.models import (
     RefundMethod,
     User,
 )
-from esani_pantportal.templatetags.pant_tags import (
-    danish,
-    material,
-    refund_method,
-    shape,
-    user_type,
-)
+from esani_pantportal.templatetags.pant_tags import danish, material, shape, user_type
 from esani_pantportal.util import (
     add_parameters_to_url,
     default_dataframe,
@@ -298,6 +292,7 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
     paginate_by = 20
     select_template = None
     annotations = {}
+    search_fields_exact = []
 
     def get(self, request, *args, **kwargs):
         self.form = self.get_form()
@@ -477,14 +472,11 @@ class RefundMethodSearchView(PermissionRequiredMixin, SearchView):
     required_permissions = ["esani_pantportal.view_refundmethod"]
 
     search_fields = ["serial_number"]
-    search_fields_exact = ["method"]
 
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)
 
-        if key == "method":
-            value = refund_method(value)
-        elif key in ["branch", "kiosk"]:
+        if key in ["branch", "kiosk"]:
             if value and key == "branch":
                 value = CompanyBranch.objects.get(pk=int(value)).name
             elif value and key == "kiosk":

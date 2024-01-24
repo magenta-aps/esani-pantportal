@@ -72,7 +72,7 @@ class PermissionRequiredMixin(LoginRequiredMixin):
         - For company users all users in the same company are returned. Including
           branches which report to the user's company.
         - For branch users only users in the same branch are returned.
-        - For Kiosk users only users in the same kioks are returned
+        - For Kiosk users only users in the same kiosk are returned
         - For ESANI users nothing is returned.
         """
         username = self.request.user.username

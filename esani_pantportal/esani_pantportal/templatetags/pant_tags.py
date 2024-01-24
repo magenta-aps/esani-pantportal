@@ -11,7 +11,6 @@ from esani_pantportal.models import (
     DANISH_PANT_CHOICES,
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
-    REFUND_METHOD_CHOICES,
     USER_TYPE_CHOICES,
 )
 from esani_pantportal.util import add_parameters_to_url
@@ -51,13 +50,6 @@ def get_display_name(obj, attr):
 def user_type(user_type_id):
     for c in USER_TYPE_CHOICES:
         if c[0] == user_type_id:
-            return c[1]
-
-
-@register.filter
-def refund_method(refund_method_id):
-    for c in REFUND_METHOD_CHOICES:
-        if c[0] == refund_method_id:
             return c[1]
 
 

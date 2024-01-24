@@ -23,7 +23,6 @@ from esani_pantportal.models import (
     DANISH_PANT_CHOICES,
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
-    REFUND_METHOD_CHOICES,
     USER_TYPE_CHOICES,
     BranchUser,
     Company,
@@ -146,7 +145,6 @@ class RefundMethodRegisterForm(forms.ModelForm, BootstrapForm):
         model = RefundMethod
         fields = (
             "compensation",
-            "method",
             "serial_number",
             "branch",
             "kiosk",
@@ -168,10 +166,8 @@ class RefundMethodRegisterForm(forms.ModelForm, BootstrapForm):
 
     def clean_serial_number(self):
         serial_number = self.cleaned_data["serial_number"]
-        method = self.cleaned_data["method"]
 
-        # "Flaskeautomat" methods start with F
-        if method.startswith("F") and not serial_number:
+        if not serial_number:
             raise ValidationError(_("Dette felt må ikke være tom"))
         return serial_number
 
@@ -786,9 +782,6 @@ class ProductFilterForm(SortPaginateForm):
 
 class RefundMethodFilterForm(SortPaginateForm):
     serial_number = forms.CharField(required=False)
-    method = forms.ChoiceField(
-        choices=[(None, "-")] + list(REFUND_METHOD_CHOICES), required=False
-    )
     branch__name = forms.CharField(required=False)
     kiosk__name = forms.CharField(required=False)
 
