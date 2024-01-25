@@ -25,6 +25,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect
 from django.template import loader
 from django.urls import reverse
+from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import (
     CreateView,
@@ -955,7 +956,7 @@ class MultipleProductRegisterView(PermissionRequiredMixin, FormView):
         job = ImportJob(
             imported_by=self.request.user,
             file_name=form.filename,
-            date=datetime.datetime.now(),
+            date=now(),
         )
         failures = []
         success_count = 0
