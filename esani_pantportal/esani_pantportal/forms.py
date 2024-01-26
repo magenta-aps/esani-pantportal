@@ -809,11 +809,11 @@ class UserFilterForm(SortPaginateForm):
 
 class DepositPayoutItemFilterForm(SortPaginateForm, BootstrapForm):
     company_branch = forms.ModelChoiceField(
-        CompanyBranch.objects.all(),
+        CompanyBranch.objects.all().order_by("name", "company__name"),
         required=False,
     )
     kiosk = forms.ModelChoiceField(
-        Kiosk.objects.all(),
+        Kiosk.objects.all().order_by("name"),
         required=False,
     )
     date = forms.DateField(
