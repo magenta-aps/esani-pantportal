@@ -78,7 +78,8 @@ class TestDepositPayoutSearchView(LoginMixin, TestCase):
         )
 
         cls.deposit_payout = DepositPayout.objects.create(
-            filename="foo.csv",
+            source_type=DepositPayout.SOURCE_TYPE_CSV,
+            source_identifier="foo.csv",
             from_date=datetime.date(2024, 1, 1),
             to_date=datetime.date(2024, 2, 1),
             item_count=0,

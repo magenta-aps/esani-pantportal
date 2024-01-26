@@ -90,7 +90,7 @@ class TestImportDepositPayouts(TestCase):
 
         # Assert: fetch the `DepositPayoutItem` objects created by `Command`
         fields = [
-            "deposit_payout__filename",
+            "deposit_payout__source_identifier",
             "deposit_payout__from_date",
             "deposit_payout__to_date",
             "company_branch__company__cvr",
@@ -110,7 +110,7 @@ class TestImportDepositPayouts(TestCase):
             # do not match any `CompanyBranch`, `Kiosk` or `Product` objects in the
             # database.
             item(
-                deposit_payout__filename="example_original.csv",
+                deposit_payout__source_identifier="example_original.csv",
                 date=datetime.date(2023, 10, 21),
                 company_branch__company__cvr=None,
                 kiosk__cvr=None,
@@ -121,7 +121,7 @@ class TestImportDepositPayouts(TestCase):
                 count=20,
             ),
             item(
-                deposit_payout__filename="example_original.csv",
+                deposit_payout__source_identifier="example_original.csv",
                 company_branch__company__cvr=None,
                 kiosk__cvr=None,
                 product__barcode=None,
@@ -131,7 +131,7 @@ class TestImportDepositPayouts(TestCase):
                 count=500,
             ),
             item(
-                deposit_payout__filename="example_original.csv",
+                deposit_payout__source_identifier="example_original.csv",
                 company_branch__company__cvr=None,
                 kiosk__cvr=None,
                 product__barcode=None,
@@ -141,7 +141,7 @@ class TestImportDepositPayouts(TestCase):
                 count=2,
             ),
             item(
-                deposit_payout__filename="example_original.csv",
+                deposit_payout__source_identifier="example_original.csv",
                 company_branch__company__cvr=None,
                 kiosk__cvr=None,
                 product__barcode=None,
@@ -154,7 +154,7 @@ class TestImportDepositPayouts(TestCase):
             # `Product` objects, as their IDs (`rvm_serial` and `barcode`)
             # match `Kiosk` and `Product` objects in the database.
             item(
-                deposit_payout__filename="example_with_valid_ids.csv",
+                deposit_payout__source_identifier="example_with_valid_ids.csv",
                 company_branch__company__cvr=None,
                 kiosk__cvr=self.kiosk_cvr,
                 product__barcode=self.product_barcode_2,
@@ -164,7 +164,7 @@ class TestImportDepositPayouts(TestCase):
                 count=2,
             ),
             item(
-                deposit_payout__filename="example_with_valid_ids.csv",
+                deposit_payout__source_identifier="example_with_valid_ids.csv",
                 company_branch__company__cvr=None,
                 kiosk__cvr=self.kiosk_cvr,
                 product__barcode=self.product_barcode_2,
@@ -174,7 +174,7 @@ class TestImportDepositPayouts(TestCase):
                 count=200,
             ),
             item(
-                deposit_payout__filename="example_with_valid_ids.csv",
+                deposit_payout__source_identifier="example_with_valid_ids.csv",
                 date=datetime.date(2023, 10, 21),
                 company_branch__company__cvr=None,
                 kiosk__cvr=self.kiosk_cvr,
@@ -185,7 +185,7 @@ class TestImportDepositPayouts(TestCase):
                 count=20,
             ),
             item(
-                deposit_payout__filename="example_with_valid_ids.csv",
+                deposit_payout__source_identifier="example_with_valid_ids.csv",
                 company_branch__company__cvr=None,
                 kiosk__cvr=self.kiosk_cvr,
                 product__barcode=self.product_barcode_1,
@@ -218,7 +218,8 @@ class TestSource(TestCase):
     @classmethod
     def setUpTestData(cls):
         DepositPayout.objects.create(
-            filename="already_processed.csv",
+            source_type=DepositPayout.SOURCE_TYPE_CSV,
+            source_identifier="already_processed.csv",
             from_date=datetime.date.today(),
             to_date=datetime.date.today(),
             item_count=0,

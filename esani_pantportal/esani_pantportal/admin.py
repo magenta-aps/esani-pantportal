@@ -17,12 +17,20 @@ class DepositPayoutItemAdmin(admin.TabularInline):
         "date",
         "barcode",
         "count",
+        "consumer_session_id",
+        "consumer_identity",
     ]
 
 
 class DepositPayoutAdmin(admin.ModelAdmin):
     inlines = [DepositPayoutItemAdmin]
-    readonly_fields = ["filename", "from_date", "to_date", "item_count"]
+    readonly_fields = [
+        "source_type",
+        "source_identifier",
+        "from_date",
+        "to_date",
+        "item_count",
+    ]
 
 
 admin.site.register(DepositPayout, DepositPayoutAdmin)

@@ -104,7 +104,8 @@ class Command(BaseCommand):
     @transaction.atomic
     def _import_data(self, filename, tomra_file):
         deposit_payout = DepositPayout.objects.create(
-            filename=filename,
+            source_type=DepositPayout.SOURCE_TYPE_CSV,
+            source_identifier=filename,
             from_date=tomra_file.from_date,
             to_date=tomra_file.to_date,
             item_count=tomra_file.total_count,
@@ -164,7 +165,11 @@ class Source(ABC):
 
     def get_new_files(self):
         filenames = set(self.listdir())
-        known_filenames = set(DepositPayout.objects.values_list("filename", flat=True))
+        known_filenames = set(
+            DepositPayout.objects.filter(
+                source_type=DepositPayout.SOURCE_TYPE_CSV
+            ).values_list("source_identifier", flat=True)
+        )
         unknown_filenames = filenames - known_filenames
         return unknown_filenames
 

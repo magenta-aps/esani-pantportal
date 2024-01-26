@@ -672,7 +672,8 @@ class ProductListBulkDeleteTest(LoginMixin, TestCase):
         kiosk = Kiosk.objects.create(cvr="123")
 
         deposit_payout = DepositPayout.objects.create(
-            filename="already_processed.csv",
+            source_type=DepositPayout.SOURCE_TYPE_CSV,
+            source_identifier="already_processed.csv",
             from_date=datetime.date.today(),
             to_date=datetime.date.today(),
             item_count=0,

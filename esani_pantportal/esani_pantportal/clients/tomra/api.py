@@ -24,6 +24,7 @@ To (re)generate the data models, run the following:
         --strict-nullable
 """
 
+from dataclasses import dataclass
 from datetime import datetime
 
 import requests
@@ -31,6 +32,20 @@ from django.conf import settings
 from pydantic import parse_obj_as
 
 from .data_models import ConsumerSessionQueryResponse, Datum
+
+
+@dataclass
+class _APIResponse:
+    url: str
+    doc: dict
+
+
+@dataclass
+class ConsumerSessionCollection:
+    url: str
+    from_date: datetime
+    to_date: datetime
+    data: list[Datum]
 
 
 class TomraAPI:
@@ -70,7 +85,9 @@ class TomraAPI:
         response.raise_for_status()
         return response.json()["access_token"]
 
-    def _api_request(self, method: str, resource: str, query: dict = None) -> dict:
+    def _api_request(
+        self, method: str, resource: str, query: dict = None
+    ) -> _APIResponse:
         # TODO: don't request a new access token on every API request.
         # (Tomra access tokens are valid for 1 hour.)
         response = requests.request(
@@ -84,31 +101,44 @@ class TomraAPI:
             },
         )
         response.raise_for_status()
-        return response.json()
+        return _APIResponse(url=response.request.url, doc=response.json())
 
     def _to_iso8601_in_utc(self, val: datetime) -> str:
         return val.astimezone().isoformat(timespec="seconds")
 
-    def get_consumer_sessions(self, after: datetime) -> list[Datum]:
-        result: list[Datum] = []
+    def get_consumer_sessions(
+        self,
+        after: datetime,
+        before: datetime,
+        rvm_serials: list[int] | None = None,
+    ) -> ConsumerSessionCollection:
+        data: list[Datum] = []
         continuation_token: str = "initial"
+        initial_url: str
 
         while continuation_token is not None:
-            doc: dict = self._api_request(
+            next = None if continuation_token == "initial" else continuation_token
+            response: _APIResponse = self._api_request(
                 "GET",
                 "/consumer-sessions",
                 query={
-                    # "receivedBefore": ...,
+                    "receivedBefore": self._to_iso8601_in_utc(before),
                     "receivedAfter": self._to_iso8601_in_utc(after),
-                    # "serialNumbers": ...,
-                    "next": (
-                        None if continuation_token == "initial" else continuation_token
-                    ),
+                    "serialNumbers": rvm_serials,
+                    "next": next,
                 },
             )
-            continuation_token = doc.get("next")
-            parsed = parse_obj_as(ConsumerSessionQueryResponse, doc)
+            continuation_token = response.doc.get("next")
+            parsed = parse_obj_as(ConsumerSessionQueryResponse, response.doc)
             if parsed.data:
-                result.extend(parsed.data)
+                data.extend(parsed.data)
+            if next is None:
+                initial_url = response.url
 
-        return result
+        return ConsumerSessionCollection(
+            # URL without continuation token (`next`)
+            url=initial_url,
+            from_date=after,
+            to_date=before,
+            data=data,
+        )
