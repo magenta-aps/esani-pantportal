@@ -72,9 +72,9 @@ SPDX-License-Identifier: MPL-2.0
                data-pagination-loop="false"
                data-side-pagination="server"
                data-page-list="[20, 50, 100]"
-               data-page-number="{{ page_number }}"
-               data-page-size="{{ page_size }}"
-               data-total-rows="{{ page_obj.paginator.count }}"
+               data-page-number="{{ page_number|unlocalize }}"
+               data-page-size="{{ page_size|unlocalize }}"
+               data-total-rows="{{ page_obj.paginator.count|unlocalize }}"
         >
             <thead>
                 <tr>
@@ -94,9 +94,9 @@ SPDX-License-Identifier: MPL-2.0
                     <td>{{ item.id }}</td> {# ID of `DepositPayoutItem` object - used when submitting form #}
                     <td>
                         {% if item.company_branch %}
-                            {{ item.company_branch.company }}, {{ item.company_branch.company.city }}
+                            {{ item.company_branch }}, {{ item.company_branch.company.city }}
                         {% elif item.kiosk %}
-                            {{ item.kiosk.name }}, {{ item.kiosk.city }}
+                            {{ item.kiosk}}, {{ item.kiosk.city }}
                         {% else %}
                             <span class="text-danger" title="Ingen matchende kæde eller butik, viser RVM-serienummer">
                                 {{ item.rvm_serial }}

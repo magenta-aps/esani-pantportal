@@ -208,3 +208,13 @@ class TestDepositPayoutSearchView(LoginMixin, TestCase):
         )
         # Assert that we "processed" all (2) deposit payout items
         self.assertDictEqual(response.json(), {"all": True, "count": 2})
+
+    def test_pagination_outside_queryset_range(self):
+        self._login()
+        # Navigate to page outside the current queryset, and observe that we are sent
+        # to the last valid page of the paginator.
+        response = self._get_response(page=2)
+        self.assertEqual(response.context["page_obj"].number, 1)
+        # Navigate to invalid page number, and observe that we (still) get a 404
+        response = self._get_response(page=0)
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)

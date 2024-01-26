@@ -17,6 +17,7 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
+from django.core.paginator import EmptyPage, Paginator
 from django.db.models import Case, F, Q, Value, When
 from django.db.models.functions import Coalesce, Concat
 from django.forms import model_to_dict
@@ -634,6 +635,22 @@ class KioskUpdateView(BaseCompanyUpdateView):
             return self.access_denied
 
 
+class GracefulPaginator(Paginator):
+    """Custom paginator which returns to first page of queryset if an invalid page
+    number is provided."""
+
+    # Source:
+    # https://forum.djangoproject.com/t/letting-listview-gracefully-handle-out-of-range-page-numbers/23037/3
+
+    def validate_number(self, number):
+        try:
+            return super().validate_number(number)
+        except EmptyPage:
+            if number > 1:
+                return self.num_pages
+            raise
+
+
 class DepositPayoutSearchView(PermissionRequiredMixin, ListView, FormView):
     template_name = "esani_pantportal/deposit_payout/list.html"
     context_object_name = "items"
@@ -641,6 +658,7 @@ class DepositPayoutSearchView(PermissionRequiredMixin, ListView, FormView):
     form_class = DepositPayoutItemFilterForm
     required_permissions = ["esani_pantportal.view_depositpayout"]
     paginate_by = 20
+    paginator_class = GracefulPaginator
 
     _reserved = ("sort", "order", "page", "size")
 
