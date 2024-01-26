@@ -144,7 +144,11 @@ class DepositPayoutTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.deposit_payout = DepositPayout.objects.create(
-            filename="hello", from_date="20230101", to_date="20240101", item_count=127
+            source_type=DepositPayout.SOURCE_TYPE_CSV,
+            source_identifier="hello",
+            from_date="20230101",
+            to_date="20240101",
+            item_count=127,
         )
 
     def test_str(self):
@@ -155,7 +159,11 @@ class DepositPayoutItemTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         deposit_payout = DepositPayout.objects.create(
-            filename="hello", from_date="20230101", to_date="20240101", item_count=127
+            source_type=DepositPayout.SOURCE_TYPE_CSV,
+            source_identifier="hello",
+            from_date="20230101",
+            to_date="20240101",
+            item_count=127,
         )
         cls.deposit_payout_item = DepositPayoutItem.objects.create(
             deposit_payout=deposit_payout,

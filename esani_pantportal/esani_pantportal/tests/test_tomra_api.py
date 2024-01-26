@@ -8,7 +8,11 @@ from django.test import SimpleTestCase
 from django.test.utils import override_settings
 from django.utils import timezone
 
-from esani_pantportal.clients.tomra.api import TomraAPI
+from esani_pantportal.clients.tomra.api import (
+    ConsumerSessionCollection,
+    TomraAPI,
+    _APIResponse,
+)
 from esani_pantportal.clients.tomra.data_models import (
     ConsumerSession,
     ConsumerSessionQueryResponse,
@@ -97,14 +101,20 @@ class TestTomraAPI(SimpleTestCase):
     def test_get_consumer_sessions_follows_continuation_token(self):
         # Arrange
         instance = TomraAPI.from_settings()
-        mock_responses = [{"next": "something"}, {"next": None}]
+        mock_responses = [
+            _APIResponse(url="", doc={"next": "something"}),
+            _APIResponse(url="?next=something", doc={"next": None}),
+        ]
         with patch.object(
             instance,
             "_api_request",
             side_effect=mock_responses,  # returns one item per call
         ) as mock_request:
             # Act
-            instance.get_consumer_sessions(datetime(2020, 1, 1))
+            instance.get_consumer_sessions(
+                datetime(2020, 1, 1),
+                datetime(2020, 2, 1),
+            )
             # Assert
             self.assertEqual(mock_request.call_count, 2)
 
@@ -117,14 +127,19 @@ class TestTomraAPI(SimpleTestCase):
         with patch.object(
             instance,
             "_api_request",
-            side_effect=[{"next": None}],
+            side_effect=[_APIResponse(url="url", doc={"next": None})],
         ):
             with patch(
                 "esani_pantportal.clients.tomra.api.parse_obj_as",
                 return_value=mock_parsed_data,
             ):
                 # Act
-                result = instance.get_consumer_sessions(datetime(2020, 1, 1))
-                self.assertEqual(len(result), 1)
-                self.assertIsInstance(result, list)
-                self.assertIsInstance(result[0], Datum)
+                result = instance.get_consumer_sessions(
+                    datetime(2020, 1, 1),
+                    datetime(2020, 2, 1),
+                )
+                self.assertIsInstance(result, ConsumerSessionCollection)
+                self.assertEqual(result.url, "url")
+                self.assertEqual(len(result.data), 1)
+                self.assertIsInstance(result.data, list)
+                self.assertIsInstance(result.data[0], Datum)

@@ -847,7 +847,24 @@ class KioskUser(User):
 class DepositPayout(models.Model):
     """Represents a single CSV file of received bottle deposits."""
 
-    filename = models.CharField(max_length=255)
+    SOURCE_TYPE_CSV = "csv"
+    SOURCE_TYPE_API = "api"
+
+    SOURCE_TYPES = [
+        (SOURCE_TYPE_CSV, _("Clearing-rapporter (CSV)")),
+        (SOURCE_TYPE_API, _("QR-sække (API)")),
+    ]
+
+    source_identifier = models.CharField(
+        _("Kilde-ID (filnavn eller URL)"),
+        max_length=255,
+    )
+
+    source_type = models.CharField(
+        _("Kilde-type"),
+        max_length=3,
+        choices=SOURCE_TYPES,
+    )
 
     from_date = models.DateField(
         _("Fra-dato"),
@@ -863,7 +880,7 @@ class DepositPayout(models.Model):
     """Contains the 'final' item count at end of CSV file"""
 
     def __str__(self):
-        return f"{self.filename} ({self.pk})"
+        return f"{self.get_source_type_display()} ({self.source_identifier})"
 
 
 class DepositPayoutItem(models.Model):
@@ -924,6 +941,18 @@ class DepositPayoutItem(models.Model):
     count = models.PositiveIntegerField()
     """Each CSV file line can represent a number of bottles, if they share the same
     barcode."""
+
+    consumer_session_id = models.UUIDField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    consumer_identity = models.CharField(
+        max_length=32,
+        null=True,
+        blank=True,
+    )
 
     def __str__(self):
         return f"{self.count}x {self.barcode}"
