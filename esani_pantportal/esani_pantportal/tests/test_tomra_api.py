@@ -4,6 +4,7 @@
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
+from django.core.exceptions import ImproperlyConfigured
 from django.test import SimpleTestCase
 from django.test.utils import override_settings
 from django.utils import timezone
@@ -143,3 +144,10 @@ class TestTomraAPI(SimpleTestCase):
                 self.assertEqual(len(result.data), 1)
                 self.assertIsInstance(result.data, list)
                 self.assertIsInstance(result.data[0], Datum)
+
+
+class TestTomraAPINoCredentials(SimpleTestCase):
+    def test_from_settings_raises_exception(self):
+        # If the credentials are not defined in settings, raise an error
+        with self.assertRaises(ImproperlyConfigured):
+            TomraAPI.from_settings()

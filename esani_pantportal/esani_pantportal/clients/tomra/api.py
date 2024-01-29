@@ -29,6 +29,7 @@ from datetime import datetime
 
 import requests
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from pydantic import parse_obj_as
 
 from .data_models import ConsumerSessionQueryResponse, Datum
@@ -59,12 +60,26 @@ class TomraAPI:
 
     @classmethod
     def from_settings(cls):
-        return cls(
-            settings.TOMRA_API_ENV,
-            settings.TOMRA_API_KEY,
-            settings.TOMRA_API_CLIENT_ID,
-            settings.TOMRA_API_CLIENT_SECRET,
-        )
+        if all(
+            [
+                settings.TOMRA_API_ENV,
+                settings.TOMRA_API_KEY,
+                settings.TOMRA_API_CLIENT_ID,
+                settings.TOMRA_API_CLIENT_SECRET,
+            ]
+        ):
+            return cls(
+                settings.TOMRA_API_ENV,
+                settings.TOMRA_API_KEY,
+                settings.TOMRA_API_CLIENT_ID,
+                settings.TOMRA_API_CLIENT_SECRET,
+            )
+        else:
+            raise ImproperlyConfigured(
+                "One or more of `TOMRA_API_ENV`, `TOMRA_API_KEY`, "
+                "`TOMRA_API_CLIENT_ID`, and `TOMRA_API_CLIENT_SECRET` are missing "
+                "from settings."
+            )
 
     def __init__(self, env: str, api_key: str, client_id: str, client_secret: str):
         self._env = env
