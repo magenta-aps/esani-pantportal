@@ -51,7 +51,7 @@ from esani_pantportal.forms import (
     ProductUpdateForm,
     RefundMethodFilterForm,
     RefundMethodRegisterForm,
-    RegisterBranchUserMultiForm,
+    RegisterCompanyBranchUserMultiForm,
     RegisterCompanyUserMultiForm,
     RegisterEsaniUserForm,
     RegisterKioskUserMultiForm,
@@ -192,7 +192,7 @@ class _PrevalidateCreateView(CreateView):
 
 class RegisterBranchUserView(_PrevalidateCreateView):
     model = BranchUser
-    form_class = RegisterBranchUserMultiForm
+    form_class = RegisterCompanyBranchUserMultiForm
     template_name = "esani_pantportal/user/branch_user/form.html"
 
     def get_context_data(self, *args, **kwargs):
