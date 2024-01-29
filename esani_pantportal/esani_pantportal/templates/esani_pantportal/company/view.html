@@ -1,0 +1,163 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+{% load bootstrap_icons %}
+
+{% block extra_headers %}
+<script src="{% static 'jquery/detail_view.js' %}"></script>
+<script src="{% static 'jquery/pantportal.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="mx-5">
+    <div class="row">
+        <h1>{{object.name}}</h1>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <form action="" method="post">
+                {% csrf_token %}
+                <h2>{% translate "Oplysninger" %}</h2>
+                <table class="table table-bordered">
+                    <tbody>
+                    <tr>
+                        <th>{% translate "Virksomhedstype" %}</th>
+                        <td>"{{form.object_verbose_name}}"</td>
+                    </tr>
+                    {% for field in form %}
+                    {% if field.name == "company" and user.is_esani_admin == False %}
+                        {% include "../edit_field.html" with field_name=field.name field=field show_pencil=False %}
+                    {% else %}
+                        {% include "../edit_field.html" with field_name=field.name field=field %}
+                    {% endif %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+
+                {% if can_edit %}
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="cart-title">Rediger</h5>
+                            <p class="card-text">
+                                Rediger en virksomhed ved at:
+    
+                                <ul>
+                                    <li>Rette de ønskede felter (ved brug af {% bs_icon "pencil-square" color="blue" %} knapper) </li>
+                                    <li>Klik "Gem"</li>
+                                </ul>
+                            </p>
+                            <button id="update_button" type="submit" class="btn btn-primary disabled">Gem</button>
+                        </div>
+                    </div>
+                {% endif %}
+            </form>
+        </div>
+        <div class="col-6">
+            <h2>{% translate "Brugere" %}</h2>
+            <table class="table table-bordered">
+                <tbody>
+                {% for user in users %}
+                    <tr>
+                        <th>
+                            {{ user.username }}
+                            <a style="display:inline-block" href="{% url 'pant:user_view' user.id %}" class="icon-link">{% bs_icon "box-arrow-up-right" %}</a>
+                        </th>
+                        <td>{{ user.first_name }} {{ user.last_name }}</td>
+                    </tr>
+                {% endfor %}
+                {% if not users %}
+                    <tr>
+                        <th>-</th>
+                        <td>-</td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+            {% if object_type == "company_branch" or object_type == "kiosk" %}
+                <h2>
+                    {% translate "Pantmaskiner" %}
+                    <a href="{% url 'pant:refund_method_list' %}?branch__name={{object.name|quote_url}}">{% bs_icon "box-arrow-up-right" %}</a>
+                </h2>
+
+                <table class="table table-bordered">
+                    <tbody>
+                    {% for refund_method in refund_methods %}
+                        <tr>
+                            <th>{{ refund_method.serial_number }}</th>
+                            <td>
+                            <span title="{{refund_method|verbose_name:'compensation'}}">
+                            {{ refund_method.compensation }} kr.
+                            </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    {% if not refund_methods %}
+                        <tr>
+                            <th>-</th>
+                            <td>-</td>
+                        </tr>
+                    {% endif %}
+                    </tbody>
+                </table>
+            {% elif object_type == "company" %}
+                <h2>
+                    {% translate "Butikker" %}
+                </h2>
+
+                <table class="table table-bordered">
+                    <tbody>
+                    {% for branch in branches %}
+                        <tr>
+                            <th>
+                                {{ branch.name }}
+                                <a style="display:inline-block" href="{% url 'pant:update_company_branch' branch.id %}" class="icon-link">{% bs_icon "box-arrow-up-right" %}</a>
+                            </th>
+                            <td>{{ branch.address }}, {{ branch.city }}</td>
+                        </tr>
+                    {% endfor %}
+                    {% if not branches %}
+                        <tr>
+                            <th>-</th>
+                            <td>-</td>
+                        </tr>
+                    {% endif %}
+                    </tbody>
+                </table>
+            {% endif %}
+            {% if user.is_esani_admin %}
+                {% blocktrans asvar delete_text %}
+                Når man fjerner en virksomhed, fjernes den helt fra databasen.
+                Man kan kun fjerne en virksomhed når:
+                <ul>
+                    <li>Der ikke er brugere tilknyttet til den</li>
+                    <li>Der ikke er butikker tilknyttet til den</li>
+                    <li>Der ikke er pantmaskiner tilknyttet til den</li>
+                </ul>
+                {% endblocktrans %}
+                {% include "../delete_button.html" with url=delete_url|add_back_url:back_url text=delete_text can_delete=can_delete %}
+            {% endif %}
+        </div>
+    </div>
+    {% if back_url %}
+    <a class="btn btn-secondary my-3" id="back_button" href="{{back_url}}">{% translate 'Tilbage' %}</a>
+    {% endif %}
+</div>
+
+
+{{ form_fields_to_show|json_script:"form_fields_to_show" }}
+{{ form_fields|json_script:"form_fields" }}
+
+<script>
+$("#delete_button").on('click', function () {
+    return confirm("{% translate 'Er du sikker på at du vil fjerne dette virksomhed?' %}");
+});
+</script>
+
+
+{% endblock %}

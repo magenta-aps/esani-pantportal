@@ -6,7 +6,6 @@ import logging
 from functools import cached_property
 from io import BytesIO
 from typing import Any, Dict
-from urllib.parse import unquote
 
 import pandas as pd
 from django.conf import settings
@@ -42,6 +41,7 @@ from simple_history.utils import bulk_update_with_history, update_change_reason
 
 from esani_pantportal.forms import (
     ChangePasswordForm,
+    CompanyFilterForm,
     DepositPayoutItemFilterForm,
     MultipleProductRegisterForm,
     NewsEmailForm,
@@ -67,6 +67,7 @@ from esani_pantportal.models import (
     BRANCH_USER,
     COMPANY_USER,
     KIOSK_USER,
+    AbstractCompany,
     BranchUser,
     Company,
     CompanyBranch,
@@ -85,9 +86,9 @@ from esani_pantportal.util import (
     add_parameters_to_url,
     default_dataframe,
     float_to_string,
-    remove_parameter_from_url,
+    get_back_url,
 )
-from esani_pantportal.view_mixins import PermissionRequiredMixin
+from esani_pantportal.view_mixins import PermissionRequiredMixin, UpdateViewMixin
 
 logger = logging.getLogger(__name__)
 
@@ -295,6 +296,7 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
     select_template = None
     annotations = {}
     search_fields_exact = []
+    excluded_fields = []
 
     def get(self, request, *args, **kwargs):
         self.form = self.get_form()
@@ -333,13 +335,8 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
         else:
             return string
 
-    def get_queryset(self):
+    def filter_qs(self, qs):
         data = self.search_data
-        qs = self.model.objects.all().annotate(**self.annotations)
-
-        # django-filter kan gøre det samme, men der er ingen grund til at
-        # overkomplicere tingene
-
         for field in self.search_fields_exact:  # præcist match
             if data.get(field, None) not in (None, ""):  # False er en gyldig værdi
                 qs = qs.filter(**{field: data[field]})
@@ -354,7 +351,10 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
                         if part
                     }
                 )
+        return qs
 
+    def sort_qs(self, qs):
+        data = self.search_data
         sort = data.get("sort", None)
         if sort:
             reverse = "-" if data.get("order", None) == "desc" else ""
@@ -362,7 +362,13 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
                 f"{reverse}{s}" for s in self.annotate_field(sort).split("_or_")
             ]
             qs = qs.order_by(*order_args)
+        return qs
 
+    def get_queryset(self):
+        qs = self.model.objects.all().annotate(**self.annotations)
+
+        qs = self.filter_qs(qs)
+        qs = self.sort_qs(qs)
         return qs
 
     def form_valid(self, form):
@@ -397,10 +403,22 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
             **{**kwargs, "actions_template": self.actions_template}
         )
 
+    def get_fields(self):
+        fields = [f.name for f in self.model._meta.fields]
+        return [f for f in fields if f not in self.excluded_fields]
+
+    def model_to_dict(self, item_obj):
+        model_dict = {"id": item_obj.id}
+        for field in self.get_fields():
+            value = getattr(item_obj, field, None)
+            model_dict[field] = getattr(value, "pk", value)
+
+        return model_dict
+
     def item_to_json_dict(
         self, item_obj: Any, context: Dict[str, Any], index: int
     ) -> Dict[str, Any]:
-        item = model_to_dict(item_obj)
+        item = self.model_to_dict(item_obj)
         return {
             key: self.map_value(item, key, context)
             for key in list(item.keys()) + ["actions"]
@@ -420,6 +438,62 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
                 self.request,
             )
         return item[key]
+
+
+class CompanySearchView(PermissionRequiredMixin, SearchView):
+    template_name = "esani_pantportal/company/list.html"
+    actions_template = "esani_pantportal/company/actions.html"
+    model = AbstractCompany
+    form_class = CompanyFilterForm
+
+    search_fields = ["name", "address", "postal_code", "city"]
+    search_fields_exact = ["object_class_name"]
+
+    # Municipality is not mandatory for Company objs
+    # It is excluded to avoid problems with the joined queryset
+    excluded_fields = ["municipality"]
+
+    def get_fields(self):
+        fields = super().get_fields()
+        return fields + ["object_class_name", "object_class_name_verbose"]
+
+    def check_permissions(self):
+        if not self.request.user.is_esani_admin:
+            return self.access_denied
+        else:
+            return super().check_permissions()
+
+    def get_queryset(self):
+        fields = super().get_fields()
+        qs = [
+            Kiosk.objects.only(*fields).annotate(
+                object_class_name=Value("Kiosk"),
+                object_class_name_verbose=Value("Kiosk"),
+                **self.annotations,
+            ),
+            Company.objects.only(*fields).annotate(
+                object_class_name=Value("Company"),
+                object_class_name_verbose=Value("Virksomhed"),
+                **self.annotations,
+            ),
+            CompanyBranch.objects.only(*fields).annotate(
+                object_class_name=Value("CompanyBranch"),
+                object_class_name_verbose=Value("Butik"),
+                **self.annotations,
+            ),
+        ]
+
+        for i in range(len(qs)):
+            qs[i] = self.filter_qs(qs[i])
+
+        return self.sort_qs(qs[0].union(qs[1], qs[2], all=True).order_by("name"))
+
+    def map_value(self, item, key, context):
+        value = super().map_value(item, key, context)
+
+        if key == "object_class_name_verbose":
+            value = _(value)
+        return value or "-"
 
 
 class ProductSearchView(SearchView):
@@ -574,8 +648,6 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
 
         if key == "approved":
             value = _("Ja") if value else _("Nej")
-        elif key == "groups":
-            value = str(value)
         elif key == "user_type":
             value = user_type(value)
         return value
@@ -590,17 +662,37 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
         return qs
 
 
-class BaseCompanyUpdateView(PermissionRequiredMixin, UpdateView):
-    template_name = "esani_pantportal/company/form.html"
+class BaseCompanyUpdateView(UpdateViewMixin):
+    template_name = "esani_pantportal/company/view.html"
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context["back_url"] = get_back_url(self.request, "")
+        context["users"] = self.object.users.all()
+
+        return context
 
     def get_success_url(self):
-        return unquote(self.request.GET.get("back", ""))
+        return self.request.get_full_path()
 
 
 class CompanyUpdateView(BaseCompanyUpdateView):
     required_permissions = ["esani_pantportal.change_company"]
     model = Company
     form_class = UpdateCompanyForm
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context["delete_url"] = reverse(
+            "pant:company_delete", kwargs={"pk": self.object.pk}
+        )
+        context["branches"] = self.object.branches.all()
+        context["object_type"] = "company"
+
+        if not context["users"] and not context["branches"]:
+            context["can_delete"] = True
+
+        return context
 
     def check_permissions(self):
         if self.request.user.is_esani_admin or self.same_company:
@@ -613,6 +705,26 @@ class CompanyBranchUpdateView(BaseCompanyUpdateView):
     required_permissions = ["esani_pantportal.change_companybranch"]
     model = CompanyBranch
     form_class = UpdateBranchForm
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context["delete_url"] = reverse(
+            "pant:company_branch_delete", kwargs={"pk": self.object.pk}
+        )
+        context["refund_methods"] = self.object.refund_methods.all()
+        context["object_type"] = "company_branch"
+        if not context["users"] and not context["refund_methods"]:
+            context["can_delete"] = True
+
+        return context
+
+    def form_valid(self, form):
+        if "company" in form.changed_data and not self.request.user.is_esani_admin:
+            raise ValidationError(
+                "Only ESANI admins may change the parent-company of a branch"
+            )
+
+        return super().form_valid(form)
 
     def check_permissions(self):
         company = self.request.user.company
@@ -628,6 +740,17 @@ class KioskUpdateView(BaseCompanyUpdateView):
     required_permissions = ["esani_pantportal.change_kiosk"]
     model = Kiosk
     form_class = UpdateKioskForm
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context["delete_url"] = reverse(
+            "pant:kiosk_delete", kwargs={"pk": self.object.pk}
+        )
+        context["refund_methods"] = self.object.refund_methods.all()
+        context["object_type"] = "kiosk"
+        if not context["users"] and not context["refund_methods"]:
+            context["can_delete"] = True
+        return context
 
     def check_permissions(self):
         if self.request.user.is_esani_admin or self.same_branch:
@@ -726,33 +849,6 @@ class DepositPayoutSearchView(PermissionRequiredMixin, ListView, FormView):
         return int(self.request.GET.get("size", self.paginate_by))
 
 
-class UpdateViewMixin(PermissionRequiredMixin, UpdateView):
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["form_fields"] = list(context["form"].fields.keys())
-
-        if self.request.user.is_esani_admin:
-            context["can_approve"] = True
-            context["can_edit"] = True
-        else:
-            context["can_approve"] = False
-            context["can_edit"] = (
-                self.same_workplace
-                and self.has_permissions
-                and self.request.user.is_admin
-            )
-        return context
-
-    def form_invalid(self, form):
-        """
-        If the form is invalid, leave all input fields open.
-        This indicates that nothing was edited
-        """
-        context = self.get_context_data(form=form)
-        context["form_fields_to_show"] = form.changed_data
-        return self.render_to_response(context)
-
-
 class ProductUpdateView(UpdateViewMixin):
     model = Product
     template_name = "esani_pantportal/product/view.html"
@@ -777,7 +873,7 @@ class ProductUpdateView(UpdateViewMixin):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["back_url"] = self.request.GET.get("back", "")
+        context["back_url"] = get_back_url(self.request, "")
         if context["object"].approved and not self.request.user.is_esani_admin:
             context["can_edit"] = False
         qs = self.get_latest_relevant_history()
@@ -797,7 +893,7 @@ class ProductUpdateView(UpdateViewMixin):
         return super().form_valid(form)
 
     def get_success_url(self):
-        back_url = unquote(self.request.GET.get("back", ""))
+        back_url = get_back_url(self.request, reverse("pant:product_list"))
         approved = self.get_object().approved
         latest_history_qs = self.get_latest_relevant_history()
         recently_approved = bool(
@@ -811,10 +907,7 @@ class ProductUpdateView(UpdateViewMixin):
                 return self.request.get_full_path()
             else:
                 update_change_reason(self.get_object(), "Godkendt")
-            if back_url:
-                return remove_parameter_from_url(back_url, "json")
-            else:
-                return reverse("pant:product_list")
+            return back_url
         else:
             if recently_approved:
                 update_change_reason(self.get_object(), "Gjort Inaktiv")
@@ -926,6 +1019,27 @@ class UserDeleteView(SameCompanyMixin, DeleteView):
             return redirect(reverse("pant:login"))
         else:
             return super().form_valid(form)
+
+
+class BaseCompanyDeleteView(PermissionRequiredMixin, DeleteView):
+    def get_success_url(self):
+        back_url = get_back_url(self.request, reverse("pant:company_list"))
+        return add_parameters_to_url(back_url, {"delete_success": 1})
+
+
+class CompanyDeleteView(BaseCompanyDeleteView):
+    model = Company
+    required_permissions = ["esani_pantportal.delete_company"]
+
+
+class CompanyBranchDeleteView(BaseCompanyDeleteView):
+    model = CompanyBranch
+    required_permissions = ["esani_pantportal.delete_companybranch"]
+
+
+class KioskDeleteView(BaseCompanyDeleteView):
+    model = Kiosk
+    required_permissions = ["esani_pantportal.delete_kiosk"]
 
 
 class ChangePasswordView(PermissionRequiredMixin, PasswordChangeView):
@@ -1116,13 +1230,8 @@ class ProductDeleteView(PermissionRequiredMixin, DeleteView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        back_url = unquote(self.request.GET.get("back", ""))
-        return_url = (
-            remove_parameter_from_url(back_url, "json")
-            if back_url
-            else reverse("pant:product_list")
-        )
-        return add_parameters_to_url(return_url, {"delete_success": 1})
+        back_url = get_back_url(self.request, reverse("pant:product_list"))
+        return add_parameters_to_url(back_url, {"delete_success": 1})
 
 
 class RefundMethodDeleteView(PermissionRequiredMixin, DeleteView):

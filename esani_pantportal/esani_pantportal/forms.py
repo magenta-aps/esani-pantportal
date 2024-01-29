@@ -373,7 +373,7 @@ class UpdateBranchForm(forms.ModelForm, BootstrapForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.object_name = _("Butik")
+        self.object_verbose_name = _("Butik")
 
 
 class RegisterKioskForm(forms.ModelForm, BootstrapForm, PhoneForm):
@@ -420,7 +420,7 @@ class UpdateKioskForm(forms.ModelForm, BootstrapForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.object_name = _("Butik")
+        self.object_verbose_name = _("Kiosk")
 
 
 class RegisterCompanyForm(forms.ModelForm, BootstrapForm, PhoneForm):
@@ -463,7 +463,7 @@ class UpdateCompanyForm(forms.ModelForm, BootstrapForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.object_name = _("Virksomhed")
+        self.object_verbose_name = _("Virksomhed")
 
 
 class RegisterUserMultiForm(MultiModelForm, BootstrapForm):
@@ -781,6 +781,22 @@ class ProductFilterForm(SortPaginateForm):
         widget=forms.Select(
             choices=((None, "---------"), (True, _("Ja")), (False, _("Nej")))
         ),
+    )
+
+
+class CompanyFilterForm(SortPaginateForm):
+    name = forms.CharField(required=False)
+    address = forms.CharField(required=False)
+    postal_code = forms.CharField(required=False)
+    city = forms.CharField(required=False)
+    object_class_name = forms.ChoiceField(
+        choices=[
+            (None, "-"),
+            ("Kiosk", _("Kiosk")),
+            ("Company", _("Virksomhed")),
+            ("CompanyBranch", _("Butik")),
+        ],
+        required=False,
     )
 
 

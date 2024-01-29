@@ -14,7 +14,16 @@ SPDX-License-Identifier: MPL-2.0
                     <p class="card-text">
                         {{ delete_text }}
                     </p>
-                    <button id="delete_button" type="submit" name="Delete" class="btn btn-danger">
+
+                    <button id="delete_button"
+                            type="submit"
+                            name="Delete"
+                            {% if can_delete|default_if_none:True %}
+                            class="btn btn-danger"
+                            {% else %}
+                            class="btn btn-danger disabled"
+                            {% endif %}
+                            >
                         {% translate "Fjern" %}
                     </button>
                 </div>

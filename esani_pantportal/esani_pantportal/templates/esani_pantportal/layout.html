@@ -64,6 +64,7 @@ SPDX-License-Identifier: MPL-2.0
         <a class="p-2 text-muted" href="{% url 'pant:user_list' %}">{% translate "Brugere" %}</a>
         {% endif %}
         {% if user.is_esani_admin %}
+	<a class="p-2 text-muted" href="{% url 'pant:company_list' %}">{% translate "Virksomheder" %}</a>
         <a class="p-2 text-muted" href="{% url 'pant:deposit_payout_list' %}">{% translate "Udbetalinger" %}</a>
         {% endif %}
         <div class="dropdown p-2 ms-auto">

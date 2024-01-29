@@ -1,0 +1,121 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+{% load bootstrap_icons %}
+
+{# Docs for bootstrap-table: https://bootstrap-table.com/docs/ #}
+{% block extra_headers %}
+<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.css">
+<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.css">
+<script src="{% static 'jquery/pantportal.js' %}"></script>
+{% endblock %}
+
+{% block extra_footers %}
+<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
+<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
+<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/defer-url/bootstrap-table-defer-url.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<div class="mx-5">
+    <div class="row">
+        <div class="col-6">
+            <h1>{% translate "Virksomheder" %}</h1>
+        </div>
+    </div>
+    <form method="get">
+        <div class="row">
+            <div class="col-2">{% translate "Navn" %}</div>
+            <div class="col-4">{{form.name}}</div>
+        </div>
+        <div class="row">
+            <div class="col-2">{% translate "Adresse" %}</div>
+            <div class="col-4">{{form.address}}</div>
+        </div>
+        <div class="row">
+            <div class="col-2">{% translate "Postnr." %}</div>
+            <div class="col-4">{{form.postal_code}}</div>
+        </div>
+        <div class="row">
+            <div class="col-2">{% translate "By" %}</div>
+            <div class="col-4">{{form.city}}</div>
+        </div>
+        <div class="row">
+            <div class="col-2">{% translate "Virksomhedstype" %}</div>
+            <div class="col-4">{{form.object_class_name}}</div>
+        </div>
+        <div class="row">
+            <div class="col-6 clearfix"><button type="submit" class="btn btn-primary float-end">Søg</button></div>
+        </div>
+    </form>
+    <div class="card" id="delete_confirmation" style="display:none">
+        <div class="card-body text-center">
+            {% bs_icon "building-x" size="2em" %}
+            <div>
+                {% translate "Virksomhed fjernet" %}
+            </div>
+        </div>
+    </div>
+    <table id="table" class="table table-bordered table-striped mt-3"
+           data-toggle="table"
+           data-sticky-header="true"
+           data-classes="table"
+           data-data-field="items"
+           data-sortable="true"
+           data-pagination="true"
+           data-pagination-parts="['pageList']"
+           data-page-number="{{search_data.page_number}}"
+           data-page-size="{{search_data.limit}}"
+           data-side-pagination="server"
+           data-pagination-loop="false"
+           data-defer-url="{% url 'pant:company_list' %}?json=1"
+           data-query-params="queryParams"
+           data-row-style="rowStyle"
+           data-total-rows="{{total}}"
+           data-silent-sort="true" {# vil vi vise en loading-boks? #}
+           data-remember-order="true"
+    >
+        <thead>
+        <tr>
+            <th data-sortable="true" data-field="name" class="col-3">{% translate "Navn" %}</th>
+            <th data-sortable="true" data-field="address" class="col-3">{% translate "Adresse" %}</th>
+            <th data-sortable="true" data-field="postal_code" class="col-3">{% translate "Postnr." %}</th>
+            <th data-sortable="true" data-field="city" class="col-3">{% translate "By" %}</th>
+            <th data-sortable="true" data-field="object_class_name_verbose" class="col-3">{% translate "Type" %}</th>
+            <th data-field="actions" class="col-3">{% translate "Handlinger" %}</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in items %}
+        <tr>
+            <td>{{item.name}}</td>
+            <td>{{item.address}}</td>
+            <td>{{item.postal_code}}</td>
+            <td>{{item.city}}</td>
+            <td>{{item.object_class_name_verbose}}</td>
+            <td>
+                {% include actions_template with item=item %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{{search_data|json_script:"search_data"}}
+
+<script>
+var delete_success = getUrlParameter("delete_success");
+if (delete_success=="1"){
+    $("#delete_confirmation").show()
+    }
+</script>
+
+{% endblock %}
