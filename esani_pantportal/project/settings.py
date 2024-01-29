@@ -297,3 +297,8 @@ CAPTCHA_FONT_SIZE = 33
 
 # When set to True, the string “PASSED” (any case) will be accepted as a valid response to any CAPTCHA. Use this for testing purposes.
 CAPTCHA_TEST_MODE = TESTING
+
+if TESTING:
+    import logging
+
+    logging.disable(logging.CRITICAL)
