@@ -10,7 +10,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from esani_pantportal.forms import (
-    RegisterBranchUserMultiForm,
+    RegisterCompanyBranchUserMultiForm,
     RegisterCompanyUserMultiForm,
     RegisterKioskUserMultiForm,
 )
@@ -187,7 +187,7 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
 
     def test_create_admin_user(self):
         user_data = self.make_user_data()
-        form = RegisterBranchUserMultiForm(user_data)
+        form = RegisterCompanyBranchUserMultiForm(user_data)
         self.assertEquals(form.is_valid(), True)
 
         user = form.save()
@@ -198,7 +198,7 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
     def test_create_non_admin_user(self):
         user_data = self.make_user_data()
         user_data["user-admin"] = False
-        form = RegisterBranchUserMultiForm(user_data)
+        form = RegisterCompanyBranchUserMultiForm(user_data)
         self.assertEquals(form.is_valid(), True)
 
         user = form.save()
@@ -211,7 +211,7 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         user_data = self.make_user_data(include_company_data=False)
         user_data["branch-company"] = self.existing_company.pk
 
-        form = RegisterBranchUserMultiForm(user_data)
+        form = RegisterCompanyBranchUserMultiForm(user_data)
         self.assertEquals(form.is_valid(), True)
 
         user = form.save()
@@ -226,7 +226,7 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         user_data["branch-company"] = self.existing_company.pk
         user_data["user-branch"] = self.existing_branch.pk
 
-        form = RegisterBranchUserMultiForm(user_data)
+        form = RegisterCompanyBranchUserMultiForm(user_data)
         self.assertEquals(form.is_valid(), True)
 
         user = form.save()
@@ -241,36 +241,40 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         user_data["branch-company"] = self.existing_company.pk
         user_data["user-branch"] = self.existing_branch2.pk
 
-        form = RegisterBranchUserMultiForm(user_data)
+        form = RegisterCompanyBranchUserMultiForm(user_data)
         self.assertEquals(form.is_valid(), False)
         self.assertIn(
             "Denne butik har allerede en admin bruger", str(form.crossform_errors)
         )
 
-        form = RegisterBranchUserMultiForm(user_data, allow_multiple_admins=True)
+        form = RegisterCompanyBranchUserMultiForm(user_data, allow_multiple_admins=True)
         self.assertEquals(form.is_valid(), True)
 
     def test_no_company_selected(self):
         user_data = self.make_user_data(include_company_data=False)
-        form = RegisterBranchUserMultiForm(user_data)
+        form = RegisterCompanyBranchUserMultiForm(user_data)
         self.assertEquals(form.is_valid(), False)
         self.assertEqual(form.errors["branch-company"], ["Dette felt må ikke være tom"])
 
     def test_company_speficied(self):
         user_data = self.make_user_data()
-        form = RegisterBranchUserMultiForm(user_data, company=self.existing_company)
+        form = RegisterCompanyBranchUserMultiForm(
+            user_data, company=self.existing_company
+        )
         self.assertEqual(form.forms["branch"].initial["company"], self.existing_company)
 
     def test_branch_speficied(self):
         user_data = self.make_user_data()
-        form = RegisterBranchUserMultiForm(user_data, branch=self.existing_branch)
+        form = RegisterCompanyBranchUserMultiForm(
+            user_data, branch=self.existing_branch
+        )
         self.assertEqual(form.forms["user"].initial["branch"], self.existing_branch)
 
     def test_no_branch_selected(self):
         user_data = self.make_user_data(
             include_company_data=False, include_branch_data=False
         )
-        form = RegisterBranchUserMultiForm(user_data)
+        form = RegisterCompanyBranchUserMultiForm(user_data)
         self.assertEquals(form.is_valid(), False)
         self.assertEqual(form.errors["branch-company"], ["Dette felt må ikke være tom"])
         self.assertEqual(form.errors["user-branch"], ["Dette felt må ikke være tom"])
@@ -281,7 +285,7 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         # These fields are not mandatory
         user_data["branch-customer_id"] = None
 
-        form = RegisterBranchUserMultiForm(user_data)
+        form = RegisterCompanyBranchUserMultiForm(user_data)
         self.assertEquals(form.is_valid(), True)
 
     def test_empty_fields_failure(self):
@@ -291,7 +295,7 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         user_data["company-cvr"] = None
         user_data["branch-phone"] = None
 
-        form = RegisterBranchUserMultiForm(user_data)
+        form = RegisterCompanyBranchUserMultiForm(user_data)
         self.assertEquals(form.is_valid(), False)
 
         self.assertEqual(form.errors["company-cvr"], ["Dette felt må ikke være tom"])
@@ -303,7 +307,7 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         # These fields are mandatory
         user_data["user-password2"] = "wrong_password"
 
-        form = RegisterBranchUserMultiForm(user_data)
+        form = RegisterCompanyBranchUserMultiForm(user_data)
         self.assertEquals(form.is_valid(), False)
         self.assertEqual(form.errors["user-password2"], ["Adgangskoder er ikke ens"])
 
@@ -314,7 +318,7 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         user_data["user-password2"] = "badpw"
         user_data["user-password"] = "badpw"
 
-        form = RegisterBranchUserMultiForm(user_data)
+        form = RegisterCompanyBranchUserMultiForm(user_data)
         self.assertEquals(form.is_valid(), False)
 
         self.assertEqual(

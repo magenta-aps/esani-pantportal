@@ -247,7 +247,7 @@ class RegisterAdminUserForm(RegisterUserForm):
     captcha = CaptchaField()
 
 
-class RegisterBranchUserForm(RegisterAdminUserForm):
+class RegisterCompanyBranchUserForm(RegisterAdminUserForm):
     class Meta:
         model = BranchUser
         fields = (
@@ -329,7 +329,7 @@ class RegisterEsaniUserForm(RegisterUserForm):
         }
 
 
-class RegisterBranchForm(forms.ModelForm, BootstrapForm, PhoneForm):
+class RegisterCompanyBranchForm(forms.ModelForm, BootstrapForm, PhoneForm):
     class Meta:
         model = CompanyBranch
         fields = (
@@ -575,10 +575,10 @@ class RegisterUserMultiForm(MultiModelForm, BootstrapForm):
         return user
 
 
-class RegisterBranchUserMultiForm(RegisterUserMultiForm):
+class RegisterCompanyBranchUserMultiForm(RegisterUserMultiForm):
     form_classes = {
-        "user": RegisterBranchUserForm,
-        "branch": RegisterBranchForm,
+        "user": RegisterCompanyBranchUserForm,
+        "branch": RegisterCompanyBranchForm,
         "company": RegisterCompanyForm,
     }
     parent_form_dict = {"branch": "user", "company": "branch"}
