@@ -11,6 +11,7 @@ from django import forms
 from django.http import HttpRequest
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
+from django.utils.timezone import make_aware
 
 from esani_pantportal.forms import ProductFilterForm
 from esani_pantportal.models import (
@@ -248,7 +249,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         cls.job = ImportJob.objects.create(
             imported_by=cls.user,
             file_name="dummy_products.csv",
-            date=datetime.datetime(2020, 1, 1),
+            date=make_aware(datetime.datetime(2020, 1, 1)),
         )
         cls.prod1 = Product.objects.create(
             product_name="prod1",
@@ -428,7 +429,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
         cls.job = ImportJob.objects.create(
             imported_by=importer,
             file_name="dummy_products.csv",
-            date=datetime.datetime(2020, 1, 1),
+            date=make_aware(datetime.datetime(2020, 1, 1)),
         )
         cls.prod1 = Product.objects.create(
             product_name="prod1",
