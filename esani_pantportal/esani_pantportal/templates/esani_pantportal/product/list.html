@@ -235,7 +235,9 @@ const approveButton = $("#approve_button");
 const deleteButton = $("#delete_button");
 
 function getRowId(row){
-    return row.find('td:first').find('input:first').val()
+    rowId = row.find('td:first').find('input:first').val();
+    // Remove spurious "." that causes type error.
+    return rowId.split(".").join("")
 };
 
 function getUnapprovedRows(){
