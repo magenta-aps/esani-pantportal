@@ -82,22 +82,22 @@ SPDX-License-Identifier: MPL-2.0
             {% if object_type == "company_branch" or object_type == "kiosk" %}
                 <h2>
                     {% translate "Pantmaskiner" %}
-                    <a href="{% url 'pant:refund_method_list' %}?branch__name={{object.name|quote_url}}">{% bs_icon "box-arrow-up-right" %}</a>
+                    <a href="{% url 'pant:rvm_list' %}?branch__name={{object.name|quote_url}}">{% bs_icon "box-arrow-up-right" %}</a>
                 </h2>
 
                 <table class="table table-bordered">
                     <tbody>
-                    {% for refund_method in refund_methods %}
+                    {% for rvm in rvms %}
                         <tr>
-                            <th>{{ refund_method.serial_number }}</th>
+                            <th>{{ rvm.serial_number }}</th>
                             <td>
-                            <span title="{{refund_method|verbose_name:'compensation'}}">
-                            {{ refund_method.compensation }} kr.
+                            <span title="{{rvm|verbose_name:'compensation'}}">
+                            {{ rvm.compensation }} kr.
                             </span>
                             </td>
                         </tr>
                     {% endfor %}
-                    {% if not refund_methods %}
+                    {% if not rvms %}
                         <tr>
                             <th>-</th>
                             <td>-</td>

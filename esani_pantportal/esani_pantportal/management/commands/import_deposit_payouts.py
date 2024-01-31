@@ -17,7 +17,7 @@ from esani_pantportal.models import (
     DepositPayout,
     DepositPayoutItem,
     Product,
-    RefundMethod,
+    ReverseVendingMachine,
 )
 
 
@@ -129,23 +129,23 @@ class Command(BaseCommand):
             ]
         )
 
-    def _get_refund_method_from_rvm_serial(self, rvm_serial):
+    def _get_rvm_from_rvm_serial(self, rvm_serial):
         try:
-            refund_method = RefundMethod.objects.get(serial_number=str(rvm_serial))
-        except RefundMethod.DoesNotExist:
+            rvm = ReverseVendingMachine.objects.get(serial_number=str(rvm_serial))
+        except ReverseVendingMachine.DoesNotExist:
             self.stderr.write(f"Encountered unknown RVM serial number {rvm_serial}")
         else:
-            return refund_method
+            return rvm
 
     def _get_kiosk_from_rvm_serial(self, rvm_serial):
-        refund_method = self._get_refund_method_from_rvm_serial(rvm_serial)
-        if refund_method:
-            return refund_method.kiosk
+        rvm = self._get_rvm_from_rvm_serial(rvm_serial)
+        if rvm:
+            return rvm.kiosk
 
     def _get_company_branch_from_rvm_serial(self, rvm_serial):
-        refund_method = self._get_refund_method_from_rvm_serial(rvm_serial)
-        if refund_method:
-            return refund_method.branch
+        rvm = self._get_rvm_from_rvm_serial(rvm_serial)
+        if rvm:
+            return rvm.branch
 
     def _get_product_from_barcode(self, barcode):
         try:

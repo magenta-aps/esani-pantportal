@@ -15,7 +15,7 @@ from esani_pantportal.models import (  # isort: skip
     KioskUser,
     Product,
     QRBag,
-    RefundMethod,
+    ReverseVendingMachine,
     SentEmail,
     User,
     Kiosk,
@@ -69,8 +69,8 @@ class Command(BaseCommand):
             CompanyUser, for_concrete_model=False
         )
         user_model = ContentType.objects.get_for_model(User, for_concrete_model=False)
-        refund_method_model = ContentType.objects.get_for_model(
-            RefundMethod, for_concrete_model=False
+        rvm_model = ContentType.objects.get_for_model(
+            ReverseVendingMachine, for_concrete_model=False
         )
         deposit_payout_model = ContentType.objects.get_for_model(
             DepositPayout, for_concrete_model=False
@@ -110,10 +110,10 @@ class Command(BaseCommand):
             ("add", company_user_model),
             ("change", company_user_model),
             ("delete", company_user_model),
-            ("view", refund_method_model),
-            ("add", refund_method_model),
-            ("change", refund_method_model),
-            ("delete", refund_method_model),
+            ("view", rvm_model),
+            ("add", rvm_model),
+            ("change", rvm_model),
+            ("delete", rvm_model),
             ("view", qrbagmodel),
             ("change", qrbagmodel),
             ("view", company_model),
@@ -133,10 +133,10 @@ class Command(BaseCommand):
             ("change", branch_user_model),
             ("delete", branch_user_model),
             ("view", user_model),
-            ("view", refund_method_model),
-            ("add", refund_method_model),
-            ("change", refund_method_model),
-            ("delete", refund_method_model),
+            ("view", rvm_model),
+            ("add", rvm_model),
+            ("change", rvm_model),
+            ("delete", rvm_model),
             ("view", qrbagmodel),
             ("add", qrbagmodel),
             ("change", qrbagmodel),
@@ -157,10 +157,10 @@ class Command(BaseCommand):
             ("change", kiosk_user_model),
             ("delete", kiosk_user_model),
             ("view", user_model),
-            ("view", refund_method_model),
-            ("add", refund_method_model),
-            ("change", refund_method_model),
-            ("delete", refund_method_model),
+            ("view", rvm_model),
+            ("add", rvm_model),
+            ("change", rvm_model),
+            ("delete", rvm_model),
             ("view", qrbagmodel),
             ("add", qrbagmodel),
             ("change", qrbagmodel),
@@ -221,10 +221,10 @@ class Command(BaseCommand):
             ("add", kiosk_user_model),
             ("change", kiosk_user_model),
             ("delete", kiosk_user_model),
-            ("view", refund_method_model),
-            ("add", refund_method_model),
-            ("change", refund_method_model),
-            ("delete", refund_method_model),
+            ("view", rvm_model),
+            ("add", rvm_model),
+            ("change", rvm_model),
+            ("delete", rvm_model),
             ("view", qrbagmodel),
             ("change", qrbagmodel),
             ("add", email_model),

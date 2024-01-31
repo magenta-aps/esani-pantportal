@@ -12,7 +12,7 @@ $("#delete_button_{{item.id}}").on("click", function () {
     if (confirmed){
         $.ajax({
             type: "POST",
-            url: "{% url 'pant:refund_method_delete' item.id %}",
+            url: "{% url 'pant:rvm_delete' item.id %}",
             data: {csrfmiddlewaretoken : "{{ csrf_token }}"},
             success: function(){
                 $table.bootstrapTable("refresh");

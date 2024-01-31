@@ -13,7 +13,7 @@ from esani_pantportal.models import (
     CompanyBranch,
     Kiosk,
     KioskUser,
-    RefundMethod,
+    ReverseVendingMachine,
 )
 
 from .conftest import LoginMixin
@@ -133,7 +133,7 @@ class CompanyDeleteTest(BaseCompanyTest):
         )
 
         # Add refund machine to facebook_branch (so facebook branch cannot be deleted)
-        cls.facebook_branch_refund_method = RefundMethod.objects.create(
+        cls.facebook_branch_rvm = ReverseVendingMachine.objects.create(
             compensation=300,
             serial_number="",
             branch=cls.facebook_branch,
@@ -163,7 +163,7 @@ class CompanyDeleteTest(BaseCompanyTest):
             self.client.post(reverse("pant:company_delete", kwargs={"pk": pk}))
 
         # Removing the branch allows deleting the company
-        self.facebook_branch_refund_method.delete()
+        self.facebook_branch_rvm.delete()
         self.facebook_branch.delete()
         self.check_delete_flag(pk, "company")
         response = self.client.post(reverse("pant:company_delete", kwargs={"pk": pk}))
@@ -178,7 +178,7 @@ class CompanyDeleteTest(BaseCompanyTest):
             self.client.post(reverse("pant:company_branch_delete", kwargs={"pk": pk}))
 
         # Removing the refund machine allows deleting the branch
-        self.facebook_branch_refund_method.delete()
+        self.facebook_branch_rvm.delete()
         self.check_delete_flag(pk, "company_branch")
         response = self.client.post(
             reverse("pant:company_branch_delete", kwargs={"pk": pk})
