@@ -3,10 +3,12 @@
 # SPDX-License-Identifier: MPL-2.0
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db.utils import IntegrityError
+from django.db import connection
+from django.db.utils import IntegrityError, ProgrammingError
 from django.test import SimpleTestCase, TestCase
 
 from esani_pantportal.models import (
+    AbstractCompany,
     BranchUser,
     Company,
     CompanyBranch,
@@ -100,6 +102,40 @@ class QRCodeIntervalTest(TestCase):
         self.assertIn("foo", str(qr_interval))
 
 
+class TestAbstractCompany(TestCase):
+    # This test creates a model deriving from `AbstractCompany` in order to be able to
+    # test its properties, methods, etc.
+
+    class DerivedModel(AbstractCompany):
+        pass
+
+    @classmethod
+    def setUpClass(cls):
+        # Inspiration: https://stackoverflow.com/a/64051797
+        try:
+            with connection.schema_editor() as schema_editor:
+                schema_editor.create_model(cls.DerivedModel)
+            super().setUpClass()
+        except ProgrammingError:
+            pass
+
+    @classmethod
+    def tearDownClass(cls):
+        # Inspiration: https://stackoverflow.com/a/64051797
+        with connection.schema_editor() as schema_editor:
+            schema_editor.delete_model(cls.DerivedModel)
+        super().tearDownClass()
+
+    def test_external_customer_id_checks_attribute(self):
+        """
+        Test that property raises `AttributeError` if derived class does not define the
+        required `customer_id_prefix` attribute.
+        """
+        instance = self.DerivedModel()
+        with self.assertRaises(AttributeError):
+            instance.external_customer_id
+
+
 class KioskTest(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -114,6 +150,9 @@ class KioskTest(TestCase):
     def test_get_company(self):
         self.assertEqual(self.kiosk.get_company(), None)
 
+    def test_external_customer_id(self):
+        self.assertEqual(self.kiosk.external_customer_id, f"3-{self.kiosk.id:05}")
+
 
 class CompanyTest(TestCase):
     @classmethod
@@ -125,6 +164,9 @@ class CompanyTest(TestCase):
 
     def test_get_company(self):
         self.assertEqual(self.company.get_company(), self.company)
+
+    def test_external_customer_id(self):
+        self.assertEqual(self.company.external_customer_id, f"1-{self.company.id:05}")
 
 
 class CompanyBranchTest(TestCase):
@@ -138,6 +180,9 @@ class CompanyBranchTest(TestCase):
 
     def test_get_company(self):
         self.assertEqual(self.branch.get_company(), self.company)
+
+    def test_external_customer_id(self):
+        self.assertEqual(self.branch.external_customer_id, f"2-{self.branch.id:05}")
 
 
 class DepositPayoutTest(TestCase):

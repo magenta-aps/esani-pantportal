@@ -145,16 +145,18 @@ class AbstractCompany(models.Model):
         default=None,
     )
 
-    esani_customer_id = models.PositiveIntegerField(
-        verbose_name=_("Konto"),
-        help_text=_("Butikkens kontonummer hos ESANI (udfyldes af ESANI)"),
-        null=True,
-        blank=True,
-        default=None,
-    )
+    @property
+    def external_customer_id(self):
+        if not hasattr(self, "customer_id_prefix"):
+            raise AttributeError(
+                f"{self.__class__.__name__} has no `customer_id_prefix` attribute"
+            )
+        return f"{self.customer_id_prefix}-{self.id:05}"
 
 
 class Company(AbstractCompany):
+    customer_id_prefix = "1"
+
     cvr = models.PositiveIntegerField(
         verbose_name=_("CVR-nummer"),
         help_text=_("CVR Nummer"),
@@ -231,6 +233,8 @@ class Branch(AbstractCompany):
 
 
 class CompanyBranch(Branch):
+    customer_id_prefix = "2"
+
     class Meta:
         verbose_name = _("Butik")
         verbose_name_plural = _("Butikker")
@@ -254,6 +258,8 @@ class CompanyBranch(Branch):
 
 
 class Kiosk(Branch):
+    customer_id_prefix = "3"
+
     class Meta:
         verbose_name = _("Kiosk")
         verbose_name_plural = _("Kiosker")
