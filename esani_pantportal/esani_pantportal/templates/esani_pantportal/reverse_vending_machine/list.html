@@ -58,7 +58,7 @@ SPDX-License-Identifier: MPL-2.0
            data-page-size="{{search_data.limit}}"
            data-side-pagination="server"
            data-pagination-loop="false"
-           data-defer-url="{% url 'pant:refund_method_list' %}?json=1"
+           data-defer-url="{% url 'pant:rvm_list' %}?json=1"
            data-query-params="queryParams"
            data-row-style="rowStyle"
            data-total-rows="{{total}}"
@@ -87,7 +87,7 @@ SPDX-License-Identifier: MPL-2.0
         {% endfor %}
         </tbody>
     </table>
-    <a href="{% url 'pant:refund_method_register' %}" class="btn btn-sm btn-primary">+</a>
+    <a href="{% url 'pant:rvm_register' %}" class="btn btn-sm btn-primary">+</a>
 </div>
 {{search_data|json_script:"search_data"}}
 {% endblock %}

@@ -49,12 +49,12 @@ from esani_pantportal.forms import (
     ProductFilterForm,
     ProductRegisterForm,
     ProductUpdateForm,
-    RefundMethodFilterForm,
-    RefundMethodRegisterForm,
     RegisterCompanyBranchUserMultiForm,
     RegisterCompanyUserMultiForm,
     RegisterEsaniUserForm,
     RegisterKioskUserMultiForm,
+    ReverseVendingMachineFilterForm,
+    ReverseVendingMachineRegisterForm,
     SetPasswordForm,
     UpdateBranchForm,
     UpdateCompanyForm,
@@ -78,7 +78,7 @@ from esani_pantportal.models import (
     Kiosk,
     KioskUser,
     Product,
-    RefundMethod,
+    ReverseVendingMachine,
     User,
 )
 from esani_pantportal.templatetags.pant_tags import danish, material, shape, user_type
@@ -133,14 +133,14 @@ class ProductRegisterView(PermissionRequiredMixin, CreateView):
         return reverse("pant:product_register_success")
 
 
-class RefundMethodRegisterView(PermissionRequiredMixin, CreateView):
-    model = RefundMethod
-    form_class = RefundMethodRegisterForm
-    template_name = "esani_pantportal/refund_method/form.html"
-    required_permissions = ["esani_pantportal.add_refundmethod"]
+class ReverseVendingMachineRegisterView(PermissionRequiredMixin, CreateView):
+    model = ReverseVendingMachine
+    form_class = ReverseVendingMachineRegisterForm
+    template_name = "esani_pantportal/reverse_vending_machine/form.html"
+    required_permissions = ["esani_pantportal.add_reversevendingmachine"]
 
     def get_success_url(self):
-        return reverse("pant:refund_method_list")
+        return reverse("pant:rvm_list")
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -540,12 +540,12 @@ class ProductSearchView(SearchView):
         return context
 
 
-class RefundMethodSearchView(PermissionRequiredMixin, SearchView):
-    template_name = "esani_pantportal/refund_method/list.html"
-    actions_template = "esani_pantportal/refund_method/actions.html"
-    model = RefundMethod
-    form_class = RefundMethodFilterForm
-    required_permissions = ["esani_pantportal.view_refundmethod"]
+class ReverseVendingMachineSearchView(PermissionRequiredMixin, SearchView):
+    template_name = "esani_pantportal/reverse_vending_machine/list.html"
+    actions_template = "esani_pantportal/reverse_vending_machine/actions.html"
+    model = ReverseVendingMachine
+    form_class = ReverseVendingMachineFilterForm
+    required_permissions = ["esani_pantportal.view_reversevendingmachine"]
 
     search_fields = ["serial_number"]
 
@@ -711,9 +711,9 @@ class CompanyBranchUpdateView(BaseCompanyUpdateView):
         context["delete_url"] = reverse(
             "pant:company_branch_delete", kwargs={"pk": self.object.pk}
         )
-        context["refund_methods"] = self.object.refund_methods.all()
+        context["rvms"] = self.object.rvms.all()
         context["object_type"] = "company_branch"
-        if not context["users"] and not context["refund_methods"]:
+        if not context["users"] and not context["rvms"]:
             context["can_delete"] = True
 
         return context
@@ -746,9 +746,9 @@ class KioskUpdateView(BaseCompanyUpdateView):
         context["delete_url"] = reverse(
             "pant:kiosk_delete", kwargs={"pk": self.object.pk}
         )
-        context["refund_methods"] = self.object.refund_methods.all()
+        context["rvms"] = self.object.rvms.all()
         context["object_type"] = "kiosk"
-        if not context["users"] and not context["refund_methods"]:
+        if not context["users"] and not context["rvms"]:
             context["can_delete"] = True
         return context
 
@@ -1234,9 +1234,9 @@ class ProductDeleteView(PermissionRequiredMixin, DeleteView):
         return add_parameters_to_url(back_url, {"delete_success": 1})
 
 
-class RefundMethodDeleteView(PermissionRequiredMixin, DeleteView):
-    model = RefundMethod
-    required_permissions = ["esani_pantportal.delete_refundmethod"]
+class ReverseVendingMachineDeleteView(PermissionRequiredMixin, DeleteView):
+    model = ReverseVendingMachine
+    required_permissions = ["esani_pantportal.delete_reversevendingmachine"]
 
     def form_valid(self, form):
         if not self.request.user.is_esani_admin and not self.same_workplace:
@@ -1244,7 +1244,7 @@ class RefundMethodDeleteView(PermissionRequiredMixin, DeleteView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse("pant:refund_method_list")
+        return reverse("pant:rvm_list")
 
 
 class NewsEmailView(PermissionRequiredMixin, FormView):

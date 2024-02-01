@@ -5,7 +5,7 @@
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from esani_pantportal.models import CompanyBranch, Kiosk, RefundMethod
+from esani_pantportal.models import CompanyBranch, Kiosk, ReverseVendingMachine
 
 
 class Command(BaseCommand):
@@ -21,19 +21,19 @@ class Command(BaseCommand):
         brugseni_nuuk = CompanyBranch.objects.get(name="Brugseni Nuuk")
         nuuk_kiosk = Kiosk.objects.get(cvr=15787407)
 
-        RefundMethod.objects.update_or_create(
+        ReverseVendingMachine.objects.update_or_create(
             serial_number=100000000,
             defaults={"compensation": 2.3, "branch": brugseni_nuuk},
         )
-        RefundMethod.objects.update_or_create(
+        ReverseVendingMachine.objects.update_or_create(
             serial_number=110000000,
             defaults={"compensation": 2.1, "branch": brugseni_natalie},
         )
-        RefundMethod.objects.update_or_create(
+        ReverseVendingMachine.objects.update_or_create(
             serial_number=120000000,
             defaults={"compensation": 1.2, "branch": brugseni_natalie},
         )
-        RefundMethod.objects.update_or_create(
+        ReverseVendingMachine.objects.update_or_create(
             serial_number=130000000,
             defaults={"compensation": 2.6, "kiosk": nuuk_kiosk},
         )

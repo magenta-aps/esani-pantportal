@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
-from esani_pantportal.models import Kiosk, Product, RefundMethod
+from esani_pantportal.models import Kiosk, Product, ReverseVendingMachine
 
 
 class Command(BaseCommand):
@@ -19,14 +19,14 @@ class Command(BaseCommand):
                 + f"{settings.ENVIRONMENT}"
             )
 
-        # Add `RefundMethod` objects matching "Kamik" kiosk.
+        # Add `ReverseVendingMachine` objects matching "Kamik" kiosk.
         # This matches the RVM serial numbers in `example_with_valid_ids.csv`
         kamik = Kiosk.objects.get(cvr=15787407)
-        RefundMethod.objects.update_or_create(
+        ReverseVendingMachine.objects.update_or_create(
             kiosk=kamik,
             serial_number="3",
         )
-        RefundMethod.objects.update_or_create(
+        ReverseVendingMachine.objects.update_or_create(
             kiosk=kamik,
             serial_number="4",
         )

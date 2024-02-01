@@ -274,7 +274,7 @@ class Kiosk(Branch):
         return None
 
 
-class RefundMethod(models.Model):
+class ReverseVendingMachine(models.Model):
     class Meta:
         verbose_name = _("Pant metode")
         verbose_name_plural = _("Pant metoder")
@@ -303,7 +303,7 @@ class RefundMethod(models.Model):
         verbose_name=_("Afdeling"),
         help_text=_("Afdeling hvor denne maskine står"),
         on_delete=models.PROTECT,
-        related_name="refund_methods",
+        related_name="rvms",
         null=True,
         blank=True,
         default=None,
@@ -314,7 +314,7 @@ class RefundMethod(models.Model):
         verbose_name=_("Butik"),
         help_text=_("Butik hvor denne maskine står"),
         on_delete=models.PROTECT,
-        related_name="refund_methods",
+        related_name="rvms",
         null=True,
         blank=True,
         default=None,

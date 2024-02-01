@@ -33,7 +33,7 @@ from esani_pantportal.models import (
     Kiosk,
     KioskUser,
     Product,
-    RefundMethod,
+    ReverseVendingMachine,
     User,
     validate_barcode_length,
     validate_digit,
@@ -121,7 +121,7 @@ class UserUpdateForm(forms.ModelForm, BootstrapForm):
         )
 
 
-class RefundMethodRegisterForm(forms.ModelForm, BootstrapForm):
+class ReverseVendingMachineRegisterForm(forms.ModelForm, BootstrapForm):
     def __init__(self, *args, kiosks=None, branches=None, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -142,7 +142,7 @@ class RefundMethodRegisterForm(forms.ModelForm, BootstrapForm):
                 self.initial["branch"] = branches[0].pk
 
     class Meta:
-        model = RefundMethod
+        model = ReverseVendingMachine
         fields = (
             "compensation",
             "serial_number",
@@ -800,7 +800,7 @@ class CompanyFilterForm(SortPaginateForm):
     )
 
 
-class RefundMethodFilterForm(SortPaginateForm):
+class ReverseVendingMachineFilterForm(SortPaginateForm):
     serial_number = forms.CharField(required=False)
     branch__name = forms.CharField(required=False)
     kiosk__name = forms.CharField(required=False)

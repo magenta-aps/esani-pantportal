@@ -20,7 +20,7 @@ from esani_pantportal.models import (
     DepositPayoutItem,
     Kiosk,
     Product,
-    RefundMethod,
+    ReverseVendingMachine,
 )
 
 
@@ -29,8 +29,8 @@ class TestImportDepositPayouts(TestCase):
 
     kiosk_cvr = 1234
 
-    refund_method_1_serial_number = "3"
-    refund_method_2_serial_number = "4"
+    rvm_1_serial_number = "3"
+    rvm_2_serial_number = "4"
 
     product_barcode_1 = "839728179970"
     product_barcode_2 = "3662195622914"
@@ -42,15 +42,15 @@ class TestImportDepositPayouts(TestCase):
         # Add `Kiosk` object
         kiosk = Kiosk.objects.create(cvr=cls.kiosk_cvr)
 
-        # Add `RefundMethod` objects matching the RVM serial numbers in
+        # Add `ReverseVendingMachine` objects matching the RVM serial numbers in
         # `example_with_valid_ids.csv`.
-        RefundMethod.objects.update_or_create(
+        ReverseVendingMachine.objects.update_or_create(
             kiosk=kiosk,
-            serial_number=cls.refund_method_1_serial_number,
+            serial_number=cls.rvm_1_serial_number,
         )
-        RefundMethod.objects.update_or_create(
+        ReverseVendingMachine.objects.update_or_create(
             kiosk=kiosk,
-            serial_number=cls.refund_method_2_serial_number,
+            serial_number=cls.rvm_2_serial_number,
         )
 
         # Add `Product` objects matching the barcodes in `example_with_valid_ids.csv`
@@ -159,7 +159,7 @@ class TestImportDepositPayouts(TestCase):
                 kiosk__cvr=self.kiosk_cvr,
                 product__barcode=self.product_barcode_2,
                 location_id=2,
-                rvm_serial=int(self.refund_method_2_serial_number),
+                rvm_serial=int(self.rvm_2_serial_number),
                 barcode=self.product_barcode_2,
                 count=2,
             ),
@@ -169,7 +169,7 @@ class TestImportDepositPayouts(TestCase):
                 kiosk__cvr=self.kiosk_cvr,
                 product__barcode=self.product_barcode_2,
                 location_id=2,
-                rvm_serial=int(self.refund_method_2_serial_number),
+                rvm_serial=int(self.rvm_2_serial_number),
                 barcode=self.product_barcode_2,
                 count=200,
             ),
@@ -180,7 +180,7 @@ class TestImportDepositPayouts(TestCase):
                 kiosk__cvr=self.kiosk_cvr,
                 product__barcode=self.product_barcode_1,
                 location_id=2,
-                rvm_serial=int(self.refund_method_1_serial_number),
+                rvm_serial=int(self.rvm_1_serial_number),
                 barcode=self.product_barcode_1,
                 count=20,
             ),
@@ -190,7 +190,7 @@ class TestImportDepositPayouts(TestCase):
                 kiosk__cvr=self.kiosk_cvr,
                 product__barcode=self.product_barcode_1,
                 location_id=2,
-                rvm_serial=int(self.refund_method_1_serial_number),
+                rvm_serial=int(self.rvm_1_serial_number),
                 barcode=self.product_barcode_1,
                 count=500,
             ),
