@@ -444,7 +444,7 @@ class Product(models.Model):
     product_name = models.CharField(
         verbose_name=_("Produktnavn"),
         help_text=_("Navn på det pågældende produkt"),
-        max_length=200,
+        max_length=44,
     )
     barcode = models.CharField(
         verbose_name=_("Stregkode"),
