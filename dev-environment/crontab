@@ -8,4 +8,4 @@
 
   0 * * * * python manage.py export_approved_products_to_csv /srv/media/product_lists
   0 * * * * python manage.py import_deposit_payouts
-  0 * * * * python manage.py import_deposit_payouts_qrbag.py
+  0 * * * * python manage.py import_deposit_payouts_qrbag
