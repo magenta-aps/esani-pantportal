@@ -13,7 +13,7 @@ from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
-from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView
+from django.contrib.auth.views import LogoutView, PasswordChangeView
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.core.paginator import EmptyPage, Paginator
@@ -38,6 +38,7 @@ from django.views.generic import (
 )
 from project.settings import DEFAULT_FROM_EMAIL
 from simple_history.utils import bulk_update_with_history, update_change_reason
+from two_factor.views import LoginView, SetupView
 
 from esani_pantportal.forms import (
     ChangePasswordForm,
@@ -46,6 +47,7 @@ from esani_pantportal.forms import (
     MultipleProductRegisterForm,
     NewsEmailForm,
     PantPortalAuthenticationForm,
+    PantPortalAuthenticationTokenForm,
     ProductFilterForm,
     ProductRegisterForm,
     ProductUpdateForm,
@@ -103,8 +105,44 @@ class AboutView(TemplateView):
 
 
 class PantportalLoginView(LoginView):
-    template_name = "esani_pantportal/login.html"
-    form_class = PantPortalAuthenticationForm
+    AUTH_STEP = "auth"
+    TOKEN_STEP = "token"
+
+    form_list = (
+        (AUTH_STEP, PantPortalAuthenticationForm),
+        (TOKEN_STEP, PantPortalAuthenticationTokenForm),
+    )
+
+    def get_form_list(self):
+        form_list = super().get_form_list()
+
+        # In case we wish to bypass 2FA we should never go to the token step.
+        if settings.BYPASS_2FA and self.TOKEN_STEP in form_list:
+            del form_list[self.TOKEN_STEP]
+
+        return form_list
+
+    def get_form(self, step=None, data=None, files=None):
+        """
+        Returns the form for the step. Overwritten because the default method hard-codes
+        the form for the token-step as AuthenticationTokenForm instead of
+        PantPortalAuthenticationTokenForm
+        """
+        if step is None:
+            step = self.steps.current
+
+        form_class = self.get_form_list()[step]
+        kwargs = self.get_form_kwargs(step)
+        kwargs.update(
+            {
+                "data": data,
+                "files": files,
+                "prefix": self.get_form_prefix(step, form_class),
+                "initial": self.get_form_initial(step),
+            }
+        )
+
+        return form_class(**kwargs)
 
 
 class PantportalLogoutView(LogoutView):
@@ -1370,4 +1408,14 @@ class MultipleProductDeleteView(View, PermissionRequiredMixin):
                 "protected_products": protected_products_count,
                 "protected_products_message": protected_products_message,
             }
+        )
+
+
+class TwoFactorSetup(SetupView):
+    form_list = [("method", PantPortalAuthenticationTokenForm)]
+
+    def get_success_url(self):
+        return add_parameters_to_url(
+            reverse("pant:user_view", kwargs={"pk": self.request.user.id}),
+            {"two_factor_success": 1},
         )

@@ -11,6 +11,7 @@ SPDX-License-Identifier: MPL-2.0
 
 {% block extra_headers %}
 <script src="{% static 'jquery/detail_view.js' %}"></script>
+<script src="{% static 'jquery/pantportal.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -59,10 +60,24 @@ SPDX-License-Identifier: MPL-2.0
                             {% endif %}
                         </td>
                     </tr>
-
+                    {% if user.username == object.username %}
+                    <tr id="two_factor_row">
+                        <th>{% translate "To-faktor-godkendelse" %}</th>
+                        <td>
+                            {{user|has_two_factor}}
+                        </td>
+                    </tr>
+                    {% endif %}
                     </tbody>
                 </table>
-
+            <div class="card my-3" id="two_factor_confirmation" style="display:none">
+                <div class="card-body text-center">
+                    {% bs_icon "shield-check" size="2em" %}
+                    <div>
+                        {% translate "To-faktor-godkendelse er nu aktiv" %}
+                    </div>
+                </div>
+            </div>
 
             {% if can_edit %}
                 <div class="card">
@@ -159,6 +174,13 @@ SPDX-License-Identifier: MPL-2.0
 $("#delete_button").on('click', function () {
     return confirm("{% translate 'Er du sikker på at du vil fjerne denne bruger?' %}");
 });
+
+var two_factor_success = getUrlParameter("two_factor_success");
+if (two_factor_success=="1"){
+    $("#two_factor_confirmation").show();
+    $("#two_factor_row").addClass("table-success");
+    }
+
 </script>
 
 {% endblock %}

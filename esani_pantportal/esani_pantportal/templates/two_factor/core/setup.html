@@ -1,0 +1,25 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% extends "two_factor/_base_focus.html" %}
+{% load i18n %}
+
+{% block cardtitle %}{% trans "Aktivér To-faktor-godkendelse" %}{% endblock %}
+{% block content %}
+    <p>{% blocktrans trimmed %}For at begynde at bruge en token-generator skal du bruge
+    din smartphone til at scanne QR-koden nedenfor.
+    Brug for eksempel Authy eller Google Authenticator.{% endblocktrans %}</p>
+    <p><img src="{{ QR_URL }}" alt="QR Code" class="bg-white"/></p>
+    <p>{% blocktrans %}Indtast derefter koden, der er genereret af appen.{% endblocktrans %}</p>
+
+    <form action="" method="post">{% csrf_token %}
+        {% include "two_factor/_wizard_forms.html" %}
+
+        {# hidden submit button to enable [enter] key #}
+        <input type="submit" value="" hidden />
+
+        {% include "two_factor/_wizard_actions.html" %}
+    </form>
+{% endblock %}

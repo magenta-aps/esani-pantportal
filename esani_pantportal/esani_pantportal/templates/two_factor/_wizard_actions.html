@@ -1,0 +1,17 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% load i18n %}
+<div class="row my-1">
+<div class="col-12">
+
+{% if not wizard.steps.auth %}
+    <button type="submit" class="btn btn-primary">{% trans "Fortsæt" %}</button>
+{% else %}
+    <button type="submit" class="btn btn-primary float-end">{% trans "Login" %}</button>
+{% endif %}
+</div>
+</div>
+

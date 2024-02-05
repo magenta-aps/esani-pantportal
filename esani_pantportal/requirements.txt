@@ -28,3 +28,4 @@ requests==2.31.0
 pydantic==1.10.13
 datamodel-code-generator==0.25.2
 devtools==0.12.2
+django-two-factor-auth==1.15.5

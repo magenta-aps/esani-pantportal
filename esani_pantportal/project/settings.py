@@ -63,7 +63,11 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "simple_history",
     "phonenumber_field",
-    "captcha"
+    "captcha",
+    "django_otp",
+    "django_otp.plugins.otp_static",
+    "django_otp.plugins.otp_totp",
+    "two_factor",
     # "anymail",
 ]
 
@@ -79,6 +83,8 @@ MIDDLEWARE = [
     "simple_history.middleware.HistoryRequestMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django_otp.middleware.OTPMiddleware",
 ]
 
 ROOT_URLCONF = "project.urls"
@@ -194,7 +200,7 @@ EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", False)
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "pant@pant.gl")
 
 LOGIN_URL = "/login"
-LOGIN_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "/produkt/"
 LOGOUT_REDIRECT_URL = "/"
 
 DEFAULT_CSV_HEADER_DICT = {
@@ -302,3 +308,7 @@ if TESTING:
     import logging
 
     logging.disable(logging.CRITICAL)
+
+TWO_FACTOR_LOGIN_TIMEOUT = 0  # Never timeout
+TWO_FACTOR_REMEMBER_COOKIE_AGE = 30 * 24 * 60 * 60  # Re-authenticate once per month
+BYPASS_2FA = bool(strtobool(os.environ.get("BYPASS_2FA", "False")))

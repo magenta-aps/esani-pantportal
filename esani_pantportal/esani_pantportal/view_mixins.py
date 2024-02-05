@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from typing import Iterable, Optional
 
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.template.response import TemplateResponse
@@ -37,9 +38,23 @@ class PermissionRequiredMixin(LoginRequiredMixin):
             headers={"Cache-Control": "no-cache"},
         )
 
+    @property
+    def two_factor_setup_required(self):
+        return TemplateResponse(
+            request=self.request,
+            status=403,
+            template="two_factor/core/otp_required.html",
+        )
+
     def check_permissions(self) -> Optional[HttpResponse]:
         if not self.has_permissions:
             return self.access_denied
+        elif (
+            self.request.user.is_esani_admin
+            and not self.request.user.is_verified()
+            and not settings.BYPASS_2FA
+        ):
+            return self.two_factor_setup_required
         return None
 
     @property

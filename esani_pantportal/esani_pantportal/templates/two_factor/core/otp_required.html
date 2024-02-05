@@ -1,0 +1,19 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% extends "two_factor/_base_focus.html" %}
+{% load i18n %}
+
+{% block cardtitle %}{% translate 'Ingen adgang' %}{% endblock %}
+{% block content %}
+<p>
+{% translate 'Du skal logge ind med to-faktor-godkendelse for at kunne se denne side' %}
+</p>
+<p>
+    <a class="btn btn-secondary" href="javascript:history.back()">{% translate 'Tilbage' %}</a>
+    <a href="{% url 'pant:two_factor_setup' %}" class="btn btn-primary">
+    {% trans 'Aktivér to-faktor-godkendelse' %}</a>
+</p>
+{% endblock %}
