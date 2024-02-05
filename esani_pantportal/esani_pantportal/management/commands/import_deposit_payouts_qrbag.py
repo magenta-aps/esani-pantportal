@@ -66,23 +66,11 @@ class Command(BaseCommand):
             datum.consumer_session
             for datum in consumer_sessions.data
             if self._all_items_have_barcode(datum.consumer_session.items)
-            and self._session_matches_qr_bag(datum.consumer_session)
             and not self._session_is_already_imported(datum.consumer_session.id)
         ]
 
     def _all_items_have_barcode(self, items) -> bool:
         return all(it.product_code is not None for it in items) if items else False
-
-    def _session_matches_qr_bag(self, consumer_session: ConsumerSession) -> bool:
-        return (
-            consumer_session.identity is not None
-            and consumer_session.identity.consumer_identity is not None
-            and self._check_qr_bag_exists(consumer_session.identity.consumer_identity)
-        )
-
-    @cache
-    def _check_qr_bag_exists(self, consumer_identity: str) -> bool:
-        return QRBag.objects.filter(qr=consumer_identity).exists()
 
     @cache
     def _session_is_already_imported(self, consumer_session_id: UUID) -> bool:
@@ -110,12 +98,8 @@ class Command(BaseCommand):
             [
                 DepositPayoutItem(
                     deposit_payout=deposit_payout,
-                    company_branch=self._get_company_branch_from_qr_bag(
-                        consumer_session.identity.consumer_identity
-                    ),
-                    kiosk=self._get_kiosk_from_qr_bag(
-                        consumer_session.identity.consumer_identity
-                    ),
+                    company_branch=self._get_company_branch(consumer_session),
+                    kiosk=self._get_kiosk(consumer_session),
                     product=self._get_product_from_barcode(item.product_code),
                     barcode=item.product_code,
                     count=item.count,
@@ -123,7 +107,7 @@ class Command(BaseCommand):
                     rvm_serial=consumer_session.metadata.rvm.serial_number,
                     date=consumer_session.started_at,
                     consumer_session_id=consumer_session.id,
-                    consumer_identity=consumer_session.identity.consumer_identity,
+                    consumer_identity=self._get_consumer_identity(consumer_session),
                 )
                 for consumer_session in consumer_sessions
                 for item in consumer_session.items
@@ -147,16 +131,44 @@ class Command(BaseCommand):
         return datetime(val.year, val.month, val.day)
 
     @cache
-    def _get_qr_bag(self, bag_qr) -> QRBag:
-        return QRBag.objects.get(qr=bag_qr)
+    def _get_qr_bag(self, bag_qr) -> QRBag | None:
+        try:
+            return QRBag.objects.get(qr=bag_qr)
+        except QRBag.DoesNotExist:
+            self.stdout.write(f"No QRBag matches {bag_qr}")
 
-    @cache
-    def _get_company_branch_from_qr_bag(self, bag_qr) -> CompanyBranch | None:
-        return self._get_qr_bag(bag_qr).companybranch
+    def _get_consumer_identity(self, consumer_session: ConsumerSession):
+        try:
+            return consumer_session.identity.consumer_identity
+        except AttributeError:
+            # 'NoneType' object has no attribute 'consumer_identity'
+            pass
 
-    @cache
-    def _get_kiosk_from_qr_bag(self, bag_qr) -> Kiosk | None:
-        return self._get_qr_bag(bag_qr).kiosk
+    def _get_company_branch(
+        self, consumer_session: ConsumerSession
+    ) -> CompanyBranch | None:
+        try:
+            qr_bag = self._get_qr_bag(consumer_session.identity.consumer_identity)
+        except AttributeError:
+            # 'NoneType' object has no attribute 'consumer_identity'
+            self.stdout.write(
+                f"No `identity` in {consumer_session.id} ({consumer_session.metadata=}"
+            )
+        else:
+            if qr_bag:
+                return qr_bag.companybranch
+
+    def _get_kiosk(self, consumer_session: ConsumerSession) -> Kiosk | None:
+        try:
+            qr_bag = self._get_qr_bag(consumer_session.identity.consumer_identity)
+        except AttributeError:
+            # 'NoneType' object has no attribute 'consumer_identity'
+            self.stdout.write(
+                f"No `identity` in {consumer_session.id} ({consumer_session.metadata=}"
+            )
+        else:
+            if qr_bag:
+                return qr_bag.kiosk
 
     @cache
     def _get_product_from_barcode(self, barcode) -> Product | None:
