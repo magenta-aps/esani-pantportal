@@ -93,3 +93,8 @@ def constraints_string(key, unit):
 @register.filter
 def truefalse(boolean):
     return "true" if boolean else "false"
+
+
+@register.filter
+def has_two_factor(user):
+    return yesno(user.is_verified())

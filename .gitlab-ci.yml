@@ -165,6 +165,7 @@ Build ESANI-Pantportal image:
     DISABLE_METRICS: 'True'
     DJANGO_LANGUAGE_COOKIE_DOMAIN: localhost
     REST_DOMAIN: http://mocked_api/
+    BYPASS_2FA: 'True'
 
 
 .test-pantportal: &test-pantportal

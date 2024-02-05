@@ -17,6 +17,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 from phonenumber_field.widgets import PhonePrefixSelect
 from phonenumbers import country_code_for_region
+from two_factor.forms import AuthenticationTokenForm
 
 from esani_pantportal.form_mixins import BootstrapForm, MaxSizeFileField
 from esani_pantportal.models import (
@@ -51,6 +52,21 @@ class PantPortalAuthenticationForm(AuthenticationForm):
         super().confirm_login_allowed(user)
         if not user.approved:
             raise ValidationError("Bruger er ikke godkendt af en ESANI medarbejder")
+
+
+class PantPortalAuthenticationTokenForm(AuthenticationTokenForm):
+    def __init__(self, user, initial_device, **kwargs):
+        """
+        Overwritten to set a Danish label on the `remember` field.
+        """
+        super().__init__(user, initial_device, **kwargs)
+        self.fields["remember"] = forms.BooleanField(
+            required=False,
+            initial=True,
+            label=_("Husk mig på denne maskine i {days} dage").format(
+                days=int(settings.TWO_FACTOR_REMEMBER_COOKIE_AGE / 3600 / 24)
+            ),
+        )
 
 
 class ProductRegisterForm(forms.ModelForm, BootstrapForm):

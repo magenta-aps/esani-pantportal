@@ -41,6 +41,7 @@ from esani_pantportal.views import (
     ReverseVendingMachineRegisterView,
     ReverseVendingMachineSearchView,
     SetPasswordView,
+    TwoFactorSetup,
     UpdateProductViewPreferences,
     UserDeleteView,
     UserSearchView,
@@ -202,4 +203,5 @@ urlpatterns = [
     ),
     path("kiosk/<int:pk>", KioskUpdateView.as_view(), name="update_kiosk"),
     path("about/", AboutView.as_view(), name="about"),
+    path("two_factor/setup", TwoFactorSetup.as_view(), name="two_factor_setup"),
 ]

@@ -1,0 +1,31 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% extends "two_factor/_base_focus.html" %}
+{% load i18n %}
+{% load two_factor_tags %}
+
+{% block cardtitle %}{% translate "Log ind" %}{% endblock %}
+{% block content %}
+  {% if wizard.steps.current == 'token' %}
+    <p>Indtast venligst koden, der er genereret af din token-generator.</p>
+  {% endif %}
+
+  <form action="" method="post">
+    {% block main_form_content %}
+    {% csrf_token %}
+    {% include "two_factor/_wizard_forms.html" %}
+
+    {# hidden submit button to enable [enter] key #}
+    <input type="submit" value="" hidden />
+    {% include "two_factor/_wizard_actions.html" %}
+    <div class="row my-1">
+        <a href="{% url 'reset_password' %}">{% translate "Glemt password?" %}</a>
+        <a href="{% url 'pant:user_register_begin' %}">{% translate "Opret bruger" %}</a>
+        <a href="{% url 'barcode:scan' %}">{% translate "Scan stregkode" %}</a>
+    </div>
+    {% endblock %}
+  </form>
+{% endblock %}

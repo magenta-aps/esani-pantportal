@@ -25,6 +25,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path
 from project.admin import pantadmin
 from project.api import api
+from two_factor.urls import urlpatterns as tf_urls
 
 urlpatterns = [
     path("admin/", pantadmin.urls),
@@ -62,6 +63,7 @@ urlpatterns = [
         name="password_reset_complete",
     ),
     path("captcha/", include("captcha.urls")),
+    path("", include(tf_urls)),
 ]
 
 if settings.DEBUG:

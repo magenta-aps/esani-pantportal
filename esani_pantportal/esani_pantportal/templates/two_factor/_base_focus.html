@@ -1,0 +1,20 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% extends "two_factor/_base.html" %}
+{% load i18n %}
+
+{% block content_wrapper %}
+<div class="justify-content-md-center d-flex align-items-center vh-100">
+    <div class="card" style="width: 40rem;">
+        <h5 class="card-header">{% block cardtitle %}{% endblock %}</h5>
+        <div class="card-body">
+            <p>
+                {% block content %}{% endblock %}
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

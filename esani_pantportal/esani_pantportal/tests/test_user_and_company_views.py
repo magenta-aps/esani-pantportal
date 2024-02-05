@@ -559,7 +559,7 @@ class DeleteUserTest(BaseUserTest):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertFalse(User.objects.filter(username=username).exists())
         self.assertFalse(CompanyUser.objects.filter(username=username).exists())
-        self.assertTemplateUsed(response, "esani_pantportal/login.html")
+        self.assertTemplateUsed(response, "two_factor/core/login.html")
 
     def test_delete_user_from_other_company(self):
         self.client.login(username="facebook_admin", password="12345")
