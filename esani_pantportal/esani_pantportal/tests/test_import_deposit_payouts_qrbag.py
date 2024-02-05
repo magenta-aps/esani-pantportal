@@ -30,6 +30,8 @@ from esani_pantportal.models import (
 
 
 class TestImportDepositPayoutsQRBag(TestCase):
+    maxDiff = None
+
     kiosk_cvr = 1234
     bag_qr = "12345678"
     product_barcode_1 = "1122"
@@ -150,7 +152,7 @@ class TestImportDepositPayoutsQRBag(TestCase):
         # import twice.)
         self.assertQuerySetEqual(
             DepositPayout.objects.all(),
-            [(DepositPayout.SOURCE_TYPE_API, "url", 2)],
+            [(DepositPayout.SOURCE_TYPE_API, "url", 3)],
             transform=lambda obj: (
                 obj.source_type,
                 obj.source_identifier,
@@ -158,7 +160,7 @@ class TestImportDepositPayoutsQRBag(TestCase):
             ),
             ordered=False,
         )
-        # Assert we create exactly two `DepositPayoutItems` (even though we run the
+        # Assert we create exactly three `DepositPayoutItems` (even though we run the
         # same import twice.) Check that the fields are set as expected.
         self.assertQuerySetEqual(
             DepositPayoutItem.objects.all(),
@@ -183,9 +185,19 @@ class TestImportDepositPayoutsQRBag(TestCase):
                     self.consumer_session_id,
                     self.bag_qr,
                 ),
+                (
+                    None,  # kiosk cvr
+                    None,  # product
+                    "product_code",  # unknown product barcode
+                    0,  # product count
+                    self.rvm_serial_number,
+                    date(2020, 1, 1),
+                    self.consumer_session_id,
+                    "unknown_bag_qr",  # unknown QR code
+                ),
             ],
             transform=lambda obj: (
-                obj.kiosk.cvr,
+                obj.kiosk.cvr if obj.kiosk else None,
                 obj.product,
                 obj.barcode,
                 obj.count,
@@ -202,3 +214,21 @@ class TestImportDepositPayoutsQRBag(TestCase):
         cmd = Command()
         # Act and assert
         self.assertIsNone(cmd._get_product_from_barcode("unknown_barcode"))
+
+    def test_get_consumer_identity_returns_none_on_absent_identity(self):
+        # Arrange
+        cmd = Command()
+        # Act and assert
+        self.assertIsNone(cmd._get_consumer_identity(ConsumerSession()))
+
+    def test_get_company_branch_returns_none_on_absent_identity(self):
+        # Arrange
+        cmd = Command()
+        # Act and assert
+        self.assertIsNone(cmd._get_company_branch(ConsumerSession()))
+
+    def test_get_kiosk_returns_none_on_absent_identity(self):
+        # Arrange
+        cmd = Command()
+        # Act and assert
+        self.assertIsNone(cmd._get_kiosk(ConsumerSession()))
