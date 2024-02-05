@@ -1323,7 +1323,7 @@ class NewsEmailView(PermissionRequiredMixin, FormView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse("pant:send_newsletter")
+        return reverse("pant:newsletter_send")
 
 
 class UpdateProductViewPreferences(UpdateView):

@@ -421,12 +421,12 @@ class CompanyAdminUserUpdateViewTest(BaseUserTest):
 class ResetPasswordTest(BaseUserTest):
     def setUp(self):
         self.facebook_employee_password_url = reverse(
-            "pant:set_password",
+            "pant:password_set",
             kwargs={"pk": self.facebook_branch_user.pk},
         )
 
         self.google_employee_password_url = reverse(
-            "pant:set_password",
+            "pant:password_set",
             kwargs={"pk": self.google_admin.pk},
         )
 
@@ -472,7 +472,7 @@ class ResetPasswordTest(BaseUserTest):
 
 class ChangePasswordTest(BaseUserTest):
     def test_change_password(self):
-        url = reverse("pant:change_password", kwargs={"pk": self.facebook_admin.pk})
+        url = reverse("pant:password_change", kwargs={"pk": self.facebook_admin.pk})
 
         self.client.login(username="facebook_admin", password="12345")
         response = self.client.get(url)
@@ -491,7 +491,7 @@ class ChangePasswordTest(BaseUserTest):
         self.assertTrue(ok)
 
     def test_change_password_bad_pw(self):
-        url = reverse("pant:change_password", kwargs={"pk": self.facebook_admin.pk})
+        url = reverse("pant:password_change", kwargs={"pk": self.facebook_admin.pk})
         self.client.login(username="facebook_admin", password="12345")
         response = self.client.get(url)
         form_data = self.make_form_data(response.context_data["form"])
@@ -585,7 +585,7 @@ class UpdateCompanyTest(BaseUserTest):
 
     def test_update_facebook_by_facebook_admin(self):
         self.client.login(username="facebook_admin", password="12345")
-        url = reverse("pant:update_company", kwargs={"pk": self.facebook.pk})
+        url = reverse("pant:company_update", kwargs={"pk": self.facebook.pk})
 
         self.update_name(url)
         self.facebook.refresh_from_db()
@@ -593,13 +593,13 @@ class UpdateCompanyTest(BaseUserTest):
 
     def test_update_facebook_by_google_admin(self):
         self.client.login(username="google_admin", password="12345")
-        url = reverse("pant:update_company", kwargs={"pk": self.facebook.pk})
+        url = reverse("pant:company_update", kwargs={"pk": self.facebook.pk})
         self.assert_forbidden(url)
 
     def test_update_facebook_branch_by_facebook_admin(self):
         self.client.login(username="facebook_admin", password="12345")
         url = reverse(
-            "pant:update_company_branch", kwargs={"pk": self.facebook_branch.pk}
+            "pant:company_branch_update", kwargs={"pk": self.facebook_branch.pk}
         )
 
         self.update_name(url)
@@ -616,7 +616,7 @@ class UpdateCompanyTest(BaseUserTest):
     def test_update_facebook_branch_by_facebook_branch_admin(self):
         self.client.login(username="facebook_branch_admin", password="12345")
         url = reverse(
-            "pant:update_company_branch", kwargs={"pk": self.facebook_branch.pk}
+            "pant:company_branch_update", kwargs={"pk": self.facebook_branch.pk}
         )
 
         self.update_name(url)
@@ -626,20 +626,20 @@ class UpdateCompanyTest(BaseUserTest):
     def test_update_facebook_branch_by_facebook_branch_user(self):
         self.client.login(username="facebook_branch_user", password="12345")
         url = reverse(
-            "pant:update_company_branch", kwargs={"pk": self.facebook_branch.pk}
+            "pant:company_branch_update", kwargs={"pk": self.facebook_branch.pk}
         )
         self.assert_forbidden(url)  # Only admins can update company info
 
     def test_update_facebook_branch_by_kiosk_admin(self):
         self.client.login(username="kiosk_admin", password="12345")
         url = reverse(
-            "pant:update_company_branch", kwargs={"pk": self.facebook_branch.pk}
+            "pant:company_branch_update", kwargs={"pk": self.facebook_branch.pk}
         )
         self.assert_forbidden(url)
 
     def test_update_kiosk_by_kiosk_admin(self):
         self.client.login(username="kiosk_admin", password="12345")
-        url = reverse("pant:update_kiosk", kwargs={"pk": self.kiosk.pk})
+        url = reverse("pant:kiosk_update", kwargs={"pk": self.kiosk.pk})
 
         self.update_name(url)
         self.kiosk.refresh_from_db()
@@ -647,7 +647,7 @@ class UpdateCompanyTest(BaseUserTest):
 
     def test_update_kiosk_by_facebook_admin(self):
         self.client.login(username="facebook_admin", password="12345")
-        url = reverse("pant:update_kiosk", kwargs={"pk": self.kiosk.pk})
+        url = reverse("pant:kiosk_update", kwargs={"pk": self.kiosk.pk})
         self.assert_forbidden(url)
 
     @staticmethod
@@ -659,8 +659,8 @@ class UpdateCompanyTest(BaseUserTest):
     def test_back_url(self):
         self.login()
         kwargs = {"pk": self.facebook.pk}
-        url1 = reverse("pant:update_company", kwargs=kwargs)
-        url2 = reverse("pant:update_company", kwargs=kwargs) + "?back=foo"
+        url1 = reverse("pant:company_update", kwargs=kwargs)
+        url2 = reverse("pant:company_update", kwargs=kwargs) + "?back=foo"
 
         response = self.client.get(url1)
         back_button = self.get_back_button(response.content)

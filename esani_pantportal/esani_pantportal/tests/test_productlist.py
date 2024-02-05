@@ -605,7 +605,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
 
         # Edit preferences
         self.client.post(
-            reverse("pant:update_preferences", kwargs={"pk": self.user.pk}),
+            reverse("pant:preferences_update", kwargs={"pk": self.user.pk}),
             data={"show_material": "false"},
         )
 

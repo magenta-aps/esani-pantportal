@@ -22,7 +22,7 @@ SPDX-License-Identifier: MPL-2.0
     <input type="submit" value="" hidden />
     {% include "two_factor/_wizard_actions.html" %}
     <div class="row my-1">
-        <a href="{% url 'reset_password' %}">{% translate "Glemt password?" %}</a>
+        <a href="{% url 'password_reset' %}">{% translate "Glemt password?" %}</a>
         <a href="{% url 'pant:user_register_begin' %}">{% translate "Opret bruger" %}</a>
         <a href="{% url 'barcode:scan' %}">{% translate "Scan stregkode" %}</a>
     </div>

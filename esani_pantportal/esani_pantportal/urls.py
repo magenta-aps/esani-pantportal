@@ -148,22 +148,22 @@ urlpatterns = [
     path(
         "bruger/<int:pk>/adgangskode/nulstil",
         SetPasswordView.as_view(),
-        name="set_password",
+        name="password_set",
     ),
     path(
         "bruger/<int:pk>/adgangskode/skift",
         ChangePasswordView.as_view(),
-        name="change_password",
+        name="password_change",
     ),
     path(
         "produkt/bruger/<int:pk>/indstillinger",
         UpdateProductViewPreferences.as_view(),
-        name="update_preferences",
+        name="preferences_update",
     ),
     path(
         "produkt/opret/flere",
         MultipleProductRegisterView.as_view(),
-        name="multiple_product_register",
+        name="product_multiple_register",
     ),
     path(
         "produkt/flere/godkend",
@@ -178,30 +178,30 @@ urlpatterns = [
     path(
         "produkt/opret/flere/excel_sample",
         ExcelTemplateView.as_view(),
-        name="example_excel",
+        name="excel_template_download",
     ),
     path(
         "produkt/opret/flere/csv_sample",
         CsvTemplateView.as_view(),
-        name="example_csv",
+        name="csv_template_download",
     ),
     path(
         "send_nyhedsbrev",
         NewsEmailView.as_view(),
-        name="send_newsletter",
+        name="newsletter_send",
     ),
     path(
         "produkt/download<int:approved>/",
         CsvProductsView.as_view(),
-        name="registered_products_csv",
+        name="registered_products_csv_download",
     ),
-    path("virksomhed/<int:pk>", CompanyUpdateView.as_view(), name="update_company"),
+    path("virksomhed/<int:pk>", CompanyUpdateView.as_view(), name="company_update"),
     path(
         "butik/<int:pk>",
         CompanyBranchUpdateView.as_view(),
-        name="update_company_branch",
+        name="company_branch_update",
     ),
-    path("kiosk/<int:pk>", KioskUpdateView.as_view(), name="update_kiosk"),
+    path("kiosk/<int:pk>", KioskUpdateView.as_view(), name="kiosk_update"),
     path("about/", AboutView.as_view(), name="about"),
     path("two_factor/setup", TwoFactorSetup.as_view(), name="two_factor_setup"),
 ]

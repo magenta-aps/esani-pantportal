@@ -314,7 +314,7 @@ class MultipleProductRegisterFormIntegrationTests(
         self.login()
         df = default_dataframe()
         file = self.make_excel_file_dict(df)
-        url = reverse("pant:multiple_product_register")
+        url = reverse("pant:product_multiple_register")
         data = self.defaults
         data["file"] = file["file"]
         self.assertFalse(ImportJob.objects.filter(file_name=file["file"]).exists())
@@ -325,7 +325,7 @@ class MultipleProductRegisterFormIntegrationTests(
 
     def test_view_get(self):
         self.login("BranchAdmins")
-        url = reverse("pant:multiple_product_register")
+        url = reverse("pant:product_multiple_register")
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
@@ -333,7 +333,7 @@ class MultipleProductRegisterFormIntegrationTests(
         self.login("BranchUsers")
         df = default_dataframe()
         file = self.make_excel_file_dict(df)
-        url = reverse("pant:multiple_product_register")
+        url = reverse("pant:product_multiple_register")
         data = self.defaults
         data["file"] = file["file"]
         response = self.client.post(url, data=data)
@@ -341,7 +341,7 @@ class MultipleProductRegisterFormIntegrationTests(
 
     def test_view_get_access_denied(self):
         self.login("BranchUsers")
-        url = reverse("pant:multiple_product_register")
+        url = reverse("pant:product_multiple_register")
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
@@ -364,7 +364,7 @@ class MultipleProductRegisterFormIntegrationTests(
         df["Højde [mm]"] = [200, 100, 100, 100]
 
         file = self.make_excel_file_dict(df)
-        url = reverse("pant:multiple_product_register")
+        url = reverse("pant:product_multiple_register")
         data = self.defaults
         data["file"] = file["file"]
         response = self.client.post(url, data=data)
@@ -376,7 +376,7 @@ class MultipleProductRegisterFormIntegrationTests(
         self.login()
         df = default_dataframe()
         file = self.make_excel_file_dict(df)
-        url = reverse("pant:multiple_product_register")
+        url = reverse("pant:product_multiple_register")
 
         data = self.defaults
         data["file"] = file["file"]
@@ -410,7 +410,7 @@ class TemplateViewTests(LoginMixin, TestCase):
                 self.assertEqual(df1.loc[row, col], df2.loc[row, col])
 
     def test_csv_template_view(self):
-        url = reverse("pant:example_csv")
+        url = reverse("pant:csv_template_download")
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
@@ -419,7 +419,7 @@ class TemplateViewTests(LoginMixin, TestCase):
         self.assertEqualDf(df, default_dataframe())
 
     def test_excel_template_view(self):
-        url = reverse("pant:example_excel")
+        url = reverse("pant:excel_template_download")
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         df = pd.read_excel(response.content, dtype={"Stregkode [str]": str})
@@ -427,12 +427,12 @@ class TemplateViewTests(LoginMixin, TestCase):
         self.assertEqualDf(df, default_dataframe())
 
     def test_approved_product_csv_view(self):
-        url = reverse("pant:registered_products_csv", kwargs={"approved": 1})
+        url = reverse("pant:registered_products_csv_download", kwargs={"approved": 1})
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_all_product_csv_view(self):
-        url = reverse("pant:registered_products_csv", kwargs={"approved": 0})
+        url = reverse("pant:registered_products_csv_download", kwargs={"approved": 0})
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.OK)
 

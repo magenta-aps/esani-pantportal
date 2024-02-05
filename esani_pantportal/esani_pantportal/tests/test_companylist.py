@@ -142,7 +142,7 @@ class CompanyDeleteTest(BaseCompanyTest):
     def check_delete_flag(self, pk, object_type):
         # Google can be deleted - it has no related objects
         response = self.client.get(
-            reverse(f"pant:update_{object_type}", kwargs={"pk": pk})
+            reverse(f"pant:{object_type}_update", kwargs={"pk": pk})
         )
         self.assertTrue(response.context_data["can_delete"])
 

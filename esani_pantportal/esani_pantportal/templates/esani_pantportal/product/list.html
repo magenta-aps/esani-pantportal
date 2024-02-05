@@ -79,9 +79,9 @@ SPDX-License-Identifier: MPL-2.0
     </div>
 
     <div class="col-12  mt-3">
-        <a class="btn btn-primary" href="{% url 'pant:registered_products_csv' 1 %}">{% translate "Download .csv-fil med godkendte produkter" %}
+        <a class="btn btn-primary" href="{% url 'pant:registered_products_csv_download' 1 %}">{% translate "Download .csv-fil med godkendte produkter" %}
         </a>
-        <a class="btn btn-primary" href="{% url 'pant:registered_products_csv' 0 %}">{% translate "Download .csv-fil med alle produkter" %}
+        <a class="btn btn-primary" href="{% url 'pant:registered_products_csv_download' 0 %}">{% translate "Download .csv-fil med alle produkter" %}
         </a>
         {% if can_edit_multiple %}
         <a id="approve_button" class="btn btn-primary disabled" href="#">{% translate "Godkend alle markerede produkter" %}</a>

@@ -116,7 +116,7 @@ SPDX-License-Identifier: MPL-2.0
                         <tr>
                             <th>
                                 {{ branch.name }}
-                                <a style="display:inline-block" href="{% url 'pant:update_company_branch' branch.id %}" class="icon-link">{% bs_icon "box-arrow-up-right" %}</a>
+                                <a style="display:inline-block" href="{% url 'pant:company_branch_update' branch.id %}" class="icon-link">{% bs_icon "box-arrow-up-right" %}</a>
                             </th>
                             <td>{{ branch.address }}, {{ branch.city }}</td>
                         </tr>

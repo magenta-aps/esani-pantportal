@@ -12,7 +12,7 @@ SPDX-License-Identifier: MPL-2.0
 {% block content %}
 <div class="mx-5">
     <h1>{% translate "Registrer nye produkter" %}</h1>
-    <form method="post" action="{% url 'pant:multiple_product_register' %}" enctype="multipart/form-data">
+    <form method="post" action="{% url 'pant:product_multiple_register' %}" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="row">
             <div class="col-2">
@@ -162,10 +162,10 @@ SPDX-License-Identifier: MPL-2.0
           {% translate "Gyldige produktrumfang er: " %} {{"capacity"|constraints_string:" ml"}}
           </li>
           </ul>
-              <a href="{% url 'pant:example_csv' %}" class="btn btn-sm btn-primary">
+              <a href="{% url 'pant:csv_template_download' %}" class="btn btn-sm btn-primary">
                  {% translate "Download eksempel csv-fil" %}
               </a>
-              <a href="{% url 'pant:example_excel' %}" class="btn btn-sm btn-primary">
+              <a href="{% url 'pant:excel_template_download' %}" class="btn btn-sm btn-primary">
                  {% translate "Download eksempel excel-fil" %}
               </a>
           </div>
