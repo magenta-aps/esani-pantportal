@@ -136,6 +136,8 @@ class UserUpdateForm(forms.ModelForm, BootstrapForm):
             "approved",
         )
 
+    disable_two_factor = forms.BooleanField(initial=False, required=False)
+
 
 class ReverseVendingMachineRegisterForm(forms.ModelForm, BootstrapForm):
     def __init__(self, *args, kiosks=None, branches=None, **kwargs):

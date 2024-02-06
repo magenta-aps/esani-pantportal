@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
+from django_otp.util import random_hex
 
 from esani_pantportal.models import (
     BranchUser,
@@ -20,6 +21,7 @@ from esani_pantportal.models import (
     KioskUser,
     User,
 )
+from esani_pantportal.templatetags.pant_tags import has_two_factor
 
 from .conftest import LoginMixin
 
@@ -203,7 +205,6 @@ class BaseUserTest(LoginMixin, TestCase):
         form_data = {}
         for field_name, field in form.fields.items():
             form_data[field_name] = form.get_initial_for_field(field, field_name)
-
         return form_data
 
 
@@ -314,6 +315,11 @@ class EsaniAdminUserUpdateViewTest(BaseUserTest):
             kwargs={"pk": self.facebook_admin.pk},
         )
 
+        self.esani_admin_url = reverse(
+            "pant:user_view",
+            kwargs={"pk": self.esani_admin.pk},
+        )
+
     def test_esani_admin_view(self):
         self.client.login(username="esani_admin", password="12345")
         response = self.client.get(self.facebook_admin_url)
@@ -338,6 +344,21 @@ class EsaniAdminUserUpdateViewTest(BaseUserTest):
 
         response = self.client.post(self.facebook_admin_url, form_data)
         self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_disable_2fa(self):
+        self.client.login(username="esani_admin", password="12345")
+
+        self.esani_admin.totpdevice_set.create(name="default", key=random_hex())
+        self.assertTrue(has_two_factor(self.esani_admin))
+
+        response = self.client.get(self.esani_admin_url)
+        form_data = self.make_form_data(response.context_data["form"])
+        form_data["disable_two_factor"] = "True"
+
+        self.client.post(self.esani_admin_url, form_data)
+
+        self.esani_admin.refresh_from_db()
+        self.assertFalse(has_two_factor(self.esani_admin))
 
 
 class CompanyAdminUserUpdateViewTest(BaseUserTest):

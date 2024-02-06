@@ -36,6 +36,7 @@ from django.views.generic import (
     UpdateView,
     View,
 )
+from django_otp import devices_for_user
 from project.settings import DEFAULT_FROM_EMAIL
 from simple_history.utils import bulk_update_with_history, update_change_reason
 from two_factor.views import LoginView, SetupView
@@ -992,6 +993,13 @@ class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
     template_name = "esani_pantportal/user/view.html"
     form_class = UserUpdateForm
 
+    def check_permissions(self):
+        if self.get_object() == self.request.user and self.request.method == "GET":
+            # A user should always be able to see his own user-profile.
+            return None
+        else:
+            return super().check_permissions()
+
     def get_context_data(self, *args, **kwargs):
         context_data = super().get_context_data(*args, **kwargs)
         context_data["user"] = self.request.user
@@ -1023,6 +1031,16 @@ class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
         return self.request.get_full_path()
 
     def form_valid(self, form):
+        if form.cleaned_data["disable_two_factor"]:
+            for device in devices_for_user(self.object):
+                device.delete()
+            return redirect(
+                add_parameters_to_url(
+                    self.get_success_url(),
+                    {"disable_two_factor_success": 1, "two_factor_success": 0},
+                )
+            )
+
         if "approved" in form.changed_data and not self.request.user.is_esani_admin:
             return self.access_denied
         else:
