@@ -591,8 +591,8 @@ class ReverseVendingMachineSearchView(PermissionRequiredMixin, SearchView):
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)
 
-        if key in ["branch", "kiosk"]:
-            if value and key == "branch":
+        if key in ["company_branch", "kiosk"]:
+            if value and key == "company_branch":
                 value = CompanyBranch.objects.get(pk=int(value)).name
             elif value and key == "kiosk":
                 value = Kiosk.objects.get(pk=int(value)).name
@@ -605,7 +605,7 @@ class ReverseVendingMachineSearchView(PermissionRequiredMixin, SearchView):
 
     def item_to_json_dict(self, *args, **kwargs):
         json_dict = super().item_to_json_dict(*args, **kwargs)
-        json_dict["branch_or_kiosk"] = json_dict["branch"] or json_dict["kiosk"]
+        json_dict["branch_or_kiosk"] = json_dict["company_branch"] or json_dict["kiosk"]
         return json_dict
 
     def get_queryset(self):
@@ -613,7 +613,7 @@ class ReverseVendingMachineSearchView(PermissionRequiredMixin, SearchView):
         data = self.search_data
 
         branch_qs = self.model.objects.none()
-        for field in ["branch__name", "kiosk__name"]:
+        for field in ["company_branch__name", "kiosk__name"]:
             if data.get(field, None) not in (None, ""):
                 branch_qs = branch_qs | self.model.objects.all().filter(
                     **{
@@ -631,9 +631,9 @@ class ReverseVendingMachineSearchView(PermissionRequiredMixin, SearchView):
         if user.user_type == KIOSK_USER:
             qs = qs.filter(kiosk__pk=user.branch.pk)
         elif user.user_type == BRANCH_USER:
-            qs = qs.filter(branch__pk=user.branch.pk)
+            qs = qs.filter(company_branch__pk=user.branch.pk)
         elif user.user_type == COMPANY_USER:
-            qs = qs.filter(branch__company__pk=user.company.pk)
+            qs = qs.filter(company_branch__company__pk=user.company.pk)
         return qs
 
 

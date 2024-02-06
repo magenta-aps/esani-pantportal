@@ -304,7 +304,7 @@ class ReverseVendingMachine(models.Model):
         blank=True,
     )
 
-    branch = models.ForeignKey(
+    company_branch = models.ForeignKey(
         "CompanyBranch",
         verbose_name=_("Afdeling"),
         help_text=_("Afdeling hvor denne maskine står"),
@@ -327,10 +327,10 @@ class ReverseVendingMachine(models.Model):
     )
 
     def get_branch(self):
-        return self.branch or self.kiosk
+        return self.company_branch or self.kiosk
 
     def get_company(self):
-        return self.branch.company if self.branch else None
+        return self.company_branch.company if self.company_branch else None
 
 
 class ImportJob(models.Model):

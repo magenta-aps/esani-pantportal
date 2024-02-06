@@ -115,14 +115,14 @@ class BaseReverseVendingMachineTest(LoginMixin, TestCase):
         cls.brugseni_nuuk_rvm = ReverseVendingMachine.objects.create(
             compensation=100,
             serial_number="123",
-            branch=cls.brugseni_nuuk,
+            company_branch=cls.brugseni_nuuk,
         )
 
         # Brugseni Sisimiut has a refund machine with a crusher
         cls.brugseni_sisimiut_rvm = ReverseVendingMachine.objects.create(
             compensation=200,
             serial_number="123",
-            branch=cls.brugseni_sisimiut,
+            company_branch=cls.brugseni_sisimiut,
         )
 
         # The local kiosk sorts manually
@@ -155,7 +155,7 @@ class ReverseVendingMachineListTest(BaseReverseVendingMachineTest):
 
     def test_esani_admin_filtered_view(self):
         self.client.login(username="esani_admin", password="12345")
-        url = reverse("pant:rvm_list") + "?branch__name=Nuuk"
+        url = reverse("pant:rvm_list") + "?company_branch__name=Nuuk"
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
@@ -205,7 +205,7 @@ class CreateReverseVendingMachineViewTest(BaseReverseVendingMachineTest):
         form = response.context["form"]
 
         # Note that "None" is also a choice
-        self.assertEqual(len(form.fields["branch"].choices), 3)
+        self.assertEqual(len(form.fields["company_branch"].choices), 3)
         self.assertEqual(len(form.fields["kiosk"].choices), 2)
 
     def test_brugseni_admin_view(self):
@@ -215,10 +215,10 @@ class CreateReverseVendingMachineViewTest(BaseReverseVendingMachineTest):
 
         # The Brugseni admin can choose all Brugseni refund machines
         # "None" is not an option for him
-        self.assertEqual(len(form.fields["branch"].choices), 2)
+        self.assertEqual(len(form.fields["company_branch"].choices), 2)
         self.assertEqual(len(form.fields["kiosk"].choices), 0)
 
-        branch_ids = [option[0] for option in form.fields["branch"].choices]
+        branch_ids = [option[0] for option in form.fields["company_branch"].choices]
 
         self.assertIn(self.brugseni_nuuk.id, branch_ids)
         self.assertIn(self.brugseni_sisimiut.id, branch_ids)
@@ -230,13 +230,15 @@ class CreateReverseVendingMachineViewTest(BaseReverseVendingMachineTest):
 
         # The Brugseni admin in Nuuk can only create refund machines at his own branch.
         # "None" is not an option for him
-        self.assertEqual(len(form.fields["branch"].choices), 1)
+        self.assertEqual(len(form.fields["company_branch"].choices), 1)
         self.assertEqual(len(form.fields["kiosk"].choices), 0)
-        self.assertEqual(self.brugseni_nuuk.id, form.fields["branch"].choices[0][0])
+        self.assertEqual(
+            self.brugseni_nuuk.id, form.fields["company_branch"].choices[0][0]
+        )
 
         # He does not need to be able to change this field, as there is only one branch
         # to choose from
-        self.assertTrue(form.fields["branch"].disabled)
+        self.assertTrue(form.fields["company_branch"].disabled)
 
     def test_kiosk_admin_view(self):
         self.client.login(username="kiosk_admin", password="12345")
@@ -245,7 +247,7 @@ class CreateReverseVendingMachineViewTest(BaseReverseVendingMachineTest):
 
         # The kiosk admincan only create refund machines at his own kiosk.
         # "None" is not an option for him
-        self.assertEqual(len(form.fields["branch"].choices), 0)
+        self.assertEqual(len(form.fields["company_branch"].choices), 0)
         self.assertEqual(len(form.fields["kiosk"].choices), 1)
         self.assertEqual(self.kiosk.id, form.fields["kiosk"].choices[0][0])
 
@@ -259,29 +261,29 @@ class CreateReverseVendingMachineFormTest(BaseReverseVendingMachineTest):
         self,
         compensation=200,
         serial_number="666",
-        branch=None,
+        company_branch=None,
         kiosk=None,
     ):
         data = {
             "compensation": compensation,
             "serial_number": serial_number,
             "kiosk": kiosk.pk if kiosk else None,
-            "branch": branch.pk if branch else None,
+            "company_branch": company_branch.pk if company_branch else None,
         }
         if not kiosk:
             del data["kiosk"]
-        if not branch:
-            del data["branch"]
+        if not company_branch:
+            del data["company_branch"]
         return data
 
     def test_form(self):
-        data = self.make_dummy_data(branch=self.brugseni_nuuk)
+        data = self.make_dummy_data(company_branch=self.brugseni_nuuk)
         form = ReverseVendingMachineRegisterForm(data)
         self.assertTrue(form.is_valid())
 
     def test_post(self):
         self.client.login(username="esani_admin", password="12345")
-        data = self.make_dummy_data(branch=self.brugseni_nuuk)
+        data = self.make_dummy_data(company_branch=self.brugseni_nuuk)
 
         qs = ReverseVendingMachine.objects.filter(serial_number=data["serial_number"])
         self.assertFalse(qs.exists())
@@ -294,19 +296,19 @@ class CreateReverseVendingMachineFormTest(BaseReverseVendingMachineTest):
 
     def test_form_no_branch_or_kiosk(self):
         # A refund machine must belong to either a kiosk or a branch.
-        data = self.make_dummy_data(branch=None, kiosk=None)
+        data = self.make_dummy_data(company_branch=None, kiosk=None)
         form = ReverseVendingMachineRegisterForm(data)
         self.assertFalse(form.is_valid())
 
     def test_form_branch_and_kiosk(self):
         # A refund machine cannot be at a branch AND at a kiosk. The user must choose.
-        data = self.make_dummy_data(branch=self.brugseni_nuuk, kiosk=self.kiosk)
+        data = self.make_dummy_data(company_branch=self.brugseni_nuuk, kiosk=self.kiosk)
         form = ReverseVendingMachineRegisterForm(data)
         self.assertFalse(form.is_valid())
 
     def test_form_serial_number_not_supplied(self):
         data = self.make_dummy_data(
-            branch=self.brugseni_nuuk,
+            company_branch=self.brugseni_nuuk,
             serial_number="",
         )
 

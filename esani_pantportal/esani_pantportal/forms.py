@@ -152,33 +152,33 @@ class ReverseVendingMachineRegisterForm(forms.ModelForm, BootstrapForm):
                 self.initial["kiosk"] = kiosks[0].pk
 
         if branches is not None:
-            self.fields["branch"].choices = [(b.pk, str(b)) for b in branches]
+            self.fields["company_branch"].choices = [(b.pk, str(b)) for b in branches]
             if len(branches) == 0:
                 self.hide_branch_dropdown = True
             elif len(branches) == 1:
-                self.fields["branch"].disabled = True
-                self.initial["branch"] = branches[0].pk
+                self.fields["company_branch"].disabled = True
+                self.initial["company_branch"] = branches[0].pk
 
     class Meta:
         model = ReverseVendingMachine
         fields = (
             "compensation",
             "serial_number",
-            "branch",
+            "company_branch",
             "kiosk",
         )
 
     compensation = forms.FloatField(localize=True)
 
     def clean(self):
-        branch = self.cleaned_data.get("branch", None)
+        company_branch = self.cleaned_data.get("company_branch", None)
         kiosk = self.cleaned_data.get("kiosk", None)
 
-        if not branch and not kiosk:
-            raise ValidationError(_("Udfyld enten butik eller kæde felt."))
+        if not company_branch and not kiosk:
+            raise ValidationError(_("Udfyld enten butik eller afdeling felt."))
 
-        if branch and kiosk:
-            raise ValidationError(_("Vælg enten en butik eller en kæde."))
+        if company_branch and kiosk:
+            raise ValidationError(_("Vælg enten en butik eller en afdeling."))
 
         return self.cleaned_data
 
@@ -820,12 +820,12 @@ class CompanyFilterForm(SortPaginateForm):
 
 class ReverseVendingMachineFilterForm(SortPaginateForm):
     serial_number = forms.CharField(required=False)
-    branch__name = forms.CharField(required=False)
+    company_branch__name = forms.CharField(required=False)
     kiosk__name = forms.CharField(required=False)
 
     def clean_kiosk__name(self):
         # We use the branch__name search-field for both kiosk and branch filtering.
-        return self.cleaned_data["branch__name"]
+        return self.cleaned_data["company_branch__name"]
 
 
 class UserFilterForm(SortPaginateForm):
