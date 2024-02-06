@@ -156,7 +156,7 @@ class Command(BaseCommand):
             )
         else:
             if qr_bag:
-                return qr_bag.companybranch
+                return qr_bag.company_branch
 
     def _get_kiosk(self, consumer_session: ConsumerSession) -> Kiosk | None:
         try:

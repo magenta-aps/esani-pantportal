@@ -113,8 +113,8 @@ class QRBagOut(ModelSchema):
     def resolve_company(obj: QRBag):
         if obj.kiosk:
             return obj.kiosk.name
-        elif obj.companybranch:
-            return obj.companybranch.name
+        elif obj.company_branch:
+            return obj.company_branch.name
 
 
 class QRBagHistoryOut(QRBagOut):
@@ -154,7 +154,7 @@ class QRBagAPI:
         try:
             user = self.context.request.user
             branch = user.branch
-            companybranch = branch if isinstance(branch, CompanyBranch) else None
+            company_branch = branch if isinstance(branch, CompanyBranch) else None
             kiosk = branch if isinstance(branch, Kiosk) else None
 
             found = QRCodeGenerator.qr_code_exists(qr)
@@ -168,7 +168,7 @@ class QRBagAPI:
                 **payload.dict(),
                 qr=qr,
                 owner=user,
-                companybranch=companybranch,
+                company_branch=company_branch,
                 kiosk=kiosk,
             )
         except IntegrityError:

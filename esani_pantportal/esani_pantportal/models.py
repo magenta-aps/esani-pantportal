@@ -975,7 +975,7 @@ class QRBag(models.Model):
         blank=False,
         on_delete=models.SET_NULL,
     )
-    companybranch = models.ForeignKey(
+    company_branch = models.ForeignKey(
         CompanyBranch,
         null=True,
         blank=False,
@@ -1001,8 +1001,8 @@ class QRBag(models.Model):
     class Meta:
         constraints = [
             CheckConstraint(
-                check=Q(companybranch__isnull=True) | Q(kiosk__isnull=True),
-                name="has_only_companybranch_or_kiosk",
+                check=Q(company_branch__isnull=True) | Q(kiosk__isnull=True),
+                name="has_only_company_branch_or_kiosk",
             )
         ]
 
