@@ -28,7 +28,7 @@ SPDX-License-Identifier: MPL-2.0
                     <tbody>
                     <tr>
                         <th>{% translate "Virksomhedstype" %}</th>
-                        <td>"{{form.object_verbose_name}}"</td>
+                        <td>{{form.object_verbose_name}}</td>
                     </tr>
                     {% for field in form %}
                     {% if field.name == "company" and user.is_esani_admin == False %}
