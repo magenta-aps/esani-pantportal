@@ -232,7 +232,7 @@ class QRBagTest(LoginMixin, TestCase):
         code = "00000000005001d201"
 
         branch = self.user.branch
-        companybranch = branch if isinstance(branch, CompanyBranch) else None
+        company_branch = branch if isinstance(branch, CompanyBranch) else None
         kiosk = branch if isinstance(branch, Kiosk) else None
 
         bag = QRBag.objects.create(
@@ -240,7 +240,7 @@ class QRBagTest(LoginMixin, TestCase):
             active=True,
             status="oprettet",
             owner=self.user,
-            companybranch=companybranch,
+            company_branch=company_branch,
             kiosk=kiosk,
         )
 
