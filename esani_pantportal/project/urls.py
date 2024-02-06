@@ -39,7 +39,7 @@ urlpatterns = [
         auth_views.PasswordResetView.as_view(
             template_name="esani_pantportal/user/password/reset_begin.html",
         ),
-        name="reset_password",
+        name="password_reset",
     ),
     path(
         "bruger/adgangskode/nulstil/sendt",

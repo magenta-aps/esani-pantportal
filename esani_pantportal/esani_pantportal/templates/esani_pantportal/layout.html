@@ -36,11 +36,11 @@ SPDX-License-Identifier: MPL-2.0
             </a>
             <ul class="dropdown-menu">
                 {% if user.is_esani_admin %}
-                    <li><a class="dropdown-item" href="{% url 'pant:send_newsletter' %}">{% bs_icon "envelope"  size="1.3em"%}{% translate "Send Nyhedsbrev" %}</a></li>
+                    <li><a class="dropdown-item" href="{% url 'pant:newsletter_send' %}">{% bs_icon "envelope"  size="1.3em"%}{% translate "Send Nyhedsbrev" %}</a></li>
                 {% endif %}
                 {% if user.is_admin %}
                     <li><a class="dropdown-item" href="{% url 'pant:product_register' %}">{% bs_icon "bag-plus" size="1.3em" %}{% translate "Registrér et enkelt produkt" %}</a></li>
-                    <li><a class="dropdown-item" href="{% url 'pant:multiple_product_register' %}">{% bs_icon "bag-plus" size="1.3em" %}{% translate "Importér produkter fra fil" %}</a></li>
+                    <li><a class="dropdown-item" href="{% url 'pant:product_multiple_register' %}">{% bs_icon "bag-plus" size="1.3em" %}{% translate "Importér produkter fra fil" %}</a></li>
                 {% endif %}
                 {% if user.is_admin and user.get_user_type_display == "Butiksbruger" %}
                     <li><a class="dropdown-item" href="{% url 'pant:branch_user_register_by_admin' %}">{% bs_icon "person-plus" size="1.3em" %}{% translate "Registrér bruger" %}</a></li>
@@ -73,7 +73,7 @@ SPDX-License-Identifier: MPL-2.0
         </a>
         <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="{% url 'pant:user_view' user.id %}">{% translate "Brugerprofil" %}</a></li>
-            <li><a class="dropdown-item" href="{% url 'pant:change_password' user.id %}">{% translate "Skift adgangskode" %}</a></li>
+            <li><a class="dropdown-item" href="{% url 'pant:password_change' user.id %}">{% translate "Skift adgangskode" %}</a></li>
             <li><a class="dropdown-item" href="{% url 'pant:logout' %}" id="logout-link">{% translate "Log ud" %}</a></li>
         </ul>
         </div>

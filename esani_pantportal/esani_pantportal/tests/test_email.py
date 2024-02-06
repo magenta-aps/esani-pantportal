@@ -142,7 +142,7 @@ class NewsEmailViewTest(EmailTest):
         subject = "Your gekko's extended warranty"
         body = "13 minutes could save you 13% or more on gekko insurance"
         self.client.post(
-            reverse("pant:send_newsletter"),
+            reverse("pant:newsletter_send"),
             {
                 "subject": subject,
                 "body": body,
@@ -174,7 +174,7 @@ class NoReceiversEmailViewTest(EmailTest):
         subject = "Your gekko's extended warranty"
         body = "13 minutes could save you 13% or more on gekko insurance"
         self.client.post(
-            reverse("pant:send_newsletter"),
+            reverse("pant:newsletter_send"),
             {
                 "subject": subject,
                 "body": body,
