@@ -60,14 +60,19 @@ SPDX-License-Identifier: MPL-2.0
                             {% endif %}
                         </td>
                     </tr>
-                    {% if user.username == object.username %}
                     <tr id="two_factor_row">
                         <th>{% translate "To-faktor-godkendelse" %}</th>
                         <td>
-                            {{user|has_two_factor}}
+                            {{object|has_two_factor|yesno}}
+                            {% if object|has_two_factor %}
+                            <button id="disable_two_factor_button"
+                                    type="submit"
+                                    name="{{form.disable_two_factor.name}}"
+                                    value="True"
+                                    class="btn btn-outline-danger btn-sm">{% bs_icon "x-square" %} Nulstil</button>
+                            {% endif %}
                         </td>
                     </tr>
-                    {% endif %}
                     </tbody>
                 </table>
             <div class="card my-3" id="two_factor_confirmation" style="display:none">
@@ -78,7 +83,14 @@ SPDX-License-Identifier: MPL-2.0
                     </div>
                 </div>
             </div>
-
+            <div class="card my-3" id="disable_two_factor_confirmation" style="display:none">
+                <div class="card-body text-center">
+                    {% bs_icon "shield-exclamation" size="2em" %}
+                    <div>
+                        {% translate "To-faktor-godkendelse er nu nulstillet for denne bruger" %}
+                    </div>
+                </div>
+            </div>
             {% if can_edit %}
                 <div class="card">
                     <div class="card-body">
@@ -181,6 +193,15 @@ if (two_factor_success=="1"){
     $("#two_factor_row").addClass("table-success");
     }
 
+var disable_two_factor_success = getUrlParameter("disable_two_factor_success");
+if (disable_two_factor_success=="1"){
+    $("#disable_two_factor_confirmation").show();
+    $("#two_factor_row").addClass("table-danger");
+    }
+
+$("#disable_two_factor_button").on("click", function () {
+    return confirm("{% translate 'Er du sikker på at du vil nulstille to-faktor-godkendelse for denne bruger?' %}");
+});
 </script>
 
 {% endblock %}

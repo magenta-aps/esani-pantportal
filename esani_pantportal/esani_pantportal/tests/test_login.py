@@ -178,9 +178,7 @@ class LoginTest(TestCase):
         self.client.login(username="esani_user", password="foo")
         self.assertEqual(0, self.esani_user.totpdevice_set.count())
 
-        response = self.client.get(
-            reverse("pant:user_view", kwargs={"pk": self.esani_user.pk})
-        )
+        response = self.client.get(reverse("pant:user_list"))
 
         self.assertTemplateUsed(response, "two_factor/core/otp_required.html")
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)

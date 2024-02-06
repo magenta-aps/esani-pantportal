@@ -97,4 +97,4 @@ def truefalse(boolean):
 
 @register.filter
 def has_two_factor(user):
-    return yesno(user.is_verified())
+    return user.totpdevice_set.count() > 0
