@@ -168,8 +168,6 @@ class ReverseVendingMachineRegisterForm(forms.ModelForm, BootstrapForm):
             "kiosk",
         )
 
-    compensation = forms.FloatField(localize=True)
-
     def clean(self):
         company_branch = self.cleaned_data.get("company_branch", None)
         kiosk = self.cleaned_data.get("kiosk", None)
