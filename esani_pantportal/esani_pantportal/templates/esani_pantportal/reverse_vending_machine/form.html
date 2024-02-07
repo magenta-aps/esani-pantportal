@@ -36,11 +36,11 @@ SPDX-License-Identifier: MPL-2.0
 
     {% if not form.hide_branch_dropdown %}
     <div class="col-12">
-      <label for="{{form.branch.id_for_label}}">{{form.branch.label}}</label>
-      {{form.branch}}
+      <label for="{{form.company_branch.id_for_label}}">{{form.company_branch.label}}</label>
+      {{form.company_branch}}
       <div class="form-text">
-          {{form.branch.help_text}}
-          {{form.branch.errors}}
+          {{form.company_branch.help_text}}
+          {{form.company_branch.errors}}
       </div>
     </div>
     {% endif %}

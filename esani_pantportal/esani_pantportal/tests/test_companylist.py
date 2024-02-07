@@ -136,7 +136,7 @@ class CompanyDeleteTest(BaseCompanyTest):
         cls.facebook_branch_rvm = ReverseVendingMachine.objects.create(
             compensation=300,
             serial_number="",
-            branch=cls.facebook_branch,
+            company_branch=cls.facebook_branch,
         )
 
     def check_delete_flag(self, pk, object_type):

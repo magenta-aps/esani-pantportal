@@ -145,7 +145,7 @@ class Command(BaseCommand):
     def _get_company_branch_from_rvm_serial(self, rvm_serial):
         rvm = self._get_rvm_from_rvm_serial(rvm_serial)
         if rvm:
-            return rvm.branch
+            return rvm.company_branch
 
     def _get_product_from_barcode(self, barcode):
         try:
