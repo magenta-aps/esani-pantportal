@@ -207,7 +207,7 @@ $('[id$=Toggle]').click(function() {
     data["show_" + item_name] = $this.is(":checked");
     $.ajax({
         type: 'POST',
-        url: 'bruger/'+'{{ request.user.id }}'+'/indstillinger',
+        url: '{% url "pant:preferences_update" request.user.id %}',
         data: data,
     });
    });
