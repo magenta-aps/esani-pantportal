@@ -966,7 +966,7 @@ class DepositPayoutItem(models.Model):
 
 class QRBag(models.Model):
     qr = models.CharField(
-        primary_key=True,
+        unique=True,
         max_length=200,  # TODO: Hvor lange er vores QR-koder?
     )
     owner = models.ForeignKey(
