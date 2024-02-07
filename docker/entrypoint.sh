@@ -38,6 +38,7 @@ if [ "$DUMMYDATA" = true ]; then
   python3 manage.py create_dummy_products
   python3 manage.py create_dummy_objects_for_csv_import
   python3 manage.py create_dummy_rvms
+  python3 manage.py create_dummy_qrbags
 fi
 python3 manage.py create_qr_status
 
