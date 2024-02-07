@@ -605,7 +605,9 @@ class ReverseVendingMachineSearchView(PermissionRequiredMixin, SearchView):
 
     def item_to_json_dict(self, *args, **kwargs):
         json_dict = super().item_to_json_dict(*args, **kwargs)
-        json_dict["branch_or_kiosk"] = json_dict["company_branch"] or json_dict["kiosk"]
+        json_dict["company_branch_or_kiosk"] = (
+            json_dict["company_branch"] or json_dict["kiosk"]
+        )
         return json_dict
 
     def get_queryset(self):

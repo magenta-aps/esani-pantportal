@@ -70,7 +70,7 @@ SPDX-License-Identifier: MPL-2.0
         <tr>
             <th data-sortable="true" data-field="serial_number" class="col-3">Serienummer</th>
             <th data-sortable="true" data-field="compensation" class="col-3">Håndterings-godtgørelse</th>
-            <th data-sortable="true" data-field="branch_or_kiosk" class="col-3">Butik</th>
+            <th data-sortable="true" data-field="company_branch_or_kiosk" class="col-3">Butik</th>
             <th data-field="actions" class="col-3">Handlinger</th>
         </tr>
         </thead>
@@ -79,7 +79,7 @@ SPDX-License-Identifier: MPL-2.0
         <tr>
             <td>{{item.serial_number}}</td>
             <td>{{item.compensation}}</td>
-            <td>{{item.branch_or_kiosk}}</td>
+            <td>{{item.company_branch_or_kiosk}}</td>
             <td>
                 {% include actions_template with item=item %}
             </td>
