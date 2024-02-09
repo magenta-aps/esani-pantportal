@@ -42,7 +42,7 @@ from esani_pantportal.views import (
     ReverseVendingMachineSearchView,
     SetPasswordView,
     TwoFactorSetup,
-    UpdateProductViewPreferences,
+    UpdateListViewPreferences,
     UserDeleteView,
     UserSearchView,
     UserUpdateView,
@@ -157,7 +157,7 @@ urlpatterns = [
     ),
     path(
         "produkt/bruger/<int:pk>/indstillinger",
-        UpdateProductViewPreferences.as_view(),
+        UpdateListViewPreferences.as_view(),
         name="preferences_update",
     ),
     path(

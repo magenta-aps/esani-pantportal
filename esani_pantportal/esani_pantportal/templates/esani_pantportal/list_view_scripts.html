@@ -1,0 +1,47 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+<script>
+var delete_success = getUrlParameter("delete_success");
+if (delete_success=="1"){
+    $("#delete_confirmation").show()
+    }
+
+var $table = $('#table');
+
+function hideItem(item_name){
+    $table.bootstrapTable('hideColumn', item_name);
+}
+
+function showItem(item_name){
+    $table.bootstrapTable('showColumn', item_name);
+}
+
+$('input[type=checkbox][id$=Toggle]').change(function (evt) {
+    evt.preventDefault();
+
+    const $this = $(this);
+    const id = $this.attr('id');
+    const itemName = id.replace("Toggle", "");
+    const itemState = $this.is(":checked");
+
+    if (itemState) {
+        showItem(itemName);
+    } else {
+        hideItem(itemName);
+    }
+
+    let data = {
+        csrfmiddlewaretoken: '{{ csrf_token }}'
+    };
+    data["show_" + itemName] = itemState;
+
+    $.ajax({
+        type: 'POST',
+        url: '{% url "pant:preferences_update" request.user.id %}',
+        data: data,
+    });
+});
+</script>

@@ -682,6 +682,7 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
         json_dict["branch"] = item_obj.branch_annotation
         json_dict["company"] = item_obj.company_annotation
         json_dict["is_admin"] = _("Ja") if user_is_admin else _("Nej")
+        json_dict["newsletter"] = _("Ja") if item_obj.newsletter else _("Nej")
         return json_dict
 
     def map_value(self, item, key, context):
@@ -1346,7 +1347,7 @@ class NewsEmailView(PermissionRequiredMixin, FormView):
         return reverse("pant:newsletter_send")
 
 
-class UpdateProductViewPreferences(UpdateView):
+class UpdateListViewPreferences(UpdateView):
     model = User
     fields = [
         "show_material",
@@ -1359,6 +1360,13 @@ class UpdateProductViewPreferences(UpdateView):
         "show_approval_date",
         "show_creation_date",
         "show_file_name",
+        "show_branch",
+        "show_company",
+        "show_is_admin",
+        "show_approved",
+        "show_phone",
+        "show_newsletter",
+        "show_email",
     ]
 
     def get_form_kwargs(self):
@@ -1366,14 +1374,15 @@ class UpdateProductViewPreferences(UpdateView):
         obj = self.get_object()
 
         # Set initial values
-        data = kwargs["data"].copy()
+        data = kwargs.get("data", {}).copy()
         for field in [f for f in self.fields if f not in data]:
             data[field] = getattr(obj, field)
         kwargs["data"] = data
         return kwargs
 
-    def get_success_url(self):
-        return reverse("pant:product_list")
+    def form_valid(self, form):
+        self.object = form.save()
+        return HttpResponse("ok")
 
 
 class MultipleProductApproveView(View, PermissionRequiredMixin):
