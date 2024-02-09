@@ -1,0 +1,4 @@
+{% load i18n %}
+
+<a href="{% url 'pant:qrbag_history' item.id %}?back={{request.get_full_path|quote_url}}"
+   class="btn btn-sm btn-secondary">{% translate "Historik" %}</a>

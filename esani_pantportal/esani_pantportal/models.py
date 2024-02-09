@@ -1018,6 +1018,7 @@ class QRBag(models.Model):
                 name="has_only_company_branch_or_kiosk",
             )
         ]
+        ordering = ["-updated"]
 
 
 class QRStatus(models.Model):

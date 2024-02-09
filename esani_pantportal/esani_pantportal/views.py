@@ -55,6 +55,7 @@ from esani_pantportal.forms import (
     ProductFilterForm,
     ProductRegisterForm,
     ProductUpdateForm,
+    QRBagFilterForm,
     RegisterCompanyBranchUserMultiForm,
     RegisterCompanyUserMultiForm,
     RegisterEsaniUserForm,
@@ -84,6 +85,7 @@ from esani_pantportal.models import (
     Kiosk,
     KioskUser,
     Product,
+    QRBag,
     ReverseVendingMachine,
     User,
 )
@@ -582,14 +584,11 @@ class ProductSearchView(SearchView):
         return context
 
 
-class ReverseVendingMachineSearchView(PermissionRequiredMixin, SearchView):
-    template_name = "esani_pantportal/reverse_vending_machine/list.html"
-    actions_template = "esani_pantportal/reverse_vending_machine/actions.html"
-    model = ReverseVendingMachine
-    form_class = ReverseVendingMachineFilterForm
-    required_permissions = ["esani_pantportal.view_reversevendingmachine"]
-
-    search_fields = ["serial_number"]
+class BranchSearchView(PermissionRequiredMixin, SearchView):
+    """
+    SearchView which merges the `company_branch` and `kiosk` fields on objects and
+    treats them as one.
+    """
 
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)
@@ -601,16 +600,16 @@ class ReverseVendingMachineSearchView(PermissionRequiredMixin, SearchView):
                 value = Kiosk.objects.get(pk=int(value)).name
             else:
                 value = ""
-        elif key == "compensation":
-            value = float_to_string(value) + " øre"
-
-        return value or ""
+        return value or "-"
 
     def item_to_json_dict(self, *args, **kwargs):
         json_dict = super().item_to_json_dict(*args, **kwargs)
-        json_dict["company_branch_or_kiosk"] = (
-            json_dict["company_branch"] or json_dict["kiosk"]
-        )
+
+        if not json_dict["company_branch"] or json_dict["company_branch"] == "-":
+            json_dict["company_branch_or_kiosk"] = json_dict["kiosk"]
+        else:
+            json_dict["company_branch_or_kiosk"] = json_dict["company_branch"]
+
         return json_dict
 
     def get_queryset(self):
@@ -631,7 +630,7 @@ class ReverseVendingMachineSearchView(PermissionRequiredMixin, SearchView):
         if branch_qs:
             qs = qs & branch_qs
 
-        # Only allow branch/company/kiosk users to see machines in their own company
+        # Only allow branch/company/kiosk users to see Objects in their own company
         user = self.request.user
         if user.user_type == KIOSK_USER:
             qs = qs.filter(kiosk__pk=user.branch.pk)
@@ -640,6 +639,61 @@ class ReverseVendingMachineSearchView(PermissionRequiredMixin, SearchView):
         elif user.user_type == COMPANY_USER:
             qs = qs.filter(company_branch__company__pk=user.company.pk)
         return qs
+
+
+class ReverseVendingMachineSearchView(BranchSearchView):
+    template_name = "esani_pantportal/reverse_vending_machine/list.html"
+    actions_template = "esani_pantportal/reverse_vending_machine/actions.html"
+    model = ReverseVendingMachine
+    form_class = ReverseVendingMachineFilterForm
+    required_permissions = ["esani_pantportal.view_reversevendingmachine"]
+
+    search_fields = ["serial_number"]
+
+    def map_value(self, item, key, context):
+        value = super().map_value(item, key, context)
+        if key == "compensation" and value and value != "-":
+            value = float_to_string(value) + " øre"
+        return value or "-"
+
+
+class QRBagSearchView(BranchSearchView):
+    template_name = "esani_pantportal/qrbag/list.html"
+    actions_template = "esani_pantportal/qrbag/actions.html"
+    model = QRBag
+    form_class = QRBagFilterForm
+    required_permissions = ["esani_pantportal.view_qrbag"]
+
+    search_fields = ["qr", "status"]
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        qrbags = self.get_queryset()
+
+        status_dict = {}
+        for status in [s["status"] for s in qrbags.values("status").distinct()]:
+            status_dict[status] = qrbags.filter(status=status).count()
+
+        context["status_dict"] = status_dict
+        return context
+
+    def item_to_json_dict(self, item_obj, context, index):
+        json_dict = super().item_to_json_dict(item_obj, context, index)
+        if item_obj.owner:
+            owner = item_obj.owner.first_name + " " + item_obj.owner.last_name
+            json_dict["owner"] = owner
+        else:
+            json_dict["owner"] = "-"
+
+        return json_dict
+
+    def map_value(self, item, key, context):
+        value = super().map_value(item, key, context)
+
+        if key == "updated":
+            value = value.strftime("%-d. %b %Y")
+
+        return value or "-"
 
 
 class UserSearchView(PermissionRequiredMixin, SearchView):
@@ -973,6 +1027,18 @@ class ProductHistoryView(LoginRequiredMixin, DetailView):
             | Q(history_change_reason="Godkendt")
             | Q(history_change_reason="Gjort Inaktiv")
         ).order_by("-history_date")
+        return context
+
+
+class QRBagHistoryView(LoginRequiredMixin, DetailView):
+    model = QRBag
+    template_name = "esani_pantportal/qrbag/history.html"
+    context_object_name = "historical_qrbag"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["histories"] = self.object.history.all().order_by("-history_date")
+        context["back_url"] = get_back_url(self.request, reverse("pant:qrbag_list"))
         return context
 
 

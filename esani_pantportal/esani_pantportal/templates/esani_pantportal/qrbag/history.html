@@ -1,0 +1,40 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+{% load bootstrap_icons %}
+
+{% block content %}
+<div class="mx-5">
+    <h1>{% translate "QR-pose historik"%}</h1>
+    <div class="row">
+        <div class="col-6">
+        <h2>{{ historical_product.qr }}</h2>
+            <table class="table table-bordered">
+                    <thead>
+                    <tr>
+                        <th>{% translate "Dato" %}</th>
+                        <th>{% translate "Status" %}</th>
+                        <th>{% translate "Ændringsansvarlig" %}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for history in histories %}
+                    <tr>
+                        <td class="col-2">{{ history.history_date }}</td>
+                        <td class="col-2">{{ history.status }}</td>
+                        <td class="col-2">{{ history.history_user }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+            </table>
+        </div>
+    </div>
+    <a class="btn btn-primary" href="{{ back_url }}">{% translate 'Tilbage' %}</a>
+</div>
+{% endblock %}
