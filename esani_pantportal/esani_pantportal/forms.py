@@ -816,6 +816,17 @@ class CompanyFilterForm(SortPaginateForm):
     )
 
 
+class QRBagFilterForm(SortPaginateForm):
+    qr = forms.CharField(required=False)
+    status = forms.CharField(required=False)
+    company_branch__name = forms.CharField(required=False)
+    kiosk__name = forms.CharField(required=False)
+
+    def clean_kiosk__name(self):
+        # We use the branch__name search-field for both kiosk and branch filtering.
+        return self.cleaned_data["company_branch__name"]
+
+
 class ReverseVendingMachineFilterForm(SortPaginateForm):
     serial_number = forms.CharField(required=False)
     company_branch__name = forms.CharField(required=False)

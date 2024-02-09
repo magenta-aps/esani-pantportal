@@ -31,6 +31,8 @@ from esani_pantportal.views import (
     ProductRegisterView,
     ProductSearchView,
     ProductUpdateView,
+    QRBagHistoryView,
+    QRBagSearchView,
     RegisterBranchUserAdminView,
     RegisterBranchUserPublicView,
     RegisterCompanyUserAdminView,
@@ -117,6 +119,12 @@ urlpatterns = [
     path("produkt/", ProductSearchView.as_view(), name="product_list"),
     path("virksomhed/", CompanySearchView.as_view(), name="company_list"),
     path("bruger/", UserSearchView.as_view(), name="user_list"),
+    path("qrpose/", QRBagSearchView.as_view(), name="qrbag_list"),
+    path(
+        "qrpose/<int:pk>/history",
+        QRBagHistoryView.as_view(),
+        name="qrbag_history",
+    ),
     path(
         "pantmaskine/",
         ReverseVendingMachineSearchView.as_view(),
