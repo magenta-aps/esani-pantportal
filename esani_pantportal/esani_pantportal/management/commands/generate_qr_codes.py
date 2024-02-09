@@ -39,7 +39,6 @@ class Command(BaseCommand):
 
         qr_codes = qr_generator.generate_qr_codes(number_of_codes)
 
-        # TODO: Write to a file
         today = date.today().isoformat()
         count = qr_generator.count
         filename = f"{bag_type}-{today}_{number_of_codes}-codes_of_{count}.csv"
