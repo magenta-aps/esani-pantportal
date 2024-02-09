@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import datetime
 import logging
+import os
 from functools import cached_property
 from io import BytesIO
 from typing import Any, Dict
@@ -16,6 +17,7 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.views import LogoutView, PasswordChangeView
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
+from django.core.management import call_command
 from django.core.paginator import EmptyPage, Paginator
 from django.db.models import Case, F, Q, Value, When
 from django.db.models.functions import Coalesce, Concat
@@ -45,6 +47,7 @@ from esani_pantportal.forms import (
     ChangePasswordForm,
     CompanyFilterForm,
     DepositPayoutItemFilterForm,
+    GenerateQRForm,
     MultipleProductRegisterForm,
     NewsEmailForm,
     PantPortalAuthenticationForm,
@@ -1448,3 +1451,36 @@ class TwoFactorSetup(SetupView):
             reverse("pant:user_view", kwargs={"pk": self.request.user.id}),
             {"two_factor_success": 1},
         )
+
+
+class GenerateQRView(FormView):
+    form_class = GenerateQRForm
+    template_name = "esani_pantportal/qr/generate.html"
+
+    def form_valid(self, form):
+        bag_type = form.cleaned_data["bag_type"]
+        bag_name = settings.QR_GENERATOR_SERIES[bag_type]["name"]
+        number_of_codes = form.cleaned_data["number_of_codes"]
+
+        csv_file = call_command("generate_qr_codes", bag_type, number_of_codes)
+        df = pd.read_csv(csv_file, sep=";", dtype=str)
+
+        with BytesIO() as b:
+            sheet_name = f"{bag_name} x {number_of_codes}"
+
+            writer = pd.ExcelWriter(b, engine="xlsxwriter")
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+            # Set column-widths
+            writer.sheets[sheet_name].set_column(0, 0, 45)
+            writer.sheets[sheet_name].set_column(1, 1, 10)
+            writer.sheets[sheet_name].set_column(2, 2, 15)
+            writer.close()
+
+            excel_filename = os.path.basename(csv_file).replace(".csv", ".xlsx")
+            content_type = (
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            response = HttpResponse(b.getvalue(), content_type=content_type)
+            response["Content-Disposition"] = f"attachment; filename={excel_filename}"
+            return response

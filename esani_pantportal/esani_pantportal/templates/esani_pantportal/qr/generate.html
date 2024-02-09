@@ -1,0 +1,38 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+
+{% block content %}
+
+<div class="mx-5">
+    <h1>{% translate "Generér QR-koder" %}</h1>
+    <form method="POST" class="row g-3">
+        {% csrf_token %}
+        <div class="col-6">
+            <label for="{{form.bag_type.id_for_label}}">{{form.bag_type.label}}</label>
+            {{form.bag_type}}
+            <div class="form-text">
+                {{form.bag_type.help_text}}
+                {{form.bag_type.errors}}
+            </div>
+        </div>
+        <div class="col-6">
+            <label for="{{form.number_of_codes.id_for_label}}">{{form.number_of_codes.label}}</label>
+            {{form.number_of_codes}}
+            <div class="form-text">
+                {{form.number_of_codes.help_text}}
+                {{form.number_of_codes.errors}}
+            </div>
+        </div>
+        <div class="col-12">
+            <input class="btn btn-success float-right my-2" type="submit" value="{% translate 'Generér' %}"/>
+        </div>
+    </form>
+</div>
+{% endblock %}

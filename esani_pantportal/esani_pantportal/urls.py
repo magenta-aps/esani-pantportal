@@ -17,6 +17,7 @@ from esani_pantportal.views import (
     CsvTemplateView,
     DepositPayoutSearchView,
     ExcelTemplateView,
+    GenerateQRView,
     KioskDeleteView,
     KioskUpdateView,
     MultipleProductApproveView,
@@ -204,4 +205,5 @@ urlpatterns = [
     path("kiosk/<int:pk>", KioskUpdateView.as_view(), name="kiosk_update"),
     path("about/", AboutView.as_view(), name="about"),
     path("two_factor/setup", TwoFactorSetup.as_view(), name="two_factor_setup"),
+    path("qr/generate", GenerateQRView.as_view(), name="qr_generate"),
 ]

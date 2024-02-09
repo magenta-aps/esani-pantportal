@@ -1195,3 +1195,14 @@ class MultipleProductRegisterForm(BootstrapForm):
         column_exists = self.validate_that_column_exists(col_name)
         if column_exists:
             self.validate_column_contents(col_name, DANISH_PANT_CHOICES)
+
+
+class GenerateQRForm(BootstrapForm):
+    bag_type = forms.ChoiceField(
+        choices=[
+            (key, value_dict["name"])
+            for key, value_dict in settings.QR_GENERATOR_SERIES.items()
+        ],
+        label=_("Sækketype"),
+    )
+    number_of_codes = forms.IntegerField(label=_("Antal koder"))
