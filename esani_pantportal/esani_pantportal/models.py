@@ -671,7 +671,7 @@ class QRCodeInterval(models.Model):
         return f"{gen_name}[{start}:{end}] - {self.salt}"
 
 
-class ProductViewPreferences(models.Model):
+class ProductListViewPreferences(models.Model):
     class Meta:
         abstract = True
 
@@ -687,7 +687,20 @@ class ProductViewPreferences(models.Model):
     show_file_name = models.BooleanField(default=False)
 
 
-class User(AbstractUser, ProductViewPreferences):
+class UserListViewPreferences(models.Model):
+    class Meta:
+        abstract = True
+
+    show_branch = models.BooleanField(default=True)
+    show_company = models.BooleanField(default=True)
+    show_is_admin = models.BooleanField(default=True)
+    show_approved = models.BooleanField(default=True)
+    show_phone = models.BooleanField(default=False)
+    show_newsletter = models.BooleanField(default=False)
+    show_email = models.BooleanField(default=False)
+
+
+class User(AbstractUser, ProductListViewPreferences, UserListViewPreferences):
     class Meta:
         verbose_name = _("Bruger")
         verbose_name_plural = _("Brugere")
