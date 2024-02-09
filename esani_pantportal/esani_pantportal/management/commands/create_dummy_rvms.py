@@ -23,17 +23,17 @@ class Command(BaseCommand):
 
         ReverseVendingMachine.objects.update_or_create(
             serial_number=100000000,
-            defaults={"compensation": 2.3, "company_branch": brugseni_nuuk},
+            defaults={"compensation": 23, "company_branch": brugseni_nuuk},
         )
         ReverseVendingMachine.objects.update_or_create(
             serial_number=110000000,
-            defaults={"compensation": 2.1, "company_branch": brugseni_natalie},
+            defaults={"compensation": 21, "company_branch": brugseni_natalie},
         )
         ReverseVendingMachine.objects.update_or_create(
             serial_number=120000000,
-            defaults={"compensation": 1.2, "company_branch": brugseni_natalie},
+            defaults={"compensation": 12, "company_branch": brugseni_natalie},
         )
         ReverseVendingMachine.objects.update_or_create(
             serial_number=130000000,
-            defaults={"compensation": 2.6, "kiosk": nuuk_kiosk},
+            defaults={"compensation": 26, "kiosk": nuuk_kiosk},
         )

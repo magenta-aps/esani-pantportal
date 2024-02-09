@@ -33,6 +33,8 @@ SPDX-License-Identifier: MPL-2.0
                     {% for field in form %}
                     {% if field.name == "company" and user.is_esani_admin == False %}
                         {% include "../edit_field.html" with field_name=field.name field=field show_pencil=False %}
+                    {% elif field.name == "qr_compensation" %}
+                        {% include "../edit_field.html" with field_name=field.name field=field unit="øre" %}
                     {% else %}
                         {% include "../edit_field.html" with field_name=field.name field=field %}
                     {% endif %}
@@ -92,7 +94,7 @@ SPDX-License-Identifier: MPL-2.0
                             <th>{{ rvm.serial_number }}</th>
                             <td>
                             <span title="{{rvm|verbose_name:'compensation'}}">
-                            {{ rvm.compensation }} kr.
+                            {{ rvm.compensation|floatformat }} øre
                             </span>
                             </td>
                         </tr>

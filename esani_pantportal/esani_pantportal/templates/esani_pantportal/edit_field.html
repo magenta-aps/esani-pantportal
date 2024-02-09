@@ -9,7 +9,8 @@ SPDX-License-Identifier: MPL-2.0
     <th class="col-6">{{object|verbose_name:field_name}}</th>
     <td class="col-6">
         <div id="show_{{field_name}}_div">
-            {{ object|get_display_name:field_name }} {{unit}}
+            {% if unit == "øre" %}{{ object|get_display_name:field_name|floatformat }}{% else %}{{ object|get_display_name:field_name }}{% endif %} {{unit}}
+            
             {% if can_edit %}
             <a style="display:inline-block" class="icon-link" id="edit_{{field_name}}_button">
                 {% if show_pencil|default_if_none:True %}
