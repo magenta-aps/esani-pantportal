@@ -19,6 +19,7 @@ from esani_pantportal.models import (
     EsaniUser,
     Kiosk,
     KioskUser,
+    ReverseVendingMachine,
     User,
 )
 from esani_pantportal.templatetags.pant_tags import has_two_factor
@@ -199,6 +200,19 @@ class BaseUserTest(LoginMixin, TestCase):
         cls.facebook_branch_admin.groups.add(Group.objects.get(name="BranchAdmins"))
         cls.facebook_branch_user.groups.add(Group.objects.get(name="BranchUsers"))
         cls.kiosk_admin.groups.add(Group.objects.get(name="KioskAdmins"))
+
+        # Create RVMs
+        cls.facebook_rvm1 = ReverseVendingMachine.objects.create(
+            compensation=11,
+            serial_number="1",
+            company_branch=cls.facebook_branch,
+        )
+
+        cls.kiosk_rvm1 = ReverseVendingMachine.objects.create(
+            compensation=12,
+            serial_number="2",
+            kiosk=cls.kiosk,
+        )
 
     @staticmethod
     def make_form_data(form):
