@@ -704,3 +704,27 @@ class UpdateCompanyTest(BaseUserTest):
         response = self.client.get(url2)
         back_button = self.get_back_button(response.content)
         self.assertEqual(back_button["href"], "foo")
+
+    def test_no_compensation(self):
+        self.client.login(username="facebook_admin", password="12345")
+        url = reverse("pant:company_update", kwargs={"pk": self.facebook.pk})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        print(response)
+        """
+        self.assertSetEqual(
+            set(response.json()["errors"]),
+            {
+                "city",
+                "address",
+                "branch_type",
+                "name",
+                "phone",
+                "company",
+                "postal_code",
+                "municipality",
+                "prefix",
+                "qr_compensation",
+            },
+        )
+        """

@@ -140,7 +140,7 @@ class UserUpdateForm(forms.ModelForm, BootstrapForm):
 
 
 class ReverseVendingMachineRegisterForm(forms.ModelForm, BootstrapForm):
-    def __init__(self, *args, kiosks=None, branches=None, **kwargs):
+    def __init__(self, *args, kiosks=None, branches=None, esani_admin=True, **kwargs):
         super().__init__(*args, **kwargs)
 
         if kiosks is not None:
@@ -158,6 +158,9 @@ class ReverseVendingMachineRegisterForm(forms.ModelForm, BootstrapForm):
             elif len(branches) == 1:
                 self.fields["company_branch"].disabled = True
                 self.initial["company_branch"] = branches[0].pk
+
+        if esani_admin:
+            self.show_compensation = True
 
     class Meta:
         model = ReverseVendingMachine
@@ -387,9 +390,12 @@ class UpdateBranchForm(forms.ModelForm, BootstrapForm):
             "qr_compensation",
         )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, esani_admin=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.object_verbose_name = _("Butik")
+
+        if not esani_admin:
+            del self.fields["qr_compensation"]
 
 
 class RegisterKioskForm(forms.ModelForm, BootstrapForm, PhoneForm):
@@ -434,9 +440,12 @@ class UpdateKioskForm(forms.ModelForm, BootstrapForm):
             "qr_compensation",
         )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, esani_admin=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.object_verbose_name = _("Kiosk")
+
+        if not esani_admin:
+            del self.fields["qr_compensation"]
 
 
 class RegisterCompanyForm(forms.ModelForm, BootstrapForm, PhoneForm):
@@ -477,7 +486,7 @@ class UpdateCompanyForm(forms.ModelForm, BootstrapForm):
             "municipality",
         )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, esani_admin=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.object_verbose_name = _("Virksomhed")
 
@@ -492,6 +501,7 @@ class RegisterUserMultiForm(MultiModelForm, BootstrapForm):
         branch=None,
         show_admin_flag=False,
         show_captcha=True,
+        esani_admin=None,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -514,6 +524,8 @@ class RegisterUserMultiForm(MultiModelForm, BootstrapForm):
                     self.forms["branch"].fields[field_name].required
                 )
                 self.forms["branch"].fields[field_name].required = False
+            if not esani_admin:
+                del self.forms["branch"].fields["qr_compensation"]
 
         # If the company is selected from the dropdown, we don't need the company form
         if "company" in self.forms:
@@ -529,6 +541,7 @@ class RegisterUserMultiForm(MultiModelForm, BootstrapForm):
         self.branch = branch
         self.show_admin_flag = show_admin_flag
         self.show_captcha = show_captcha
+        self.esani_admin = esani_admin
 
         if not show_captcha:
             self.forms["user"].fields["captcha"].required = False

@@ -69,7 +69,9 @@ SPDX-License-Identifier: MPL-2.0
         <thead>
         <tr>
             <th data-sortable="true" data-field="serial_number" class="col-3">Serienummer</th>
+            {% if user.is_esani_admin %}
             <th data-sortable="true" data-field="compensation" class="col-3">Håndterings-godtgørelse</th>
+            {% endif %}
             <th data-sortable="true" data-field="company_branch_or_kiosk" class="col-3">Butik</th>
             <th data-field="actions" class="col-3">Handlinger</th>
         </tr>
@@ -78,7 +80,9 @@ SPDX-License-Identifier: MPL-2.0
         {% for item in items %}
         <tr>
             <td>{{item.serial_number}}</td>
+            {% if user.is_esani_admin %}
             <td>{{item.compensation}}</td>
+            {% endif %}
             <td>{{item.company_branch_or_kiosk}}</td>
             <td>
                 {% include actions_template with item=item %}

@@ -12,6 +12,7 @@ from django.views.generic import UpdateView
 from esani_pantportal.models import (
     BRANCH_USER,
     COMPANY_USER,
+    ESANI_USER,
     KIOSK_USER,
     BranchUser,
     CompanyUser,
@@ -167,3 +168,12 @@ class UpdateViewMixin(PermissionRequiredMixin, UpdateView):
         context = self.get_context_data(form=form)
         context["form_fields_to_show"] = form.changed_data
         return self.render_to_response(context)
+
+
+class IsAdminMixin:
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        user = self.request.user
+        if not user.is_anonymous and user.user_type == ESANI_USER:
+            kwargs["esani_admin"] = True
+        return kwargs

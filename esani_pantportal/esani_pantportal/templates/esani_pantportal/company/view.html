@@ -86,17 +86,24 @@ SPDX-License-Identifier: MPL-2.0
                     {% translate "Pantmaskiner" %}
                     <a href="{% url 'pant:rvm_list' %}?branch__name={{object.name|quote_url}}">{% bs_icon "box-arrow-up-right" %}</a>
                 </h2>
-
                 <table class="table table-bordered">
                     <tbody>
+                        <tr>
+                          <th>{% translate "Serienummer" %}</th>
+                          {% if is_admin %}
+                          <th>{% translate "Håndteringsgodtgørelse" %}</th>
+                          {% endif %}
+                        </tr>
                     {% for rvm in rvms %}
                         <tr>
                             <th>{{ rvm.serial_number }}</th>
+                            {% if is_admin %}
                             <td>
                             <span title="{{rvm|verbose_name:'compensation'}}">
                             {{ rvm.compensation|floatformat }} øre
                             </span>
                             </td>
+                            {% endif %}
                         </tr>
                     {% endfor %}
                     {% if not rvms %}
