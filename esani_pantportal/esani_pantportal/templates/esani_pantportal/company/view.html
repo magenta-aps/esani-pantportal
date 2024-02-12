@@ -30,6 +30,10 @@ SPDX-License-Identifier: MPL-2.0
                         <th>{% translate "Virksomhedstype" %}</th>
                         <td>{{form.object_verbose_name}}</td>
                     </tr>
+                    <tr>
+                        <th>{% translate "Kundenummer" %}</th>
+                        <td>{{object.external_customer_id}}</td>
+                    </tr>
                     {% for field in form %}
                     {% if field.name == "company" and user.is_esani_admin == False %}
                         {% include "../edit_field.html" with field_name=field.name field=field show_pencil=False %}
@@ -48,7 +52,7 @@ SPDX-License-Identifier: MPL-2.0
                             <h5 class="cart-title">Rediger</h5>
                             <p class="card-text">
                                 Rediger en virksomhed ved at:
-    
+
                                 <ul>
                                     <li>Rette de ønskede felter (ved brug af {% bs_icon "pencil-square" color="blue" %} knapper) </li>
                                     <li>Klik "Gem"</li>

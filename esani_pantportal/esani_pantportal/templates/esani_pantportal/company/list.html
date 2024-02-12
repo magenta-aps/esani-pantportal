@@ -84,6 +84,7 @@ SPDX-License-Identifier: MPL-2.0
     >
         <thead>
         <tr>
+            <th data-sortable="true" data-field="external_customer_id_annotation" class="col-1">{% translate "Kundenummer" %}</th>
             <th data-sortable="true" data-field="name" class="col-3">{% translate "Navn" %}</th>
             <th data-sortable="true" data-field="address" class="col-3">{% translate "Adresse" %}</th>
             <th data-sortable="true" data-field="postal_code" class="col-3">{% translate "Postnr." %}</th>
@@ -95,6 +96,7 @@ SPDX-License-Identifier: MPL-2.0
         <tbody>
         {% for item in items %}
         <tr>
+            <td>{{item.external_customer_id_annotation}}</td>
             <td>{{item.name}}</td>
             <td>{{item.address}}</td>
             <td>{{item.postal_code}}</td>
