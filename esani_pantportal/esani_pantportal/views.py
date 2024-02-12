@@ -22,7 +22,11 @@ from django.core.paginator import EmptyPage, Paginator
 from django.db.models import Case, F, Max, Min, Q, Value, When
 from django.db.models.functions import Coalesce, Concat
 from django.forms import model_to_dict
-from django.http import HttpResponse, JsonResponse
+from django.http import (
+    HttpResponse,
+    HttpResponseForbidden,
+    JsonResponse,
+)
 from django.shortcuts import redirect
 from django.template import loader
 from django.urls import reverse
@@ -1598,3 +1602,74 @@ class GenerateQRView(FormView):
             response = HttpResponse(b.getvalue(), content_type=content_type)
             response["Content-Disposition"] = f"attachment; filename={excel_filename}"
             return response
+
+
+class CsvUsersView(CsvTemplateView):
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_esani_admin:
+            return HttpResponseForbidden("Permission denied!")
+
+        # Query
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        users_all_query = User.objects.all()
+
+        # Dynamically get all field names from the User model
+        initial_fields = ["id", "username", "email", "first_name", "last_name"]
+        excluded_fields = ["password"]
+        other_fields = [
+            f.name
+            for f in User._meta.fields
+            if f.name not in initial_fields and f.name not in excluded_fields
+        ]
+        field_names = initial_fields + other_fields
+
+        df = pd.DataFrame(users_all_query.values(*field_names))
+
+        # Add an extra column "company_name", right after "user_info",
+        # which will use "user_info" to determine its value
+        df["company_name"] = ""
+        for index, row in df.iterrows():
+            if row["user_type"] == ESANI_USER:
+                df.at[index, "company_name"] = "ESANI"
+            elif row["user_type"] == COMPANY_USER:
+                user_model = User.objects.get(pk=row["id"])
+                company = user_model.get_company()
+                df.at[index, "company_name"] = company.name
+            elif row["user_type"] == BRANCH_USER:
+                user_model = User.objects.get(pk=row["id"])
+                branch = user_model.get_branch()
+                df.at[index, "company_name"] = branch.name
+            elif row["user_type"] == KIOSK_USER:
+                user_model = User.objects.get(pk=row["id"])
+                kiosk_user_model = KioskUser.objects.get(user_ptr_id=row["id"])
+                kiosk = Kiosk.objects.get(pk=kiosk_user_model.branch_id)
+                df.at[index, "company_name"] = kiosk.name
+
+        df = self.move_pd_column_after(df, "company_name", "user_type")
+
+        # Convert column "user_type" to a text instead of the integer value
+        df["user_type"] = df["user_type"].map(
+            {
+                ESANI_USER: "ESANI_USER",
+                BRANCH_USER: "BRANCH_USER",
+                COMPANY_USER: "COMPANY_USER",
+                KIOSK_USER: "KIOSK_USER",
+            }
+        )
+
+        # Response
+        filename = f"{timestamp}_full_user_list.csv"
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f"attachment; filename={filename}"
+        df.to_csv(path_or_buf=response, sep=";", index=False)
+        return response
+
+    def move_pd_column_after(self, df: pd.DataFrame, column_to_move, after_column):
+        after_column_position = df.columns.get_loc(after_column) + 1
+        column_data = df[column_to_move]
+
+        if after_column_position - 1 != df.columns.get_loc(column_to_move):
+            df.drop(columns=[column_to_move], inplace=True)
+            df.insert(after_column_position, column_to_move, column_data)
+
+        return df
