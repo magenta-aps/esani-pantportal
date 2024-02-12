@@ -69,6 +69,12 @@ SPDX-License-Identifier: MPL-2.0
         </div>
     </div>
     <div class="col-12  mt-3">
+        {% if user.is_esani_admin %}
+        <a class="btn btn-primary" href="{% url 'pant:all_users_csv_download' %}">
+            {% translate "Download .csv-fil med alle brugere" %}
+        </a>
+        {% endif %}
+
         <div class="dropdown float-end">
             <a class="btn btn-primary dropdown-toggle" role="button" id="dropdownMenuButton"
             data-bs-toggle="dropdown" aria-expanded="false">

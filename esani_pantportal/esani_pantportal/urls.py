@@ -15,6 +15,7 @@ from esani_pantportal.views import (
     CompanyUpdateView,
     CsvProductsView,
     CsvTemplateView,
+    CsvUsersView,
     DepositPayoutSearchView,
     ExcelTemplateView,
     GenerateQRView,
@@ -145,6 +146,7 @@ urlpatterns = [
     path("produkt/<int:pk>/fjern", ProductDeleteView.as_view(), name="product_delete"),
     path("bruger/<int:pk>", UserUpdateView.as_view(), name="user_view"),
     path("bruger/<int:pk>/fjern", UserDeleteView.as_view(), name="user_delete"),
+    path("bruger/download/", CsvUsersView.as_view(), name="all_users_csv_download"),
     path(
         "virksomhed/<int:pk>/fjern", CompanyDeleteView.as_view(), name="company_delete"
     ),
