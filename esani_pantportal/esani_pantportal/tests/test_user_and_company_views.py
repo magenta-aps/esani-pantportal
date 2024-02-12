@@ -728,3 +728,13 @@ class UpdateCompanyTest(BaseUserTest):
             },
         )
         """
+
+    def test_context_has_external_customer_id(self):
+        self.login()
+        response = self.client.get(
+            reverse("pant:company_update", kwargs={"pk": self.facebook.pk})
+        )
+        self.assertEqual(
+            response.context["object"].external_customer_id,
+            f"{Company.customer_id_prefix}-{self.facebook.pk:05}",
+        )

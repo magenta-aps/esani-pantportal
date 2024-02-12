@@ -11,7 +11,8 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-from django.db.models import CheckConstraint, Q
+from django.db.models import CharField, CheckConstraint, Q, Value
+from django.db.models.functions import Cast, Concat, LPad
 from django.utils.translation import gettext as _
 from simple_history.models import HistoricalRecords
 
@@ -144,6 +145,20 @@ class AbstractCompany(models.Model):
         blank=True,
         default=None,
     )
+
+    @staticmethod
+    def annotate_external_customer_id(cls, length=5, fill="0"):
+        prefix = f"{cls.customer_id_prefix}-"
+        return Concat(
+            Value(prefix),
+            LPad(
+                Cast("id", output_field=CharField()),
+                length,
+                Value(fill),
+                output_field=CharField(),
+            ),
+            output_field=CharField(),
+        )
 
     @property
     def external_customer_id(self):

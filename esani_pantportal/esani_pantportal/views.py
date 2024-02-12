@@ -506,7 +506,12 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
 
     def get_fields(self):
         fields = super().get_fields()
-        return fields + ["object_class_name", "object_class_name_verbose"]
+        extra = [
+            "object_class_name",
+            "object_class_name_verbose",
+            "external_customer_id_annotation",
+        ]
+        return fields + extra
 
     def check_permissions(self):
         if not self.request.user.is_esani_admin:
@@ -516,20 +521,24 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
 
     def get_queryset(self):
         fields = super().get_fields()
+        external_customer_id = AbstractCompany.annotate_external_customer_id
         qs = [
             Kiosk.objects.only(*fields).annotate(
                 object_class_name=Value("Kiosk"),
                 object_class_name_verbose=Value("Kiosk"),
+                external_customer_id_annotation=external_customer_id(Kiosk),
                 **self.annotations,
             ),
             Company.objects.only(*fields).annotate(
                 object_class_name=Value("Company"),
                 object_class_name_verbose=Value("Virksomhed"),
+                external_customer_id_annotation=external_customer_id(Company),
                 **self.annotations,
             ),
             CompanyBranch.objects.only(*fields).annotate(
                 object_class_name=Value("CompanyBranch"),
                 object_class_name_verbose=Value("Butik"),
+                external_customer_id_annotation=external_customer_id(CompanyBranch),
                 **self.annotations,
             ),
         ]

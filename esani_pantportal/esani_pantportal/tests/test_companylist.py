@@ -114,6 +114,26 @@ class CompanyListTest(BaseCompanyTest):
         response = self.client.get(reverse("pant:company_list"))
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
+    def test_external_customer_id(self):
+        def prefix(external_customer_id):
+            return external_customer_id.split("-")[0]
+
+        self.login()
+        response = self.client.get(reverse("pant:company_list"))
+        ext_id_and_names = [
+            (item.external_customer_id_annotation, item.name)
+            for item in response.context["items"]
+        ]
+        self.assertListEqual(
+            [(prefix(elem[0]), elem[1]) for elem in ext_id_and_names],
+            [
+                (Company.customer_id_prefix, self.facebook.name),
+                (CompanyBranch.customer_id_prefix, self.facebook_branch.name),
+                (Company.customer_id_prefix, self.google.name),
+                (Kiosk.customer_id_prefix, self.kiosk.name),
+            ],
+        )
+
 
 class CompanyDeleteTest(BaseCompanyTest):
     def setUp(self):
