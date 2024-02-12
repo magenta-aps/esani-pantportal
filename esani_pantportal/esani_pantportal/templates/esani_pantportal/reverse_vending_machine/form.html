@@ -16,6 +16,7 @@ SPDX-License-Identifier: MPL-2.0
     <form method="POST" class="row g-3">
         {% csrf_token %}
 
+    {% if form.show_compensation %}
     <div class="col-6">
       <label for="{{form.compensation.id_for_label}}">{{form.compensation.label}}</label>
       {{form.compensation}}
@@ -24,6 +25,7 @@ SPDX-License-Identifier: MPL-2.0
           {{form.compensation.errors}}
       </div>
     </div>
+    {% endif %}
 
     <div class="col-6">
       <label for="{{form.serial_number.id_for_label}}">{{form.serial_number.label}}</label>

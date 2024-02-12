@@ -73,6 +73,7 @@ from esani_pantportal.models import (
     ADMIN_GROUPS,
     BRANCH_USER,
     COMPANY_USER,
+    ESANI_USER,
     KIOSK_USER,
     AbstractCompany,
     BranchUser,
@@ -96,7 +97,11 @@ from esani_pantportal.util import (
     float_to_string,
     get_back_url,
 )
-from esani_pantportal.view_mixins import PermissionRequiredMixin, UpdateViewMixin
+from esani_pantportal.view_mixins import (
+    IsAdminMixin,
+    PermissionRequiredMixin,
+    UpdateViewMixin,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +182,9 @@ class ProductRegisterView(PermissionRequiredMixin, CreateView):
         return reverse("pant:product_register_success")
 
 
-class ReverseVendingMachineRegisterView(PermissionRequiredMixin, CreateView):
+class ReverseVendingMachineRegisterView(
+    IsAdminMixin, PermissionRequiredMixin, CreateView
+):
     model = ReverseVendingMachine
     form_class = ReverseVendingMachineRegisterForm
     template_name = "esani_pantportal/reverse_vending_machine/form.html"
@@ -235,7 +242,7 @@ class _PrevalidateCreateView(CreateView):
         return super().post(request, *args, **kwargs)
 
 
-class RegisterBranchUserView(_PrevalidateCreateView):
+class RegisterBranchUserView(IsAdminMixin, _PrevalidateCreateView):
     model = BranchUser
     form_class = RegisterCompanyBranchUserMultiForm
     template_name = "esani_pantportal/user/branch_user/form.html"
@@ -279,7 +286,7 @@ class RegisterBranchUserAdminView(PermissionRequiredMixin, RegisterBranchUserVie
         return kwargs
 
 
-class RegisterCompanyUserView(_PrevalidateCreateView):
+class RegisterCompanyUserView(IsAdminMixin, _PrevalidateCreateView):
     model = CompanyUser
     form_class = RegisterCompanyUserMultiForm
     template_name = "esani_pantportal/user/company_user/form.html"
@@ -307,7 +314,7 @@ class RegisterCompanyUserAdminView(PermissionRequiredMixin, RegisterCompanyUserV
         return kwargs
 
 
-class RegisterKioskUserView(_PrevalidateCreateView):
+class RegisterKioskUserView(IsAdminMixin, _PrevalidateCreateView):
     model = KioskUser
     form_class = RegisterKioskUserMultiForm
     template_name = "esani_pantportal/user/kiosk_user/form.html"
@@ -761,13 +768,14 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
         return qs
 
 
-class BaseCompanyUpdateView(UpdateViewMixin):
+class BaseCompanyUpdateView(IsAdminMixin, UpdateViewMixin):
     template_name = "esani_pantportal/company/view.html"
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         context["back_url"] = get_back_url(self.request, "")
         context["users"] = self.object.users.all()
+        context["is_admin"] = self.request.user.user_type == ESANI_USER
 
         return context
 
@@ -814,7 +822,6 @@ class CompanyBranchUpdateView(BaseCompanyUpdateView):
         context["object_type"] = "company_branch"
         if not context["users"] and not context["rvms"]:
             context["can_delete"] = True
-
         return context
 
     def form_valid(self, form):
@@ -1089,7 +1096,9 @@ class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
             "city",
             "phone",
         ]
-        branch_attributes = ["customer_id", "qr_compensation"]
+        branch_attributes = ["customer_id"]
+        if self.request.user.user_type == ESANI_USER:
+            branch_attributes.append("qr_compensation")
         company_attributes = ["cvr"]
         kiosk_attributes = ["cvr"]
 
