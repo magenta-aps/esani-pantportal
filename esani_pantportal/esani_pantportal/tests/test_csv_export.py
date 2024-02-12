@@ -3,14 +3,26 @@
 # SPDX-License-Identifier: MPL-2.0
 import datetime
 import os
+from http import HTTPStatus
 from io import StringIO
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
 from django.core.management import call_command
 from django.test import TestCase
+from django.urls import reverse
 
-from esani_pantportal.models import Product
+from esani_pantportal.models import (
+    BranchUser,
+    Company,
+    CompanyBranch,
+    CompanyUser,
+    Kiosk,
+    KioskUser,
+    Product,
+)
+
+from .conftest import LoginMixin
 
 datetime_mock = MagicMock()
 datetime_mock.datetime.now.side_effect = [
@@ -96,3 +108,82 @@ class ExportProductsToCSVTests(TestCase):
         self.assertNotIn(filenames[0], os.listdir("."))
         self.assertIn(filenames[1], os.listdir("."))
         self.assertIn(filenames[2], os.listdir("."))
+
+
+class CSVExportViewTest(LoginMixin, TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        test_company = Company.objects.create(
+            name="test-company",
+            cvr=10000000,
+            address="Væskevej 1337",
+            city="Nuuk",
+            postal_code="1234",
+            phone="+299 36 35 42",
+            country="Grønland",
+            company_type="A",
+        )
+        _ = CompanyUser.objects.create_user(
+            username="testuser_CompanyUsers",
+            password="12345",
+            email="test-company-admins@test.com",
+            company_id=test_company.id,
+        )
+
+        test_branch = CompanyBranch.objects.create(
+            company=test_company,
+            name="test-branch",
+            address="Væskevej 1337",
+            city="Nuuk",
+            postal_code="1234",
+            phone="+299 36 35 42",
+            location_id=1,
+        )
+        _ = BranchUser.objects.create_user(
+            branch=test_branch,
+            username="testuser_BranchUsers",
+            password="12345",
+            email="test-branch-admins@test.com",
+        )
+
+        test_kiosk_branch = Kiosk.objects.create(
+            cvr=10000000,
+            name="test-kiosk",
+            address="Væskevej 1337",
+            city="Nuuk",
+            postal_code="1234",
+            phone="+299 36 35 42",
+            location_id=1,
+        )
+        _ = KioskUser.objects.create_user(
+            branch=test_kiosk_branch,
+            username="testuser_KioskUsers",
+            password="12345",
+            email="test-kiosk-admins@test.com",
+        )
+
+
+class CSVExportUsersViewTest(CSVExportViewTest):
+    def test_admin_user(self):
+        self.login()
+        url = reverse("pant:all_users_csv_download")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_company_user(self):
+        self.login("CompanyUsers")
+        url = reverse("pant:all_users_csv_download")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_branch_user(self):
+        self.login("BranchUsers")
+        url = reverse("pant:all_users_csv_download")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_kiosk_user(self):
+        self.login("KioskUsers")
+        url = reverse("pant:all_users_csv_download")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)

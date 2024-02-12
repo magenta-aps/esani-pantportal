@@ -8,6 +8,7 @@ from esani_pantportal.models import (
     BranchUser,
     Company,
     CompanyBranch,
+    CompanyUser,
     EsaniUser,
     Kiosk,
     KioskUser,
@@ -55,6 +56,17 @@ class LoginMixin:
                 location_id=4,
             )
             kwargs = {"branch": kiosk}
+        elif group in ["CompanyAdmins", "CompanyUsers"]:
+            user_model = CompanyUser
+            company = Company.objects.create(
+                name="test company2",
+                cvr=19232345,
+                address="foo",
+                postal_code="123",
+                city="test city",
+                phone="+4544457845",
+            )
+            kwargs = {"company": company}
 
         qs = user_model.objects.filter(username=username)
         if not qs:
