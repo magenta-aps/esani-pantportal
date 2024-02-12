@@ -45,10 +45,22 @@ SPDX-License-Identifier: MPL-2.0
             <div class="col-4">{{ form.kiosk }}</div>
         </div>
         <div class="row">
-            <div class="col-2">{% translate "Dato" %}</div>
-            <div class="col-4">{{ form.date }}</div>
+            <div class="col-2">{% translate "Periode" %}</div>
+            <div class="col-2">{{ form.from_date }}</div>
+            <div class="col-2">{{ form.to_date }}</div>
         </div>
+        {% if form.non_field_errors %}
         <div class="row">
+            <div class="col-6 d-flex justify-content-end">
+                <ul class="errorlist">
+                    {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+        <div class="row mt-3 mb-3">
             <div class="col-6 clearfix"><button type="submit" class="btn btn-primary float-end">Søg</button></div>
         </div>
     </form>
@@ -125,14 +137,12 @@ SPDX-License-Identifier: MPL-2.0
                 {% endfor %}
             </tbody>
         </table>
-        <!--
         <button type="submit" class="btn btn-primary" name="selection" value="selected">
-            Marker valgte (<span>0</span>) som udbetalt
+            Hent valgte (<span>0</span>) som udbetalingsliste
         </button>
         <button type="submit" class="btn btn-primary d-none" name="selection" value="all">
-            Marker alle ({{ page_obj.paginator.count }}) som udbetalt
+            Hent alle ({{ page_obj.paginator.count }}) som udbetalingsliste
         </button>
-        -->
     </form>
 </div>
 

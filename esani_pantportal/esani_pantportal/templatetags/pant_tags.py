@@ -75,11 +75,6 @@ def danish(danish_id):
 
 
 @register.filter
-def yesno(boolean):
-    return _("Ja") if boolean else _("Nej")
-
-
-@register.filter
 def constraints_string(key, unit):
     product_constraints = settings.PRODUCT_CONSTRAINTS
     product_shape_dict = {p[0]: p[1] for p in PRODUCT_SHAPE_CHOICES}

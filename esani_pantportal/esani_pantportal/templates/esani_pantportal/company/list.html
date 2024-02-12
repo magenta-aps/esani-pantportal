@@ -109,6 +109,11 @@ SPDX-License-Identifier: MPL-2.0
         {% endfor %}
         </tbody>
     </table>
+    <form method="get">
+        <button type="submit" class="btn btn-primary" name="download" value="csv">
+            {% translate "Hent som CSV" %}
+        </button>
+    </form>
 </div>
 
 {{search_data|json_script:"search_data"}}

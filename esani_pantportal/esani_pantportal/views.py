@@ -19,10 +19,10 @@ from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.core.management import call_command
 from django.core.paginator import EmptyPage, Paginator
-from django.db.models import Case, F, Q, Value, When
+from django.db.models import Case, F, Max, Min, Q, Value, When
 from django.db.models.functions import Coalesce, Concat
 from django.forms import model_to_dict
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.template import loader
 from django.urls import reverse
@@ -43,6 +43,7 @@ from project.settings import DEFAULT_FROM_EMAIL
 from simple_history.utils import bulk_update_with_history, update_change_reason
 from two_factor.views import LoginView, SetupView
 
+from esani_pantportal.exports.uniconta.exports import CreditNoteExport, DebtorExport
 from esani_pantportal.forms import (
     ChangePasswordForm,
     CompanyFilterForm,
@@ -504,6 +505,16 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
     # It is excluded to avoid problems with the joined queryset
     excluded_fields = ["municipality"]
 
+    def get(self, request, *args, **kwargs):
+        if request.GET.get("download", None) == "csv":
+            export = DebtorExport()
+            filename = f"debitor_{datetime.date.today().strftime('%Y-%m-%d')}.csv"
+            response = HttpResponse(content_type="text/csv")
+            response["Content-Disposition"] = f"attachment; filename={filename}"
+            export.as_csv(response)
+            return response
+        return super().get(request, *args, **kwargs)
+
     def get_fields(self):
         fields = super().get_fields()
         extra = [
@@ -902,19 +913,29 @@ class DepositPayoutSearchView(PermissionRequiredMixin, ListView, FormView):
     _reserved = ("sort", "order", "page", "size")
 
     def post(self, request, *args, **kwargs):
-        # This is a dummy implementation which demonstrates how to process POST
-        # requests for this view.
         # If POST contains "selection=all", process all objects in queryset.
         # If POST contains one more item IDs in "id", process only the objects given by
         # those IDs.
         if request.POST.get("selection", "") == "all":
-            return JsonResponse({"all": True, "count": self.get_queryset().count()})
+            qs = self.get_queryset()
         else:
             ids = [int(id) for id in request.POST.getlist("id")]
-            return JsonResponse(
-                {"all": False, "count": self.get_queryset().filter(id__in=ids).count()}
-            )
-        return HttpResponseRedirect(".")  # pragma: no cover
+            qs = self.get_queryset().filter(id__in=ids)
+
+        from_date = qs.aggregate(Min("date"))["date__min"]
+        to_date = qs.aggregate(Max("date"))["date__max"]
+        filter_form = self.get_form_class()(self.request.GET)
+        if filter_form.is_valid():
+            from_date = filter_form.cleaned_data.get("from_date") or from_date
+            to_date = filter_form.cleaned_data.get("to_date") or to_date
+
+        export = CreditNoteExport(from_date, to_date, qs)
+        response = HttpResponse(content_type="text/csv")
+        response[
+            "Content-Disposition"
+        ] = f"attachment; filename={export.get_filename()}"
+        export.as_csv(response)
+        return response
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -928,13 +949,22 @@ class DepositPayoutSearchView(PermissionRequiredMixin, ListView, FormView):
         )
 
         # Apply filters
-        filters = {
-            name: val
-            for name, val in self.request.GET.items()
-            if (name not in self._reserved) and (val not in ("", None))
-        }
-        if filters:
-            qs = qs.filter(**filters)
+        filter_form = self.get_form_class()(self.request.GET)
+        if filter_form.is_valid():
+            company_branch = filter_form.cleaned_data.get("company_branch")
+            kiosk = filter_form.cleaned_data.get("kiosk")
+            from_date = filter_form.cleaned_data.get("from_date")
+            to_date = filter_form.cleaned_data.get("to_date")
+            if company_branch:
+                qs = qs.filter(company_branch=company_branch)
+            if kiosk:
+                qs = qs.filter(kiosk=kiosk)
+            if from_date:
+                qs = qs.filter(date__gte=from_date)
+            if to_date:
+                qs = qs.filter(date__lte=to_date)
+        else:
+            return qs.none()
 
         # Apply sort order
         sort_field = self.request.GET.get("sort")

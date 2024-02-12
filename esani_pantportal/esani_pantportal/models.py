@@ -198,6 +198,11 @@ class Company(AbstractCompany):
         blank=True,
     )
 
+    invoice_company_branch = models.BooleanField(
+        verbose_name=_("Send faktura/kreditnota/mv. til den enkelte butik"),
+        default=True,
+    )
+
     def __str__(self):
         name = self.name
         cvr = self.cvr
@@ -246,6 +251,10 @@ class Branch(AbstractCompany):
     def get_branch(self):
         return self
 
+    @property
+    def customer_invoice_account_id(self):
+        return None
+
 
 class CompanyBranch(Branch):
     customer_id_prefix = "2"
@@ -270,6 +279,13 @@ class CompanyBranch(Branch):
 
     def get_company(self):
         return self.company
+
+    @property
+    def customer_invoice_account_id(self):
+        if self.company.invoice_company_branch:
+            return None
+        else:
+            return self.company.external_customer_id
 
 
 class Kiosk(Branch):
@@ -1069,3 +1085,68 @@ class SentEmail(models.Model):
         help_text=_("Emailens indhold"),
         max_length=300,
     )
+
+
+class ERPProductMapping(models.Model):
+    """
+    Each `ERPProductMapping` object represents one unique product ID in the external
+    ERP system.
+    This model determines which external product ID and rates to use for different
+    types of exported lines on ERP credit notas.
+    """
+
+    class Meta:
+        verbose_name = _("Eksternt varenummer")
+        verbose_name_plural = _("Eksterne varenumre")
+        unique_together = [("category", "specifier")]
+
+    CATEGORY_DEPOSIT = "deposit"
+    CATEGORY_HANDLING = "handling"
+    CATEGORY_BAG = "bag"
+    CATEGORY_CHOICES = [
+        (CATEGORY_DEPOSIT, _("Pant")),
+        (CATEGORY_HANDLING, _("Håndteringsgodtgørelse")),
+        (CATEGORY_BAG, _("Pose")),
+    ]
+
+    SPECIFIER_RVM = "rvm"
+    SPECIFIER_BAG = "bag"
+    SPECIFIER_CHOICES = [
+        (SPECIFIER_RVM, _("Pant eller håndteringsgodtgørelse, fra automat")),
+        (SPECIFIER_BAG, _("Pant eller håndteringsgodtgørelse, fra QR-pose")),
+    ]
+
+    item_number = models.PositiveSmallIntegerField(
+        verbose_name=_("Varenummer i eksternt system (ERP)"),
+        unique=True,
+    )
+
+    rate = models.SmallIntegerField(
+        verbose_name=_("Sats ('pris' pr. enhed) i øre"),
+        null=True,
+        blank=True,
+    )
+
+    text = models.CharField(
+        verbose_name=_("Tekst på varelinjer"),
+        max_length=100,
+    )
+
+    category = models.CharField(
+        verbose_name=_("Overordnet type af varelinje"),
+        choices=CATEGORY_CHOICES,
+        max_length=10,
+    )
+
+    specifier = models.CharField(
+        verbose_name=_("Specifik type af varelinje"),
+        choices=SPECIFIER_CHOICES
+        + [
+            (str(item["prefix"]), item["name"])
+            for item in settings.QR_GENERATOR_SERIES.values()
+        ],
+        max_length=10,
+    )
+
+    def __str__(self):
+        return f"{self.item_number} ({self.get_category_display()})"
