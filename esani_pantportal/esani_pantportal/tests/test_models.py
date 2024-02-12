@@ -9,12 +9,14 @@ from django.test import SimpleTestCase, TestCase
 
 from esani_pantportal.models import (
     AbstractCompany,
+    Branch,
     BranchUser,
     Company,
     CompanyBranch,
     CompanyUser,
     DepositPayout,
     DepositPayoutItem,
+    ERPProductMapping,
     EsaniUser,
     Kiosk,
     KioskUser,
@@ -24,6 +26,29 @@ from esani_pantportal.models import (
     validate_barcode_length,
     validate_digit,
 )
+
+
+class _AbstractModelTestCase(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Inspiration: https://stackoverflow.com/a/64051797
+        try:
+            with connection.schema_editor() as schema_editor:
+                schema_editor.create_model(cls.get_derived_model())
+            super().setUpClass()
+        except ProgrammingError:
+            pass
+
+    @classmethod
+    def tearDownClass(cls):
+        # Inspiration: https://stackoverflow.com/a/64051797
+        with connection.schema_editor() as schema_editor:
+            schema_editor.delete_model(cls.get_derived_model())
+        super().tearDownClass()
+
+    @classmethod
+    def get_derived_model(cls):
+        raise NotImplementedError("must be implemented by subclass")
 
 
 class ValidationTest(SimpleTestCase):
@@ -102,38 +127,38 @@ class QRCodeIntervalTest(TestCase):
         self.assertIn("foo", str(qr_interval))
 
 
-class TestAbstractCompany(TestCase):
+class TestAbstractCompany(_AbstractModelTestCase):
     # This test creates a model deriving from `AbstractCompany` in order to be able to
     # test its properties, methods, etc.
 
-    class DerivedModel(AbstractCompany):
+    class DerivedCompanyModel(AbstractCompany):
         pass
 
     @classmethod
-    def setUpClass(cls):
-        # Inspiration: https://stackoverflow.com/a/64051797
-        try:
-            with connection.schema_editor() as schema_editor:
-                schema_editor.create_model(cls.DerivedModel)
-            super().setUpClass()
-        except ProgrammingError:
-            pass
-
-    @classmethod
-    def tearDownClass(cls):
-        # Inspiration: https://stackoverflow.com/a/64051797
-        with connection.schema_editor() as schema_editor:
-            schema_editor.delete_model(cls.DerivedModel)
-        super().tearDownClass()
+    def get_derived_model(cls):
+        return cls.DerivedCompanyModel
 
     def test_external_customer_id_checks_attribute(self):
         """
         Test that property raises `AttributeError` if derived class does not define the
         required `customer_id_prefix` attribute.
         """
-        instance = self.DerivedModel()
+        instance = self.get_derived_model()()
         with self.assertRaises(AttributeError):
             instance.external_customer_id
+
+
+class TestBranch(_AbstractModelTestCase):
+    class DerivedBranchModel(Branch):
+        pass
+
+    @classmethod
+    def get_derived_model(cls):
+        return cls.DerivedBranchModel
+
+    def test_customer_invoice_account_id_returns_none(self):
+        instance = self.get_derived_model()()
+        self.assertIsNone(instance.customer_invoice_account_id)
 
 
 class KioskTest(TestCase):
@@ -174,6 +199,12 @@ class CompanyBranchTest(TestCase):
     def setUpTestData(cls):
         cls.company = Company.objects.create(name="my company", cvr=11221122)
         cls.branch = CompanyBranch.objects.create(name="my branch", company=cls.company)
+        cls.company2 = Company.objects.create(
+            name="other company", cvr=123, invoice_company_branch=False
+        )
+        cls.branch2 = CompanyBranch.objects.create(
+            name="other branch", company=cls.company2
+        )
 
     def test_get_branch(self):
         self.assertEqual(self.branch.get_branch(), self.branch)
@@ -183,6 +214,13 @@ class CompanyBranchTest(TestCase):
 
     def test_external_customer_id(self):
         self.assertEqual(self.branch.external_customer_id, f"2-{self.branch.id:05}")
+
+    def test_customer_invoice_account_id(self):
+        self.assertIsNone(self.branch.customer_invoice_account_id)
+        self.assertEqual(
+            self.branch2.customer_invoice_account_id,
+            f"1-{self.company2.id:05}",
+        )
 
 
 class DepositPayoutTest(TestCase):
@@ -378,3 +416,13 @@ class ProductTest(TestCase):
 
         with self.assertRaisesRegexp(IntegrityError, "height_constraints"):
             product.save()
+
+
+class TestERPProductMapping(TestCase):
+    def test_str(self):
+        # This object is added via a data migration
+        obj = ERPProductMapping.objects.get(
+            category=ERPProductMapping.CATEGORY_DEPOSIT,
+            specifier=ERPProductMapping.SPECIFIER_RVM,
+        )
+        self.assertEqual(str(obj), "101 (Pant)")

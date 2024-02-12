@@ -1,7 +1,9 @@
 # SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
+from csv import DictReader
 from http import HTTPStatus
+from io import StringIO
 
 from bs4 import BeautifulSoup
 from django.db.models.deletion import ProtectedError
@@ -219,3 +221,36 @@ class CompanyDeleteTest(BaseCompanyTest):
         response = self.client.post(reverse("pant:kiosk_delete", kwargs={"pk": pk}))
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertFalse(Kiosk.objects.filter(pk=pk).exists())
+
+
+class CompanyListExportTest(BaseCompanyTest):
+    def test_export(self):
+        # Fetch debtor list as CSV
+        self.login()
+        response = self.client.get(f"{reverse('pant:company_list')}?download=csv")
+        # Assert we get the expected response
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response["Content-Type"], "text/csv")
+        self.assertRegex(
+            response["Content-Disposition"],
+            r"attachment; filename=debitor_(.*?)\.csv",
+        )
+        # Assert that all companies, company branches and kiosks defined in this test
+        # are exported in the CSV.
+        self.assertSetEqual(
+            {
+                row["name"]
+                for row in DictReader(
+                    StringIO(response.content.decode("utf-8")), delimiter=";"
+                )
+            },
+            {
+                obj.name
+                for obj in (
+                    self.google,
+                    self.facebook,
+                    self.facebook_branch,
+                    self.kiosk,
+                )
+            },
+        )

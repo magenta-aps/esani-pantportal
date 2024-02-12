@@ -41,7 +41,7 @@ SPDX-License-Identifier: MPL-2.0
                     {% if object.user_type != 1 %}
                         <tr>
                             <th>{% translate "Admin-rettigheder" %}</th>
-                            <td>{{object.is_admin|yesno}}</td>
+                            <td>{{ object.is_admin|yesno:_("Ja,Nej") }}</td>
                         </tr>
                     {% endif %}
 

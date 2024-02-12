@@ -864,6 +864,10 @@ class UserFilterForm(SortPaginateForm):
 
 
 class DepositPayoutItemFilterForm(SortPaginateForm, BootstrapForm):
+    class HTML5DateWidget(forms.widgets.Input):
+        input_type = "date"
+        template_name = "django/forms/widgets/date.html"
+
     company_branch = forms.ModelChoiceField(
         CompanyBranch.objects.all().order_by("name", "company__name"),
         required=False,
@@ -872,9 +876,31 @@ class DepositPayoutItemFilterForm(SortPaginateForm, BootstrapForm):
         Kiosk.objects.all().order_by("name"),
         required=False,
     )
-    date = forms.DateField(
+    from_date = forms.DateField(
         required=False,
+        widget=HTML5DateWidget(),
     )
+    to_date = forms.DateField(
+        required=False,
+        widget=HTML5DateWidget(),
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        if cleaned_data.get("company_branch") and cleaned_data.get("kiosk"):
+            raise ValidationError(
+                _("Angiv venligst enten en butik eller en kiosk (ikke begge.)"),
+                code="both_company_branch_and_kiosk_supplied",
+            )
+
+        from_date = cleaned_data.get("from_date")
+        to_date = cleaned_data.get("to_date")
+        if (from_date and to_date) and (to_date < from_date):
+            raise ValidationError(
+                _("Angiv venligst en fra-dato, der ligger før til-datoen."),
+                code="to_date_is_before_from_date",
+            )
 
 
 def validate_file_extension(value, valid_extensions):

@@ -4,7 +4,7 @@
 
 from django.contrib import admin
 
-from esani_pantportal.models import DepositPayout, DepositPayoutItem
+from esani_pantportal.models import DepositPayout, DepositPayoutItem, ERPProductMapping
 
 
 class DepositPayoutItemAdmin(admin.TabularInline):
@@ -33,4 +33,16 @@ class DepositPayoutAdmin(admin.ModelAdmin):
     ]
 
 
+class ERPProductMappingAdmin(admin.ModelAdmin):
+    list_display = [
+        "item_number",
+        "category",
+        "specifier",
+        "text",
+        "rate",
+    ]
+    ordering = ["item_number"]
+
+
 admin.site.register(DepositPayout, DepositPayoutAdmin)
+admin.site.register(ERPProductMapping, ERPProductMappingAdmin)

@@ -2,7 +2,9 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import datetime
+from csv import DictReader
 from http import HTTPStatus
+from io import StringIO
 
 from django.contrib.auth.models import Group
 from django.core.management import call_command
@@ -89,7 +91,6 @@ class TestDepositPayoutSearchView(LoginMixin, TestCase):
             "product": cls.product,
             "location_id": 123,
             "rvm_serial": 123,
-            "date": datetime.date(2024, 1, 28),
             "barcode": "barcode",
             "count": 42,
         }
@@ -97,12 +98,14 @@ class TestDepositPayoutSearchView(LoginMixin, TestCase):
         cls.deposit_payout_item_1 = DepositPayoutItem.objects.create(
             deposit_payout=cls.deposit_payout,
             company_branch=cls.company_branch,
+            date=datetime.date(2024, 1, 28),
             **shared,
         )
 
         cls.deposit_payout_item_2 = DepositPayoutItem.objects.create(
             deposit_payout=cls.deposit_payout,
             kiosk=cls.kiosk,
+            date=datetime.date(2024, 1, 29),
             **shared,
         )
 
@@ -138,6 +141,12 @@ class TestDepositPayoutSearchView(LoginMixin, TestCase):
         self.assertEqual(response.context["sort_name"], sort)
         self.assertEqual(response.context["sort_order"], order)
 
+    def _assert_csv_response(self, response, expected_length=None):
+        csv_rows = list(
+            DictReader(StringIO(response.content.decode("utf-8")), delimiter=";")
+        )
+        self.assertEqual(len(csv_rows), expected_length)
+
     def test_esani_admin_can_access_view(self):
         response = self._get_response()
         self.assertEqual(response.status_code, HTTPStatus.OK)
@@ -160,6 +169,23 @@ class TestDepositPayoutSearchView(LoginMixin, TestCase):
         # Test filtering on kiosk
         response = self._get_response(kiosk=self.kiosk.pk)
         self._assert_list_contents(response, [self.kiosk], 1)
+        self._assert_page_parameters(response)
+
+        # Test filtering on `from_date`
+        response = self._get_response(
+            from_date=datetime.date(2024, 1, 29).strftime("%Y-%m-%d"),
+        )
+        # Only the 'kiosk' deposit payout item matches (the other is on Jan 28.)
+        self._assert_list_contents(response, [self.kiosk], 1)
+        self._assert_page_parameters(response)
+
+        # Test filtering on `to_date`
+        response = self._get_response(
+            to_date=datetime.date(2024, 1, 28).strftime("%Y-%m-%d"),
+        )
+        # Only the 'company branch' deposit payout item matches (the other is on
+        # Jan 29.)
+        self._assert_list_contents(response, [self.company_branch], 1)
         self._assert_page_parameters(response)
 
     def test_sorting(self):
@@ -197,8 +223,9 @@ class TestDepositPayoutSearchView(LoginMixin, TestCase):
                 ]
             },
         )
-        # Assert that we "processed" only two items
-        self.assertDictEqual(response.json(), {"all": False, "count": 2})
+        # Assert that we receive the expected CSV response
+        self.assertEqual(response["Content-Type"], "text/csv")
+        self._assert_csv_response(response, expected_length=4)
 
     def test_post_selection_all(self):
         self._login()
@@ -207,8 +234,9 @@ class TestDepositPayoutSearchView(LoginMixin, TestCase):
             reverse("pant:deposit_payout_list"),
             data={"selection": "all"},
         )
-        # Assert that we "processed" all (2) deposit payout items
-        self.assertDictEqual(response.json(), {"all": True, "count": 2})
+        # Assert that we receive the expected CSV response
+        self.assertEqual(response["Content-Type"], "text/csv")
+        self._assert_csv_response(response, expected_length=4)
 
     def test_pagination_outside_queryset_range(self):
         self._login()
@@ -219,3 +247,13 @@ class TestDepositPayoutSearchView(LoginMixin, TestCase):
         # Navigate to invalid page number, and observe that we (still) get a 404
         response = self._get_response(page=0)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+
+    def test_invalid_filters_returns_empty_queryset(self):
+        self._login()
+        # Supply invalid filter parameters
+        response = self._get_response(
+            from_date=datetime.date(2020, 1, 1).strftime("%Y-%m-%d"),
+            to_date=datetime.date(2019, 1, 1).strftime("%Y-%m-%d"),
+        )
+        # Assert that queryset is empty
+        self._assert_list_contents(response, [], 0)
