@@ -4,3 +4,4 @@ docker-compose.override.yml
 **_product_list.csv
 **/qr_codes/*.csv
 **/.venv*
+**/.vscode
