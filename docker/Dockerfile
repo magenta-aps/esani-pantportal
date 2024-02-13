@@ -24,7 +24,7 @@ RUN mkdir /app && \
 COPY esani_pantportal/requirements.txt /app/requirements.txt
 # hadolint ignore=DL3008
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends gettext python3-distutils graphviz libxmlsec1-dev xmlsec1 locales libz-dev libjpeg-dev libfreetype6-dev && \
+    apt-get install -y --no-install-recommends gettext python3-distutils graphviz libxmlsec1-dev xmlsec1 locales libz-dev libjpeg-dev libfreetype6-dev postgresql-client-common && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* \
     && curl -fsSLO "$SUPERCRONIC_URL" \
