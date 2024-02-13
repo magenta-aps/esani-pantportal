@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import connection
 from django.db.utils import IntegrityError, ProgrammingError
 from django.test import SimpleTestCase, TestCase
+from unittest_parametrize import ParametrizedTestCase, parametrize
 
 from esani_pantportal.models import (
     AbstractCompany,
@@ -127,12 +128,21 @@ class QRCodeIntervalTest(TestCase):
         self.assertIn("foo", str(qr_interval))
 
 
-class TestAbstractCompany(_AbstractModelTestCase):
+class TestAbstractCompany(ParametrizedTestCase, _AbstractModelTestCase):
     # This test creates a model deriving from `AbstractCompany` in order to be able to
     # test its properties, methods, etc.
 
     class DerivedCompanyModel(AbstractCompany):
         pass
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.company = Company.objects.create(name="Virksomhed", cvr=1)
+        cls.company_branch = CompanyBranch.objects.create(
+            name="Butik", company=cls.company
+        )
+        cls.kiosk = Kiosk.objects.create(name="Butik", cvr=1)
 
     @classmethod
     def get_derived_model(cls):
@@ -146,6 +156,47 @@ class TestAbstractCompany(_AbstractModelTestCase):
         instance = self.get_derived_model()()
         with self.assertRaises(AttributeError):
             instance.external_customer_id
+
+    def test_get_from_id_returns_expected_instance(self):
+        """
+        Test that `AbstractCompany.get_instance_from_external_customer_id`
+        returns the appropriate `Company`, `CompanyBranch` or `Kiosk` instance.
+        """
+        # 1. Company
+        company = AbstractCompany.get_from_id(
+            f"{Company.customer_id_prefix}-{self.company.pk:05}"
+        )
+        self.assertEqual(company, self.company)
+        # 2. CompanyBranch
+        company_branch = AbstractCompany.get_from_id(
+            f"{CompanyBranch.customer_id_prefix}-{self.company_branch.pk:05}"
+        )
+        self.assertEqual(company_branch, self.company_branch)
+        # 3. Kiosk
+        kiosk = AbstractCompany.get_from_id(
+            f"{Kiosk.customer_id_prefix}-{self.kiosk.pk:05}"
+        )
+        self.assertEqual(kiosk, self.kiosk)
+
+    @parametrize(
+        "val,expected_exception",
+        [
+            (None, AttributeError),
+            ("", ValueError),
+            ("1-abc", ValueError),
+            ("a-123", KeyError),
+            ("1-0", Company.DoesNotExist),
+            ("2-0", CompanyBranch.DoesNotExist),
+            ("3-0", Kiosk.DoesNotExist),
+        ],
+    )
+    def test_get_from_id_raises_exception(self, val, expected_exception):
+        """
+        Test that we see the expected exceptions raised on different kinds of
+        invalid or non-existent input.
+        """
+        with self.assertRaises(expected_exception):
+            AbstractCompany.get_from_id(val)
 
 
 class TestBranch(_AbstractModelTestCase):

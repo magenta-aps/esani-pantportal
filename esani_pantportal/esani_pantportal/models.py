@@ -4,8 +4,10 @@
 
 import datetime
 import hashlib
+import logging
 import random
 import string
+from typing import Union
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
@@ -15,6 +17,8 @@ from django.db.models import CharField, CheckConstraint, Q, Value
 from django.db.models.functions import Cast, Concat, LPad
 from django.utils.translation import gettext as _
 from simple_history.models import HistoricalRecords
+
+logger = logging.getLogger(__name__)
 
 
 # Custom validators
@@ -145,6 +149,23 @@ class AbstractCompany(models.Model):
         blank=True,
         default=None,
     )
+
+    @staticmethod
+    def get_from_id(external_id: str) -> Union["Company", "CompanyBranch", "Kiosk"]:
+        type_map = {
+            Company.customer_id_prefix: Company,
+            CompanyBranch.customer_id_prefix: CompanyBranch,
+            Kiosk.customer_id_prefix: Kiosk,
+        }
+        try:
+            prefix, pk = external_id.split("-")
+            cls = type_map[prefix]
+            pk = int(pk)
+        except (AttributeError, KeyError, ValueError):
+            logger.exception("could not process external id %r", external_id)
+            raise
+        else:
+            return cls.objects.get(pk=pk)
 
     @staticmethod
     def annotate_external_customer_id(cls, length=5, fill="0"):
