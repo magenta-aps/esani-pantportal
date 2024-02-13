@@ -319,7 +319,7 @@ class TestDebtorExport(_SharedBase):
             # `CompanyBranch` row
             (
                 CUSTOMER_1_NAME,
-                None,
+                CUSTOMER_1_CVR,  # same as on `Company` row
                 CUSTOMER_1_LOCATION_ID,
                 f"2-{self.company_branch.id:05}",
             ),
