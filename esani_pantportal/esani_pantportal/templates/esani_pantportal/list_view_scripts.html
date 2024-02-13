@@ -24,6 +24,7 @@ $('input[type=checkbox][id$=Toggle]').change(function (evt) {
 
     const $this = $(this);
     const id = $this.attr('id');
+    const prefix = $this.attr('prefix');
     const itemName = id.replace("Toggle", "");
     const itemState = $this.is(":checked");
 
@@ -36,7 +37,7 @@ $('input[type=checkbox][id$=Toggle]').change(function (evt) {
     let data = {
         csrfmiddlewaretoken: '{{ csrf_token }}'
     };
-    data["show_" + itemName] = itemState;
+    data["show_" + prefix + itemName] = itemState;
 
     $.ajax({
         type: 'POST',

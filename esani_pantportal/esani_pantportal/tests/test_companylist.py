@@ -35,7 +35,8 @@ class BaseCompanyTest(LoginMixin, TestCase):
             company_type="E",
             registration_number="112",
             account_number="112",
-            invoice_mail="foo@bar.com",
+            invoice_mail="fb@bar.com",
+            invoice_company_branch=True,
         )
 
         cls.google = Company.objects.create(
@@ -49,7 +50,8 @@ class BaseCompanyTest(LoginMixin, TestCase):
             company_type="A",
             registration_number="112",
             account_number="112",
-            invoice_mail="foo@bar.com",
+            invoice_mail="gl@bar.com",
+            invoice_company_branch=False,
         )
 
         cls.facebook_branch = CompanyBranch.objects.create(
@@ -59,13 +61,14 @@ class BaseCompanyTest(LoginMixin, TestCase):
             postal_code="12311",
             city="test town",
             phone="+4542457845",
-            location_id=2,
+            location_id=100,
             municipality="foo",
             branch_type="A",
             customer_id=2,
             registration_number="112",
             account_number="112",
-            invoice_mail="foo@bar.com",
+            invoice_mail="fbb@bar.com",
+            qr_compensation=2,
         )
 
         cls.kiosk = Kiosk.objects.create(
@@ -74,14 +77,15 @@ class BaseCompanyTest(LoginMixin, TestCase):
             postal_code="12311",
             city="test town",
             phone="+4542457845",
-            location_id=2,
+            location_id=200,
             cvr=11221122,
             municipality="foo",
             branch_type="A",
-            customer_id=2,
+            customer_id=3,
             registration_number="112",
             account_number="112",
-            invoice_mail="foo@bar.com",
+            invoice_mail="kio@bar.com",
+            qr_compensation=2.5,
         )
 
 
@@ -95,21 +99,91 @@ class CompanyListTest(BaseCompanyTest):
         for row in table.tbody.find_all("tr"):
             rowdata = [cell.text.strip() for cell in row.find_all("td")]
             output.append({k: v for k, v in dict(zip(headers, rowdata)).items() if k})
-        return output
+
+        return {o["Navn"]: o for o in output}
+
+    @staticmethod
+    def get_table_headers(html):
+        soup = BeautifulSoup(html, "html.parser")
+        table = soup.find("table")
+        return [
+            cell.attrs.get("data-field")
+            for cell in table.thead.tr.find_all("th")
+            if cell.attrs.get("data-visible", "true") == "true"
+        ]
 
     def test_esani_admin_view(self):
         self.login()
         response = self.client.get(reverse("pant:company_list"))
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
-        data = self.get_html_items(response.content)
-        companies = [d["Navn"] for d in data]
+        companies = self.get_html_items(response.content)
 
-        self.assertEqual(len(data), 4)
+        self.assertEqual(len(companies), 4)
         self.assertIn(self.facebook.name, companies)
         self.assertIn(self.google.name, companies)
         self.assertIn(self.kiosk.name, companies)
         self.assertIn(self.facebook_branch.name, companies)
+
+        self.assertEqual(companies["kiosk"]["Butikstype"], "Andet")
+        self.assertEqual(companies["facebook_branch"]["Butikstype"], "Andet")
+        self.assertEqual(companies["google"]["Butikstype"], "-")
+        self.assertEqual(companies["facebook"]["Butikstype"], "-")
+
+        self.assertEqual(companies["kiosk"]["Virksomhedstype"], "-")
+        self.assertEqual(companies["facebook_branch"]["Virksomhedstype"], "-")
+        self.assertEqual(companies["google"]["Virksomhedstype"], "Andet")
+        self.assertEqual(companies["facebook"]["Virksomhedstype"], "Eksportør")
+
+        self.assertEqual(companies["kiosk"]["Kommune"], "foo")
+        self.assertEqual(companies["facebook_branch"]["Kommune"], "foo")
+        self.assertEqual(companies["google"]["Kommune"], "-")
+        self.assertEqual(companies["facebook"]["Kommune"], "-")
+
+        self.assertEqual(companies["kiosk"]["Virksomhed"], "-")
+        self.assertEqual(companies["facebook_branch"]["Virksomhed"], "facebook")
+        self.assertEqual(companies["google"]["Virksomhed"], "-")
+        self.assertEqual(companies["facebook"]["Virksomhed"], "-")
+
+        self.assertEqual(companies["kiosk"]["Kunde ID"], "3")
+        self.assertEqual(companies["facebook_branch"]["Kunde ID"], "2")
+        self.assertEqual(companies["google"]["Kunde ID"], "-")
+        self.assertEqual(companies["facebook"]["Kunde ID"], "-")
+
+        self.assertEqual(companies["kiosk"]["Lokation ID"], "200")
+        self.assertEqual(companies["facebook_branch"]["Lokation ID"], "100")
+        self.assertEqual(companies["google"]["Lokation ID"], "-")
+        self.assertEqual(companies["facebook"]["Lokation ID"], "-")
+
+        self.assertEqual(companies["kiosk"]["CVR"], "11221122")
+        self.assertEqual(companies["facebook_branch"]["CVR"], "-")
+        self.assertEqual(companies["google"]["CVR"], "12312346")
+        self.assertEqual(companies["facebook"]["CVR"], "12312345")
+
+        self.assertEqual(companies["kiosk"]["Faktura til butik"], "-")
+        self.assertEqual(companies["facebook_branch"]["Faktura til butik"], "-")
+        self.assertEqual(companies["google"]["Faktura til butik"], "Nej")
+        self.assertEqual(companies["facebook"]["Faktura til butik"], "Ja")
+
+        self.assertEqual(companies["kiosk"]["Fakturamail"], "kio@bar.com")
+        self.assertEqual(companies["facebook_branch"]["Fakturamail"], "fbb@bar.com")
+        self.assertEqual(companies["google"]["Fakturamail"], "gl@bar.com")
+        self.assertEqual(companies["facebook"]["Fakturamail"], "fb@bar.com")
+
+        self.assertEqual(
+            companies["kiosk"]["Håndterings-godtgørelse for QR-poser"], "2.5 øre"
+        )
+        self.assertEqual(
+            companies["facebook_branch"]["Håndterings-godtgørelse for QR-poser"],
+            "2 øre",
+        )
+        self.assertEqual(
+            companies["google"]["Håndterings-godtgørelse for QR-poser"], "-"
+        )
+        self.assertEqual(
+            companies["facebook"]["Håndterings-godtgørelse for QR-poser"],
+            "-",
+        )
 
     def test_kiosk_admin_view(self):
         self.login("KioskUsers")
@@ -135,6 +209,24 @@ class CompanyListTest(BaseCompanyTest):
                 (Kiosk.customer_id_prefix, self.kiosk.name),
             ],
         )
+
+    def test_column_preferences(self):
+        # Load the page with default settings
+        user = self.login()
+        response = self.client.get(reverse("pant:company_list"))
+        data = self.get_table_headers(response.content)
+        self.assertIn("municipality", data)
+
+        # Edit preferences
+        self.client.post(
+            reverse("pant:preferences_update", kwargs={"pk": user.pk}),
+            data={"show_company_municipality": "false"},
+        )
+
+        # Reload the page
+        response = self.client.get(reverse("pant:product_list"))
+        data = self.get_table_headers(response.content)
+        self.assertNotIn("municipality", data)
 
 
 class CompanyDeleteTest(BaseCompanyTest):

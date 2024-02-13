@@ -29,4 +29,8 @@ class Command(BaseCommand):
                 phone="+299 36 35 " + str(random.randint(10, 99)),
                 country="Grønland",
                 company_type="A",
+                registration_number=random.randint(1000, 9999),
+                account_number=random.randint(10000000, 99999999),
+                invoice_mail=company_name[:3].lower() + "@finansafdeling.gl",
+                invoice_company_branch=False,
             )

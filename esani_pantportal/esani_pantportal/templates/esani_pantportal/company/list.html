@@ -63,7 +63,8 @@ SPDX-License-Identifier: MPL-2.0
             </div>
         </div>
     </div>
-    <table id="table" class="table table-bordered table-striped mt-3"
+    {% include "../list_view_filter_button.html" with columns=filterable_columns prefix=preferences_prefix %}
+    <table id="table" class="table table-bordered table-striped mt-1"
            data-toggle="table"
            data-sticky-header="true"
            data-classes="table"
@@ -84,24 +85,18 @@ SPDX-License-Identifier: MPL-2.0
     >
         <thead>
         <tr>
-            <th data-sortable="true" data-field="external_customer_id_annotation" class="col-1">{% translate "Kundenummer" %}</th>
-            <th data-sortable="true" data-field="name" class="col-3">{% translate "Navn" %}</th>
-            <th data-sortable="true" data-field="address" class="col-3">{% translate "Adresse" %}</th>
-            <th data-sortable="true" data-field="postal_code" class="col-3">{% translate "Postnr." %}</th>
-            <th data-sortable="true" data-field="city" class="col-3">{% translate "By" %}</th>
-            <th data-sortable="true" data-field="object_class_name_verbose" class="col-3">{% translate "Type" %}</th>
+            {% for name, verbose_name, show in columns %}
+            <th data-sortable="true" data-field={{name}} class="col-3" data-visible={{show|truefalse}}>{{verbose_name}}</th>
+            {% endfor %}
             <th data-field="actions" class="col-3">{% translate "Handlinger" %}</th>
         </tr>
         </thead>
         <tbody>
         {% for item in items %}
         <tr>
-            <td>{{item.external_customer_id_annotation}}</td>
-            <td>{{item.name}}</td>
-            <td>{{item.address}}</td>
-            <td>{{item.postal_code}}</td>
-            <td>{{item.city}}</td>
-            <td>{{item.object_class_name_verbose}}</td>
+            {% for name, verbose_name, show in columns %}
+                <td>{{item|get:name}}</td>
+            {% endfor %}
             <td>
                 {% include actions_template with item=item %}
             </td>
@@ -117,12 +112,5 @@ SPDX-License-Identifier: MPL-2.0
 </div>
 
 {{search_data|json_script:"search_data"}}
-
-<script>
-var delete_success = getUrlParameter("delete_success");
-if (delete_success=="1"){
-    $("#delete_confirmation").show()
-    }
-</script>
-
+{% include "../list_view_scripts.html"%}
 {% endblock %}

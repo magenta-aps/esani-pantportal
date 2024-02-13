@@ -1,0 +1,20 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% load bootstrap_icons %}
+
+<div class="col-12  mt-3">
+    <div class="dropdown float-end">
+        <a class="btn btn-primary dropdown-toggle" role="button" id="dropdownMenuButton"
+        data-bs-toggle="dropdown" aria-expanded="false">
+        {% bs_icon "funnel" size="1em" %}
+        </a>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            {% for name, verbose_name, show in columns %}
+            {% include "./filter.html" with verbose_name=verbose_name name=name show=show prefix=prefix %}
+            {% endfor %}
+        </ul>
+    </div>
+</div>

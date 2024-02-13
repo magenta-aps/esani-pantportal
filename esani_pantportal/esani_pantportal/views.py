@@ -19,7 +19,17 @@ from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.core.management import call_command
 from django.core.paginator import EmptyPage, Paginator
-from django.db.models import Case, F, Max, Min, Q, Value, When
+from django.db.models import (
+    Case,
+    F,
+    FloatField,
+    Max,
+    Min,
+    PositiveIntegerField,
+    Q,
+    Value,
+    When,
+)
 from django.db.models.functions import Coalesce, Concat
 from django.forms import model_to_dict
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
@@ -80,6 +90,7 @@ from esani_pantportal.models import (
     BranchUser,
     Company,
     CompanyBranch,
+    CompanyListViewPreferences,
     CompanyUser,
     DepositPayoutItem,
     EsaniUser,
@@ -91,7 +102,14 @@ from esani_pantportal.models import (
     ReverseVendingMachine,
     User,
 )
-from esani_pantportal.templatetags.pant_tags import danish, material, shape, user_type
+from esani_pantportal.templatetags.pant_tags import (
+    branch_type,
+    company_type,
+    danish,
+    material,
+    shape,
+    user_type,
+)
 from esani_pantportal.util import (
     add_parameters_to_url,
     default_dataframe,
@@ -348,7 +366,9 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
     select_template = None
     annotations = {}
     search_fields_exact = []
-    excluded_fields = []
+    fixed_columns = {}
+    preferences_class = None
+    preferences_prefix = ""
 
     def get(self, request, *args, **kwargs):
         self.form = self.get_form()
@@ -382,10 +402,14 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
         return {k: getattr(v, "pk", v) for k, v in search_data.items()}
 
     def annotate_field(self, string):
-        if string + "_annotation" in self.annotations:
-            return string + "_annotation"
-        else:
-            return string
+        annotation_dicts = [
+            getattr(self, d) for d in dir(self) if d.endswith("annotations")
+        ]
+
+        for annotation_dict in annotation_dicts:
+            if string + "_annotation" in annotation_dict:
+                return string + "_annotation"
+        return string
 
     def filter_qs(self, qs):
         data = self.search_data
@@ -451,20 +475,41 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
         return self.render_to_response(context)
 
     def get_context_data(self, **kwargs):
-        return super().get_context_data(
-            **{**kwargs, "actions_template": self.actions_template}
+        context = super().get_context_data(**kwargs)
+
+        # [name, verbose_name, show (T/F)]
+        regular_columns = [
+            [key, value, True] for key, value in self.fixed_columns.items()
+        ]
+
+        filterable_columns = (
+            [
+                [
+                    f.name.replace("show_" + self.preferences_prefix, ""),
+                    f.verbose_name,
+                    getattr(self.request.user, f.name),
+                ]
+                for f in self.preferences_class._meta.fields
+            ]
+            if self.preferences_class
+            else []
         )
 
-    def get_fields(self):
-        fields = [f.name for f in self.model._meta.fields]
-        return [f for f in fields if f not in self.excluded_fields]
+        context["filterable_columns"] = filterable_columns
+        context["columns"] = regular_columns + filterable_columns
+        context["actions_template"] = self.actions_template
+        context["preferences_prefix"] = self.preferences_prefix
+        return context
+
+    def get_fields(self, model=None):
+        meta = model._meta if model else self.model._meta
+        return [f.name for f in meta.fields]
 
     def model_to_dict(self, item_obj):
         model_dict = {"id": item_obj.id}
         for field in self.get_fields():
-            value = getattr(item_obj, field, None)
+            value = getattr(item_obj, self.annotate_field(field), None)
             model_dict[field] = getattr(value, "pk", value)
-
         return model_dict
 
     def item_to_json_dict(
@@ -497,13 +542,74 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
     actions_template = "esani_pantportal/company/actions.html"
     model = AbstractCompany
     form_class = CompanyFilterForm
+    annotations = {"municipality_annotation": F("municipality")}
+
+    external_customer_id = AbstractCompany.annotate_external_customer_id
+
+    # The kiosk, company and company_branch annotation dicts must have the same keys
+    # in the same order. Otherwise qs.union fails.
+    kiosk_annotations = {
+        "object_class_name": Value("Kiosk"),
+        "object_class_name_verbose": Value("Kiosk"),
+        "external_customer_id_annotation": external_customer_id(Kiosk),
+        "company_type_annotation": Value("-"),
+        "branch_type_annotation": F("branch_type"),
+        "country_annotation": Value("-"),
+        "invoice_company_branch_annotation": Value("-"),
+        "location_id_annotation": F("location_id"),
+        "customer_id_annotation": F("customer_id"),
+        "qr_compensation_annotation": F("qr_compensation"),
+        "company_annotation": Value("-"),
+        "cvr_annotation": F("cvr"),
+    }
+
+    company_annotations = {
+        "object_class_name": Value("Company"),
+        "object_class_name_verbose": Value("Virksomhed"),
+        "external_customer_id_annotation": external_customer_id(Company),
+        "company_type_annotation": F("company_type"),
+        "branch_type_annotation": Value("-"),
+        "country_annotation": F("country"),
+        "invoice_company_branch_annotation": Case(
+            When(
+                Q(invoice_company_branch=True),
+                then=Value("Ja"),
+            ),
+            default=Value("Nej"),
+        ),
+        "location_id_annotation": Value(None, output_field=PositiveIntegerField()),
+        "customer_id_annotation": Value(None, output_field=PositiveIntegerField()),
+        "qr_compensation_annotation": Value(None, output_field=FloatField()),
+        "company_annotation": Value("-"),
+        "cvr_annotation": F("cvr"),
+    }
+
+    company_branch_annotations = {
+        "object_class_name": Value("CompanyBranch"),
+        "object_class_name_verbose": Value("Butik"),
+        "external_customer_id_annotation": external_customer_id(CompanyBranch),
+        "company_type_annotation": Value("-"),
+        "branch_type_annotation": F("branch_type"),
+        "country_annotation": Value("-"),
+        "invoice_company_branch_annotation": Value("-"),
+        "location_id_annotation": F("location_id"),
+        "customer_id_annotation": F("customer_id"),
+        "qr_compensation_annotation": F("qr_compensation"),
+        "company_annotation": F("company__name"),
+        "cvr_annotation": Value(None, output_field=PositiveIntegerField()),
+    }
 
     search_fields = ["name", "address", "postal_code", "city"]
     search_fields_exact = ["object_class_name"]
 
-    # Municipality is not mandatory for Company objs
-    # It is excluded to avoid problems with the joined queryset
-    excluded_fields = ["municipality"]
+    preferences_class = CompanyListViewPreferences
+    preferences_prefix = "company_"
+
+    fixed_columns = {
+        "external_customer_id": _("Kundenummer"),
+        "name": _("Navn"),
+        "object_class_name_verbose": _("Type"),
+    }
 
     def get(self, request, *args, **kwargs):
         if request.GET.get("download", None) == "csv":
@@ -517,12 +623,25 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
 
     def get_fields(self):
         fields = super().get_fields()
-        extra = [
+        kiosk_fields = super().get_fields(model=Kiosk)
+        company_fields = super().get_fields(model=Company)
+        company_branch_fields = super().get_fields(model=CompanyBranch)
+
+        extra_fields = [
+            "external_customer_id",
             "object_class_name",
             "object_class_name_verbose",
-            "external_customer_id_annotation",
         ]
-        return fields + extra
+
+        return list(
+            set(
+                fields
+                + kiosk_fields
+                + company_fields
+                + company_branch_fields
+                + extra_fields
+            )
+        )
 
     def check_permissions(self):
         if not self.request.user.is_esani_admin:
@@ -532,24 +651,21 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
 
     def get_queryset(self):
         fields = super().get_fields()
-        external_customer_id = AbstractCompany.annotate_external_customer_id
+
+        # Municipality is not mandatory for Company objs
+        # It is annotated to avoid problems with the joined queryset
+        fields.remove("municipality")
         qs = [
             Kiosk.objects.only(*fields).annotate(
-                object_class_name=Value("Kiosk"),
-                object_class_name_verbose=Value("Kiosk"),
-                external_customer_id_annotation=external_customer_id(Kiosk),
+                **self.kiosk_annotations,
                 **self.annotations,
             ),
             Company.objects.only(*fields).annotate(
-                object_class_name=Value("Company"),
-                object_class_name_verbose=Value("Virksomhed"),
-                external_customer_id_annotation=external_customer_id(Company),
+                **self.company_annotations,
                 **self.annotations,
             ),
             CompanyBranch.objects.only(*fields).annotate(
-                object_class_name=Value("CompanyBranch"),
-                object_class_name_verbose=Value("Butik"),
-                external_customer_id_annotation=external_customer_id(CompanyBranch),
+                **self.company_branch_annotations,
                 **self.annotations,
             ),
         ]
@@ -562,8 +678,19 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)
 
-        if key == "object_class_name_verbose":
+        if key in ["object_class_name_verbose", "invoice_company_branch"]:
             value = _(value)
+        elif key == "company_type":
+            value = company_type(value)
+        elif key == "branch_type":
+            value = branch_type(value)
+        elif key == "qr_compensation" and value:
+            if int(value) == value:
+                value = int(value)
+            value = str(value) + " øre"
+        elif type(value) in [float, int] and value:
+            value = str(value)
+
         return value or "-"
 
 
@@ -1467,23 +1594,7 @@ class NewsEmailView(PermissionRequiredMixin, FormView):
 class UpdateListViewPreferences(UpdateView):
     model = User
     fields = [
-        "show_material",
-        "show_shape",
-        "show_danish",
-        "show_height",
-        "show_diameter",
-        "show_weight",
-        "show_capacity",
-        "show_approval_date",
-        "show_creation_date",
-        "show_file_name",
-        "show_branch",
-        "show_company",
-        "show_is_admin",
-        "show_approved",
-        "show_phone",
-        "show_newsletter",
-        "show_email",
+        field.name for field in User._meta.fields if field.name.startswith("show_")
     ]
 
     def get_form_kwargs(self):
