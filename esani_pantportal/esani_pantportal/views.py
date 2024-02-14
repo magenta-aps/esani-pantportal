@@ -98,9 +98,11 @@ from esani_pantportal.models import (
     Kiosk,
     KioskUser,
     Product,
+    ProductListViewPreferences,
     QRBag,
     ReverseVendingMachine,
     User,
+    UserListViewPreferences,
 )
 from esani_pantportal.templatetags.pant_tags import (
     branch_type,
@@ -499,6 +501,9 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
         context["columns"] = regular_columns + filterable_columns
         context["actions_template"] = self.actions_template
         context["preferences_prefix"] = self.preferences_prefix
+        context["data_defer_url"] = add_parameters_to_url(
+            self.request.get_full_path(), {"json": 1}
+        )
         return context
 
     def get_fields(self, model=None):
@@ -542,6 +547,8 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
     actions_template = "esani_pantportal/company/actions.html"
     model = AbstractCompany
     form_class = CompanyFilterForm
+    preferences_class = CompanyListViewPreferences
+    preferences_prefix = "company_"
     annotations = {"municipality_annotation": F("municipality")}
 
     external_customer_id = AbstractCompany.annotate_external_customer_id
@@ -601,9 +608,6 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
 
     search_fields = ["name", "address", "postal_code", "city"]
     search_fields_exact = ["object_class_name"]
-
-    preferences_class = CompanyListViewPreferences
-    preferences_prefix = "company_"
 
     fixed_columns = {
         "external_customer_id": _("Kundenummer"),
@@ -700,10 +704,17 @@ class ProductSearchView(SearchView):
     select_template = "esani_pantportal/product/select.html"
     model = Product
     form_class = ProductFilterForm
+    preferences_class = ProductListViewPreferences
     annotations = {"file_name": F("import_job__file_name")}
 
     search_fields = ["product_name", "barcode"]
     search_fields_exact = ["approved", "import_job"]
+
+    fixed_columns = {
+        "product_name": _("Produktnavn"),
+        "barcode": _("Stregkode"),
+        "approved": _("Godkendt"),
+    }
 
     def item_to_json_dict(self, item_obj, context, index):
         json_dict = super().item_to_json_dict(item_obj, context, index)
@@ -804,6 +815,16 @@ class ReverseVendingMachineSearchView(BranchSearchView):
 
     search_fields = ["serial_number"]
 
+    def get_context_data(self, *args, **kwargs):
+        self.fixed_columns = {
+            "serial_number": _("Serienummer"),
+            "company_branch_or_kiosk": _("Butik"),
+        }
+        if self.request.user.is_esani_admin:
+            self.fixed_columns["compensation"] = _("Håndterings-godtgørelse")
+
+        return super().get_context_data(*args, **kwargs)
+
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)
         if key == "compensation" and value and value != "-":
@@ -819,6 +840,14 @@ class QRBagSearchView(BranchSearchView):
     required_permissions = ["esani_pantportal.view_qrbag"]
 
     search_fields = ["qr", "status"]
+
+    fixed_columns = {
+        "qr": _("QR kode"),
+        "owner": _("Ejer"),
+        "company_branch_or_kiosk": _("Butik"),
+        "status": _("Status"),
+        "updated": _("Opdateret"),
+    }
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
@@ -855,6 +884,7 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
     actions_template = "esani_pantportal/user/actions.html"
     model = User
     form_class = UserFilterForm
+    preferences_class = UserListViewPreferences
     required_permissions = ["esani_pantportal.view_user"]
 
     search_fields = ["username", "user_type", "branch", "company"]
@@ -884,6 +914,12 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
             default=Value("-"),
         ),
         "full_name": Concat("first_name", Value(" "), "last_name"),
+    }
+
+    fixed_columns = {
+        "username": _("Brugernavn"),
+        "full_name": _("Navn"),
+        "user_type": _("Brugertype"),
     }
 
     def item_to_json_dict(self, item_obj, context, index):

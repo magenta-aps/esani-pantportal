@@ -1,0 +1,55 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% load i18n %}
+{% load l10n %}
+
+<table id="table" class="table table-bordered table-striped mt-1"
+       data-toggle="table"
+       data-sticky-header="true"
+       data-classes="table"
+       data-data-field="items"
+       data-sortable="true"
+       data-pagination="true"
+       data-pagination-parts="['pageList']"
+       data-page-number="{{search_data.page_number}}"
+       data-page-size="{{search_data.limit}}"
+       data-side-pagination="server"
+       data-pagination-loop="false"
+       data-defer-url="{{ data_defer_url }}"
+       data-query-params="queryParams"
+       data-row-style="rowStyle"
+       data-total-rows="{{total}}"
+       data-silent-sort="true" {# vil vi vise en loading-boks? #}
+       data-remember-order="true"
+       data-cookie="true" {# Handles table refresh after bulk-approval properly #}
+>
+    <thead>
+    <tr>
+        {% if can_edit_multiple %}
+        <th data-field="select"><input type="checkbox" id="select_all"/></th>
+        {% endif %}
+        {% for name, verbose_name, show in columns %}
+            <th data-sortable="true" data-field={{name}} class="col-3" data-visible={{show|truefalse}}>{{verbose_name}}</th>
+        {% endfor %}
+        <th data-field="actions" class="col-3">{% translate "Handlinger" %}</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for item in items %}
+    <tr>
+        {% if can_edit_multiple %}
+        <td>{% include select_template with item=item %}</td>
+        {% endif %}
+        {% for name, verbose_name, show in columns %}
+            <td>{{item|get:name}}</td>
+        {% endfor %}
+        <td>
+            {% include actions_template with item=item %}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>

@@ -63,47 +63,10 @@ SPDX-License-Identifier: MPL-2.0
             </div>
         </div>
     </div>
-    {% include "../list_view_filter_button.html" with columns=filterable_columns prefix=preferences_prefix %}
-    <table id="table" class="table table-bordered table-striped mt-1"
-           data-toggle="table"
-           data-sticky-header="true"
-           data-classes="table"
-           data-data-field="items"
-           data-sortable="true"
-           data-pagination="true"
-           data-pagination-parts="['pageList']"
-           data-page-number="{{search_data.page_number}}"
-           data-page-size="{{search_data.limit}}"
-           data-side-pagination="server"
-           data-pagination-loop="false"
-           data-defer-url="{% url 'pant:company_list' %}?json=1"
-           data-query-params="queryParams"
-           data-row-style="rowStyle"
-           data-total-rows="{{total}}"
-           data-silent-sort="true" {# vil vi vise en loading-boks? #}
-           data-remember-order="true"
-    >
-        <thead>
-        <tr>
-            {% for name, verbose_name, show in columns %}
-            <th data-sortable="true" data-field={{name}} class="col-3" data-visible={{show|truefalse}}>{{verbose_name}}</th>
-            {% endfor %}
-            <th data-field="actions" class="col-3">{% translate "Handlinger" %}</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for item in items %}
-        <tr>
-            {% for name, verbose_name, show in columns %}
-                <td>{{item|get:name}}</td>
-            {% endfor %}
-            <td>
-                {% include actions_template with item=item %}
-            </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <div class="col-12  mt-3">
+        {% include "../list_view_filter_button.html" with columns=filterable_columns prefix=preferences_prefix %}
+    </div>
+    {% include "../list_view_table.html" %}
     <form method="get">
         <button type="submit" class="btn btn-primary" name="download" value="csv">
             {% translate "Hent som CSV" %}
