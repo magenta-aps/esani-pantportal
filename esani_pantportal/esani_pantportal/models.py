@@ -752,7 +752,61 @@ class UserListViewPreferences(models.Model):
     show_email = models.BooleanField(default=False)
 
 
-class User(AbstractUser, ProductListViewPreferences, UserListViewPreferences):
+class CompanyListViewPreferences(models.Model):
+    class Meta:
+        abstract = True
+
+    show_company_address = models.BooleanField(default=True, verbose_name=_("Adresse"))
+    show_company_postal_code = models.BooleanField(
+        default=False, verbose_name=_("Postnr.")
+    )
+    show_company_municipality = models.BooleanField(
+        default=True, verbose_name=_("Kommune")
+    )
+    show_company_city = models.BooleanField(default=True, verbose_name=_("By"))
+    show_company_country = models.BooleanField(default=False, verbose_name=_("Land"))
+    show_company_phone = models.BooleanField(
+        default=False, verbose_name=_("Telefonnummer")
+    )
+    show_company_registration_number = models.BooleanField(
+        default=False, verbose_name=_("Registreringsnummer")
+    )
+    show_company_account_number = models.BooleanField(
+        default=False, verbose_name=_("Kontonummer")
+    )
+    show_company_invoice_mail = models.BooleanField(
+        default=False, verbose_name=_("Fakturamail")
+    )
+    show_company_company_type = models.BooleanField(
+        default=False, verbose_name=_("Virksomhedstype")
+    )
+    show_company_branch_type = models.BooleanField(
+        default=False, verbose_name=_("Butikstype")
+    )
+    show_company_invoice_company_branch = models.BooleanField(
+        default=False, verbose_name=_("Faktura til butik")
+    )
+    show_company_location_id = models.BooleanField(
+        default=False, verbose_name=_("Lokation ID")
+    )
+    show_company_customer_id = models.BooleanField(
+        default=False, verbose_name=_("Kunde ID")
+    )
+    show_company_qr_compensation = models.BooleanField(
+        default=False, verbose_name=_("Håndterings-godtgørelse for QR-poser")
+    )
+    show_company_company = models.BooleanField(
+        default=False, verbose_name=_("Virksomhed")
+    )
+    show_company_cvr = models.BooleanField(default=False, verbose_name=_("CVR"))
+
+
+class User(
+    AbstractUser,
+    ProductListViewPreferences,
+    UserListViewPreferences,
+    CompanyListViewPreferences,
+):
     class Meta:
         verbose_name = _("Bruger")
         verbose_name_plural = _("Brugere")

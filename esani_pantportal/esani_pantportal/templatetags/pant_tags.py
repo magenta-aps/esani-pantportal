@@ -8,6 +8,8 @@ from django.template.defaultfilters import register
 from django.utils.translation import gettext_lazy as _
 
 from esani_pantportal.models import (
+    BRANCH_TYPE_CHOICES,
+    COMPANY_TYPE_CHOICES,
     DANISH_PANT_CHOICES,
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
@@ -68,6 +70,20 @@ def shape(shape_id):
 
 
 @register.filter
+def company_type(company_type_id):
+    for c in COMPANY_TYPE_CHOICES:
+        if c[0] == company_type_id:
+            return c[1]
+
+
+@register.filter
+def branch_type(branch_type_id):
+    for c in BRANCH_TYPE_CHOICES:
+        if c[0] == branch_type_id:
+            return c[1]
+
+
+@register.filter
 def danish(danish_id):
     for c in DANISH_PANT_CHOICES:
         if c[0] == danish_id:
@@ -93,3 +109,8 @@ def truefalse(boolean):
 @register.filter
 def has_two_factor(user):
     return user.totpdevice_set.count() > 0
+
+
+@register.filter
+def get(dictionary, key):
+    return dictionary[key]
