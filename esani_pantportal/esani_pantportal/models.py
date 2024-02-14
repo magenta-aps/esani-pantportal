@@ -727,29 +727,37 @@ class ProductListViewPreferences(models.Model):
     class Meta:
         abstract = True
 
-    show_material = models.BooleanField(default=True)
-    show_shape = models.BooleanField(default=True)
-    show_danish = models.BooleanField(default=True)
-    show_height = models.BooleanField(default=False)
-    show_diameter = models.BooleanField(default=False)
-    show_weight = models.BooleanField(default=False)
-    show_capacity = models.BooleanField(default=False)
-    show_approval_date = models.BooleanField(default=False)
-    show_creation_date = models.BooleanField(default=False)
-    show_file_name = models.BooleanField(default=False)
+    show_material = models.BooleanField(default=True, verbose_name=_("Materiale"))
+    show_shape = models.BooleanField(default=True, verbose_name=_("Form"))
+    show_danish = models.BooleanField(default=True, verbose_name=_("Dansk pant"))
+    show_height = models.BooleanField(default=False, verbose_name=_("Højde"))
+    show_diameter = models.BooleanField(default=False, verbose_name=_("Diameter"))
+    show_weight = models.BooleanField(default=False, verbose_name=_("Vægt"))
+    show_capacity = models.BooleanField(default=False, verbose_name=_("Volumen"))
+    show_approval_date = models.BooleanField(
+        default=False, verbose_name=_("Godkendt dato")
+    )
+    show_creation_date = models.BooleanField(
+        default=False, verbose_name=_("Oprettelsesdato")
+    )
+    show_file_name = models.BooleanField(default=False, verbose_name=_("Filnavn"))
 
 
 class UserListViewPreferences(models.Model):
     class Meta:
         abstract = True
 
-    show_branch = models.BooleanField(default=True)
-    show_company = models.BooleanField(default=True)
-    show_is_admin = models.BooleanField(default=True)
-    show_approved = models.BooleanField(default=True)
-    show_phone = models.BooleanField(default=False)
-    show_newsletter = models.BooleanField(default=False)
-    show_email = models.BooleanField(default=False)
+    show_branch = models.BooleanField(default=True, verbose_name=_("Butik"))
+    show_company = models.BooleanField(default=True, verbose_name=_("Virksomhed"))
+    show_is_admin = models.BooleanField(
+        default=True, verbose_name=_("Har admin-rettigheder")
+    )
+    show_approved = models.BooleanField(default=True, verbose_name=_("Godkendt"))
+    show_phone = models.BooleanField(default=False, verbose_name=_("Telefonnummer"))
+    show_newsletter = models.BooleanField(
+        default=False, verbose_name=_("Modtager Nyhedsbreve")
+    )
+    show_email = models.BooleanField(default=False, verbose_name=_("Mail"))
 
 
 class CompanyListViewPreferences(models.Model):

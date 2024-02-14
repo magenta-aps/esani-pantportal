@@ -45,52 +45,7 @@ SPDX-License-Identifier: MPL-2.0
             <div class="col-6 clearfix"><button type="submit" class="btn btn-primary float-end">Søg</button></div>
         </div>
     </form>
-
-    <table id="table" class="table table-bordered table-striped mt-3"
-           data-toggle="table"
-           data-sticky-header="true"
-           data-classes="table"
-           data-data-field="items"
-           data-sortable="true"
-           data-pagination="true"
-           data-pagination-parts="['pageList']"
-           data-page-number="{{search_data.page_number}}"
-           data-page-size="{{search_data.limit}}"
-           data-side-pagination="server"
-           data-pagination-loop="false"
-           data-defer-url="{% url 'pant:rvm_list' %}?json=1"
-           data-query-params="queryParams"
-           data-row-style="rowStyle"
-           data-total-rows="{{total}}"
-           data-silent-sort="true" {# vil vi vise en loading-boks? #}
-           data-remember-order="true"
-           data-cookie="true" {# Handles table refresh after item removal #}
-    >
-        <thead>
-        <tr>
-            <th data-sortable="true" data-field="serial_number" class="col-3">Serienummer</th>
-            {% if user.is_esani_admin %}
-            <th data-sortable="true" data-field="compensation" class="col-3">Håndterings-godtgørelse</th>
-            {% endif %}
-            <th data-sortable="true" data-field="company_branch_or_kiosk" class="col-3">Butik</th>
-            <th data-field="actions" class="col-3">Handlinger</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for item in items %}
-        <tr>
-            <td>{{item.serial_number}}</td>
-            {% if user.is_esani_admin %}
-            <td>{{item.compensation}}</td>
-            {% endif %}
-            <td>{{item.company_branch_or_kiosk}}</td>
-            <td>
-                {% include actions_template with item=item %}
-            </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    {% include "../list_view_table.html" %}
     <a href="{% url 'pant:rvm_register' %}" class="btn btn-sm btn-primary">+</a>
 </div>
 {{search_data|json_script:"search_data"}}

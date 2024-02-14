@@ -74,77 +74,10 @@ SPDX-License-Identifier: MPL-2.0
             {% translate "Download .csv-fil med alle brugere" %}
         </a>
         {% endif %}
-
-        <div class="dropdown float-end">
-            <a class="btn btn-primary dropdown-toggle" role="button" id="dropdownMenuButton"
-            data-bs-toggle="dropdown" aria-expanded="false">
-            {% bs_icon "funnel" size="1em" %}
-            </a>
-            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                {% include "../filter.html" with verbose_name="Butik" name="branch" show=request.user.show_branch %}
-                {% include "../filter.html" with verbose_name="Virksomhed" name="company" show=request.user.show_company %}
-                {% include "../filter.html" with verbose_name="Har admin-rettigheder" name="is_admin" show=request.user.show_is_admin %}
-                {% include "../filter.html" with verbose_name="Godkendt" name="approved" show=request.user.show_approved %}
-                {% include "../filter.html" with verbose_name="Telefonnummer" name="phone" show=request.user.show_phone %}
-                {% include "../filter.html" with verbose_name="Modtager Nyhedsbreve" name="newsletter" show=request.user.show_newsletter %}
-                {% include "../filter.html" with verbose_name="Mail" name="email" show=request.user.show_email %}
-            </ul>
-        </div>
+        {% include "../list_view_filter_button.html" with columns=filterable_columns %}
     </div>
-    <table id="table" class="table table-bordered table-striped mt-1"
-           data-toggle="table"
-           data-sticky-header="true"
-           data-classes="table"
-           data-data-field="items"
-           data-sortable="true"
-           data-pagination="true"
-           data-pagination-parts="['pageList']"
-           data-page-number="{{search_data.page_number}}"
-           data-page-size="{{search_data.limit}}"
-           data-side-pagination="server"
-           data-pagination-loop="false"
-           data-defer-url="{% url 'pant:user_list' %}?json=1"
-           data-query-params="queryParams"
-           data-row-style="rowStyle"
-           data-total-rows="{{total}}"
-           data-silent-sort="true" {# vil vi vise en loading-boks? #}
-           data-remember-order="true"
-    >
-        <thead>
-        <tr>
-            <th data-sortable="true" data-field="username" class="col-3">Brugernavn</th>
-            <th data-sortable="true" data-field="full_name" class="col-3">Navn</th>
-            <th data-sortable="true" data-field="user_type" class="col-3">Brugertype</th>
-            <th data-sortable="true" data-field="branch" class="col-3" data-visible={{request.user.show_branch|truefalse}}>Butik</th>
-            <th data-sortable="true" data-field="company" class="col-3" data-visible={{request.user.show_company|truefalse}}>Virksomhed</th>
-            <th data-sortable="true" data-field="is_admin" class="col-3" data-visible={{request.user.show_is_admin|truefalse}}>{% translate "Har admin-rettigheder" %}</th>
-            <th data-sortable="true" data-field="approved" class="col-3" data-visible={{request.user.show_approved|truefalse}}>Godkendt</th>
-            <th data-sortable="true" data-field="phone" class="col-3" data-visible={{request.user.show_phone|truefalse}}>Telefonnummer</th>
-            <th data-sortable="true" data-field="newsletter" class="col-3" data-visible={{request.user.show_newsletter|truefalse}}>Modtager Nyhedsbreve</th>
-            <th data-sortable="true" data-field="email" class="col-3" data-visible={{request.user.show_email|truefalse}}>Mail</th>
-            <th data-field="actions" class="col-3">Handlinger</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for item in items %}
-        <tr>
-            <td>{{item.username}}</td>
-            <td>{{item.first_name}} {{item.last_name}}</td>
-            <td>{{item.user_type}}</td>
-            <td>{{item.branch}}</td>
-            <td>{{item.company}}</td>
-            <td>{{item.is_admin}}</td>
-            <td>{{item.approved}}</td>
-            <td>{{item.phone}}</td>
-            <td>{{item.newsletter}}</td>
-            <td>{{item.email}}</td>
-            <td>
-                {% include actions_template with item=item %}
-            </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    {% include "../list_view_table.html" %}
+
 </div>
 
 {{search_data|json_script:"search_data"}}
