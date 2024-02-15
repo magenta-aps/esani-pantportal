@@ -81,6 +81,9 @@ variables:
   IMAGE_SHA: ${CI_REGISTRY_IMAGE}/esani-pantportal:${CI_COMMIT_SHA}
   IMAGE_TAG: magentaaps/esani-pantportal:${CI_COMMIT_TAG}
 
+  ER_IMAGE_SHA: ${CI_REGISTRY_IMAGE}/esani-pantportal-er:${CI_COMMIT_SHA}
+  ER_IMAGE_TAG: magentaaps/esani-pantportal-er:${CI_COMMIT_TAG}
+
   VERSION: PIPELINE
 
 # Lint stage
@@ -144,6 +147,22 @@ Build ESANI-Pantportal image:
       --dockerfile=$CI_PROJECT_DIR/docker/Dockerfile
       --destination=${IMAGE_SHA}
       --build-arg=COMMIT_TAG=${CI_COMMIT_TAG}
+
+
+Build ER image:
+  stage: build
+  dependencies: []
+  image:
+    name: gcr.io/kaniko-project/executor:debug-v0.16.0
+    entrypoint: [""]
+  script:
+    # Login to GitLab registry
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor
+      --cache
+      --context=$CI_PROJECT_DIR
+      --dockerfile=$CI_PROJECT_DIR/docker/Dockerfile_er
+      --destination=${ER_IMAGE_SHA}
 
 # Test stage
 #############
@@ -220,6 +239,19 @@ Release ESANI-Pantportal image:
       --dest-creds=${RELEASE_REGISTRY_USER}:${RELEASE_REGISTRY_PASSWORD}
       "docker://${IMAGE_SHA}"
       "docker://${IMAGE_TAG}"
+
+Release ER image:
+  extends:
+    - .rules:semver-all
+    - .release
+  needs:
+    ["Build ER image"]
+  script:
+    - skopeo copy
+      --src-creds=${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD}
+      --dest-creds=${RELEASE_REGISTRY_USER}:${RELEASE_REGISTRY_PASSWORD}
+      "docker://${ER_IMAGE_SHA}"
+      "docker://${ER_IMAGE_TAG}"
 
 Release Semantic commit:
   extends: .release:semantic-commit

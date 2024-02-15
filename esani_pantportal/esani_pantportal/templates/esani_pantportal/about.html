@@ -5,22 +5,23 @@ SPDX-License-Identifier: MPL-2.0
 -->
 {% extends "esani_pantportal/layout.html" %}
 {% load i18n %}
+{% load static %}
+{% load bootstrap_icons %}
 {% block content %}
 <div class="justify-content-md-center d-flex align-items-center vh-100">
     <div class="card" style="width: 40rem;">
-        <h5 class="card-header">{% translate 'Om Pantportal' %}</h5>
+        <h5 class="card-header">{% translate 'Pantportal' %} v{{version}}</h5>
         <div class="card-body">
             <p>
-            <table>
-                <tr>
-                    <td>{% translate 'Version' %}</td>
-                    <td>: {{version}}</td>
-                </tr>
-                <tr>
-                    <td>{% translate 'Kildekode' %}</td>
-                    <td>: <a href="https://github.com/magenta-aps/esani-pantportal">https://github.com/magenta-aps/esani-pantportal</a></td>
-                </tr>
-            </table>
+            <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+               href="https://github.com/magenta-aps/esani-pantportal">
+                {% bs_icon "github" size="1.3em" %} {% translate 'Kildekode' %}
+            </a>
+            </p><p>
+            <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+               href="{% static 'doc/index.html' %}">
+                {% bs_icon "database" size="1.3em" %} {% translate 'Database dokumentation' %}
+            </a>
             </p><p>
             <a class="btn btn-primary" href="javascript:history.back()">{% translate 'Tilbage' %}</a>
             </p>

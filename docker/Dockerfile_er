@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+#
+# SPDX-License-Identifier: MPL-2.0
+
+FROM eclipse-temurin:11
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+# hadolint ignore=DL3008
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends graphviz \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && wget --progress=dot:giga https://github.com/schemaspy/schemaspy/releases/download/v6.1.0/schemaspy-6.1.0.jar -O /usr/local/share/schemaspy.jar \
+    && wget --progress=dot:giga https://jdbc.postgresql.org/download/postgresql-42.2.8.jar -O /usr/local/share/postgresql.jar
+
+COPY ./docker/er_entrypoint.sh /entrypoint.sh
+RUN chmod +x entrypoint.sh
+VOLUME /doc
+ENTRYPOINT ["/entrypoint.sh"]

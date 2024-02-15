@@ -127,7 +127,7 @@ from esani_pantportal.view_mixins import (
 logger = logging.getLogger(__name__)
 
 
-class AboutView(TemplateView):
+class AboutView(LoginRequiredMixin, TemplateView):
     template_name = "esani_pantportal/about.html"
 
     def get_context_data(self, *args, **kwargs):

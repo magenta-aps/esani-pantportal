@@ -18,6 +18,8 @@ services:
       - ./dev-environment/cert:/ssl:ro
       - ./data/qr_codes:/srv/media/qr_codes
       - ./data/deposit_payouts:/srv/media/deposit_payouts
+      - ./data/er:/app/esani_pantportal/static/doc:ro
+
     depends_on:
       - pantportal-db
     environment:
@@ -79,6 +81,22 @@ services:
     ports:
       - "8025:8025" # Web UI
       - "1025:1025" # SMTP port
+    networks:
+      - postgres
+
+  pantportal-er:
+    user: "1000:1000"  # Override in docker-compose.override.yml if your local user is different
+    container_name: pantportal-er
+    image: pantportal-er:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile_er
+    depends_on:
+      - pantportal-db
+    env_file:
+      - ./dev-environment/esani-pantportal.env
+    volumes:
+      - ./data/er:/doc
     networks:
       - postgres
 

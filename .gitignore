@@ -5,3 +5,4 @@ docker-compose.override.yml
 **/qr_codes/*.csv
 **/.venv*
 **/.vscode
+/data/er/**
