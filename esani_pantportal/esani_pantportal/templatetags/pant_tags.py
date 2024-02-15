@@ -4,7 +4,8 @@
 from urllib.parse import quote
 
 from django.conf import settings
-from django.template.defaultfilters import register
+from django.db.models import BooleanField
+from django.template.defaultfilters import register, yesno
 from django.utils.translation import gettext_lazy as _
 
 from esani_pantportal.models import (
@@ -45,7 +46,11 @@ def get_display_name(obj, attr):
     try:
         return getattr(obj, f"get_{attr}_display")()
     except AttributeError:
-        return str(getattr(obj, attr) or _("Udefineret"))
+        field = obj._meta.get_field(attr)
+        value = getattr(obj, attr)
+        if isinstance(field, BooleanField):
+            return yesno(value, _("Ja,Nej"))
+        return str(value or _("Udefineret"))
 
 
 @register.filter

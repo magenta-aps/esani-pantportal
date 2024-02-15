@@ -10,6 +10,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from django_otp.util import random_hex
+from unittest_parametrize import ParametrizedTestCase, parametrize
 
 from esani_pantportal.models import (
     BranchUser,
@@ -604,7 +605,7 @@ class DeleteUserTest(BaseUserTest):
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
 
-class UpdateCompanyTest(BaseUserTest):
+class UpdateCompanyTest(ParametrizedTestCase, BaseUserTest):
     def update_name(self, url):
         response = self.client.get(url)
         form_data = self.make_form_data(response.context_data["form"])
@@ -738,3 +739,23 @@ class UpdateCompanyTest(BaseUserTest):
             response.context["object"].external_customer_id,
             f"{Company.customer_id_prefix}-{self.facebook.pk:05}",
         )
+
+    @parametrize(
+        "input_value,expected_value",
+        [
+            ("0", False),
+            ("1", True),
+        ],
+    )
+    def test_update_invoice_company_branch(self, input_value, expected_value):
+        # Login and retrieve page with form
+        self.client.login(username="esani_admin", password="12345")
+        url = reverse("pant:company_update", kwargs={"pk": self.facebook.pk})
+        response = self.client.get(url)
+        # Post updated data
+        form_data = self.make_form_data(response.context_data["form"])
+        form_data["invoice_company_branch"] = input_value
+        response = self.client.post(url, form_data)
+        # Assert object is updated as expected
+        self.facebook.refresh_from_db()
+        self.assertEqual(self.facebook.invoice_company_branch, expected_value)
