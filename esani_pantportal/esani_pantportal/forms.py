@@ -486,9 +486,29 @@ class UpdateCompanyForm(forms.ModelForm, BootstrapForm):
             "municipality",
         )
 
+    invoice_company_branch = forms.BooleanField(
+        required=False,
+        initial=Company.invoice_company_branch.field.default,
+        widget=forms.Select(
+            choices=[(1, _("Ja")), (0, _("Nej"))],
+        ),
+    )
+
     def __init__(self, *args, esani_admin=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.object_verbose_name = _("Virksomhed")
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        # This is necessary as the Django form machinery removes a value of "0" from
+        # the POST data before the form is instantiated and validated. In order to
+        # "see" a value of "0" (= "Nej"), we treat an absent value as False.
+        instance.invoice_company_branch = self.cleaned_data.get(
+            "invoice_company_branch", False
+        )
+        if commit:
+            instance.save()
+        return instance
 
 
 class RegisterUserMultiForm(MultiModelForm, BootstrapForm):
