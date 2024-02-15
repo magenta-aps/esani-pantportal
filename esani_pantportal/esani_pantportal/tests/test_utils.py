@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.test import SimpleTestCase
 from project.util import json_dump
 
+from esani_pantportal.migrations.utils.utils import clean_phone_no
 from esani_pantportal.util import (
     add_parameters_to_url,
     default_dataframe,
@@ -83,3 +84,22 @@ class UtilTest(SimpleTestCase):
 
         url = "http://foo.com/?m=2"
         self.assertEqual(add_parameters_to_url(url, params), "http://foo.com/?m=2&s=1")
+
+    def test_phone_no_cleaner(self):
+        self.assertEqual(clean_phone_no("112211"), "(+299) 112211")
+        self.assertEqual(clean_phone_no("11 22 11"), "(+299) 112211")
+        self.assertEqual(clean_phone_no("(+299) 11 22 11"), "(+299) 112211")
+        self.assertEqual(clean_phone_no("299 11 22 11"), "(+299) 112211")
+        self.assertEqual(clean_phone_no("+299 11 22 11"), "(+299) 112211")
+        self.assertEqual(clean_phone_no("(+299) 112211"), "(+299) 112211")
+
+        self.assertEqual(clean_phone_no("11221122"), "(+45) 11221122")
+        self.assertEqual(clean_phone_no("11 22 11 22"), "(+45) 11221122")
+        self.assertEqual(clean_phone_no("(+45) 11 22 11 22"), "(+45) 11221122")
+        self.assertEqual(clean_phone_no("45 11 22 11 22"), "(+45) 11221122")
+        self.assertEqual(clean_phone_no("+45 11 22 11 22"), "(+45) 11221122")
+        self.assertEqual(clean_phone_no("(+45) 11221122"), "(+45) 11221122")
+
+        self.assertEqual(clean_phone_no("+299 36 35 04"), "(+299) 363504")
+        self.assertEqual(clean_phone_no("00299558835"), "(+299) 558835")
+        self.assertEqual(clean_phone_no("004511221122"), "(+45) 11221122")

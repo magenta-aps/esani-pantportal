@@ -119,7 +119,7 @@ class CSVExportViewTest(LoginMixin, TestCase):
             address="Væskevej 1337",
             city="Nuuk",
             postal_code="1234",
-            phone="+299 36 35 42",
+            phone="(+299) 363542",
             country="Grønland",
             company_type="A",
         )
@@ -136,7 +136,7 @@ class CSVExportViewTest(LoginMixin, TestCase):
             address="Væskevej 1337",
             city="Nuuk",
             postal_code="1234",
-            phone="+299 36 35 42",
+            phone="(+299) 363542",
             location_id=1,
         )
         _ = BranchUser.objects.create_user(
@@ -152,7 +152,7 @@ class CSVExportViewTest(LoginMixin, TestCase):
             address="Væskevej 1337",
             city="Nuuk",
             postal_code="1234",
-            phone="+299 36 35 42",
+            phone="(+299) 363542",
             location_id=1,
         )
         _ = KioskUser.objects.create_user(
