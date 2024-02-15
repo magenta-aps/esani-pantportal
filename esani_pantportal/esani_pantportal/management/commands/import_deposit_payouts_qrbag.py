@@ -5,8 +5,11 @@ from datetime import date, datetime, timedelta
 from functools import cache
 from uuid import UUID
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.db.models import Q
+from django.db.models.functions import Substr
 
 from esani_pantportal.clients.tomra.api import ConsumerSessionCollection, TomraAPI
 from esani_pantportal.clients.tomra.data_models import ConsumerSession
@@ -131,9 +134,38 @@ class Command(BaseCommand):
         return datetime(val.year, val.month, val.day)
 
     @cache
-    def _get_qr_bag(self, bag_qr) -> QRBag | None:
+    def _get_qr_bag(self, bag_qr, qr_bag_model=QRBag) -> QRBag | None:
+        long = 1 + settings.QR_ID_LENGTH + settings.QR_HASH_LENGTH
+        short = 1 + settings.QR_ID_LENGTH
+
+        qs = qr_bag_model.objects.annotate(
+            qr_prefix=Substr("qr", 1, 1),
+            qr_id=Substr("qr", 2, settings.QR_ID_LENGTH),
+            qr_hash=Substr("qr", 2 + settings.QR_ID_LENGTH, settings.QR_HASH_LENGTH),
+        )
+
+        if len(bag_qr) == long:
+            # 18-digit QR code (prefix + ID + hash.)
+            # Exact match on entire QR.
+            lookup = Q(qr=bag_qr)
+        elif len(bag_qr) == short:
+            # 10-digit QR code (prefix + ID.)
+            # Exact match on QR prefix and ID only.
+            lookup = Q(qr_prefix=bag_qr[0], qr_id=bag_qr[1:])
+        elif len(bag_qr) == settings.QR_ID_LENGTH:
+            # 9-digit QR code (ID only.)
+            # Exact match on QR ID.
+            lookup = Q(qr_id=bag_qr)
+        else:
+            # The provided QR code is neither 18, 10 or 9 digits long.
+            self.stdout.write(
+                f"Not looking up `QRBag` for code of unexpected length: "
+                f"{bag_qr=} (length={len(bag_qr)})"
+            )
+            return
+
         try:
-            return QRBag.objects.get(qr=bag_qr)
+            return qs.get(lookup)
         except QRBag.DoesNotExist:
             self.stdout.write(f"No QRBag matches {bag_qr}")
 
