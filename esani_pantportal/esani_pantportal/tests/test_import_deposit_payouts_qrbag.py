@@ -6,8 +6,10 @@ from datetime import date, datetime
 from io import StringIO
 from unittest.mock import Mock, patch
 
+from django.conf import settings
 from django.core.management import call_command
 from django.test import TestCase
+from unittest_parametrize import ParametrizedTestCase, parametrize
 
 from esani_pantportal.clients.tomra.api import ConsumerSessionCollection, TomraAPI
 from esani_pantportal.clients.tomra.data_models import (
@@ -28,12 +30,14 @@ from esani_pantportal.models import (
     QRBag,
 )
 
+EXAMPLE_QR_ID = "0" * settings.QR_ID_LENGTH
 
-class TestImportDepositPayoutsQRBag(TestCase):
+
+class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
     maxDiff = None
 
     kiosk_cvr = 1234
-    bag_qr = "12345678"
+    bag_qr = "0123456789deadbeef"
     product_barcode_1 = "1122"
     product_count_1 = 10
     product_barcode_2 = "2233"
@@ -47,10 +51,10 @@ class TestImportDepositPayoutsQRBag(TestCase):
         super().setUpTestData()
 
         # Add `Kiosk` object
-        kiosk, _ = Kiosk.objects.update_or_create(cvr=cls.kiosk_cvr)
+        cls.kiosk, _ = Kiosk.objects.update_or_create(cvr=cls.kiosk_cvr)
 
         # Add `QRBag` object
-        QRBag.objects.update_or_create(qr=cls.bag_qr, kiosk=kiosk)
+        QRBag.objects.update_or_create(qr=cls.bag_qr, kiosk=cls.kiosk)
 
         # Add `Product` objects
         defaults = {
@@ -232,3 +236,50 @@ class TestImportDepositPayoutsQRBag(TestCase):
         cmd = Command()
         # Act and assert
         self.assertIsNone(cmd._get_kiosk(ConsumerSession()))
+
+    @parametrize(
+        "lookup,db_value,expected",
+        [
+            # 9-digit QR code input
+            (
+                EXAMPLE_QR_ID,
+                f"1{EXAMPLE_QR_ID}deadbeef",
+                True,
+            ),
+            # 10-digit QR code
+            (
+                f"1{EXAMPLE_QR_ID}",
+                f"1{EXAMPLE_QR_ID}deadbeef",
+                True,
+            ),
+            # 18-digit QR code
+            (
+                f"1{EXAMPLE_QR_ID}deadbeef",
+                f"1{EXAMPLE_QR_ID}deadbeef",
+                True,
+            ),
+            # QR code of unrecognized length
+            (
+                "1",
+                f"1{EXAMPLE_QR_ID}deadbeef",
+                False,
+            ),
+            # QR code of recognized length, but does not exist in DB
+            (
+                f"1{EXAMPLE_QR_ID}deadbeef",
+                "",
+                False,
+            ),
+        ],
+    )
+    def test_get_bag_qr(self, lookup, db_value, expected):
+        # Arrange
+        QRBag.objects.update_or_create(qr=db_value, kiosk=self.kiosk)
+        cmd = Command()
+        # Act
+        result = cmd._get_qr_bag(lookup)
+        # Assert
+        if expected:
+            self.assertEqual(result.qr, db_value)
+        else:
+            self.assertIsNone(result)
