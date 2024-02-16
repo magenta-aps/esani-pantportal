@@ -26,7 +26,7 @@ class Command(BaseCommand):
                 address="Væskevej " + str(company_names.index(company_name)),
                 city="Nuuk",
                 postal_code="1234",
-                phone="+299 36 35 " + str(random.randint(10, 99)),
+                phone="(+299) 3635" + str(random.randint(10, 99)),
                 country="Grønland",
                 company_type="A",
                 registration_number=random.randint(1000, 9999),
