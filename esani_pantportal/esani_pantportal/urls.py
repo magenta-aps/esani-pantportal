@@ -13,6 +13,7 @@ from esani_pantportal.views import (
     CompanyDeleteView,
     CompanySearchView,
     CompanyUpdateView,
+    CsvCompaniesView,
     CsvProductsView,
     CsvTemplateView,
     CsvUsersView,
@@ -147,6 +148,11 @@ urlpatterns = [
     path("bruger/<int:pk>", UserUpdateView.as_view(), name="user_view"),
     path("bruger/<int:pk>/fjern", UserDeleteView.as_view(), name="user_delete"),
     path("bruger/download/", CsvUsersView.as_view(), name="all_users_csv_download"),
+    path(
+        "virksomhed/download/",
+        CsvCompaniesView.as_view(),
+        name="all_companies_csv_download",
+    ),
     path(
         "virksomhed/<int:pk>/fjern", CompanyDeleteView.as_view(), name="company_delete"
     ),

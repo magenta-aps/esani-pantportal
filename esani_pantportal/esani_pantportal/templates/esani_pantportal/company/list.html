@@ -64,14 +64,12 @@ SPDX-License-Identifier: MPL-2.0
         </div>
     </div>
     <div class="col-12  mt-3">
+        <a class="btn btn-primary" href="{% url 'pant:all_companies_csv_download' %}">
+            {% translate "Download .csv-fil med alle virksomheder" %}
+        </a>
         {% include "../list_view_filter_button.html" with columns=filterable_columns prefix=preferences_prefix %}
     </div>
     {% include "../list_view_table.html" %}
-    <form method="get">
-        <button type="submit" class="btn btn-primary" name="download" value="csv">
-            {% translate "Hent som CSV" %}
-        </button>
-    </form>
 </div>
 
 {{search_data|json_script:"search_data"}}
