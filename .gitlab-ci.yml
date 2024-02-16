@@ -153,7 +153,7 @@ Build ER image:
   stage: build
   dependencies: []
   image:
-    name: gcr.io/kaniko-project/executor:debug-v0.16.0
+    name: gcr.io/kaniko-project/executor:v1.15.0-debug
     entrypoint: [""]
   script:
     # Login to GitLab registry
