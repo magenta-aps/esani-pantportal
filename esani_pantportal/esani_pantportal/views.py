@@ -615,16 +615,6 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
         "object_class_name_verbose": _("Type"),
     }
 
-    def get(self, request, *args, **kwargs):
-        if request.GET.get("download", None) == "csv":
-            export = DebtorExport()
-            filename = f"debitor_{datetime.date.today().strftime('%Y-%m-%d')}.csv"
-            response = HttpResponse(content_type="text/csv")
-            response["Content-Disposition"] = f"attachment; filename={filename}"
-            export.as_csv(response)
-            return response
-        return super().get(request, *args, **kwargs)
-
     def get_fields(self):
         fields = super().get_fields()
         kiosk_fields = super().get_fields(model=Kiosk)
@@ -1481,6 +1471,16 @@ class CsvTemplateView(LoginRequiredMixin, View):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = "attachment; filename=template.csv"
         df.to_csv(path_or_buf=response, sep=";", index=False)
+        return response
+
+
+class CsvCompaniesView(CsvTemplateView):
+    def get(self, request, *args, **kwargs):
+        export = DebtorExport()
+        filename = f"debitor_{datetime.date.today().strftime('%Y-%m-%d')}.csv"
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f"attachment; filename={filename}"
+        export.as_csv(response)
         return response
 
 

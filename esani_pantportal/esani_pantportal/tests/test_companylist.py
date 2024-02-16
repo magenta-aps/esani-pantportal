@@ -319,7 +319,7 @@ class CompanyListExportTest(BaseCompanyTest):
     def test_export(self):
         # Fetch debtor list as CSV
         self.login()
-        response = self.client.get(f"{reverse('pant:company_list')}?download=csv")
+        response = self.client.get(reverse("pant:all_companies_csv_download"))
         # Assert we get the expected response
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response["Content-Type"], "text/csv")
