@@ -325,7 +325,7 @@ class CompanyListExportTest(BaseCompanyTest):
         self.assertEqual(response["Content-Type"], "text/csv")
         self.assertRegex(
             response["Content-Disposition"],
-            r"attachment; filename=debitor_(.*?)\.csv",
+            r"attachment; filename=(.*?)_all_companies\.csv",
         )
         # Assert that all companies, company branches and kiosks defined in this test
         # are exported in the CSV.

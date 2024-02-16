@@ -53,7 +53,7 @@ from project.settings import DEFAULT_FROM_EMAIL
 from simple_history.utils import bulk_update_with_history, update_change_reason
 from two_factor.views import LoginView, SetupView
 
-from esani_pantportal.exports.uniconta.exports import CreditNoteExport, DebtorExport
+from esani_pantportal.exports.uniconta.exports import CreditNoteExport
 from esani_pantportal.forms import (
     ChangePasswordForm,
     CompanyFilterForm,
@@ -1475,12 +1475,39 @@ class CsvTemplateView(LoginRequiredMixin, View):
 
 
 class CsvCompaniesView(CsvTemplateView):
+    @staticmethod
+    def obj_to_dict(obj, fields):
+        obj_dict = dict(
+            {"external_customer_id": obj.external_customer_id},
+            **model_to_dict(obj, fields=fields),
+        )
+        if "company" in fields:
+            obj_dict["company"] = obj.company.name
+
+        return obj_dict
+
+    def create_dataframe(self, company_class):
+        fields = [field.name for field in company_class._meta.fields]
+        df = pd.DataFrame(
+            [self.obj_to_dict(obj, fields) for obj in company_class.objects.all()]
+        )
+        df["object_class_name"] = company_class.__name__
+        return df
+
     def get(self, request, *args, **kwargs):
-        export = DebtorExport()
-        filename = f"debitor_{datetime.date.today().strftime('%Y-%m-%d')}.csv"
+        company_df = self.create_dataframe(Company)
+        company_branch_df = self.create_dataframe(CompanyBranch)
+        kiosk_df = self.create_dataframe(Kiosk)
+        df = pd.concat([company_df, company_branch_df, kiosk_df])
+        df["branch_type"] = df["branch_type"].apply(branch_type)
+        df["company_type"] = df["company_type"].apply(company_type)
+
+        timestamp = now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{timestamp}_all_companies.csv"
+
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = f"attachment; filename={filename}"
-        export.as_csv(response)
+        df.to_csv(path_or_buf=response, sep=";", index=False)
         return response
 
 
