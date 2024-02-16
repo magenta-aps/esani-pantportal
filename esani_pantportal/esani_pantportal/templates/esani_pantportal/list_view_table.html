@@ -14,14 +14,14 @@ SPDX-License-Identifier: MPL-2.0
        data-sortable="true"
        data-pagination="true"
        data-pagination-parts="['pageList']"
-       data-page-number="{{search_data.page_number}}"
-       data-page-size="{{search_data.limit}}"
+       data-page-number="{{search_data.page_number|unlocalize}}"
+       data-page-size="{{search_data.limit|unlocalize}}"
        data-side-pagination="server"
        data-pagination-loop="false"
        data-defer-url="{{ data_defer_url }}"
        data-query-params="queryParams"
        data-row-style="rowStyle"
-       data-total-rows="{{total}}"
+       data-total-rows="{{total|unlocalize}}"
        data-silent-sort="true" {# vil vi vise en loading-boks? #}
        data-remember-order="true"
        data-cookie="true" {# Handles table refresh after bulk-approval properly #}
