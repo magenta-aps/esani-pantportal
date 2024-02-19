@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-FROM python:3.11
+FROM python:3.11-bookworm
 ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.1.12/supercronic-linux-amd64 \
     SUPERCRONIC=supercronic-linux-amd64 \
     SUPERCRONIC_SHA1SUM=048b95b48b708983effb2e5c935a1ef8483d9e3e\
@@ -24,14 +24,19 @@ RUN mkdir /app && \
 COPY esani_pantportal/requirements.txt /app/requirements.txt
 # hadolint ignore=DL3008
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends gettext python3-distutils graphviz libxmlsec1-dev xmlsec1 locales libz-dev libjpeg-dev libfreetype6-dev postgresql-client-common postgresql-client-15 && \
+    apt-get install -y --no-install-recommends gettext apt-utils python3-distutils graphviz libxmlsec1-dev xmlsec1 locales libz-dev libjpeg-dev libfreetype6-dev postgresql-client-common && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* \
     && curl -fsSLO "$SUPERCRONIC_URL" \
     && echo "${SUPERCRONIC_SHA1SUM}  ${SUPERCRONIC}" | sha1sum -c - \
     && chmod +x "$SUPERCRONIC" \
     && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
-    && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
+    && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic \
+    # Postgres client 16 stufff \
+    && sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list' \
+    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client-16
 
 RUN pip3 install --no-cache-dir -r /app/requirements.txt
 
