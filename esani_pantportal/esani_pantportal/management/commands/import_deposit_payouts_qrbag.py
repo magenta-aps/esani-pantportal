@@ -185,6 +185,8 @@ class Command(BaseCommand):
         except QRBag.DoesNotExist:
             self.stdout.write(f"No QRBag matches {bag_qr}")
         else:
+            qr_bag.status = "Optalt"
+            qr_bag.save()
             if source_type is CompanyBranch:
                 return qr_bag.company_branch
             elif source_type is Kiosk:
