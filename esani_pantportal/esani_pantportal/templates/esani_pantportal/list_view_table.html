@@ -25,12 +25,14 @@ SPDX-License-Identifier: MPL-2.0
        data-silent-sort="true" {# vil vi vise en loading-boks? #}
        data-remember-order="true"
        data-cookie="true" {# Handles table refresh after bulk-approval properly #}
+       data-click-to-select="true"
 >
     <thead>
     <tr>
         {% if can_edit_multiple %}
-        <th data-field="select"><input type="checkbox" id="select_all"/></th>
+        <th data-checkbox="true" data-field="state"></th>
         {% endif %}
+        <th data-field="id" class="col-3" data-visible="false">ID</th>
         {% for name, verbose_name, show in columns %}
             <th data-sortable="true" data-field={{name}} class="col-3" data-visible={{show|truefalse}}>{{verbose_name}}</th>
         {% endfor %}
@@ -41,8 +43,9 @@ SPDX-License-Identifier: MPL-2.0
     {% for item in items %}
     <tr>
         {% if can_edit_multiple %}
-        <td>{% include select_template with item=item %}</td>
+        <td></td> {# Bootstrap Table puts a checkbox here #}
         {% endif %}
+        <td>{{item|get:"id"}}</td>
         {% for name, verbose_name, show in columns %}
             <td>{{item|get:name}}</td>
         {% endfor %}
@@ -52,4 +55,43 @@ SPDX-License-Identifier: MPL-2.0
     </tr>
     {% endfor %}
     </tbody>
-    </table>
+</table>
+
+<!--
+Allow selecting multiple items when holding shift
+https://github.com/wenzhixin/bootstrap-table/issues/6855
+-->
+<script>
+  var $table = $('#table')
+  let shiftKeyDown = false;
+        let firstCheckIndex = null;
+        let checkingMultiple = false;
+
+        $(document).keydown(function (e) {
+            if (e.key === "Shift") shiftKeyDown = true;
+        }).keyup(function (e) {
+            if (e.key === "Shift") shiftKeyDown = false;
+        });
+
+        $table.on('check.bs.table', async (e, row, $element) => {
+ 
+            if (checkingMultiple) return;
+
+            const index = parseInt($element.attr('data-index'));
+
+            if (shiftKeyDown && firstCheckIndex !== null) {
+                checkingMultiple = true;
+
+                let startIndex = Math.min(firstCheckIndex, index);
+                let endIndex = Math.max(firstCheckIndex, index);
+
+                for (let i = startIndex; i <= endIndex; i++) {
+                    $table.bootstrapTable('check', i);
+                }
+
+                checkingMultiple = false;
+            } else {
+                firstCheckIndex = index;
+            }
+        });
+</script>
