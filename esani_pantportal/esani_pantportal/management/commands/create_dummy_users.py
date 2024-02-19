@@ -8,6 +8,7 @@ from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
 
 from esani_pantportal.models import (
+    MUNICIPALITY_CHOICES,
     BranchUser,
     Company,
     CompanyBranch,
@@ -16,6 +17,10 @@ from esani_pantportal.models import (
     Kiosk,
     KioskUser,
 )
+
+# OBS: Old dummy value was "Semersooq"..
+# we now fetch the same value from the new choices
+DUMMY_MUNICIPALITY = MUNICIPALITY_CHOICES[len(MUNICIPALITY_CHOICES) - 3][0]
 
 
 class Command(BaseCommand):
@@ -37,7 +42,7 @@ class Command(BaseCommand):
                 "address": "Aqqusinersuaq 4, 2 th. P.O.Box 1092 ",
                 "postal_code": "1092",
                 "city": "Nuuk",
-                "municipality": "Semersooq",
+                "municipality": DUMMY_MUNICIPALITY,
                 "country": "Grønland",
                 "phone": "(+299) 363500",
                 "company_type": "A",
@@ -51,7 +56,7 @@ class Command(BaseCommand):
                 "address": "57RR+M9M, Iiminaq",
                 "postal_code": "3905",
                 "city": "Nuuk",
-                "municipality": "Semersooq",
+                "municipality": DUMMY_MUNICIPALITY,
                 "phone": "(+299) 363501",
                 "location_id": "00432",
                 "customer_id": "1234",
@@ -67,7 +72,7 @@ class Command(BaseCommand):
                 "address": "Brugsen, Aqqusinersuaq 2",
                 "postal_code": "3900",
                 "city": "Nuuk",
-                "municipality": "Semersooq",
+                "municipality": DUMMY_MUNICIPALITY,
                 "phone": "(+299) 321122",
                 "location_id": "004321",
                 "customer_id": "12345",
@@ -190,7 +195,8 @@ class Command(BaseCommand):
                 "location_id": "2",
                 "customer_id": "22",
                 "branch_type": "A",
-                "municipality": "Sermersooq",
+                # "municipality": "Sermersooq",
+                "municipality": DUMMY_MUNICIPALITY,
                 "qr_compensation": 35,
             },
         )
