@@ -113,6 +113,16 @@ def float_to_string(value):
         return locale.format("%.1f", value)
 
 
+def clean_url(url):
+    u = urlparse(url)
+    query = parse_qs(u.query, keep_blank_values=True)
+    for key, value in query.items():
+        query[key] = value[-1]
+
+    u = u._replace(query=urlencode(query, True))
+    return urlunparse(u)
+
+
 def get_back_url(request, fallback_url):
-    back_url = unquote(request.GET.get("back", ""))
+    back_url = clean_url(unquote(request.GET.get("back", "")))
     return remove_parameter_from_url(back_url, "json") if back_url else fallback_url
