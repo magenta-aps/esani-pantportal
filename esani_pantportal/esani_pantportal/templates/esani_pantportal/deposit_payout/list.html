@@ -67,12 +67,14 @@ SPDX-License-Identifier: MPL-2.0
 
     <form method="post">
         {% csrf_token %}
-        <button type="submit" class="btn btn-primary" name="selection" value="selected">
-            Hent valgte (<span>0</span>) som udbetalingsliste
-        </button>
-        <button type="submit" class="btn btn-primary d-none" name="selection" value="all">
-            Hent alle ({{ page_obj.paginator.count }}) som udbetalingsliste
-        </button>
+        <div class="mb-1">
+            <button type="submit" class="btn btn-primary" name="selection" value="selected">
+                Hent valgte (<span>0</span>) som udbetalingsliste
+            </button>
+            <button type="submit" class="btn btn-primary d-none" name="selection" value="all">
+                Hent alle ({{ page_obj.paginator.count }}) som udbetalingsliste
+            </button>
+        </div>
         <table id="table" class="table table-bordered table-striped"
                data-toggle="table"
                data-sticky-header="true"
