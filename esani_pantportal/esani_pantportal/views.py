@@ -365,7 +365,6 @@ class RegisterKioskUserAdminView(PermissionRequiredMixin, RegisterKioskUserView)
 
 class SearchView(LoginRequiredMixin, FormView, ListView):
     paginate_by = 20
-    select_template = None
     annotations = {}
     search_fields_exact = []
     fixed_columns = {}
@@ -460,7 +459,6 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
             total=total,
             search_data=self.search_data,
             actions_template=self.actions_template,
-            select_template=self.select_template,
         )
         items = [
             self.item_to_json_dict(item, context, index)
@@ -530,12 +528,6 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
         if key == "actions":
             return loader.render_to_string(
                 self.actions_template,
-                {"item": item, **context},
-                self.request,
-            )
-        if key == "select":
-            return loader.render_to_string(
-                self.select_template,
                 {"item": item, **context},
                 self.request,
             )
@@ -691,7 +683,6 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
 class ProductSearchView(SearchView):
     template_name = "esani_pantportal/product/list.html"
     actions_template = "esani_pantportal/product/actions.html"
-    select_template = "esani_pantportal/product/select.html"
     model = Product
     form_class = ProductFilterForm
     preferences_class = ProductListViewPreferences
@@ -708,7 +699,6 @@ class ProductSearchView(SearchView):
 
     def item_to_json_dict(self, item_obj, context, index):
         json_dict = super().item_to_json_dict(item_obj, context, index)
-        json_dict["select"] = self.map_value(model_to_dict(item_obj), "select", context)
         json_dict["file_name"] = item_obj.file_name or "-"
         return json_dict
 

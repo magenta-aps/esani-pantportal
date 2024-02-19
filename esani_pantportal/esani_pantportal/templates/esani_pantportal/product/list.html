@@ -98,50 +98,34 @@ SPDX-License-Identifier: MPL-2.0
 
 {% if can_edit_multiple %}
 <script>
-let shiftPressed = false;
-$(document).on("keydown", function (event){
-    if (event.originalEvent.key === "Shift") {
-        shiftPressed = true;
-    }
-});
-$(document).on("keyup", function (event){
-    if (event.originalEvent.key === "Shift") {
-        shiftPressed = false;
-    }
-});
-
-let latestClicked;
-let latestRange;
-const activeClass = "table-active";
 const approveButton = $("#approve_button");
 const deleteButton = $("#delete_button");
 
 function getRowId(row){
-    rowId = row.find('td:first').find('input:first').val();
+    rowId = row.id.toString();
     // Remove spurious "." that causes type error.
     return rowId.split(".").join("")
 };
 
 function getUnapprovedRows(){
-    const selectedRows = $("table tr."+activeClass);
+    const selectedRows = $("#table").bootstrapTable("getSelections");
     const rowIds = [];
-    selectedRows.each(function (){
-        if ($(this).find('td:eq(3)').text()==='{{ _("Nej") }}') {
-            rowIds.push(getRowId($(this)));
+    for (let row of selectedRows) {
+        if (row.approved==='{{ _("Nej") }}') {
+            rowIds.push(getRowId(row));
         }
-    });
+    };
     return rowIds
 };
 
 function getRows(){
-    const selectedRows = $("table tr."+activeClass);
+    const selectedRows = $("#table").bootstrapTable("getSelections");
     const rowIds = [];
-    selectedRows.each(function (){
-        rowIds.push(getRowId($(this)));
-    });
+    for (let row of selectedRows) {
+        rowIds.push(getRowId(row));
+    }
     return rowIds
 };
-
 
 const onUpdateSelected = function () {
     unapprovedRowIds = getUnapprovedRows();
@@ -210,62 +194,12 @@ deleteButton.on("click", function() {
     }
 });
 
-{# Klikbare rækker efter følgende regler: #}
-{#   Klik på en række aktiverer / deaktiverer #}
-{#   Klik på række A, hold shift nede og klik på række B: aktiverer / deaktiverer alle rækker mellem A og B, så de får samme tilstand som A #}
-$("table").on("click-row.bs.table", function (event, data, row, field) {
-    if (shiftPressed && latestClicked) {
-        const index1 = row.index();
-        const index2 = latestClicked.index();
-        const range = row.siblings().slice(Math.min(index1, index2), Math.max(index1, index2)).add(row);
-        const firstActive = latestClicked.hasClass(activeClass);
-        if (latestRange) {
-            // Hvis vi lige har valgt en range og vælger en ny, skal den første range flippes
-            if (firstActive) {
-                latestRange.removeClass(activeClass);
-                latestRange.find("[name=id]").prop("checked", false);
-            } else {
-                latestRange.addClass(activeClass);
-                latestRange.find("[name=id]").prop("checked", true);
-            }
-        }
-        // Sæt ny range's aktiv ud fra startpunktets aktivitet
-        if (firstActive) {
-            range.addClass(activeClass);
-            range.find("[name=id]").prop("checked", true);
-        } else {
-            range.removeClass(activeClass);
-            range.find("[name=id]").prop("checked", false);
-        }
-        latestRange = range;
-    } else {
-        const checkbox = row.find("[name=id]");
-        const activate = !row.hasClass(activeClass);//!checkbox.is(":checked");
-        latestClicked = row;
-        latestRange = null;
-        row.toggleClass(activeClass, activate);
-        checkbox.prop("checked", activate);
-    }
-    onUpdateSelected();
-});
-
-const setListeners = function () {
-    $("table a").on("click", function (event) {
-        event.stopPropagation();
-    });
-    $("#select_all").on("change", function () {
-        const checked = $(this).is(":checked");
-        $("[name=id]").prop("checked", checked);
-        $("table tbody tr").toggleClass(activeClass, checked);
+$("table").on(
+    "uncheck.bs.table uncheck-all.bs.table uncheck-some.bs.table check.bs.table check-some.bs.table check-all.bs.table reset-view.bs.table",
+    function (evt) {
         onUpdateSelected();
-    });
-};
-
-$("table").on("reset-view.bs.table", function () {
-    setListeners();
-    onUpdateSelected();
-});
-setListeners();
+    },
+);
 
 </script>
 {% endif %}

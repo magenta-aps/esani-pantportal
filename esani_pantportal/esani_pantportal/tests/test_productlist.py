@@ -334,8 +334,6 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "file_name": self.job.file_name,
                         "import_job": self.job.pk,
                         "created_by": self.user.pk,
-                        "select": '<input type="checkbox" id="select_1" '
-                        'name="id" value="1"/>\n',
                     },
                     {
                         "actions": '<a href="/produkt/2?back=" class="btn btn-sm '
@@ -357,8 +355,6 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "file_name": "-",
                         "import_job": "-",
                         "created_by": self.user.pk,
-                        "select": '<input type="checkbox" id="select_2" '
-                        'name="id" value="2"/>\n',
                     },
                 ],
                 "total": 2,
@@ -405,8 +401,6 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                         "file_name": self.job.file_name,
                         "import_job": self.job.pk,
                         "created_by": self.user.pk,
-                        "select": '<input type="checkbox" id="select_1" '
-                        'name="id" value="1"/>\n',
                     }
                 ],
                 "total": 1,
@@ -509,7 +503,13 @@ class ProductListGuiTest(LoginMixin, TestCase):
         output = []
         for row in table.tbody.find_all("tr"):
             rowdata = [cell.text.strip() for cell in row.find_all("td")]
-            output.append({k: v for k, v in dict(zip(headers, rowdata)).items() if k})
+            output.append(
+                {
+                    k: v
+                    for k, v in dict(zip(headers, rowdata)).items()
+                    if k and k != "ID"  # The ID column is always hidden
+                }
+            )
         return output
 
     @staticmethod
