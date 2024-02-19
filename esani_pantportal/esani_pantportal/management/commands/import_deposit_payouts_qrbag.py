@@ -1,11 +1,13 @@
 # SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
+import re
 from datetime import date, datetime, timedelta
 from functools import cache
 from uuid import UUID
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import Q
@@ -14,6 +16,7 @@ from django.db.models.functions import Substr
 from esani_pantportal.clients.tomra.api import ConsumerSessionCollection, TomraAPI
 from esani_pantportal.clients.tomra.data_models import ConsumerSession
 from esani_pantportal.models import (
+    AbstractCompany,
     CompanyBranch,
     DepositPayout,
     DepositPayoutItem,
@@ -101,8 +104,8 @@ class Command(BaseCommand):
             [
                 DepositPayoutItem(
                     deposit_payout=deposit_payout,
-                    company_branch=self._get_company_branch(consumer_session),
-                    kiosk=self._get_kiosk(consumer_session),
+                    company_branch=self._get_source(consumer_session, CompanyBranch),
+                    kiosk=self._get_source(consumer_session, Kiosk),
                     product=self._get_product_from_barcode(item.product_code),
                     barcode=item.product_code,
                     count=item.count,
@@ -134,7 +137,18 @@ class Command(BaseCommand):
         return datetime(val.year, val.month, val.day)
 
     @cache
-    def _get_qr_bag(self, bag_qr, qr_bag_model=QRBag) -> QRBag | None:
+    def _get_from_qr(
+        self,
+        consumer_identity: str,
+        source_type: type[CompanyBranch] | type[Kiosk],
+        qr_bag_model=QRBag,
+    ) -> CompanyBranch | Kiosk | None:
+        """
+        Find the matching `QRBag` instance for the given `consumer_identity`,
+        and return either the `CompanyBranch` or the `Kiosk` that has claimed the
+        `QRBag` in question.
+        """
+
         long = 1 + settings.QR_ID_LENGTH + settings.QR_HASH_LENGTH
         short = 1 + settings.QR_ID_LENGTH
 
@@ -143,6 +157,8 @@ class Command(BaseCommand):
             qr_id=Substr("qr", 2, settings.QR_ID_LENGTH),
             qr_hash=Substr("qr", 2 + settings.QR_ID_LENGTH, settings.QR_HASH_LENGTH),
         )
+
+        bag_qr = consumer_identity
 
         if len(bag_qr) == long:
             # 18-digit QR code (prefix + ID + hash.)
@@ -165,9 +181,54 @@ class Command(BaseCommand):
             return
 
         try:
-            return qs.get(lookup)
+            qr_bag = qs.get(lookup)
         except QRBag.DoesNotExist:
             self.stdout.write(f"No QRBag matches {bag_qr}")
+        else:
+            if source_type is CompanyBranch:
+                return qr_bag.company_branch
+            elif source_type is Kiosk:
+                return qr_bag.kiosk
+            else:
+                raise ValueError(f"Unknown source type {source_type=}")
+
+    @cache
+    def _get_direct(
+        self,
+        consumer_identity: str,
+        source_type: type[CompanyBranch] | type[Kiosk],
+    ) -> CompanyBranch | Kiosk | None:
+        """
+        Find the `CompanyBranch` or `Kiosk` whose external customer ID is encoded
+        directly in the `consumer_identity` given.
+        """
+
+        # Look for strings starting with "8" or "9", followed by three zeroes, followed
+        # by an external customer ID (6 digits, starting with either "1", "2" or "3".)
+        pattern = re.compile(r"[8|9]000(?P<ext_id>[1|2|3]\d{5})")
+        match = pattern.match(consumer_identity)
+
+        if match:
+            # Convert "200002" into "2-00002", etc.
+            ext_id = match.group("ext_id")
+            ext_id_with_separator = re.sub(r"(\d)(\d{5})", r"\g<1>-\g<2>", ext_id)
+
+            # Try to look up object based on `ext_id_with_separator`
+            try:
+                obj = AbstractCompany.get_from_id(ext_id_with_separator)
+            except ObjectDoesNotExist:
+                self.stdout.write(
+                    f"No matching object for external customer ID: "
+                    f"{ext_id_with_separator}"
+                )
+            else:
+                if isinstance(obj, source_type):
+                    return obj
+                else:
+                    self.stdout.write(
+                        f"Unexpected match on `{obj.__class__.__name__}` "
+                        f"(expected `{source_type.__name__}`): {ext_id_with_separator}"
+                    )
 
     def _get_consumer_identity(self, consumer_session: ConsumerSession):
         try:
@@ -176,31 +237,31 @@ class Command(BaseCommand):
             # 'NoneType' object has no attribute 'consumer_identity'
             pass
 
-    def _get_company_branch(
-        self, consumer_session: ConsumerSession
-    ) -> CompanyBranch | None:
-        try:
-            qr_bag = self._get_qr_bag(consumer_session.identity.consumer_identity)
-        except AttributeError:
-            # 'NoneType' object has no attribute 'consumer_identity'
-            self.stdout.write(
-                f"No `identity` in {consumer_session.id} ({consumer_session.metadata=}"
-            )
-        else:
-            if qr_bag:
-                return qr_bag.company_branch
+    def _get_source(
+        self,
+        consumer_session: ConsumerSession,
+        source_type: type[CompanyBranch] | type[Kiosk],
+    ) -> CompanyBranch | Kiosk | None:
+        """
+        Find the "source" of the given `consumer_session` - either a `CompanyBranch`,
+        a `Kiosk`, or None.
+        """
 
-    def _get_kiosk(self, consumer_session: ConsumerSession) -> Kiosk | None:
         try:
-            qr_bag = self._get_qr_bag(consumer_session.identity.consumer_identity)
+            consumer_identity = consumer_session.identity.consumer_identity
         except AttributeError:
             # 'NoneType' object has no attribute 'consumer_identity'
             self.stdout.write(
-                f"No `identity` in {consumer_session.id} ({consumer_session.metadata=}"
+                f"No `identity` in {consumer_session.id} ({consumer_session.metadata=})"
             )
         else:
-            if qr_bag:
-                return qr_bag.kiosk
+            # First, try looking for an external customer ID encoded directly in the
+            # `consumer_identity`.
+            source = self._get_direct(consumer_identity, source_type)
+            if source is None:
+                # Then, look for a `QRBag` matching `consumer_identity`
+                source = self._get_from_qr(consumer_identity, source_type)
+            return source
 
     @cache
     def _get_product_from_barcode(self, barcode) -> Product | None:
@@ -210,3 +271,10 @@ class Command(BaseCommand):
             return None
         else:
             return product
+
+    def _get_qr_bag(self, consumer_identity, qr_bag_model=None):
+        """
+        Dummy implementation to keep the migration `0041_backfill_short_qr_codes`
+        working.
+        """
+        return None
