@@ -23,6 +23,8 @@ from esani_pantportal.clients.tomra.data_models import (
 )
 from esani_pantportal.management.commands.import_deposit_payouts_qrbag import Command
 from esani_pantportal.models import (
+    Company,
+    CompanyBranch,
     DepositPayout,
     DepositPayoutItem,
     Kiosk,
@@ -53,6 +55,12 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
         # Add `Kiosk` object
         cls.kiosk, _ = Kiosk.objects.update_or_create(cvr=cls.kiosk_cvr)
 
+        # Add `Company` and `CompanyBranch` objects
+        cls.company, _ = Company.objects.update_or_create(cvr=2345)
+        cls.company_branch, _ = CompanyBranch.objects.update_or_create(
+            company=cls.company,
+        )
+
         # Add `QRBag` object
         QRBag.objects.update_or_create(qr=cls.bag_qr, kiosk=cls.kiosk)
 
@@ -74,6 +82,8 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
             barcode=cls.product_barcode_2,
             defaults=defaults,
         )
+
+        cls.consumer_identity_ext_id = f"80003{cls.kiosk.id:05}"
 
     def test_import_creates_expected_objects(self):
         # Arrange
@@ -120,6 +130,27 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
                     ],
                 ),
             ),
+            # Third datum uses a 10-digit consumer identity containing an
+            # external customer ID.
+            Datum(
+                consumer_session=ConsumerSession(
+                    id=self.consumer_session_id,
+                    identity=Identity(
+                        consumer_identity=self.consumer_identity_ext_id,
+                    ),
+                    metadata=Metadata(
+                        location=Location(customer_id=self.location_customer_id),
+                        rvm=Rvm(serial_number=self.rvm_serial_number),
+                    ),
+                    started_at=datetime(2020, 1, 1, 12, 0),
+                    items=[
+                        Item1(
+                            product_code=self.product_barcode_1,
+                            count=self.product_count_1,
+                        ),
+                    ],
+                ),
+            ),
         ]
 
         with patch(
@@ -154,9 +185,10 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
     def _assert_objects_created(self):
         # Assert we create exactly one `DepositPayout` (even though we run the same
         # import twice.)
+        expected_item_count = 4  # 2 + 1 + 1 objects
         self.assertQuerySetEqual(
             DepositPayout.objects.all(),
-            [(DepositPayout.SOURCE_TYPE_API, "url", 3)],
+            [(DepositPayout.SOURCE_TYPE_API, "url", expected_item_count)],
             transform=lambda obj: (
                 obj.source_type,
                 obj.source_identifier,
@@ -169,6 +201,7 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
         self.assertQuerySetEqual(
             DepositPayoutItem.objects.all(),
             [
+                # First datum produces two objects
                 (
                     self.kiosk_cvr,
                     self.product_1,
@@ -189,6 +222,7 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
                     self.consumer_session_id,
                     self.bag_qr,
                 ),
+                # Second datum produces one object
                 (
                     None,  # kiosk cvr
                     None,  # product
@@ -198,6 +232,17 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
                     date(2020, 1, 1),
                     self.consumer_session_id,
                     "unknown_bag_qr",  # unknown QR code
+                ),
+                # Third datum produces one object
+                (
+                    self.kiosk_cvr,
+                    self.product_1,
+                    self.product_barcode_1,
+                    self.product_count_1,
+                    self.rvm_serial_number,
+                    date(2020, 1, 1),
+                    self.consumer_session_id,
+                    self.consumer_identity_ext_id,
                 ),
             ],
             transform=lambda obj: (
@@ -225,17 +270,11 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
         # Act and assert
         self.assertIsNone(cmd._get_consumer_identity(ConsumerSession()))
 
-    def test_get_company_branch_returns_none_on_absent_identity(self):
+    def test_get_source_returns_none_on_absent_identity(self):
         # Arrange
         cmd = Command()
         # Act and assert
-        self.assertIsNone(cmd._get_company_branch(ConsumerSession()))
-
-    def test_get_kiosk_returns_none_on_absent_identity(self):
-        # Arrange
-        cmd = Command()
-        # Act and assert
-        self.assertIsNone(cmd._get_kiosk(ConsumerSession()))
+        self.assertIsNone(cmd._get_source(ConsumerSession(), Kiosk))
 
     @parametrize(
         "lookup,db_value,expected",
@@ -272,14 +311,66 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
             ),
         ],
     )
-    def test_get_bag_qr(self, lookup, db_value, expected):
+    def test_get_from_qr(self, lookup, db_value, expected):
         # Arrange
         QRBag.objects.update_or_create(qr=db_value, kiosk=self.kiosk)
         cmd = Command()
         # Act
-        result = cmd._get_qr_bag(lookup)
+        result = cmd._get_from_qr(lookup, Kiosk)
         # Assert
         if expected:
-            self.assertEqual(result.qr, db_value)
+            self.assertEqual(result, self.kiosk)
         else:
             self.assertIsNone(result)
+
+    def test_get_from_qr_raises_on_invalid_source_type(self):
+        # Arrange
+        QRBag.objects.update_or_create(
+            qr=f"1{EXAMPLE_QR_ID}deadbeef",
+            kiosk=self.kiosk,
+        )
+        cmd = Command()
+        # Assert
+        with self.assertRaises(ValueError):
+            # Act
+            cmd._get_from_qr(EXAMPLE_QR_ID, Company)
+
+    def test_get_direct_company_branch(self):
+        # Arrange
+        cmd = Command()
+        # Act
+        result = cmd._get_direct(f"80002{self.company_branch.id:05}", CompanyBranch)
+        # Assert
+        self.assertEqual(result, self.company_branch)
+
+    def test_get_direct_kiosk(self):
+        # Arrange
+        cmd = Command()
+        # Act
+        result = cmd._get_direct(f"90003{self.kiosk.id:05}", Kiosk)
+        # Assert
+        self.assertEqual(result, self.kiosk)
+
+    def test_get_direct_returns_none_on_no_match(self):
+        # Arrange
+        cmd = Command()
+        # Act
+        result = cmd._get_direct("9000299999", CompanyBranch)
+        # Assert
+        self.assertIsNone(result)
+
+    def test_get_direct_returns_none_on_unexpected_source_type(self):
+        # Arrange
+        cmd = Command()
+        # Act
+        result = cmd._get_direct(f"90002{self.company_branch.id:05}", Company)
+        # Assert
+        self.assertIsNone(result)
+
+    def test_get_qr_bag_always_returns_none(self):
+        # Arrange
+        cmd = Command()
+        # Act
+        result = cmd._get_qr_bag(self.bag_qr, Kiosk)
+        # Assert
+        self.assertIsNone(result)
