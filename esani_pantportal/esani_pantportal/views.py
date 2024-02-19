@@ -388,7 +388,15 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
     @cached_property
     def search_data(self):
         data = self.form.cleaned_data
-        search_data = {"offset": 0, "limit": self.paginate_by}
+        search_data = {"offset": 0}
+
+        if data.get("json"):
+            # limit = None means "all data" when BootstrapTable is in charge.
+            search_data["limit"] = data["limit"]
+        else:
+            # limit = None means "default value" when loading the page.
+            search_data["limit"] = data["limit"] or self.paginate_by
+
         for key, value in data.items():
             if key not in ("json",) and value not in ("", None):
                 if key in ("offset", "limit"):
@@ -396,10 +404,16 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
                 search_data[key] = value
         if search_data["offset"] < 0:
             search_data["offset"] = 0
-        if search_data["limit"] < 1:
+        if search_data["limit"] and search_data["limit"] < 1:
             search_data["limit"] = 1
         # // = Python floor division
-        search_data["page_number"] = (search_data["offset"] // search_data["limit"]) + 1
+        if search_data["limit"]:
+            search_data["page_number"] = (
+                search_data["offset"] // search_data["limit"]
+            ) + 1
+        else:
+            search_data["page_number"] = 1
+
         return {k: getattr(v, "pk", v) for k, v in search_data.items()}
 
     def annotate_field(self, string):
@@ -453,7 +467,7 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
         total = qs.count()
         offset = self.search_data["offset"]
         limit = self.search_data["limit"]
-        items = qs[offset : offset + limit]
+        items = qs[offset : offset + limit] if limit else qs[offset:]
         context = self.get_context_data(
             items=items,
             total=total,
