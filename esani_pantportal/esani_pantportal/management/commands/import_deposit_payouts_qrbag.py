@@ -271,3 +271,10 @@ class Command(BaseCommand):
             return None
         else:
             return product
+
+    def _get_qr_bag(self, consumer_identity, qr_bag_model=None):
+        """
+        Dummy implementation to keep the migration `0041_backfill_short_qr_codes`
+        working.
+        """
+        return None

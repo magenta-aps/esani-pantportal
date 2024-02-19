@@ -366,3 +366,11 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
         result = cmd._get_direct(f"90002{self.company_branch.id:05}", Company)
         # Assert
         self.assertIsNone(result)
+
+    def test_get_qr_bag_always_returns_none(self):
+        # Arrange
+        cmd = Command()
+        # Act
+        result = cmd._get_qr_bag(self.bag_qr, Kiosk)
+        # Assert
+        self.assertIsNone(result)
