@@ -283,14 +283,34 @@ class TestCreditNoteExport(_SharedBase):
         # Assert
         self.assertListEqual(list(filter_items(actual_lines)), expected_lines)
 
-    @parametrize("bag_qrs", [([],), (None,)])
-    def test_get_bag_groups_handles_empty_or_absent_list(self, bag_qrs):
+    @parametrize(
+        "bag_qrs,expected_groups",
+        [
+            ([], []),
+            (None, []),
+            (
+                # List consists of empty QR, plus QR of unknown prefix
+                [None, "57"],
+                # No bag groups
+                [],
+            ),
+            (
+                # Empty QR, plus 2 unique QRs sharing same prefix ("1")
+                [None, "1001", "1001", "1002"],
+                # Count 2 bags with prefix = 1
+                [("1", 2)],
+            ),
+        ],
+    )
+    def test_get_bag_groups_handles_empty_or_absent_values(
+        self, bag_qrs, expected_groups
+    ):
         # Arrange
         row = {"bag_qrs": bag_qrs}
         # Act
         groups = self.instance._get_bag_groups(row)
         # Assert
-        self.assertListEqual(groups, [])
+        self.assertListEqual(groups, expected_groups)
 
     def test_get_customer_returns_company_branch(self):
         # Arrange
