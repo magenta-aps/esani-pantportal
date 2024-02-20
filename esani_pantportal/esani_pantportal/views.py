@@ -1496,6 +1496,18 @@ class CsvCompaniesView(CsvTemplateView):
             [self.obj_to_dict(obj, fields) for obj in company_class.objects.all()]
         )
         df["object_class_name"] = company_class.__name__
+
+        # Remove decimals from integer columns
+        for col in [
+            "registration_number",
+            "account_number",
+            "cvr",
+            "location_id",
+            "customer_id",
+        ]:
+            if col in df.columns:
+                df[col] = df[col].astype("Int64")
+
         return df
 
     def get(self, request, *args, **kwargs):
