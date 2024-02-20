@@ -182,7 +182,7 @@ class CreditNoteExport:
             logger.warning("Cannot find bag type prefix for unknown bag QR %r", qr)
 
         if row["bag_qrs"]:
-            qrs = row["bag_qrs"]
+            qrs = [qr for qr in row["bag_qrs"] if qr is not None]
             return [
                 (k, len(set(v)))
                 for k, v in groupby(sorted(qrs), key=_get_bag_type)
