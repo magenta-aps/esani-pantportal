@@ -27,6 +27,7 @@ from esani_pantportal.models import (
     DepositPayout,
     ERPProductMapping,
     Kiosk,
+    QRBag,
     ReverseVendingMachine,
 )
 
@@ -34,7 +35,13 @@ logger = logging.getLogger(__name__)
 
 
 class CreditNoteExport:
-    def __init__(self, from_date, to_date, queryset):
+    def __init__(
+        self,
+        from_date,
+        to_date,
+        queryset,
+        dry=True,  # False: updates underlying objects
+    ):
         self._from_date = from_date
         self._to_date = to_date
         self._file_id = uuid4()
@@ -57,6 +64,17 @@ class CreditNoteExport:
         self._bag_type_prefixes = ERPProductMapping.objects.filter(
             category=ERPProductMapping.CATEGORY_BAG
         ).values_list("specifier", flat=True)
+
+        if not dry:
+            # Update status of all related QR bags to `esani_udbetalt`
+            qr_bags = QRBag.objects.filter(
+                id__in=(
+                    queryset.filter(qr_bag__isnull=False).values_list(
+                        "qr_bag__id", flat=True
+                    )
+                )
+            )
+            qr_bags.update(status="esani_udbetalt")
 
     def __iter__(self):
         for row in self._qs:
