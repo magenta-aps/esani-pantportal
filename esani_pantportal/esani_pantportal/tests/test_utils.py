@@ -8,6 +8,7 @@ from project.util import json_dump
 from esani_pantportal.migrations.utils.utils import clean_phone_no
 from esani_pantportal.util import (
     add_parameters_to_url,
+    clean_url,
     default_dataframe,
     float_to_string,
     join_strings_human_readable,
@@ -103,3 +104,8 @@ class UtilTest(SimpleTestCase):
         self.assertEqual(clean_phone_no("+299 36 35 04"), "(+299) 363504")
         self.assertEqual(clean_phone_no("00299558835"), "(+299) 558835")
         self.assertEqual(clean_phone_no("004511221122"), "(+45) 11221122")
+
+    def test_clean_url(self):
+        self.assertEqual(clean_url("http://foo.com?id=1&id=2"), "http://foo.com?id=2")
+        self.assertEqual(clean_url("http://foo.com?id=1"), "http://foo.com?id=1")
+        self.assertEqual(clean_url("http://foo.com"), "http://foo.com")
