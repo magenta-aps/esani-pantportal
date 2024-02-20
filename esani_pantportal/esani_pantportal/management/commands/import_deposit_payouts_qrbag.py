@@ -137,16 +137,14 @@ class Command(BaseCommand):
         return datetime(val.year, val.month, val.day)
 
     @cache
-    def _get_from_qr(
+    def _get_qr_bag_from_qr(
         self,
         consumer_identity: str,
-        source_type: type[CompanyBranch] | type[Kiosk],
         qr_bag_model=QRBag,
-    ) -> CompanyBranch | Kiosk | None:
+    ) -> QRBag | None:
         """
         Find the matching `QRBag` instance for the given `consumer_identity`,
-        and return either the `CompanyBranch` or the `Kiosk` that has claimed the
-        `QRBag` in question.
+        and return either a `CompanyBranch`, a `Kiosk`, or None in case of no match.
         """
 
         long = 1 + settings.QR_ID_LENGTH + settings.QR_HASH_LENGTH
@@ -185,17 +183,23 @@ class Command(BaseCommand):
         except QRBag.DoesNotExist:
             self.stdout.write(f"No QRBag matches {bag_qr}")
         else:
-            # Update QR bag status
-            qr_bag.status = "esani_optalt"
-            qr_bag.save()
+            return qr_bag
 
-            # Return value depends on `source_type`
-            if source_type is CompanyBranch:
-                return qr_bag.company_branch
-            elif source_type is Kiosk:
-                return qr_bag.kiosk
-            else:
-                raise ValueError(f"Unknown source type {source_type=}")
+    def _get_from_qr(
+        self,
+        consumer_identity: str,
+        source_type: type[CompanyBranch] | type[Kiosk],
+        qr_bag_model=QRBag,
+    ) -> CompanyBranch | Kiosk | None:
+        qr_bag = self._get_qr_bag_from_qr(consumer_identity, qr_bag_model=qr_bag_model)
+        if qr_bag is None:
+            return None
+        if source_type is CompanyBranch:
+            return qr_bag.company_branch
+        elif source_type is Kiosk:
+            return qr_bag.kiosk
+        else:
+            raise ValueError(f"Unknown source type {source_type=}")
 
     @cache
     def _get_direct(
