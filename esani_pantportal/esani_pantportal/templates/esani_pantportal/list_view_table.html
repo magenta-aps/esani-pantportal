@@ -26,6 +26,9 @@ SPDX-License-Identifier: MPL-2.0
        data-remember-order="true"
        data-cookie="true" {# Handles table refresh after bulk-approval properly #}
        data-click-to-select="true"
+       data-escape="false"
+       data-id-field="id"
+       data-select-item-name="id"
 >
     <thead>
     <tr>
@@ -36,7 +39,9 @@ SPDX-License-Identifier: MPL-2.0
         {% for name, verbose_name, show in columns %}
             <th data-sortable="true" data-field={{name}} class="col-3" data-visible={{show|truefalse}}>{{verbose_name}}</th>
         {% endfor %}
+        {% if actions_template %}
         <th data-field="actions" class="col-3">{% translate "Handlinger" %}</th>
+        {% endif %}
     </tr>
     </thead>
     <tbody>
@@ -47,11 +52,13 @@ SPDX-License-Identifier: MPL-2.0
         {% endif %}
         <td>{{item|get:"id"}}</td>
         {% for name, verbose_name, show in columns %}
-            <td>{{item|get:name}}</td>
+            <td>{{item|get:name|safe}}</td>
         {% endfor %}
+        {% if actions_template %}
         <td>
             {% include actions_template with item=item %}
         </td>
+        {% endif %}
     </tr>
     {% endfor %}
     </tbody>

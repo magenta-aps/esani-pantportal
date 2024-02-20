@@ -18,7 +18,6 @@ from django.contrib.auth.views import LogoutView, PasswordChangeView
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.core.management import call_command
-from django.core.paginator import EmptyPage, Paginator
 from django.db.models import (
     Case,
     F,
@@ -370,6 +369,8 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
     fixed_columns = {}
     preferences_class = None
     preferences_prefix = ""
+    actions_template = None
+    can_edit_multiple = False
 
     def get(self, request, *args, **kwargs):
         self.form = self.get_form()
@@ -377,6 +378,7 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
             self.object_list = self.get_queryset()
             return self.form_valid(self.form)
         else:
+            self.object_list = []
             return self.form_invalid(self.form)
 
     def get_form_kwargs(self):
@@ -516,6 +518,7 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
         context["data_defer_url"] = add_parameters_to_url(
             self.request.get_full_path(), {"json": 1}
         )
+        context["can_edit_multiple"] = self.can_edit_multiple
         return context
 
     def get_fields(self, model=None):
@@ -533,9 +536,13 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
         self, item_obj: Any, context: Dict[str, Any], index: int
     ) -> Dict[str, Any]:
         item = self.model_to_dict(item_obj)
+        if self.actions_template:
+            additional_keys = ["actions"]
+        else:
+            additional_keys = []
         return {
             key: self.map_value(item, key, context)
-            for key in list(item.keys()) + ["actions"]
+            for key in list(item.keys()) + additional_keys
         }
 
     def map_value(self, item, key, context):
@@ -701,6 +708,7 @@ class ProductSearchView(SearchView):
     form_class = ProductFilterForm
     preferences_class = ProductListViewPreferences
     annotations = {"file_name": F("import_job__file_name")}
+    can_edit_multiple = True
 
     search_fields = ["product_name", "barcode"]
     search_fields_exact = ["approved", "import_job"]
@@ -739,7 +747,6 @@ class ProductSearchView(SearchView):
             # Other users don't need to see this because they cannot approve anyway.
             context["approved_products"] = Product.objects.filter(approved=True).count()
             context["pending_products"] = Product.objects.filter(approved=False).count()
-            context["can_edit_multiple"] = True
         return context
 
 
@@ -1042,51 +1049,48 @@ class KioskUpdateView(BaseCompanyUpdateView):
             return self.access_denied
 
 
-class GracefulPaginator(Paginator):
-    """Custom paginator which returns to first page of queryset if an invalid page
-    number is provided."""
-
-    # Source:
-    # https://forum.djangoproject.com/t/letting-listview-gracefully-handle-out-of-range-page-numbers/23037/3
-
-    def validate_number(self, number):
-        try:
-            return super().validate_number(number)
-        except EmptyPage:
-            if number > 1:
-                return self.num_pages
-            raise
-
-
-class DepositPayoutSearchView(PermissionRequiredMixin, ListView, FormView):
+class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
     template_name = "esani_pantportal/deposit_payout/list.html"
-    context_object_name = "items"
     model = DepositPayoutItem
     form_class = DepositPayoutItemFilterForm
     required_permissions = ["esani_pantportal.view_depositpayout"]
     paginate_by = 20
-    paginator_class = GracefulPaginator
+    can_edit_multiple = True
 
-    _reserved = ("sort", "order", "page", "size")
+    search_fields_exact = ["company_branch", "kiosk"]
+    search_fields = []
+
+    fixed_columns = {
+        "source": _("Kæde, butik (eller RVM-serienummer)"),
+        "product": _("Produkt (eller stregkode)"),
+        "product__refund_value": _("Pantværdi (i øre)"),
+        "count": _("antal"),
+        "date": _("Dato"),
+    }
+
+    annotations = {"source": Coalesce("company_branch__company__name", "kiosk__name")}
 
     def post(self, request, *args, **kwargs):
         # If POST contains "selection=all", process all objects in queryset.
         # If POST contains one more item IDs in "id", process only the objects given by
         # those IDs.
+
+        self.form = self.get_form()
+        if self.form.is_valid():
+            from_date = self.form.cleaned_data.get("from_date")
+            to_date = self.form.cleaned_data.get("to_date")
+
         if request.POST.get("selection", "") == "all":
             qs = self.get_queryset()
         else:
             ids = [int(id) for id in request.POST.getlist("id")]
             qs = self.get_queryset().filter(id__in=ids)
 
-        from_date = qs.aggregate(Min("date"))["date__min"]
-        to_date = qs.aggregate(Max("date"))["date__max"]
-        filter_form = self.get_form_class()(self.request.GET)
-        if filter_form.is_valid():
-            from_date = filter_form.cleaned_data.get("from_date") or from_date
-            to_date = filter_form.cleaned_data.get("to_date") or to_date
-
-        export = CreditNoteExport(from_date, to_date, qs)
+        export = CreditNoteExport(
+            from_date or qs.aggregate(Min("date"))["date__min"],
+            to_date or qs.aggregate(Max("date"))["date__max"],
+            qs,
+        )
         response = HttpResponse(content_type="text/csv")
         response[
             "Content-Disposition"
@@ -1099,56 +1103,48 @@ class DepositPayoutSearchView(PermissionRequiredMixin, ListView, FormView):
         qs = qs.select_related(
             "company_branch__company", "kiosk", "product", "deposit_payout"
         )
-
-        # Annotate queryset to enable sorting on expressions
-        qs = qs.annotate(
-            source=Coalesce("company_branch__company__name", "kiosk__name"),
-        )
-
-        # Apply filters
-        filter_form = self.get_form_class()(self.request.GET)
-        if filter_form.is_valid():
-            company_branch = filter_form.cleaned_data.get("company_branch")
-            kiosk = filter_form.cleaned_data.get("kiosk")
-            from_date = filter_form.cleaned_data.get("from_date")
-            to_date = filter_form.cleaned_data.get("to_date")
-            if company_branch:
-                qs = qs.filter(company_branch=company_branch)
-            if kiosk:
-                qs = qs.filter(kiosk=kiosk)
-            if from_date:
-                qs = qs.filter(date__gte=from_date)
-            if to_date:
-                qs = qs.filter(date__lte=to_date)
-        else:
-            return qs.none()
-
-        # Apply sort order
-        sort_field = self.request.GET.get("sort")
-        sort_order = self.request.GET.get("order")
-        if sort_field and sort_order:
-            qs = qs.order_by("%s%s" % ("-" if sort_order == "desc" else "", sort_field))
-
         return qs
 
-    def get_paginate_by(self, queryset):
-        return self._get_page_size()
+    def filter_qs(self, qs):
+        qs = super().filter_qs(qs)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["page_size"] = self._get_page_size()
-        context["page_number"] = self.request.GET.get("page", 1)
-        context["sort_name"] = self.request.GET.get("sort", "")
-        context["sort_order"] = self.request.GET.get("order", "")
-        return context
+        from_date = self.form.cleaned_data.get("from_date")
+        to_date = self.form.cleaned_data.get("to_date")
+        if from_date:
+            qs = qs.filter(date__gte=from_date)
+        if to_date:
+            qs = qs.filter(date__lte=to_date)
+        return qs
 
-    def get_form_kwargs(self):
-        form_kwargs = super().get_form_kwargs()
-        form_kwargs.update({"data": self.request.GET})
-        return form_kwargs
+    @staticmethod
+    def span(text, title):
+        return f'<span class="text-danger" title="{title}">{text}</span>'
 
-    def _get_page_size(self):
-        return int(self.request.GET.get("size", self.paginate_by))
+    def item_to_json_dict(self, item_obj, context, index):
+        json_dict = super().item_to_json_dict(item_obj, context, index)
+
+        company_branch = item_obj.company_branch
+        kiosk = item_obj.kiosk
+        product = item_obj.product
+
+        source_error = _("Ingen matchende kæde eller butik, viser RVM-serienummer")
+        barcode_error = _("Intet matchende produkt, viser stregkoden")
+
+        if company_branch:
+            json_dict["source"] = str(company_branch) + ", " + company_branch.city
+        elif kiosk:
+            json_dict["source"] = str(kiosk) + ", " + kiosk.city
+        else:
+            json_dict["source"] = self.span(item_obj.rvm_serial, source_error)
+
+        if product:
+            json_dict["product"] = product.product_name
+            json_dict["product__refund_value"] = product.refund_value
+        else:
+            json_dict["product"] = self.span(item_obj.barcode, barcode_error)
+            json_dict["product__refund_value"] = "-"
+
+        return json_dict
 
 
 class ProductUpdateView(UpdateViewMixin):
