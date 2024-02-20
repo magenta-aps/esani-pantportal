@@ -172,7 +172,7 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
 
             # Assert: check the `QRBag` object was updated as expected
             self.qr_bag.refresh_from_db()
-            self.assertEqual(self.qr_bag.status, "Optalt")
+            self.assertEqual(self.qr_bag.status, "esani_optalt")
 
     def _get_mock_api(self, data=None):
         mock_api = Mock(spec=TomraAPI)
