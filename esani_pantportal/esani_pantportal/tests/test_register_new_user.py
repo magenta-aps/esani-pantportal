@@ -15,6 +15,7 @@ from esani_pantportal.forms import (
     RegisterKioskUserMultiForm,
 )
 from esani_pantportal.models import (
+    MUNICIPALITY_CHOICES,
     BranchUser,
     Company,
     CompanyBranch,
@@ -23,6 +24,10 @@ from esani_pantportal.models import (
     Kiosk,
     KioskUser,
 )
+
+TEST_DATA_MUNICIPALITY_SERMERSOOQ = MUNICIPALITY_CHOICES[len(MUNICIPALITY_CHOICES) - 3][
+    0
+]
 
 
 class RegisterNewUserFormTest(TestCase):
@@ -136,7 +141,7 @@ class RegisterNewUserFormTest(TestCase):
             "branch-registration_number": 2222,
             "branch-account_number": 102010,
             "branch-invoice_mail": "pay_me@moneyplz.dk",
-            "branch-municipality": "Scotland",
+            "branch-municipality": TEST_DATA_MUNICIPALITY_SERMERSOOQ,
             "branch-qr_compensation": 0.0,
         }
         cls.kiosk_data = {
@@ -153,7 +158,7 @@ class RegisterNewUserFormTest(TestCase):
             "branch-registration_number": 2222,
             "branch-account_number": 102010,
             "branch-invoice_mail": "pay_me@moneyplz.dk",
-            "branch-municipality": "Scotland",
+            "branch-municipality": TEST_DATA_MUNICIPALITY_SERMERSOOQ,
             "branch-cvr": 1017196402,
             "branch-qr_compensation": 0.0,
         }
@@ -171,7 +176,7 @@ class RegisterNewUserFormTest(TestCase):
             "company-account_number": 102033,
             "company-invoice_mail": "pay_me@goldmember.dk",
             "company-country": "UK",
-            "company-municipality": "Scotland",
+            "company-municipality": TEST_DATA_MUNICIPALITY_SERMERSOOQ,
         }
 
 

@@ -81,6 +81,18 @@ COMPANY_TYPE_CHOICES = (
     ("A", "Andet"),
 )
 
+MUNICIPALITY_CHOICES = (
+    ("Avannaata Kommunia", "Avannaata Kommunia"),
+    ("Kommune Kujalleq", "Kommune Kujalleq"),
+    ("Kommune Qeqertalik", "Kommune Qeqertalik"),
+    (
+        "Kommuneqarfik Sermersooq",
+        "Kommuneqarfik Sermersooq",
+    ),
+    ("Qeqqata Kommunia", "Qeqqata Kommunia"),
+    ("Anden", "Anden"),
+)
+
 
 diameter_constraints = settings.PRODUCT_CONSTRAINTS["diameter"]
 height_constraints = settings.PRODUCT_CONSTRAINTS["height"]
@@ -112,6 +124,7 @@ class AbstractCompany(models.Model):
         verbose_name=_("Kommune"),
         help_text=_("Butikken eller firmaets registrerede kommunenavn"),
         max_length=255,
+        choices=MUNICIPALITY_CHOICES,
     )
 
     city = models.CharField(
@@ -209,14 +222,6 @@ class Company(AbstractCompany):
         verbose_name=_("Land"),
         help_text=_("Butikken eller firmaets registrerede landenavn"),
         max_length=255,
-    )
-
-    municipality = models.CharField(
-        verbose_name=_("Kommune"),
-        help_text=_("Butikken eller firmaets hjemkommune (valgfri)"),
-        max_length=255,
-        default="",
-        blank=True,
     )
 
     invoice_company_branch = models.BooleanField(

@@ -13,6 +13,7 @@ from django_otp.util import random_hex
 from unittest_parametrize import ParametrizedTestCase, parametrize
 
 from esani_pantportal.models import (
+    MUNICIPALITY_CHOICES,
     BranchUser,
     Company,
     CompanyBranch,
@@ -26,6 +27,10 @@ from esani_pantportal.models import (
 from esani_pantportal.templatetags.pant_tags import has_two_factor
 
 from .conftest import LoginMixin
+
+TEST_DATA_MUNICIPALITY_SERMERSOOQ = MUNICIPALITY_CHOICES[len(MUNICIPALITY_CHOICES) - 3][
+    0
+]
 
 
 class TestPrevalidateCreateView(TestCase):
@@ -42,6 +47,7 @@ class TestPrevalidateCreateView(TestCase):
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIn("errors", response.json())
+
         self.assertSetEqual(
             set(response.json()["errors"]),
             {
@@ -77,6 +83,7 @@ class TestPrevalidateCreateView(TestCase):
                 "company-phone": "Telefon",
                 "company-postal_code": "Postnummer",
                 "company-prefix": "Landekode",
+                "company-municipality": TEST_DATA_MUNICIPALITY_SERMERSOOQ,
             },
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
@@ -95,6 +102,7 @@ class BaseUserTest(LoginMixin, TestCase):
             city="test city",
             country="USA",
             phone="+4544457845",
+            municipality=TEST_DATA_MUNICIPALITY_SERMERSOOQ,
             company_type="E",
             registration_number="112",
             account_number="112",
@@ -109,6 +117,7 @@ class BaseUserTest(LoginMixin, TestCase):
             city="test city",
             country="USA",
             phone="+4544457845",
+            municipality=TEST_DATA_MUNICIPALITY_SERMERSOOQ,
             company_type="A",
             registration_number="112",
             account_number="112",
@@ -123,7 +132,7 @@ class BaseUserTest(LoginMixin, TestCase):
             city="test town",
             phone="+4542457845",
             location_id=2,
-            municipality="foo",
+            municipality=TEST_DATA_MUNICIPALITY_SERMERSOOQ,
             branch_type="A",
             customer_id=2,
             registration_number="112",
@@ -139,7 +148,7 @@ class BaseUserTest(LoginMixin, TestCase):
             phone="+4542457845",
             location_id=2,
             cvr=11221122,
-            municipality="foo",
+            municipality=TEST_DATA_MUNICIPALITY_SERMERSOOQ,
             branch_type="A",
             customer_id=2,
             registration_number="112",
@@ -711,7 +720,6 @@ class UpdateCompanyTest(ParametrizedTestCase, BaseUserTest):
         url = reverse("pant:company_update", kwargs={"pk": self.facebook.pk})
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        print(response)
         """
         self.assertSetEqual(
             set(response.json()["errors"]),
