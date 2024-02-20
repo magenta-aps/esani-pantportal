@@ -329,7 +329,7 @@ class NonAdminUserUpdateViewTest(BaseUserTest):
         form_data = self.make_form_data(response.context_data["form"])
         form_data["first_name"] = "Mark"
         response = self.client.post(self.facebook_branch_user_url, form_data)
-        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
+        self.assertEquals(response.status_code, HTTPStatus.FOUND)
 
 
 class EsaniAdminUserUpdateViewTest(BaseUserTest):

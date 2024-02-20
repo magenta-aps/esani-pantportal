@@ -60,6 +60,7 @@ SPDX-License-Identifier: MPL-2.0
                             {% endif %}
                         </td>
                     </tr>
+                    {% include "../edit_field.html" with field_name="newsletter" field=form.newsletter %}
                     <tr id="two_factor_row">
                         <th>{% translate "To-faktor-godkendelse" %}</th>
                         <td>

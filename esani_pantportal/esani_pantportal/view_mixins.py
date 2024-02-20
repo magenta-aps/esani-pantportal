@@ -156,7 +156,7 @@ class UpdateViewMixin(PermissionRequiredMixin, UpdateView):
             context["can_edit"] = (
                 self.same_workplace
                 and self.has_permissions
-                and self.request.user.is_admin
+                # and self.request.user.is_admin
             )
         return context
 

@@ -1265,7 +1265,7 @@ class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
     form_class = UserUpdateForm
 
     def check_permissions(self):
-        if self.get_object() == self.request.user and self.request.method == "GET":
+        if self.get_object() == self.request.user:
             # A user should always be able to see his own user-profile.
             return None
         else:
@@ -1298,6 +1298,10 @@ class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
         if context_data["object"].user_type == KIOSK_USER:
             context_data["branch_info_attributes"].extend(kiosk_attributes)
         context_data["company_info_attributes"] = common_attributes + company_attributes
+        """
+        context_data["can_edit_newsletter"] = context_data["can_edit"] or (
+            self.request.user == self.get_object()
+        )"""
         return context_data
 
     def get_success_url(self):
@@ -1313,7 +1317,6 @@ class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
                     {"disable_two_factor_success": 1, "two_factor_success": 0},
                 )
             )
-
         if "approved" in form.changed_data and not self.request.user.is_esani_admin:
             return self.access_denied
         else:

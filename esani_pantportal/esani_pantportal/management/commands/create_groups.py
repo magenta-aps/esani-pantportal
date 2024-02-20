@@ -171,7 +171,7 @@ class Command(BaseCommand):
 
         for action, model in (
             ("view", product_model),
-            ("view", branch_user_model),
+            ("change", branch_user_model),
             ("view", company_user_model),
             ("view", qrbagmodel),
             ("change", qrbagmodel),
@@ -180,7 +180,7 @@ class Command(BaseCommand):
 
         for action, model in (
             ("view", product_model),
-            ("view", branch_user_model),
+            ("change", branch_user_model),
             ("view", qrbagmodel),
             ("add", qrbagmodel),
             ("change", qrbagmodel),
@@ -189,7 +189,7 @@ class Command(BaseCommand):
 
         for action, model in (
             ("view", product_model),
-            ("view", kiosk_user_model),
+            ("change", kiosk_user_model),
             ("view", qrbagmodel),
             ("add", qrbagmodel),
             ("change", qrbagmodel),
