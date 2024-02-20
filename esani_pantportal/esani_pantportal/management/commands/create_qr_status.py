@@ -39,3 +39,17 @@ class Command(BaseCommand):
                 "name_kl": "Modtaget af ESANI",
             },
         )
+        QRStatus.objects.update_or_create(
+            code="esani_optalt",
+            defaults={
+                "name_da": "Optalt hos ESANI",
+                "name_kl": "Optalt hos ESANI",
+            },
+        )
+        QRStatus.objects.update_or_create(
+            code="esani_udbetalt",
+            defaults={
+                "name_da": "Udbetalt af ESANI",
+                "name_kl": "Udbetalt af ESANI",
+            },
+        )
