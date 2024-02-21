@@ -1266,7 +1266,7 @@ class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
 
     def check_permissions(self):
         if self.get_object() == self.request.user:
-            # A user should always be able to see his own user-profile.
+            # A user should always be able to see and edit their own user-profile.
             return None
         else:
             return super().check_permissions()
@@ -1298,10 +1298,6 @@ class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
         if context_data["object"].user_type == KIOSK_USER:
             context_data["branch_info_attributes"].extend(kiosk_attributes)
         context_data["company_info_attributes"] = common_attributes + company_attributes
-        """
-        context_data["can_edit_newsletter"] = context_data["can_edit"] or (
-            self.request.user == self.get_object()
-        )"""
         return context_data
 
     def get_success_url(self):

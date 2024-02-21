@@ -171,6 +171,7 @@ class Command(BaseCommand):
 
         for action, model in (
             ("view", product_model),
+            ("view", branch_user_model),
             ("change", branch_user_model),
             ("view", company_user_model),
             ("view", qrbagmodel),
