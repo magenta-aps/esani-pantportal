@@ -87,6 +87,11 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def _import_data(self, url, from_date, to_date, consumer_sessions):
+        def get_qr_bag(consumer_session: ConsumerSession):
+            consumer_identity = self._get_consumer_identity(consumer_session)
+            if consumer_identity is not None:
+                return self._get_qr_bag_from_qr(consumer_identity)
+
         deposit_payout = DepositPayout.objects.create(
             source_type=DepositPayout.SOURCE_TYPE_API,
             source_identifier=url,
@@ -100,25 +105,36 @@ class Command(BaseCommand):
                 ]
             ),
         )
-        DepositPayoutItem.objects.bulk_create(
-            [
-                DepositPayoutItem(
-                    deposit_payout=deposit_payout,
-                    company_branch=self._get_source(consumer_session, CompanyBranch),
-                    kiosk=self._get_source(consumer_session, Kiosk),
-                    product=self._get_product_from_barcode(item.product_code),
-                    barcode=item.product_code,
-                    count=item.count,
-                    location_id=consumer_session.metadata.location.customer_id,
-                    rvm_serial=consumer_session.metadata.rvm.serial_number,
-                    date=consumer_session.started_at,
-                    consumer_session_id=consumer_session.id,
-                    consumer_identity=self._get_consumer_identity(consumer_session),
-                )
-                for consumer_session in consumer_sessions
-                for item in consumer_session.items
+
+        deposit_payout_items = [
+            DepositPayoutItem(
+                deposit_payout=deposit_payout,
+                qr_bag=get_qr_bag(consumer_session),
+                company_branch=self._get_source(consumer_session, CompanyBranch),
+                kiosk=self._get_source(consumer_session, Kiosk),
+                product=self._get_product_from_barcode(item.product_code),
+                barcode=item.product_code,
+                count=item.count,
+                location_id=consumer_session.metadata.location.customer_id,
+                rvm_serial=consumer_session.metadata.rvm.serial_number,
+                date=consumer_session.started_at,
+                consumer_session_id=consumer_session.id,
+                consumer_identity=self._get_consumer_identity(consumer_session),
+            )
+            for consumer_session in consumer_sessions
+            for item in consumer_session.items
+        ]
+        DepositPayoutItem.objects.bulk_create(deposit_payout_items)
+
+        # Update status of all related QR bags to `esani_optalt`
+        qr_bags = QRBag.objects.filter(
+            id__in=[
+                deposit_payout_item.qr_bag.id
+                for deposit_payout_item in deposit_payout_items
+                if deposit_payout_item.qr_bag is not None
             ]
         )
+        qr_bags.update(status="esani_optalt")
 
     def _get_previous_to_date(self) -> date:
         try:
@@ -137,16 +153,14 @@ class Command(BaseCommand):
         return datetime(val.year, val.month, val.day)
 
     @cache
-    def _get_from_qr(
+    def _get_qr_bag_from_qr(
         self,
         consumer_identity: str,
-        source_type: type[CompanyBranch] | type[Kiosk],
         qr_bag_model=QRBag,
-    ) -> CompanyBranch | Kiosk | None:
+    ) -> QRBag | None:
         """
         Find the matching `QRBag` instance for the given `consumer_identity`,
-        and return either the `CompanyBranch` or the `Kiosk` that has claimed the
-        `QRBag` in question.
+        and return either a `CompanyBranch`, a `Kiosk`, or None in case of no match.
         """
 
         long = 1 + settings.QR_ID_LENGTH + settings.QR_HASH_LENGTH
@@ -185,12 +199,23 @@ class Command(BaseCommand):
         except QRBag.DoesNotExist:
             self.stdout.write(f"No QRBag matches {bag_qr}")
         else:
-            if source_type is CompanyBranch:
-                return qr_bag.company_branch
-            elif source_type is Kiosk:
-                return qr_bag.kiosk
-            else:
-                raise ValueError(f"Unknown source type {source_type=}")
+            return qr_bag
+
+    def _get_from_qr(
+        self,
+        consumer_identity: str,
+        source_type: type[CompanyBranch] | type[Kiosk],
+        qr_bag_model=QRBag,
+    ) -> CompanyBranch | Kiosk | None:
+        qr_bag = self._get_qr_bag_from_qr(consumer_identity, qr_bag_model=qr_bag_model)
+        if qr_bag is None:
+            return None
+        if source_type is CompanyBranch:
+            return qr_bag.company_branch
+        elif source_type is Kiosk:
+            return qr_bag.kiosk
+        else:
+            raise ValueError(f"Unknown source type {source_type=}")
 
     @cache
     def _get_direct(

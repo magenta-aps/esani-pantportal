@@ -1061,6 +1061,17 @@ class DepositPayoutItem(models.Model):
     )
     """If the bar code matches a known product, we link this item to the product"""
 
+    qr_bag = models.ForeignKey(
+        "QRBag",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        verbose_name=_("QR-pose"),
+        related_name="deposit_items",
+    )
+    """If the consumer session identity matches a known QR bag, we link this item to
+    the QR bag"""
+
     location_id = models.PositiveIntegerField()
     """Holds the raw value of the location ID in the CSV file line"""
 

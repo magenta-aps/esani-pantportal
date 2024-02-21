@@ -17,6 +17,7 @@ from esani_pantportal.models import (
     DepositPayoutItem,
     Kiosk,
     Product,
+    QRBag,
     ReverseVendingMachine,
 )
 
@@ -67,6 +68,8 @@ def _line_vals():
 class TestCreditNoteExport(_SharedBase):
     maxDiff = None
 
+    qr_code = "1234"
+
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
@@ -77,6 +80,11 @@ class TestCreditNoteExport(_SharedBase):
         cls.kiosk_rvm = ReverseVendingMachine.objects.create(
             kiosk=cls.kiosk,
             compensation=25,
+        )
+        cls.qr_bag = QRBag.objects.create(
+            company_branch=cls.company_branch,
+            qr=cls.qr_code,
+            status="esani_optalt",
         )
         cls.product = Product.objects.create(
             product_name="product",
@@ -99,6 +107,11 @@ class TestCreditNoteExport(_SharedBase):
         cls.deposit_payout_item_rvm_2 = cls._add_deposit_payout_item(
             cls.deposit_payout_rvm,
             kiosk=cls.kiosk,
+        )
+        cls.deposit_payout_item_bag_1 = cls._add_deposit_payout_item(
+            cls.deposit_payout_bag,
+            company_branch=cls.company_branch,
+            qr_bag=cls.qr_bag,
         )
 
     @classmethod
@@ -124,12 +137,17 @@ class TestCreditNoteExport(_SharedBase):
             **kwargs,
         )
 
-    def setUp(self):
-        self.instance = CreditNoteExport(
+    def _get_instance(self, **kwargs):
+        return CreditNoteExport(
             date(2020, 1, 1),
             date(2020, 2, 1),
             DepositPayoutItem.objects.all(),
+            **kwargs,
         )
+
+    def setUp(self):
+        super().setUp()
+        self.instance = self._get_instance()
 
     def test_iter(self):
         # Act (consume iterable)
@@ -151,6 +169,9 @@ class TestCreditNoteExport(_SharedBase):
                 # From `cls.deposit_payout_item_rvm_1`
                 "101",
                 "201",
+                # From `cls.deposit_payout_item_bag`
+                "102",
+                "202",
                 # From `cls.deposit_payout_item_rvm_2`
                 "101",
                 "201",
@@ -327,6 +348,22 @@ class TestCreditNoteExport(_SharedBase):
         customer = self.instance._get_customer(row)
         # Assert
         self.assertEqual(customer, self.kiosk)
+
+    def test_dry_false(self):
+        """Passing `dry=False` should update the underlying objects"""
+        # Arrange and act
+        self._get_instance(dry=False)
+        # Assert
+        self.qr_bag.refresh_from_db()
+        self.assertEqual(self.qr_bag.status, "esani_udbetalt")
+
+    def test_dry_true(self):
+        """Passing `dry=True` should *not* update the underlying objects"""
+        # Arrange and act
+        self._get_instance(dry=True)
+        # Assert
+        self.qr_bag.refresh_from_db()
+        self.assertEqual(self.qr_bag.status, "esani_optalt")
 
 
 class TestDebtorExport(_SharedBase):
