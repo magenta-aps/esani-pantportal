@@ -12,7 +12,12 @@ if [[ "${GENERATE_DB_DOCUMENTATION,,}" = true ]]; then
 
   RESULT=1
   while [[ $RESULT != "0" ]] ; do
+    if [[ "$ENVIRONMENT" == "development" ]]; then
     RESULT=$(bash -c 'exec 3<> /dev/tcp/esani_pantportal/8000; echo $?' 2>/dev/null);
+    else
+    RESULT=$(bash -c 'exec 3<> /dev/tcp/pantportal/8000; echo $?' 2>/dev/null);
+    fi
+
     sleep 1
   done
 
