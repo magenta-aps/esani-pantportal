@@ -17,3 +17,7 @@ License: MIT
 Files: docs/*
 Copyright: 2023 Magenta ApS <info@magenta.dk>
 License: CC-BY-SA-4.0
+
+Files: esani_pantportal/esani_pantportal/static/bootstrap-table/*
+Copyright: 2011-2023 The Bootstrap-table Authors
+License: MIT

@@ -5,6 +5,19 @@ SPDX-License-Identifier: MPL-2.0
 -->
 {% load i18n %}
 {% load l10n %}
+{% load static %}
+
+{% block extra_headers %}
+<link rel="stylesheet" href="{% static 'bootstrap-table/bootstrap-table.min.css' %}">
+<link rel="stylesheet" href="{% static 'bootstrap-table/extensions/sticky-header/bootstrap-table-sticky-header.min.css' %}">
+{% endblock %}
+
+{% block extra_footers %}
+<script src="{% static 'bootstrap-table/bootstrap-table.min.js' %}"></script>
+<script src="{% static 'bootstrap-table/extensions/sticky-header/bootstrap-table-sticky-header.min.js' %}"></script>
+<script src="{% static 'bootstrap-table/extensions/defer-url/bootstrap-table-defer-url.min.js' %}"></script>
+<script src="{% static 'bootstrap-table/extensions/cookie/bootstrap-table-cookie.js' %}"></script>
+{% endblock %}
 
 <table id="table" class="table table-bordered table-striped mt-1"
        data-toggle="table"
