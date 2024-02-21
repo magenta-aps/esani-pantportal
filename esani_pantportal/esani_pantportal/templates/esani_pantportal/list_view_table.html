@@ -76,6 +76,7 @@ SPDX-License-Identifier: MPL-2.0
     {% endfor %}
     </tbody>
 </table>
+{{search_data|json_script:"search_data"}}
 
 <!--
 Allow selecting multiple items when holding shift
