@@ -562,7 +562,6 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
     form_class = CompanyFilterForm
     preferences_class = CompanyListViewPreferences
     preferences_prefix = "company_"
-    annotations = {"municipality_annotation": F("municipality")}
 
     external_customer_id = AbstractCompany.annotate_external_customer_id
 
@@ -659,9 +658,6 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
     def get_queryset(self):
         fields = super().get_fields()
 
-        # Municipality is not mandatory for Company objs
-        # It is annotated to avoid problems with the joined queryset
-        fields.remove("municipality")
         qs = [
             Kiosk.objects.only(*fields).annotate(
                 **self.kiosk_annotations,
