@@ -26,7 +26,7 @@ from esani_pantportal.views import DepositPayoutSearchView
 from .conftest import LoginMixin
 
 
-class TestDepositPayoutSearchView(LoginMixin, TestCase):
+class BaseDepositPayoutSearchView(LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls) -> None:
         cls.esani_admin = EsaniUser.objects.create_user(
@@ -122,8 +122,8 @@ class TestDepositPayoutSearchView(LoginMixin, TestCase):
     def _assert_list_contents(self, response, values, count):
         self.assertQuerySetEqual(
             response.context["items"],
-            values,
-            transform=lambda obj: obj.company_branch or obj.kiosk,
+            [v.id for v in values],
+            transform=lambda obj: obj["company_branch"] or obj["kiosk"],
             ordered=False,
         )
         self.assertEqual(response.context["page_obj"].paginator.count, count)
@@ -136,10 +136,11 @@ class TestDepositPayoutSearchView(LoginMixin, TestCase):
         sort="",
         order="",
     ):
-        self.assertEqual(response.context["page_size"], size)
-        self.assertEqual(response.context["page_number"], page)
-        self.assertEqual(response.context["sort_name"], sort)
-        self.assertEqual(response.context["sort_order"], order)
+        search_data = response.context["search_data"]
+        self.assertEqual(search_data.get("limit"), size)
+        self.assertEqual(search_data.get("page_number"), page)
+        self.assertEqual(search_data.get("sort", ""), sort)
+        self.assertEqual(search_data.get("order", ""), order)
 
     def _assert_csv_response(self, response, expected_length=None):
         csv_rows = list(
@@ -147,6 +148,8 @@ class TestDepositPayoutSearchView(LoginMixin, TestCase):
         )
         self.assertEqual(len(csv_rows), expected_length)
 
+
+class TestDepositPayoutSearchView(BaseDepositPayoutSearchView):
     def test_esani_admin_can_access_view(self):
         response = self._get_response()
         self.assertEqual(response.status_code, HTTPStatus.OK)
@@ -193,22 +196,23 @@ class TestDepositPayoutSearchView(LoginMixin, TestCase):
         response = self._get_response(sort="source", order="desc")
         self.assertQuerySetEqual(
             response.context["items"],
-            [self.kiosk.name, self.company_branch.name],
+            [self.kiosk.id, self.company_branch.id],
             transform=lambda obj: (
-                obj.company_branch.name if obj.company_branch else obj.kiosk.name
+                obj["company_branch"] if obj["company_branch"] else obj["kiosk"]
             ),
             ordered=True,
         )
 
     def test_page_size(self):
         # Use a page size of 1 to enforce pagination of the two items
-        response = self._get_response(size=1)
+        response = self._get_response(limit=1)
         self._assert_page_parameters(response, size=1)
         self.assertEqual(
             response.context["page_obj"].paginator.count,
             DepositPayoutItem.objects.count(),
         )
-        self.assertEqual(response.context["page_obj"].paginator.num_pages, 2)
+        self.assertEqual(len(response.context["items"]), 1)
+        self.assertEqual(response.context["total"], 2)
 
     def test_post_ids(self):
         self._login()
@@ -240,11 +244,9 @@ class TestDepositPayoutSearchView(LoginMixin, TestCase):
 
     def test_pagination_outside_queryset_range(self):
         self._login()
-        # Navigate to page outside the current queryset, and observe that we are sent
-        # to the last valid page of the paginator.
+        # Navigate to invalid page number, and observe that we get a 404
         response = self._get_response(page=2)
-        self.assertEqual(response.context["page_obj"].number, 1)
-        # Navigate to invalid page number, and observe that we (still) get a 404
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         response = self._get_response(page=0)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
 
@@ -256,4 +258,50 @@ class TestDepositPayoutSearchView(LoginMixin, TestCase):
             to_date=datetime.date(2019, 1, 1).strftime("%Y-%m-%d"),
         )
         # Assert that queryset is empty
-        self._assert_list_contents(response, [], 0)
+        self.assertEqual(response.context["object_list"], [])
+
+
+class MissingDataTest(BaseDepositPayoutSearchView):
+    @classmethod
+    def setUpTestData(cls) -> None:
+        super().setUpTestData()
+        shared = {
+            "location_id": 123,
+            "rvm_serial": 123,
+            "barcode": "barcode",
+            "count": 42,
+        }
+
+        # Deposit item with neither a company or kiosk
+        cls.deposit_payout_item_3 = DepositPayoutItem.objects.create(
+            deposit_payout=cls.deposit_payout,
+            date=datetime.date(2024, 1, 29),
+            product=cls.product,
+            **shared,
+        )
+
+        # Deposit item without a product
+        cls.deposit_payout_item_4 = DepositPayoutItem.objects.create(
+            deposit_payout=cls.deposit_payout,
+            date=datetime.date(2024, 1, 29),
+            kiosk=cls.kiosk,
+            **shared,
+        )
+
+    def test_missing_company(self):
+        response = self._get_response()
+
+        items = {d["id"]: d for d in response.context["items"]}
+        item3 = items[self.deposit_payout_item_3.id]
+
+        self.assertEqual(item3["kiosk"], None)
+        self.assertEqual(item3["company_branch"], None)
+        self.assertIn("Ingen matchende kæde eller butik", item3["source"])
+
+    def test_missing_product(self):
+        response = self._get_response()
+
+        items = {d["id"]: d for d in response.context["items"]}
+        item4 = items[self.deposit_payout_item_4.id]
+
+        self.assertIn("Intet matchende produkt", item4["product"])

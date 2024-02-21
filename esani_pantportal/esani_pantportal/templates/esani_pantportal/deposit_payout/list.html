@@ -75,113 +75,14 @@ SPDX-License-Identifier: MPL-2.0
                 Hent alle ({{ page_obj.paginator.count }}) som udbetalingsliste
             </button>
         </div>
-        <table id="table" class="table table-bordered table-striped"
-               data-toggle="table"
-               data-sticky-header="true"
-               data-classes="table"
-               data-data-field="items"
-               data-click-to-select="true"
-               data-multiple-select-row="true"
-               data-id-field="id"
-               data-select-item-name="id"
-               data-sortable="true"
-               data-silent-sort="true"
-               data-sort-name="{{ sort_name }}"
-               data-sort-order="{{ sort_order }}"
-               data-pagination="true"
-               data-pagination-loop="false"
-               data-side-pagination="server"
-               data-page-list="[20, 50, 100]"
-               data-page-number="{{ page_number|unlocalize }}"
-               data-page-size="{{ page_size|unlocalize }}"
-               data-total-rows="{{ page_obj.paginator.count|unlocalize }}"
-        >
-            <thead>
-                <tr>
-                    <th data-checkbox="true" data-field="state"></th>
-                    <th data-visible="false" data-field="id">ID</th>
-                    <th data-sortable="true" data-field="source" class="col-3">Kæde, butik (eller RVM-serienummer)</th>
-                    <th data-sortable="true" data-field="product" class="col-3">Produkt (eller stregkode)</th>
-                    <th data-sortable="true" data-field="product__refund_value" class="col-3">Pantværdi (i øre)</th>
-                    <th data-sortable="true" data-field="count" data-width="1%" class="col-3">Antal</th>
-                    <th data-sortable="true" data-field="date" data-width="5%" class="col-3">Dato</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in items %}
-                <tr>
-                    <td></td> {# Bootstrap Table puts a checkbox here #}
-                    <td>{{ item.id }}</td> {# ID of `DepositPayoutItem` object - used when submitting form #}
-                    <td>
-                        {% if item.company_branch %}
-                            {{ item.company_branch }}, {{ item.company_branch.company.city }}
-                        {% elif item.kiosk %}
-                            {{ item.kiosk}}, {{ item.kiosk.city }}
-                        {% else %}
-                            <span class="text-danger" title="Ingen matchende kæde eller butik, viser RVM-serienummer">
-                                {{ item.rvm_serial }}
-                            </span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if item.product %}
-                            {{ item.product.product_name }}
-                        {% else %}
-                            <span class="text-danger" title="Intet matchende produkt, viser stregkoden">
-                                {{ item.barcode }}
-                            </span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {{ item.product.refund_value }}
-                    </td>
-                    <td>
-                        {{ item.count }}
-                    </td>
-                    <td>
-                        {{ item.date }}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        {% include "../list_view_table.html" %}
     </form>
 </div>
 
+{{search_data|json_script:"search_data"}}
 <script>
 (function () {
     $(document).ready(function () {
-        // Update query parameters when switching page number or page size
-        $("#table").on("page-change.bs.table", function (evt, number, size) {
-            const url = new URL(location);
-            url.searchParams.set("page", number);
-            url.searchParams.set("size", size);
-            window.location = url;
-        });
-
-        // Update query parameters when the sort field and/or sort order is changed
-        $("#table").on("sort.bs.table", function (evt, name, order) {
-            const url = new URL(location);
-            url.searchParams.set("sort", name);
-            url.searchParams.set("order", order);
-            window.location = url;
-        });
-
-        // Update query parameters when the filters are updated
-        $("form[method=get]").submit(function (evt) {
-            evt.preventDefault();
-            const formVals = $(this).serializeArray();
-            const url = new URL(location);
-            $(formVals).each(function (index, elem) {
-                if (!!elem.value) {
-                    url.searchParams.set(elem.name, elem.value);
-                } else {
-                    url.searchParams.delete(elem.name);
-                }
-            });
-            window.location = url;
-        });
-
         // Update count of selected rows on button whenever rows are selected (or unselected.)
         $("#table").on(
             "uncheck.bs.table uncheck-all.bs.table uncheck-some.bs.table check.bs.table check-some.bs.table check-all.bs.table",
