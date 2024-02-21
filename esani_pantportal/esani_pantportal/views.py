@@ -1265,8 +1265,8 @@ class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
     form_class = UserUpdateForm
 
     def check_permissions(self):
-        if self.get_object() == self.request.user and self.request.method == "GET":
-            # A user should always be able to see his own user-profile.
+        if self.get_object() == self.request.user:
+            # A user should always be able to see and edit their own user-profile.
             return None
         else:
             return super().check_permissions()
@@ -1313,7 +1313,6 @@ class UserUpdateView(SameCompanyMixin, UpdateViewMixin):
                     {"disable_two_factor_success": 1, "two_factor_success": 0},
                 )
             )
-
         if "approved" in form.changed_data and not self.request.user.is_esani_admin:
             return self.access_denied
         else:

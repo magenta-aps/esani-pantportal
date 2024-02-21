@@ -134,6 +134,7 @@ class UserUpdateForm(forms.ModelForm, BootstrapForm):
             "email",
             "phone",
             "approved",
+            "newsletter",
         )
 
     disable_two_factor = forms.BooleanField(initial=False, required=False)
