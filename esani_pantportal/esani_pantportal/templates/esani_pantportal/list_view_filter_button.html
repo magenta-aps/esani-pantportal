@@ -5,14 +5,53 @@ SPDX-License-Identifier: MPL-2.0
 -->
 {% load bootstrap_icons %}
 
-    <div class="dropdown float-end">
-        <a class="btn btn-primary dropdown-toggle" role="button" id="dropdownMenuButton"
-        data-bs-toggle="dropdown" aria-expanded="false">
-        {% bs_icon "funnel" size="1em" %}
-        </a>
-        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            {% for name, verbose_name, show in columns %}
-            {% include "./filter.html" with verbose_name=verbose_name name=name show=show prefix=prefix %}
-            {% endfor %}
-        </ul>
-    </div>
+<div class="dropdown float-end">
+    <a class="btn btn-primary dropdown-toggle" role="button" id="dropdownMenuButton"
+    data-bs-toggle="dropdown" aria-expanded="false">
+    {% bs_icon "funnel" size="1em" %}
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        {% for name, verbose_name, show in columns %}
+        {% include "./filter.html" with verbose_name=verbose_name name=name show=show prefix=prefix %}
+        {% endfor %}
+    </ul>
+</div>
+
+<script>
+var $table = $('#table');
+
+function hideItem(item_name){
+    $table.bootstrapTable('hideColumn', item_name);
+}
+
+function showItem(item_name){
+    $table.bootstrapTable('showColumn', item_name);
+}
+
+$('input[type=checkbox][id$=Toggle]').change(function (evt) {
+    evt.preventDefault();
+
+    const $this = $(this);
+    const id = $this.attr('id');
+    const prefix = $this.attr('prefix');
+    const itemName = id.replace("Toggle", "");
+    const itemState = $this.is(":checked");
+
+    if (itemState) {
+        showItem(itemName);
+    } else {
+        hideItem(itemName);
+    }
+
+    let data = {
+        csrfmiddlewaretoken: '{{ csrf_token }}'
+    };
+    data["show_" + prefix + itemName] = itemState;
+
+    $.ajax({
+        type: 'POST',
+        url: '{% url "pant:preferences_update" request.user.id %}',
+        data: data,
+    });
+});
+</script>

@@ -42,15 +42,7 @@ SPDX-License-Identifier: MPL-2.0
             <div class="col-6 clearfix"><button type="submit" class="btn btn-primary float-end">Søg</button></div>
         </div>
     </form>
-
-    <div class="card" id="delete_confirmation" style="display:none">
-        <div class="card-body text-center">
-            {% bs_icon "person-x" size="2em" %}
-            <div>
-                {% translate "Bruger fjernet" %}
-            </div>
-        </div>
-    </div>
+    {% include "../delete_confirmation.html" with icon_tag="person-x" delete_text="Bruger fjernet"  %}
     <div class="col-12  mt-3">
         {% if user.is_esani_admin %}
         <a class="btn btn-primary" href="{% url 'pant:all_users_csv_download' %}">
@@ -63,5 +55,4 @@ SPDX-License-Identifier: MPL-2.0
 
 </div>
 
-{% include "../list_view_scripts.html"%}
 {% endblock %}
