@@ -14,6 +14,7 @@ from esani_pantportal.views import (
     CompanySearchView,
     CompanyUpdateView,
     CsvCompaniesView,
+    CsvDebtorView,
     CsvProductsView,
     CsvTemplateView,
     CsvUsersView,
@@ -152,6 +153,11 @@ urlpatterns = [
         "virksomhed/download/",
         CsvCompaniesView.as_view(),
         name="all_companies_csv_download",
+    ),
+    path(
+        "virksomhed/download_debitor/",
+        CsvDebtorView.as_view(),
+        name="all_companies_csv_debtor_download",
     ),
     path(
         "virksomhed/<int:pk>/fjern", CompanyDeleteView.as_view(), name="company_delete"
