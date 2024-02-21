@@ -40,14 +40,7 @@ SPDX-License-Identifier: MPL-2.0
             <div class="col-6 clearfix"><button type="submit" class="btn btn-primary float-end">Søg</button></div>
         </div>
     </form>
-    <div class="card" id="delete_confirmation" style="display:none">
-        <div class="card-body text-center">
-            {% bs_icon "building-x" size="2em" %}
-            <div>
-                {% translate "Virksomhed fjernet" %}
-            </div>
-        </div>
-    </div>
+    {% include "../delete_confirmation.html" with icon_tag="building-x" delete_text="Virksomhed fjernet" %}
     <div class="col-12  mt-3">
         <a class="btn btn-primary" href="{% url 'pant:all_companies_csv_download' %}">
             {% translate "Download .csv-fil med alle virksomheder" %}
@@ -60,5 +53,4 @@ SPDX-License-Identifier: MPL-2.0
     {% include "../list_view_table.html" %}
 </div>
 
-{% include "../list_view_scripts.html"%}
 {% endblock %}

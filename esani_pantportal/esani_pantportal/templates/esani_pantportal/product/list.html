@@ -48,16 +48,7 @@ SPDX-License-Identifier: MPL-2.0
             </div>
         </div>
     </form>
-
-    <div class="card mt-3" id="delete_confirmation" style="display:none">
-        <div class="card-body text-center">
-            {% bs_icon "trash" size="2em" %}
-            <div>
-                {% translate "Produkt fjernet" %}
-            </div>
-        </div>
-    </div>
-
+    {% include "../delete_confirmation.html" with icon_tag="trash" delete_text="Produkt fjernet"  %}
     <div class="col-12  mt-3">
         <a class="btn btn-primary" href="{% url 'pant:registered_products_csv_download' 1 %}">{% translate "Download .csv-fil med godkendte produkter" %}
         </a>
@@ -72,8 +63,6 @@ SPDX-License-Identifier: MPL-2.0
     {% include "../list_view_table.html" %}
 </div>
 
-
-{% include "../list_view_scripts.html"%}
 
 {% if can_edit_multiple %}
 <script>

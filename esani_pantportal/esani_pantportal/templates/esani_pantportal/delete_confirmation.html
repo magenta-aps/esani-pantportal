@@ -1,0 +1,24 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% load i18n %}
+{% load l10n %}
+{% load bootstrap_icons %}
+
+<div class="card mt-3" id="delete_confirmation" style="display:none">
+    <div class="card-body text-center">
+        {% bs_icon icon_tag size="2em" %}
+        <div>
+            {% translate delete_text %}
+        </div>
+    </div>
+</div>
+
+<script>
+var delete_success = getUrlParameter("delete_success");
+if (delete_success=="1"){
+    $("#delete_confirmation").show()
+    }
+</script>
