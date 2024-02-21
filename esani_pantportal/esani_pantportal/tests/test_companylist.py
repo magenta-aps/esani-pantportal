@@ -346,3 +346,34 @@ class CompanyListExportTest(BaseCompanyTest):
                 )
             },
         )
+
+    def test_debtor_export(self):
+        # Fetch debtor list as CSV
+        self.login()
+        response = self.client.get(reverse("pant:all_companies_csv_debtor_download"))
+        # Assert we get the expected response
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response["Content-Type"], "text/csv")
+        self.assertRegex(
+            response["Content-Disposition"],
+            r"attachment; filename=debitor_(.*?)\.csv",
+        )
+        # Assert that all companies, company branches and kiosks defined in this test
+        # are exported in the CSV.
+        self.assertSetEqual(
+            {
+                row["name"]
+                for row in DictReader(
+                    StringIO(response.content.decode("utf-8")), delimiter=";"
+                )
+            },
+            {
+                obj.name
+                for obj in (
+                    self.google,
+                    self.facebook,
+                    self.facebook_branch,
+                    self.kiosk,
+                )
+            },
+        )

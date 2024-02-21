@@ -52,7 +52,7 @@ from project.settings import DEFAULT_FROM_EMAIL
 from simple_history.utils import bulk_update_with_history, update_change_reason
 from two_factor.views import LoginView, SetupView
 
-from esani_pantportal.exports.uniconta.exports import CreditNoteExport
+from esani_pantportal.exports.uniconta.exports import CreditNoteExport, DebtorExport
 from esani_pantportal.forms import (
     ChangePasswordForm,
     CompanyFilterForm,
@@ -1471,6 +1471,16 @@ class CsvTemplateView(LoginRequiredMixin, View):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = "attachment; filename=template.csv"
         df.to_csv(path_or_buf=response, sep=";", index=False)
+        return response
+
+
+class CsvDebtorView(CsvTemplateView):
+    def get(self, request, *args, **kwargs):
+        export = DebtorExport()
+        filename = f"debitor_{datetime.date.today().strftime('%Y-%m-%d')}.csv"
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f"attachment; filename={filename}"
+        export.as_csv(response)
         return response
 
 

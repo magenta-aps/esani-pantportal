@@ -67,6 +67,9 @@ SPDX-License-Identifier: MPL-2.0
         <a class="btn btn-primary" href="{% url 'pant:all_companies_csv_download' %}">
             {% translate "Download .csv-fil med alle virksomheder" %}
         </a>
+        <a class="btn btn-primary" href="{% url 'pant:all_companies_csv_debtor_download' %}">
+            {% translate "Download debitor-csv-fil" %}
+        </a>
         {% include "../list_view_filter_button.html" with columns=filterable_columns prefix=preferences_prefix %}
     </div>
     {% include "../list_view_table.html" %}
