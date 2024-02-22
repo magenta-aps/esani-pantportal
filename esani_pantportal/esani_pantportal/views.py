@@ -755,35 +755,25 @@ class BranchSearchView(PermissionRequiredMixin, SearchView):
 
     def get_fields(self, model=None):
         fields = super().get_fields(model=model)
-        fields = fields + ["company_branch__name", "kiosk__name"]
+        fields = fields + ["_name"]
         return fields
 
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)
-
         if key in ["company_branch", "kiosk"]:
-            if value and key == "company_branch":
-                value = item["company_branch__name"]
-            elif value and key == "kiosk":
-                value = item["kiosk__name"]
-            else:
-                value = ""
+            return item["_name"]
         return value or "-"
 
     def item_to_json_dict(self, *args, **kwargs):
         json_dict = super().item_to_json_dict(*args, **kwargs)
-
-        if not json_dict["company_branch"] or json_dict["company_branch"] == "-":
-            json_dict["company_branch_or_kiosk"] = json_dict["kiosk"]
-        else:
-            json_dict["company_branch_or_kiosk"] = json_dict["company_branch"]
-
+        json_dict["company_branch_or_kiosk"] = json_dict["_name"]
         return json_dict
 
     def get_queryset(self):
         qs = super().get_queryset()
-        qs = qs.select_related("company_branch", "kiosk").annotate(
-            company_branch_name=F("company_branch__name")
+        qs = qs.select_related("company_branch", "kiosk")
+        qs = qs.annotate(
+            _name=Coalesce(F("company_branch__name"), F("kiosk__name")),
         )
         data = self.search_data
 
