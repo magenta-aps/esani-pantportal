@@ -753,14 +753,19 @@ class BranchSearchView(PermissionRequiredMixin, SearchView):
     treats them as one.
     """
 
+    def get_fields(self, model=None):
+        fields = super().get_fields(model=model)
+        fields = fields + ["company_branch__name", "kiosk__name"]
+        return fields
+
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)
 
         if key in ["company_branch", "kiosk"]:
             if value and key == "company_branch":
-                value = CompanyBranch.objects.get(pk=int(value)).name
+                value = item["company_branch__name"]
             elif value and key == "kiosk":
-                value = Kiosk.objects.get(pk=int(value)).name
+                value = item["kiosk__name"]
             else:
                 value = ""
         return value or "-"
@@ -777,6 +782,9 @@ class BranchSearchView(PermissionRequiredMixin, SearchView):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        qs = qs.select_related("company_branch", "kiosk").annotate(
+            company_branch_name=F("company_branch__name")
+        )
         data = self.search_data
 
         branch_qs = self.model.objects.none()
