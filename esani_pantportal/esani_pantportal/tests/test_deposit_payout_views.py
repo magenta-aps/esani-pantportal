@@ -242,6 +242,31 @@ class TestDepositPayoutSearchView(BaseDepositPayoutSearchView):
         self.assertEqual(response["Content-Type"], "text/csv")
         self._assert_csv_response(response, expected_length=4)
 
+    def test_post_selection_all_with_filters(self):
+        self._login()
+
+        # When filtering for to_date=2024-01-28 we filter out deposit_payout_item_2
+        response = self.client.post(
+            reverse("pant:deposit_payout_list") + "?to_date=2024-01-28",
+            data={"selection": "all"},
+        )
+        # Assert that we receive the expected CSV response
+        self.assertEqual(response["Content-Type"], "text/csv")
+        self._assert_csv_response(response, expected_length=2)
+
+    def test_post_selection_all_with_hidden_items(self):
+        self._login()
+
+        # When limit=1, some items are on the next page. We still expect them in the
+        # exported csv-file
+        response = self.client.post(
+            reverse("pant:deposit_payout_list") + "?limit=1",
+            data={"selection": "all"},
+        )
+        # Assert that we receive the expected CSV response
+        self.assertEqual(response["Content-Type"], "text/csv")
+        self._assert_csv_response(response, expected_length=4)
+
     def test_pagination_outside_queryset_range(self):
         self._login()
         # Navigate to invalid page number, and observe that we get a 404
