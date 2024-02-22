@@ -12,6 +12,9 @@ SKIP_IDP_METADATA=${SKIP_IDP_METADATA:=false}
 TEST=${TEST:=false}
 CREATE_GROUPS=${CREATE_GROUPS:=true}
 
+DOCUMENTATION_READY=false
+echo $DOCUMENTATION_READY > /tmp/DOCUMENTATION_READY
+
 if [ "$MAKE_MIGRATIONS" = true ] || [ "$MIGRATE" = true ]; then
   python3 manage.py wait_for_db
 fi
@@ -23,9 +26,6 @@ if [ "$MIGRATE" = true ]; then
   echo 'Running migrations'
   python3 manage.py migrate
 fi
-
-echo "collecting static files"
-python3 manage.py collectstatic --no-input --clear
 
 if [ "${CREATE_GROUPS,,}" = true ]; then
   echo 'create groups'
@@ -47,5 +47,17 @@ if [ "$TEST" = true ]; then
   echo 'running tests'
   python manage.py test
 fi
+
+# Signal that the database is now ready
+echo true > /tmp/DATABASE_READY
+
+# Wait for documentation to finish generating before collecting static files
+while [[ $DOCUMENTATION_READY != true ]] ; do
+  DOCUMENTATION_READY=`cat /tmp/DOCUMENTATION_READY`
+  sleep 1
+done
+
+echo "collecting static files"
+python3 manage.py collectstatic --no-input --clear
 
 exec "$@"

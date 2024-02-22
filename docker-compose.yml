@@ -19,6 +19,7 @@ services:
       - ./data/qr_codes:/srv/media/qr_codes
       - ./data/deposit_payouts:/srv/media/deposit_payouts
       - ./data/er:/app/esani_pantportal/static/doc:ro
+      - ./data/startup_flags:/tmp
 
     depends_on:
       - pantportal-db
@@ -97,6 +98,7 @@ services:
       - ./dev-environment/esani-pantportal.env
     volumes:
       - ./data/er:/doc
+      - ./data/startup_flags:/tmp
     networks:
       - postgres
 
