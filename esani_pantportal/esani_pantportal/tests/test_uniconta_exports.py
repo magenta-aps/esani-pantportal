@@ -75,11 +75,11 @@ class TestCreditNoteExport(_SharedBase):
         super().setUpTestData()
         cls.company_branch_rvm = ReverseVendingMachine.objects.create(
             company_branch=cls.company_branch,
-            compensation=15,
+            compensation=15.0,
         )
         cls.kiosk_rvm = ReverseVendingMachine.objects.create(
             kiosk=cls.kiosk,
-            compensation=25,
+            compensation=25.0,
         )
         cls.qr_bag = QRBag.objects.create(
             company_branch=cls.company_branch,
@@ -164,17 +164,20 @@ class TestCreditNoteExport(_SharedBase):
         self.instance.as_csv(stream)
         # Assert that we got the expected lines by looking at the product IDs
         self.assertListEqual(
-            [row["product_id"] for row in self._get_csv_rows(stream)],
+            [
+                (row["product_id"], row["unit_price"])
+                for row in self._get_csv_rows(stream)
+            ],
             [
                 # From `cls.deposit_payout_item_rvm_1`
-                "101",
-                "201",
-                # From `cls.deposit_payout_item_bag`
-                "102",
-                "202",
+                ("101", "250"),
+                ("201", "15"),
+                # From `cls.deposit_payout_item_bag_1`
+                ("102", "250"),
+                ("202", "30"),
                 # From `cls.deposit_payout_item_rvm_2`
-                "101",
-                "201",
+                ("101", "250"),
+                ("201", "15"),
             ],
         )
         # Assert that all lines have the expected fields
