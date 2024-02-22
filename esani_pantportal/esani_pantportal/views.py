@@ -1071,7 +1071,7 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
         # If POST contains one more item IDs in "id", process only the objects given by
         # those IDs.
 
-        self.form = self.get_form()
+        self.form = self.get_form_class()(self.request.GET)
         if self.form.is_valid():
             from_date = self.form.cleaned_data.get("from_date")
             to_date = self.form.cleaned_data.get("to_date")
