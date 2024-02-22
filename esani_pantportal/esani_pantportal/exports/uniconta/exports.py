@@ -140,7 +140,7 @@ class CreditNoteExport:
 
         def line(category, specifier, quantity, unit_price=None):
             rate = self._get_rate(category, specifier)
-            unit_price = unit_price if unit_price is not None else rate.rate
+            unit_price = int(unit_price if unit_price is not None else rate.rate)
             return {
                 "customer_id": customer.external_customer_id,
                 "customer_invoice_account_id": customer.customer_invoice_account_id,
