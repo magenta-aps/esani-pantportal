@@ -20,6 +20,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.core.management import call_command
 from django.db.models import (
     Case,
+    Count,
     F,
     FloatField,
     Max,
@@ -846,15 +847,16 @@ class QRBagSearchView(BranchSearchView):
         "updated": _("Opdateret"),
     }
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.select_related("company_branch", "kiosk", "owner")
+
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        qrbags = self.get_queryset()
-
-        status_dict = {}
-        for status in [s["status"] for s in qrbags.values("status").distinct()]:
-            status_dict[status] = qrbags.filter(status=status).count()
-
-        context["status_dict"] = status_dict
+        context["status_dict"] = {
+            row["status"]: row["count"]
+            for row in self.get_queryset().values("status").annotate(count=Count("id"))
+        }
         return context
 
     def item_to_json_dict(self, item_obj, context, index):
