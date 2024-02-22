@@ -1060,7 +1060,7 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
         "source": _("Kæde, butik (eller RVM-serienummer)"),
         "product": _("Produkt (eller stregkode)"),
         "product__refund_value": _("Pantværdi (i øre)"),
-        "count": _("antal"),
+        "count": _("Antal"),
         "date": _("Dato"),
     }
 
@@ -1139,6 +1139,7 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
         else:
             json_dict["product"] = self.span(item_obj.barcode, barcode_error)
             json_dict["product__refund_value"] = "-"
+        json_dict["date"] = item_obj.date.strftime("%-d. %b %Y")
 
         return json_dict
 
