@@ -1067,32 +1067,45 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
     annotations = {"source": Coalesce("company_branch__company__name", "kiosk__name")}
 
     def post(self, request, *args, **kwargs):
+        # Instantiate form and trigger validation.
+        # This is required by `filter_qs` which in turn is called from `get_queryset`.
+        self.form = self.get_form_class()(self.request.GET)
+        form_is_valid = self.form.is_valid()
+
         # If POST contains "selection=all", process all objects in queryset.
         # If POST contains one more item IDs in "id", process only the objects given by
         # those IDs.
-
-        self.form = self.get_form_class()(self.request.GET)
-        if self.form.is_valid():
-            from_date = self.form.cleaned_data.get("from_date")
-            to_date = self.form.cleaned_data.get("to_date")
-
         if request.POST.get("selection", "") == "all":
             qs = self.get_queryset()
         else:
             ids = [int(id) for id in request.POST.getlist("id")]
             qs = self.get_queryset().filter(id__in=ids)
 
-        export = CreditNoteExport(
-            from_date or qs.aggregate(Min("date"))["date__min"],
-            to_date or qs.aggregate(Max("date"))["date__max"],
-            qs,
-        )
-        response = HttpResponse(content_type="text/csv")
-        response[
-            "Content-Disposition"
-        ] = f"attachment; filename={export.get_filename()}"
-        export.as_csv(response)
-        return response
+        date_min = qs.aggregate(Min("date"))["date__min"]
+        date_max = qs.aggregate(Max("date"))["date__max"]
+
+        if form_is_valid:
+            from_date = self.form.cleaned_data.get("from_date") or date_min
+            to_date = self.form.cleaned_data.get("to_date") or date_max
+        else:
+            from_date = date_min
+            to_date = date_max
+
+        if qs.exists():
+            export = CreditNoteExport(from_date, to_date, qs)
+            response = HttpResponse(content_type="text/csv")
+            response[
+                "Content-Disposition"
+            ] = f"attachment; filename={export.get_filename()}"
+            export.as_csv(response)
+            return response
+        else:
+            messages.add_message(
+                request,
+                messages.ERROR,
+                _("Ingen linjer er valgt"),
+            )
+            return redirect(".")
 
     def get_queryset(self):
         qs = super().get_queryset()
