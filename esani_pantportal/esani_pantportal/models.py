@@ -15,6 +15,7 @@ from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import CharField, CheckConstraint, Q, Value
 from django.db.models.functions import Cast, Concat, LPad
+from django.utils.functional import cached_property
 from django.utils.translation import gettext as _
 from simple_history.models import HistoricalRecords
 
@@ -194,7 +195,7 @@ class AbstractCompany(models.Model):
             output_field=CharField(),
         )
 
-    @property
+    @cached_property
     def external_customer_id(self):
         if not hasattr(self, "customer_id_prefix"):
             raise AttributeError(
@@ -277,7 +278,7 @@ class Branch(AbstractCompany):
     def get_branch(self):
         return self
 
-    @property
+    @cached_property
     def customer_invoice_account_id(self):
         return None
 
@@ -306,7 +307,7 @@ class CompanyBranch(Branch):
     def get_company(self):
         return self.company
 
-    @property
+    @cached_property
     def customer_invoice_account_id(self):
         if self.company.invoice_company_branch:
             return None
@@ -855,7 +856,7 @@ class User(
         help_text=_("Brugerens emailadresse"),
     )
 
-    @property
+    @cached_property
     def user_profile(self):
         if self.user_type == BRANCH_USER:
             return BranchUser.objects.get(username=self.username)
@@ -866,14 +867,14 @@ class User(
         elif self.user_type == COMPANY_USER:
             return CompanyUser.objects.get(username=self.username)
 
-    @property
+    @cached_property
     def branch(self):
         if self.user_type in [BRANCH_USER, KIOSK_USER]:
             return self.user_profile.branch
         else:
             return None
 
-    @property
+    @cached_property
     def company(self):
         if self.user_type == BRANCH_USER:
             return self.user_profile.branch.company
@@ -882,11 +883,11 @@ class User(
         else:
             return None
 
-    @property
+    @cached_property
     def is_esani_admin(self):
         return self.groups.filter(name="EsaniAdmins").exists()
 
-    @property
+    @cached_property
     def is_admin(self):
         return self.groups.filter(name__in=ADMIN_GROUPS).exists()
 
