@@ -890,7 +890,9 @@ class DepositPayoutItemFilterForm(SortPaginateForm, BootstrapForm):
         template_name = "django/forms/widgets/date.html"
 
     company_branch = forms.ModelChoiceField(
-        CompanyBranch.objects.all().order_by("name", "company__name"),
+        CompanyBranch.objects.select_related("company").order_by(
+            "name", "company__name"
+        ),
         required=False,
     )
     kiosk = forms.ModelChoiceField(

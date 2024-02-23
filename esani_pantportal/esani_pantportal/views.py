@@ -1097,7 +1097,11 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
     def get_queryset(self):
         qs = super().get_queryset()
         qs = qs.select_related(
-            "company_branch__company", "kiosk", "product", "deposit_payout"
+            "company_branch__company",
+            "kiosk",
+            "product",
+            "deposit_payout",
+            "qr_bag",
         )
         return qs
 

@@ -1078,7 +1078,7 @@ class DepositPayoutItem(models.Model):
     rvm_serial = models.PositiveIntegerField()
     """Serial number of RVM (= 'Reverse vending machine', aka. 'flaskeautomat')"""
 
-    date = models.DateField()
+    date = models.DateField(db_index=True)
     """Date for when items have been processed by the RVM.
     Can be before `DepositPayout.from_date` in case of offline situations.`"""
 
