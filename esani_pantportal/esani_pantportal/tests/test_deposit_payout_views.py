@@ -7,10 +7,13 @@ from http import HTTPStatus
 from io import StringIO
 
 from django.contrib.auth.models import Group
+from django.contrib.messages import get_messages
 from django.core.management import call_command
+from django.http import HttpResponseRedirect
 from django.test import TestCase
 from django.urls import reverse
 from django.utils.http import urlencode
+from django.utils.translation import gettext as _
 
 from esani_pantportal.models import (
     Company,
@@ -112,12 +115,14 @@ class BaseDepositPayoutSearchView(LoginMixin, TestCase):
     def _login(self):
         self.client.login(username="esani_admin", password="12345")
 
+    def _get_url(self, **query_params):
+        return reverse("pant:deposit_payout_list") + (
+            f"?{urlencode(query_params)}" if query_params else ""
+        )
+
     def _get_response(self, **query_params):
         self._login()
-        return self.client.get(
-            reverse("pant:deposit_payout_list")
-            + (f"?{urlencode(query_params)}" if query_params else "")
-        )
+        return self.client.get(self._get_url(**query_params))
 
     def _assert_list_contents(self, response, values, count):
         self.assertQuerySetEqual(
@@ -266,6 +271,27 @@ class TestDepositPayoutSearchView(BaseDepositPayoutSearchView):
         # Assert that we receive the expected CSV response
         self.assertEqual(response["Content-Type"], "text/csv")
         self._assert_csv_response(response, expected_length=4)
+
+    def test_post_handles_empty_queryset(self):
+        def assert_response_is_redirect_with_message(response):
+            self.assertEqual(response.status_code, HttpResponseRedirect.status_code)
+            self.assertEqual(
+                str(list(get_messages(response.wsgi_request))[0]),
+                _("Ingen linjer er valgt"),
+            )
+
+        self._login()
+
+        # Test 1: POST invalid item IDs, resulting in an empty queryset
+        response = self.client.post(self._get_url(), data={"id": "-1"})
+        assert_response_is_redirect_with_message(response)
+
+        # Test 2: POST invalid filter data, resulting in an invalid form
+        response = self.client.post(
+            self._get_url(from_date="99"),
+            data={"selection": "all"},
+        )
+        assert_response_is_redirect_with_message(response)
 
     def test_pagination_outside_queryset_range(self):
         self._login()
