@@ -1084,14 +1084,9 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
         date_min = qs.aggregate(Min("date"))["date__min"]
         date_max = qs.aggregate(Max("date"))["date__max"]
 
-        if form_is_valid:
+        if form_is_valid and qs.exists():
             from_date = self.form.cleaned_data.get("from_date") or date_min
             to_date = self.form.cleaned_data.get("to_date") or date_max
-        else:
-            from_date = date_min
-            to_date = date_max
-
-        if qs.exists():
             export = CreditNoteExport(from_date, to_date, qs)
             response = HttpResponse(content_type="text/csv")
             response[
