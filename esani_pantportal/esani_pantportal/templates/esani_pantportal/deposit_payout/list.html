@@ -11,8 +11,6 @@ SPDX-License-Identifier: MPL-2.0
 
 {# Docs for bootstrap-table: https://bootstrap-table.com/docs/ #}
 {% block extra_headers %}
-<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.css">
-<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.css">
 <style>
     /* Prevent text highlighting in table when selecting multiple rows (using Shift key) */
     #table { user-select: none }
@@ -20,14 +18,7 @@ SPDX-License-Identifier: MPL-2.0
 <script src="{% static 'jquery/pantportal.js' %}"></script>
 {% endblock %}
 
-{% block extra_footers %}
-<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
-<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
-<script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/defer-url/bootstrap-table-defer-url.min.js"></script>
-{% endblock %}
-
 {% block content %}
-
 <div class="mx-5">
     <div class="row">
         <div class="col-6">
@@ -82,30 +73,47 @@ SPDX-License-Identifier: MPL-2.0
 <script>
 (function () {
     $(document).ready(function () {
+        const table = $("#table");
+        const selectChosen = $("button[type=submit][value=selected]");
+        const selectAll = $("button[type=submit][value=all]");
+
+        // Initial state of "Hent valgte" and "Hent alle" is disabled
+        selectChosen.attr("disabled", "disabled");
+        selectAll.attr("disabled", "disabled");
+
+        // Enable/disable the "Hent valgte"/"Hent alle" buttons whenever the number of selected
+        // rows change, or when the current page is changed (as this also resets the selected
+        // rows back to zero.)
         // Update count of selected rows on button whenever rows are selected (or unselected.)
-        $("#table").on(
-            "uncheck.bs.table uncheck-all.bs.table uncheck-some.bs.table check.bs.table check-some.bs.table check-all.bs.table",
+        table.on(
+            "uncheck.bs.table uncheck-all.bs.table uncheck-some.bs.table check.bs.table check-some.bs.table check-all.bs.table page-change.bs.table",
             function (evt) {
                 const selectedRows = $("#table").bootstrapTable("getSelections");
-                $("button[type=submit][value=selected] span").text(selectedRows.length);
+                const numSelectedRows = selectedRows.length;
+                const state = numSelectedRows === 0 ? "disabled" : null;
+                // Toggle disabled state of "Hent valgte" and "Hent alle"
+                selectChosen.attr("disabled", state);
+                selectAll.attr("disabled", state);
+                // Update count on "Hent valgte"
+                $("span", selectChosen).text(numSelectedRows);
             },
         );
 
         // Prompt user when checking 'all' rows. If more rows are available, but not on screen, then allow user to
         // select everything matching the current filters.
-        $("#table").on("check-all.bs.table", function (evt, rows) {
+        table.on("check-all.bs.table", function (evt, rows) {
             const totalRows = $("#table").bootstrapTable("getOptions")["totalRows"];
             const selectedRows = rows.length;
             if (totalRows >= selectedRows) {
-                $("button[type=submit][value=all]").removeClass("d-none");
+                selectAll.removeClass("d-none");
             }
         });
 
         // Hide button which can submit 'all' rows whenever only a subset of rows are selected
-        $("#table").on(
-            "uncheck.bs.table uncheck-all.bs.table uncheck-some.bs.table check.bs.table check-some.bs.table",
+        table.on(
+            "uncheck.bs.table uncheck-all.bs.table uncheck-some.bs.table check.bs.table check-some.bs.table page-change.bs.table",
             function (evt) {
-                $("button[type=submit][value=all]").addClass("d-none");
+                selectAll.addClass("d-none");
             },
         );
     })
