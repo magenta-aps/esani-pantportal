@@ -355,8 +355,16 @@ class TestCreditNoteExport(_SharedBase):
     def test_dry_false(self):
         """Passing `dry=False` should update the underlying objects"""
         # Arrange and act
-        self._get_instance(dry=False)
-        # Assert
+        instance = self._get_instance(dry=False)
+        # Assert: Deposit payout items are marked as exported
+        for item in (
+            self.deposit_payout_item_rvm_1,
+            self.deposit_payout_item_rvm_2,
+            self.deposit_payout_item_bag_1,
+        ):
+            item.refresh_from_db()
+            self.assertEqual(item.file_id, instance._file_id)
+        # Assert: QR bag status is updated
         self.qr_bag.refresh_from_db()
         self.assertEqual(self.qr_bag.status, "esani_udbetalt")
 
@@ -364,7 +372,15 @@ class TestCreditNoteExport(_SharedBase):
         """Passing `dry=True` should *not* update the underlying objects"""
         # Arrange and act
         self._get_instance(dry=True)
-        # Assert
+        # Assert: Deposit payout items are *not* marked as exported
+        for item in (
+            self.deposit_payout_item_rvm_1,
+            self.deposit_payout_item_rvm_2,
+            self.deposit_payout_item_bag_1,
+        ):
+            item.refresh_from_db()
+            self.assertEqual(item.file_id, None)
+        # Assert: QR bag status is *not* updated
         self.qr_bag.refresh_from_db()
         self.assertEqual(self.qr_bag.status, "esani_optalt")
 

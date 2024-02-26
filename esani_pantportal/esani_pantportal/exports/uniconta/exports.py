@@ -44,7 +44,11 @@ class CreditNoteExport:
     ):
         self._from_date = from_date
         self._to_date = to_date
+        self._queryset = queryset
+        self._dry = dry
+
         self._file_id = uuid4()
+
         self._field_names = [
             "customer_id",
             "customer_invoice_account_id",
@@ -60,25 +64,27 @@ class CreditNoteExport:
             "to_date",
             "file_id",
         ]
+
         self._qs = self._get_base_queryset(queryset)
         self._bag_type_prefixes = ERPProductMapping.objects.filter(
             category=ERPProductMapping.CATEGORY_BAG
         ).values_list("specifier", flat=True)
 
-        if not dry:
+    def __iter__(self):
+        for row in self._qs:
+            yield from self._get_lines_for_row(row)
+        if not self._dry:
+            # Mark all deposit payout items as exported
+            self._queryset.update(file_id=self._file_id)
             # Update status of all related QR bags to `esani_udbetalt`
             qr_bags = QRBag.objects.filter(
                 id__in=(
-                    queryset.filter(qr_bag__isnull=False).values_list(
+                    self._queryset.filter(qr_bag__isnull=False).values_list(
                         "qr_bag__id", flat=True
                     )
                 )
             )
             qr_bags.update(status="esani_udbetalt")
-
-    def __iter__(self):
-        for row in self._qs:
-            yield from self._get_lines_for_row(row)
 
     def as_csv(self, stream=sys.stdout, delimiter=";"):
         writer = csv.DictWriter(stream, self._field_names, delimiter=delimiter)
@@ -91,6 +97,9 @@ class CreditNoteExport:
         return f"kreditnota_{from_date}_{to_date}_{self._file_id}.csv"
 
     def _get_base_queryset(self, queryset):
+        if not self._dry:
+            queryset = queryset.filter(file_id__isnull=True)
+
         return (
             queryset.select_related("product", "company_branch__company", "kiosk")
             .annotate(
