@@ -103,7 +103,7 @@ Lint Python:
   <<: *lint-default
   before_script:
     - pip3 install flake8
-    - pip3 install black==23.1.0
+    - pip3 install black==24.1.1
     - pip3 install isort==5.12.0
   script:
     - flake8 --max-line-length 88 --exclude=migrations,project --extend-ignore E226,E203,W503 esani_pantportal/
