@@ -238,37 +238,37 @@ class TestDepositPayoutSearchView(BaseDepositPayoutSearchView):
         self.assertEqual(response["Content-Type"], "text/csv")
         self._assert_csv_response(response, expected_length=4)
 
-    def test_post_selection_all(self):
+    def test_post_selection_all_dry(self):
         self._login()
         # Post "selection=all"
         response = self.client.post(
             reverse("pant:deposit_payout_list"),
-            data={"selection": "all"},
+            data={"selection": "all-dry"},
         )
         # Assert that we receive the expected CSV response
         self.assertEqual(response["Content-Type"], "text/csv")
         self._assert_csv_response(response, expected_length=4)
 
-    def test_post_selection_all_with_filters(self):
+    def test_post_selection_all_dry_with_filters(self):
         self._login()
 
         # When filtering for to_date=2024-01-28 we filter out deposit_payout_item_2
         response = self.client.post(
             reverse("pant:deposit_payout_list") + "?to_date=2024-01-28",
-            data={"selection": "all"},
+            data={"selection": "all-dry"},
         )
         # Assert that we receive the expected CSV response
         self.assertEqual(response["Content-Type"], "text/csv")
         self._assert_csv_response(response, expected_length=2)
 
-    def test_post_selection_all_with_hidden_items(self):
+    def test_post_selection_all_dry_with_hidden_items(self):
         self._login()
 
         # When limit=1, some items are on the next page. We still expect them in the
         # exported csv-file
         response = self.client.post(
             reverse("pant:deposit_payout_list") + "?limit=1",
-            data={"selection": "all"},
+            data={"selection": "all-dry"},
         )
         # Assert that we receive the expected CSV response
         self.assertEqual(response["Content-Type"], "text/csv")
