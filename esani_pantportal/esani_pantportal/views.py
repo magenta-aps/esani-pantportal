@@ -731,8 +731,10 @@ class ProductSearchView(SearchView):
         if self.request.user.is_esani_admin:
             # Statistics on approved products for ESANI admins
             # Other users don't need to see this because they cannot approve anyway.
-            context["approved_products"] = Product.objects.filter(approved=True).count()
-            context["pending_products"] = Product.objects.filter(approved=False).count()
+            qs = Product.objects.values("approved").annotate(count=Count("id"))
+            approval_count_dict = {item["approved"]: item["count"] for item in qs}
+            context["approved_products"] = approval_count_dict.get(True, 0)
+            context["pending_products"] = approval_count_dict.get(False, 0)
         return context
 
 
