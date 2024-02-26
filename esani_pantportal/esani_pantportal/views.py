@@ -491,15 +491,13 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
             )
         return self.render_to_response(context)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+    @cached_property
+    def regular_columns(self):
+        return [[key, value, True] for key, value in self.fixed_columns.items()]
 
-        # [name, verbose_name, show (T/F)]
-        regular_columns = [
-            [key, value, True] for key, value in self.fixed_columns.items()
-        ]
-
-        filterable_columns = (
+    @cached_property
+    def filterable_columns(self):
+        return (
             [
                 [
                     f.name.replace("show_" + self.preferences_prefix, ""),
@@ -512,8 +510,15 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
             else []
         )
 
-        context["filterable_columns"] = filterable_columns
-        context["columns"] = regular_columns + filterable_columns
+    @cached_property
+    def columns(self):
+        return self.regular_columns + self.filterable_columns
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["filterable_columns"] = self.filterable_columns
+        context["columns"] = self.columns
         context["actions_template"] = self.actions_template
         context["preferences_prefix"] = self.preferences_prefix
         context["data_defer_url"] = add_parameters_to_url(
@@ -524,8 +529,7 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
         return context
 
     def get_fields(self, model=None):
-        meta = model._meta if model else self.model._meta
-        return [f.name for f in meta.fields]
+        return [c[0] for c in self.columns]
 
     def model_to_dict(self, item_obj):
         model_dict = {"id": item_obj.id}
@@ -629,28 +633,6 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
         "object_class_name_verbose": _("Type"),
     }
 
-    def get_fields(self):
-        fields = super().get_fields()
-        kiosk_fields = super().get_fields(model=Kiosk)
-        company_fields = super().get_fields(model=Company)
-        company_branch_fields = super().get_fields(model=CompanyBranch)
-
-        extra_fields = [
-            "external_customer_id",
-            "object_class_name",
-            "object_class_name_verbose",
-        ]
-
-        return list(
-            set(
-                fields
-                + kiosk_fields
-                + company_fields
-                + company_branch_fields
-                + extra_fields
-            )
-        )
-
     def check_permissions(self):
         if not self.request.user.is_esani_admin:
             return self.access_denied
@@ -659,6 +641,12 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
 
     def get_queryset(self):
         fields = super().get_fields()
+
+        # Remove annotated fields
+        for field in fields.copy():
+            if self.annotate_field(field) != field:
+                fields.remove(field)
+        fields.remove("object_class_name_verbose")
 
         qs = [
             Kiosk.objects.only(*fields).annotate(
@@ -758,12 +746,6 @@ class BranchSearchView(PermissionRequiredMixin, SearchView):
         fields = super().get_fields(model=model)
         fields = fields + ["_name"]
         return fields
-
-    def map_value(self, item, key, context):
-        value = super().map_value(item, key, context)
-        if key in ["company_branch", "kiosk"]:
-            return item["_name"]
-        return value or "-"
 
     def item_to_json_dict(self, *args, **kwargs):
         json_dict = super().item_to_json_dict(*args, **kwargs)
