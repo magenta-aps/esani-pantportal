@@ -824,7 +824,7 @@ class ProductFilterForm(SortPaginateForm):
     product_name = forms.CharField(required=False)
     barcode = forms.CharField(required=False)
     import_job = forms.ModelChoiceField(
-        queryset=ImportJob.objects.all(), required=False
+        queryset=ImportJob.objects.all().select_related("imported_by"), required=False
     )
     approved = forms.NullBooleanField(
         required=False,
