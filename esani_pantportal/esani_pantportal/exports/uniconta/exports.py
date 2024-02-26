@@ -145,9 +145,11 @@ class CreditNoteExport:
                 "customer_id": customer.external_customer_id,
                 "customer_invoice_account_id": customer.customer_invoice_account_id,
                 "customer_name": customer.name,
-                "customer_cvr": customer.cvr
-                if isinstance(customer, Kiosk)
-                else customer.company.cvr,
+                "customer_cvr": (
+                    customer.cvr
+                    if isinstance(customer, Kiosk)
+                    else customer.company.cvr
+                ),
                 "customer_location_id": customer.location_id,
                 "product_id": rate.item_number,
                 "product_name": rate.text,

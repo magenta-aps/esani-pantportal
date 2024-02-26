@@ -1089,9 +1089,9 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
             to_date = self.form.cleaned_data.get("to_date") or date_max
             export = CreditNoteExport(from_date, to_date, qs)
             response = HttpResponse(content_type="text/csv")
-            response[
-                "Content-Disposition"
-            ] = f"attachment; filename={export.get_filename()}"
+            response["Content-Disposition"] = (
+                f"attachment; filename={export.get_filename()}"
+            )
             export.as_csv(response)
             return response
         else:
