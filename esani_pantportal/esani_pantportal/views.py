@@ -520,6 +520,7 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
             self.request.get_full_path(), {"json": 1}
         )
         context["can_edit_multiple"] = self.can_edit_multiple
+        context["cookie_id"] = self.model.__name__ + "-table-cookie"
         return context
 
     def get_fields(self, model=None):
