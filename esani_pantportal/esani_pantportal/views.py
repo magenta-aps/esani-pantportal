@@ -1098,7 +1098,7 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
         # If POST contains "selection=all", process all objects in queryset.
         # If POST contains one more item IDs in "id", process only the objects given by
         # those IDs.
-        if request.POST.get("selection", "") == "all":
+        if request.POST.get("selection", "") in ("all-wet", "all-dry"):
             qs = self.get_queryset()
         else:
             ids = [int(id.replace(".", "")) for id in request.POST.getlist("id")]
@@ -1110,7 +1110,8 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
         if form_is_valid and qs.exists():
             from_date = self.form.cleaned_data.get("from_date") or date_min
             to_date = self.form.cleaned_data.get("to_date") or date_max
-            export = CreditNoteExport(from_date, to_date, qs)
+            dry = request.POST.get("selection", "").endswith("-dry")
+            export = CreditNoteExport(from_date, to_date, qs, dry=dry)
             response = HttpResponse(content_type="text/csv")
             response["Content-Disposition"] = (
                 f"attachment; filename={export.get_filename()}"
