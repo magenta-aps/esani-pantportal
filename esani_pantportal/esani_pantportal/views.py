@@ -1145,6 +1145,11 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
             qs = qs.filter(date__gte=from_date)
         if to_date:
             qs = qs.filter(date__lte=to_date)
+
+        already_exported = self.form.cleaned_data.get("already_exported")
+        if already_exported is False:
+            qs = qs.filter(file_id__isnull=True)
+
         return qs
 
     @staticmethod
