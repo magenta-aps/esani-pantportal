@@ -64,7 +64,7 @@ SPDX-License-Identifier: MPL-2.0
         {% if can_edit_multiple %}
         <td></td> {# Bootstrap Table puts a checkbox here #}
         {% endif %}
-        <td>{{item|get:"id"}}</td>
+        <td>{{item|get:"id"|unlocalize}}</td>
         {% for name, verbose_name, show in columns %}
             <td>{{item|get:name|safe}}</td>
         {% endfor %}
@@ -96,7 +96,7 @@ https://github.com/wenzhixin/bootstrap-table/issues/6855
         });
 
         $table.on('check.bs.table', async (e, row, $element) => {
- 
+
             if (checkingMultiple) return;
 
             const index = parseInt($element.attr('data-index'));
