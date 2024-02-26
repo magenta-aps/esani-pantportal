@@ -125,11 +125,10 @@ class BaseDepositPayoutSearchView(LoginMixin, TestCase):
         return self.client.get(self._get_url(**query_params))
 
     def _assert_list_contents(self, response, values, count):
-        self.assertQuerySetEqual(
-            response.context["items"],
-            [v.id for v in values],
-            transform=lambda obj: obj["company_branch"] or obj["kiosk"],
-            ordered=False,
+        items = response.context["items"]
+        self.assertEqual(
+            sorted([item["source"].split(" - ")[0] for item in items]),
+            sorted([v.name for v in values]),
         )
         self.assertEqual(response.context["page_obj"].paginator.count, count)
 
@@ -199,14 +198,16 @@ class TestDepositPayoutSearchView(BaseDepositPayoutSearchView):
     def test_sorting(self):
         # Sort items on "source" in reverse order
         response = self._get_response(sort="source", order="desc")
-        self.assertQuerySetEqual(
-            response.context["items"],
-            [self.kiosk.id, self.company_branch.id],
-            transform=lambda obj: (
-                obj["company_branch"] if obj["company_branch"] else obj["kiosk"]
-            ),
-            ordered=True,
-        )
+        items = response.context["items"]
+
+        self.assertIn(self.kiosk.name, items[0]["source"])
+        self.assertIn(self.company_branch.name, items[1]["source"])
+
+        response = self._get_response(sort="source", order="asc")
+        items = response.context["items"]
+
+        self.assertIn(self.company_branch.name, items[0]["source"])
+        self.assertIn(self.kiosk.name, items[1]["source"])
 
     def test_page_size(self):
         # Use a page size of 1 to enforce pagination of the two items
@@ -345,8 +346,6 @@ class MissingDataTest(BaseDepositPayoutSearchView):
         items = {d["id"]: d for d in response.context["items"]}
         item3 = items[self.deposit_payout_item_3.id]
 
-        self.assertEqual(item3["kiosk"], None)
-        self.assertEqual(item3["company_branch"], None)
         self.assertIn("Ingen matchende kæde eller butik", item3["source"])
 
     def test_missing_product(self):
