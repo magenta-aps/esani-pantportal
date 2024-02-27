@@ -291,7 +291,6 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         view.request = HttpRequest()
         view.request.method = "GET"
         view.request.user = MagicMock(is_esani_admin=True)
-        view.object_list = []
         view.kwargs = {}
         response = view.get(view.request)
         self.assertEquals(response.status_code, 200)
@@ -306,7 +305,6 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         view.request = HttpRequest()
         view.request.method = "GET"
         view.request.user = MagicMock(is_esani_admin=True)
-        view.object_list = view.get_queryset()
         view.kwargs = {}
         response = view.form_valid(view.form)
         self.assertEquals(response.status_code, 200)
@@ -367,7 +365,6 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         view.request = HttpRequest()
         view.request.method = "GET"
         view.request.user = MagicMock(is_esani_admin=True)
-        view.object_list = view.get_queryset()
         view.kwargs = {}
         response = view.form_valid(view.form)
         self.assertEquals(response.status_code, 200)

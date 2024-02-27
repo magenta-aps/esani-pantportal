@@ -130,7 +130,7 @@ class BaseDepositPayoutSearchView(LoginMixin, TestCase):
             sorted([item["source"].split(" - ")[0] for item in items]),
             sorted([v.name for v in values]),
         )
-        self.assertEqual(response.context["page_obj"].paginator.count, count)
+        self.assertEqual(response.context["total"], count)
 
     def _assert_page_parameters(
         self,
@@ -214,7 +214,7 @@ class TestDepositPayoutSearchView(BaseDepositPayoutSearchView):
         response = self._get_response(limit=1)
         self._assert_page_parameters(response, size=1)
         self.assertEqual(
-            response.context["page_obj"].paginator.count,
+            response.context["total"],
             DepositPayoutItem.objects.count(),
         )
         self.assertEqual(len(response.context["items"]), 1)
@@ -295,14 +295,6 @@ class TestDepositPayoutSearchView(BaseDepositPayoutSearchView):
         )
         assert_response_is_redirect_with_message(response)
 
-    def test_pagination_outside_queryset_range(self):
-        self._login()
-        # Navigate to invalid page number, and observe that we get a 404
-        response = self._get_response(page=2)
-        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-        response = self._get_response(page=0)
-        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-
     def test_invalid_filters_returns_empty_queryset(self):
         self._login()
         # Supply invalid filter parameters
@@ -310,8 +302,11 @@ class TestDepositPayoutSearchView(BaseDepositPayoutSearchView):
             from_date=datetime.date(2020, 1, 1).strftime("%Y-%m-%d"),
             to_date=datetime.date(2019, 1, 1).strftime("%Y-%m-%d"),
         )
-        # Assert that queryset is empty
-        self.assertEqual(response.context["object_list"], [])
+        self.assertNotIn("items", response.context)
+        self.assertEquals(
+            ["Angiv venligst en fra-dato, der ligger før til-datoen."],
+            response.context["form"].errors["__all__"],
+        )
 
 
 class MissingDataTest(BaseDepositPayoutSearchView):
