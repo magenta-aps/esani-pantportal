@@ -16,7 +16,6 @@ SPDX-License-Identifier: MPL-2.0
 <script src="{% static 'bootstrap-table/bootstrap-table.min.js' %}"></script>
 <script src="{% static 'bootstrap-table/extensions/sticky-header/bootstrap-table-sticky-header.min.js' %}"></script>
 <script src="{% static 'bootstrap-table/extensions/defer-url/bootstrap-table-defer-url.min.js' %}"></script>
-<script src="{% static 'bootstrap-table/extensions/cookie/bootstrap-table-cookie.js' %}"></script>
 {% endblock %}
 
 <table id="table" class="table table-bordered table-striped mt-1"
@@ -37,12 +36,10 @@ SPDX-License-Identifier: MPL-2.0
        data-total-rows="{{total|unlocalize}}"
        data-silent-sort="true" {# vil vi vise en loading-boks? #}
        data-remember-order="true"
-       data-cookie="true" {# Handles table refresh after bulk-approval properly #}
        data-click-to-select="true"
        data-escape="false"
        data-id-field="id"
        data-select-item-name="id"
-       data-cookie-id-table="{{ cookie_id }}"
 >
     <thead>
     <tr>
