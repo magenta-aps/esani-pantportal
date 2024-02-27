@@ -1063,7 +1063,7 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
         if request.POST.get("selection", "") == "all":
             qs = self.get_queryset()
         else:
-            ids = [int(id) for id in request.POST.getlist("id")]
+            ids = [int(id.replace(".", "")) for id in request.POST.getlist("id")]
             qs = self.get_queryset().filter(id__in=ids)
 
         date_min = qs.aggregate(Min("date"))["date__min"]

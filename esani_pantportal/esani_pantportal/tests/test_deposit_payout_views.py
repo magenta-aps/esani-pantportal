@@ -230,6 +230,7 @@ class TestDepositPayoutSearchView(BaseDepositPayoutSearchView):
                     self.deposit_payout_item_1.pk,
                     self.deposit_payout_item_2.pk,
                     42,
+                    "1.234",
                 ]
             },
         )
