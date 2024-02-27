@@ -633,6 +633,11 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
         "object_class_name_verbose": _("Type"),
     }
 
+    def item_to_json_dict(self, item_obj, context, index):
+        json_dict = super().item_to_json_dict(item_obj, context, index)
+        json_dict["object_class_name"] = item_obj.object_class_name
+        return json_dict
+
     def check_permissions(self):
         if not self.request.user.is_esani_admin:
             return self.access_denied
