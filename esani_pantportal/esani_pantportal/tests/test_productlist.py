@@ -316,7 +316,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                 "items": [
                     {
                         "actions": '<a href="/produkt/1?back=" class="btn btn-sm '
-                        'btn-primary">Vis</a>\n',
+                        'btn-primary">Vis</a>',
                         "approved": "Nej",
                         "approval_date": "-",
                         "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
@@ -334,7 +334,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                     },
                     {
                         "actions": '<a href="/produkt/2?back=" class="btn btn-sm '
-                        'btn-primary">Vis</a>\n',
+                        'btn-primary">Vis</a>',
                         "approved": "Ja",
                         "approval_date": datetime.date.today().strftime("%-d. %b %Y"),
                         "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
@@ -377,7 +377,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                 "items": [
                     {
                         "actions": '<a href="/produkt/1?back=" class="btn btn-sm '
-                        'btn-primary">Vis</a>\n',
+                        'btn-primary">Vis</a>',
                         "approved": "Nej",
                         "approval_date": "-",
                         "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
