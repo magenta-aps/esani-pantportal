@@ -142,7 +142,9 @@ SPDX-License-Identifier: MPL-2.0
         selectWet.on("click", function (evt) {
             evt.preventDefault();
 
-            const proceed = confirm(gettext("Er du sikker på at du vil fortsætte?"));
+            const proceed = confirm(
+                gettext("Er du sikker på at du vil fortsætte? Dette vil markere de valgte pantdata som udbetalt. Denne handling kan ikke fortrydes.")
+            );
             if (proceed) {
                 const selection = $(this).val();
                 downloadFile(selection);
