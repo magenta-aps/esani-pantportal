@@ -44,7 +44,6 @@ from django.views.generic import (
     DeleteView,
     DetailView,
     FormView,
-    ListView,
     TemplateView,
     UpdateView,
     View,
@@ -364,7 +363,7 @@ class RegisterKioskUserAdminView(PermissionRequiredMixin, RegisterKioskUserView)
         return kwargs
 
 
-class SearchView(LoginRequiredMixin, FormView, ListView):
+class SearchView(LoginRequiredMixin, FormView):
     paginate_by = 20
     annotations = {}
     search_fields_exact = []
@@ -377,10 +376,8 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
     def get(self, request, *args, **kwargs):
         self.form = self.get_form()
         if self.form.is_valid():
-            self.object_list = self.get_queryset()
             return self.form_valid(self.form)
         else:
-            self.object_list = []
             return self.form_invalid(self.form)
 
     def get_action_html(self, item, label, button_class):
