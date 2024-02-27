@@ -1104,6 +1104,12 @@ class DepositPayoutItem(models.Model):
         blank=True,
     )
 
+    file_id = models.UUIDField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
     def __str__(self):
         return f"{self.count}x {self.barcode}"
 

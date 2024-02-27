@@ -15,6 +15,7 @@ SPDX-License-Identifier: MPL-2.0
     /* Prevent text highlighting in table when selecting multiple rows (using Shift key) */
     #table { user-select: none }
 </style>
+<script src="{% url 'javascript-catalog' %}"></script>
 <script src="{% static 'jquery/pantportal.js' %}"></script>
 {% endblock %}
 
@@ -40,6 +41,14 @@ SPDX-License-Identifier: MPL-2.0
             <div class="col-2">{{ form.from_date }}</div>
             <div class="col-2">{{ form.to_date }}</div>
         </div>
+        <div class="row">
+            <div class="col-2">{% translate "Allerede eksporteret" %}</div>
+            <div class="col-4">
+                {{ form.already_exported }}
+                <br>
+                {{ form.already_exported.label }}
+            </div>
+        </div>
         {% if form.non_field_errors %}
         <div class="row">
             <div class="col-6 d-flex justify-content-end">
@@ -59,11 +68,17 @@ SPDX-License-Identifier: MPL-2.0
     <form method="post">
         {% csrf_token %}
         <div class="mb-1">
-            <button type="submit" class="btn btn-primary" name="selection" value="selected">
-                Hent valgte (<span>0</span>) som udbetalingsliste
+            <button type="submit" class="btn btn-primary" name="selection" value="selected-wet">
+                Hent valgte (<span>0</span>) som ERP-eksport
             </button>
-            <button type="submit" class="btn btn-primary d-none" name="selection" value="all">
-                Hent alle ({{ total }}) som udbetalingsliste
+            <button type="submit" class="btn btn-primary d-none" name="selection" value="all-wet">
+                Hent alle ({{ total }}) som som ERP-eksport
+            </button>
+            <button type="submit" class="btn btn-secondary" name="selection" value="selected-dry">
+                Hent valgte (<span>0</span>) som preview
+            </button>
+            <button type="submit" class="btn btn-secondary d-none" name="selection" value="all-dry">
+                Hent alle ({{ total }}) som preview
             </button>
         </div>
         {% include "../list_view_table.html" %}
@@ -74,8 +89,11 @@ SPDX-License-Identifier: MPL-2.0
 (function () {
     $(document).ready(function () {
         const table = $("#table");
-        const selectChosen = $("button[type=submit][value=selected]");
-        const selectAll = $("button[type=submit][value=all]");
+        const form = $("form[method=post]");
+        const selectChosen = $("button[type=submit][value|=selected]");
+        const selectAll = $("button[type=submit][value|=all]");
+        const selectWet = $("button[type=submit][value$=wet]");
+        const selectDry = $("button[type=submit][value$=dry]");
 
         // Initial state of "Hent valgte" and "Hent alle" is disabled
         selectChosen.attr("disabled", "disabled");
@@ -116,6 +134,83 @@ SPDX-License-Identifier: MPL-2.0
                 selectAll.addClass("d-none");
             },
         );
+
+        form.on("submit", function (evt) {
+            evt.preventDefault();
+        })
+
+        selectWet.on("click", function (evt) {
+            evt.preventDefault();
+
+            const proceed = confirm(
+                gettext("Er du sikker på at du vil fortsætte? Dette vil markere de valgte pantdata som udbetalt. Denne handling kan ikke fortrydes.")
+            );
+            if (proceed) {
+                const selection = $(this).val();
+                downloadFile(selection);
+            }
+        });
+
+        selectDry.on("click", function (evt) {
+            evt.preventDefault();
+
+            const selection = $(this).val();
+            downloadFile(selection);
+        });
+
+        const downloadFile = function (selection) {
+            let data = form.serializeArray();
+            data.push({"name": "selection", "value": selection});
+
+            // Source: https://stackoverflow.com/a/23797348
+            $.ajax({
+                type: "POST",
+                url: "." + window.location.search,
+                data: data,
+                xhrFields: {
+                    responseType: "blob" // to avoid binary data being mangled on charset conversion
+                },
+                success: function(blob, status, xhr) {
+                    // check for a filename
+                    var filename = "";
+                    var disposition = xhr.getResponseHeader("Content-Disposition");
+                    if (disposition && disposition.indexOf("attachment") !== -1) {
+                        var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                        var matches = filenameRegex.exec(disposition);
+                        if (matches != null && matches[1]) filename = matches[1].replace(/['"]/g, "");
+                    }
+
+                    if (typeof window.navigator.msSaveBlob !== "undefined") {
+                        // IE workaround for "HTML7007: One or more blob URLs were revoked by closing the blob for which they were created. These URLs will no longer resolve as the data backing the URL has been freed."
+                        window.navigator.msSaveBlob(blob, filename);
+                    } else {
+                        var URL = window.URL || window.webkitURL;
+                        var downloadUrl = URL.createObjectURL(blob);
+
+                        if (filename) {
+                            // use HTML5 a[download] attribute to specify filename
+                            var a = document.createElement("a");
+                            // safari doesn't support this yet
+                            if (typeof a.download === "undefined") {
+                                window.location.href = downloadUrl;
+                            } else {
+                                a.href = downloadUrl;
+                                a.download = filename;
+                                document.body.appendChild(a);
+                                a.click();
+
+                                // Reload page when download completes
+                                setTimeout( function () { window.location.reload(); }, 1);
+                            }
+                        } else {
+                            window.location.href = downloadUrl;
+                        }
+
+                        setTimeout(function () { URL.revokeObjectURL(downloadUrl); }, 100); // cleanup
+                    }
+                }
+            });
+        }
     })
 })();
 </script>
