@@ -23,6 +23,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path
+from django.views.i18n import JavaScriptCatalog
 from project.admin import pantadmin
 from project.api import api
 from two_factor.urls import urlpatterns as tf_urls
@@ -33,6 +34,7 @@ urlpatterns = [
     path("", include("esani_pantportal.urls", namespace="pant")),
     path("barcode/", include("barcode_scanner.urls", namespace="barcode")),
     path("api/", api.urls),
+    path("jsi18n/", JavaScriptCatalog.as_view(), name="javascript-catalog"),
     path("__debug__/", include("debug_toolbar.urls")),
     path(
         "bruger/adgangskode/nulstil",

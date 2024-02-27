@@ -907,6 +907,14 @@ class DepositPayoutItemFilterForm(SortPaginateForm, BootstrapForm):
         required=False,
         widget=HTML5DateWidget(),
     )
+    already_exported = forms.BooleanField(
+        required=False,
+        initial=False,
+        label=_(
+            "Vælg dette, hvis du også ønsker at siden viser pantdata, "
+            "der allerede er eksporteret"
+        ),
+    )
 
     def clean(self):
         cleaned_data = super().clean()
