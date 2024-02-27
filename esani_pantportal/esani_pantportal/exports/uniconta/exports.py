@@ -82,7 +82,7 @@ class CreditNoteExport:
             qr_bags.update(status="esani_udbetalt")
 
             # Mark all deposit payout items as exported
-            self._queryset.update(file_id=self._file_id)
+            self._queryset.filter(file_id__isnull=True).update(file_id=self._file_id)
 
     def as_csv(self, stream=sys.stdout, delimiter=";"):
         writer = csv.DictWriter(stream, self._field_names, delimiter=delimiter)
