@@ -7,6 +7,7 @@ import os
 from functools import cached_property
 from io import BytesIO
 from typing import Any, Dict
+from urllib.parse import quote
 
 import pandas as pd
 from django.conf import settings
@@ -370,8 +371,8 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
     fixed_columns = {}
     preferences_class = None
     preferences_prefix = ""
-    actions_template = None
     can_edit_multiple = False
+    actions = {}
 
     def get(self, request, *args, **kwargs):
         self.form = self.get_form()
@@ -381,6 +382,10 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
         else:
             self.object_list = []
             return self.form_invalid(self.form)
+
+    def get_action_html(self, item, label, button_class):
+        url = self.get_action_url(item, label)
+        return f'<a href="{url}" class="{button_class}">{label}</a>'
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -475,7 +480,6 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
             items=items,
             total=total,
             search_data=self.search_data,
-            actions_template=self.actions_template,
         )
         items = [
             self.item_to_json_dict(item, context, index)
@@ -519,7 +523,7 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
 
         context["filterable_columns"] = self.filterable_columns
         context["columns"] = self.columns
-        context["actions_template"] = self.actions_template
+        context["actions"] = self.actions
         context["preferences_prefix"] = self.preferences_prefix
         context["data_defer_url"] = add_parameters_to_url(
             self.request.get_full_path(), {"json": 1}
@@ -542,28 +546,25 @@ class SearchView(LoginRequiredMixin, FormView, ListView):
         self, item_obj: Any, context: Dict[str, Any], index: int
     ) -> Dict[str, Any]:
         item = self.model_to_dict(item_obj)
-        if self.actions_template:
-            additional_keys = ["actions"]
-        else:
-            additional_keys = []
-        return {
-            key: self.map_value(item, key, context)
-            for key in list(item.keys()) + additional_keys
+        json_dict = {
+            key: self.map_value(item, key, context) for key in list(item.keys())
         }
+        if self.actions:
+            json_dict["actions"] = " ".join(
+                [
+                    self.get_action_html(item_obj, action, button_class)
+                    for action, button_class in self.actions.items()
+                ]
+            )
+        return json_dict
 
     def map_value(self, item, key, context):
-        if key == "actions":
-            return loader.render_to_string(
-                self.actions_template,
-                {"item": item, **context},
-                self.request,
-            )
         return item[key]
 
 
 class CompanySearchView(PermissionRequiredMixin, SearchView):
     template_name = "esani_pantportal/company/list.html"
-    actions_template = "esani_pantportal/company/actions.html"
+    actions = {_("Vis"): "btn btn-sm btn-primary"}
     model = AbstractCompany
     form_class = CompanyFilterForm
     preferences_class = CompanyListViewPreferences
@@ -633,6 +634,18 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
         "object_class_name_verbose": _("Type"),
     }
 
+    def get_action_url(self, item, *args):
+        if item.object_class_name == "Company":
+            url_name = "pant:company_update"
+        elif item.object_class_name == "CompanyBranch":
+            url_name = "pant:company_branch_update"
+        elif item.object_class_name == "Kiosk":
+            url_name = "pant:kiosk_update"
+
+        base_url = reverse(url_name, kwargs={"pk": item.id})
+        back_url = self.request.get_full_path()
+        return add_parameters_to_url(base_url, {"back": quote(back_url)})
+
     def item_to_json_dict(self, item_obj, context, index):
         json_dict = super().item_to_json_dict(item_obj, context, index)
         json_dict["object_class_name"] = item_obj.object_class_name
@@ -694,7 +707,6 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
 
 class ProductSearchView(SearchView):
     template_name = "esani_pantportal/product/list.html"
-    actions_template = "esani_pantportal/product/actions.html"
     model = Product
     form_class = ProductFilterForm
     preferences_class = ProductListViewPreferences
@@ -709,6 +721,12 @@ class ProductSearchView(SearchView):
         "barcode": _("Stregkode"),
         "approved": _("Godkendt"),
     }
+    actions = {_("Vis"): "btn btn-sm btn-primary"}
+
+    def get_action_url(self, item, *args):
+        base_url = reverse("pant:product_view", kwargs={"pk": item.id})
+        back_url = self.request.get_full_path()
+        return add_parameters_to_url(base_url, {"back": quote(back_url)})
 
     def item_to_json_dict(self, item_obj, context, index):
         json_dict = super().item_to_json_dict(item_obj, context, index)
@@ -794,12 +812,19 @@ class BranchSearchView(PermissionRequiredMixin, SearchView):
 
 class ReverseVendingMachineSearchView(BranchSearchView):
     template_name = "esani_pantportal/reverse_vending_machine/list.html"
-    actions_template = "esani_pantportal/reverse_vending_machine/actions.html"
     model = ReverseVendingMachine
     form_class = ReverseVendingMachineFilterForm
     required_permissions = ["esani_pantportal.view_reversevendingmachine"]
 
     search_fields = ["serial_number"]
+    actions = {_("Fjern"): "btn btn-sm btn-danger"}
+
+    def get_action_html(self, item, *args):
+        return loader.render_to_string(
+            "esani_pantportal/reverse_vending_machine/actions.html",
+            {"item": item},
+            self.request,
+        )
 
     def get_context_data(self, *args, **kwargs):
         self.fixed_columns = {
@@ -820,7 +845,7 @@ class ReverseVendingMachineSearchView(BranchSearchView):
 
 class QRBagSearchView(BranchSearchView):
     template_name = "esani_pantportal/qrbag/list.html"
-    actions_template = "esani_pantportal/qrbag/actions.html"
+    actions = {_("Historik"): "btn btn-sm btn-secondary"}
     model = QRBag
     form_class = QRBagFilterForm
     required_permissions = ["esani_pantportal.view_qrbag"]
@@ -834,6 +859,11 @@ class QRBagSearchView(BranchSearchView):
         "status": _("Status"),
         "updated": _("Opdateret"),
     }
+
+    def get_action_url(self, item, *args):
+        base_url = reverse("pant:qrbag_history", kwargs={"pk": item.id})
+        back_url = self.request.get_full_path()
+        return add_parameters_to_url(base_url, {"back": quote(back_url)})
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -868,7 +898,7 @@ class QRBagSearchView(BranchSearchView):
 
 class UserSearchView(PermissionRequiredMixin, SearchView):
     template_name = "esani_pantportal/user/list.html"
-    actions_template = "esani_pantportal/user/actions.html"
+    actions = {_("Vis"): "btn btn-sm btn-primary"}
     model = User
     form_class = UserFilterForm
     preferences_class = UserListViewPreferences
@@ -908,6 +938,9 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
         "full_name": _("Navn"),
         "user_type": _("Brugertype"),
     }
+
+    def get_action_url(self, item, *args):
+        return reverse("pant:user_view", kwargs={"pk": item.id})
 
     def item_to_json_dict(self, item_obj, context, index):
         json_dict = super().item_to_json_dict(item_obj, context, index)

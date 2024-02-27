@@ -53,7 +53,7 @@ SPDX-License-Identifier: MPL-2.0
         {% for name, verbose_name, show in columns %}
             <th data-width="10" data-width-unit="%" data-sortable="true" data-field={{name}} data-visible={{show|truefalse}}>{{verbose_name}}</th>
         {% endfor %}
-        {% if actions_template %}
+        {% if actions %}
         <th data-width="1" data-width-unit="%" data-field="actions" >{% translate "Handlinger" %}</th>
         {% endif %}
     </tr>
@@ -68,9 +68,9 @@ SPDX-License-Identifier: MPL-2.0
         {% for name, verbose_name, show in columns %}
             <td>{{item|get:name|safe}}</td>
         {% endfor %}
-        {% if actions_template %}
+        {% if actions %}
         <td>
-            {% include actions_template with item=item %}
+            {{item|get:"actions"|safe}}
         </td>
         {% endif %}
     </tr>

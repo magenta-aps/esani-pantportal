@@ -197,7 +197,7 @@ class CompanyListTest(BaseCompanyTest):
         self.login()
         response = self.client.get(reverse("pant:company_list"))
         ext_id_and_names = [
-            (item.external_customer_id_annotation, item.name)
+            (item["external_customer_id"], item["name"])
             for item in response.context["items"]
         ]
         self.assertListEqual(
