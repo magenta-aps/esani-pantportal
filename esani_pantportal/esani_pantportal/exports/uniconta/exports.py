@@ -74,17 +74,15 @@ class CreditNoteExport:
         for row in self._qs:
             yield from self._get_lines_for_row(row)
         if not self._dry:
-            # Mark all deposit payout items as exported
-            self._queryset.update(file_id=self._file_id)
             # Update status of all related QR bags to `esani_udbetalt`
+            has_qr_bag = self._queryset.filter(qr_bag__isnull=False)
             qr_bags = QRBag.objects.filter(
-                id__in=(
-                    self._queryset.filter(qr_bag__isnull=False).values_list(
-                        "qr_bag__id", flat=True
-                    )
-                )
+                id__in=has_qr_bag.values_list("qr_bag__id", flat=True)
             )
             qr_bags.update(status="esani_udbetalt")
+
+            # Mark all deposit payout items as exported
+            self._queryset.update(file_id=self._file_id)
 
     def as_csv(self, stream=sys.stdout, delimiter=";"):
         writer = csv.DictWriter(stream, self._field_names, delimiter=delimiter)

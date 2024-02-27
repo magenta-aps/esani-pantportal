@@ -23,6 +23,7 @@ from esani_pantportal.models import (
     EsaniUser,
     Kiosk,
     Product,
+    QRBag,
 )
 from esani_pantportal.views import DepositPayoutSearchView
 
@@ -82,9 +83,15 @@ class BaseDepositPayoutSearchView(LoginMixin, TestCase):
             **shared,
         )
 
+        cls.qr_bag = QRBag.objects.create(
+            company_branch=cls.company_branch,
+            qr="1234",
+            status="esani_optalt",
+        )
+
         cls.deposit_payout = DepositPayout.objects.create(
-            source_type=DepositPayout.SOURCE_TYPE_CSV,
-            source_identifier="foo.csv",
+            source_type=DepositPayout.SOURCE_TYPE_API,
+            source_identifier="unused",
             from_date=datetime.date(2024, 1, 1),
             to_date=datetime.date(2024, 2, 1),
             item_count=0,
@@ -102,6 +109,7 @@ class BaseDepositPayoutSearchView(LoginMixin, TestCase):
             deposit_payout=cls.deposit_payout,
             company_branch=cls.company_branch,
             date=datetime.date(2024, 1, 28),
+            qr_bag=cls.qr_bag,
             **shared,
         )
 
@@ -254,12 +262,38 @@ class TestDepositPayoutSearchView(BaseDepositPayoutSearchView):
 
         # When filtering for to_date=2024-01-28 we filter out deposit_payout_item_2
         response = self.client.post(
-            reverse("pant:deposit_payout_list") + "?to_date=2024-01-28",
+            self._get_url(to_date="2024-01-28"),
             data={"selection": "all-dry"},
         )
         # Assert that we receive the expected CSV response
         self.assertEqual(response["Content-Type"], "text/csv")
         self._assert_csv_response(response, expected_length=2)
+
+    def test_post_selection_all_wet_with_filters(self):
+        self._login()
+
+        # When filtering for to_date=2024-01-28 we filter out deposit_payout_item_2
+        response = self.client.post(
+            self._get_url(to_date="2024-01-28"),
+            data={"selection": "all-wet"},
+        )
+
+        # Assert that we receive the expected CSV response
+        self.assertEqual(response["Content-Type"], "text/csv")
+        self._assert_csv_response(response, expected_length=2)
+
+        # Assert that the underlying deposit payout item is marked as exported
+        self.deposit_payout_item_1.refresh_from_db()
+        self.assertIsNotNone(self.deposit_payout_item_1.file_id)
+
+        # Assert that the underlying deposit payout item is *not* marked as exported
+        # (it does not match the filter on `to_date` above.)
+        self.deposit_payout_item_2.refresh_from_db()
+        self.assertIsNone(self.deposit_payout_item_2.file_id)
+
+        # Assert that the underlying QR bag object is updated
+        self.qr_bag.refresh_from_db()
+        self.assertEqual(self.qr_bag.status, "esani_udbetalt")
 
     def test_post_selection_all_dry_with_hidden_items(self):
         self._login()
@@ -267,7 +301,7 @@ class TestDepositPayoutSearchView(BaseDepositPayoutSearchView):
         # When limit=1, some items are on the next page. We still expect them in the
         # exported csv-file
         response = self.client.post(
-            reverse("pant:deposit_payout_list") + "?limit=1",
+            self._get_url(limit=1),
             data={"selection": "all-dry"},
         )
         # Assert that we receive the expected CSV response
