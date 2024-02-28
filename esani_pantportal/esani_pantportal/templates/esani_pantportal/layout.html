@@ -6,6 +6,9 @@ SPDX-License-Identifier: MPL-2.0
 {% load static %}
 {% load i18n %}
 {% load bootstrap_icons %}
+{% load cache %}
+
+{% cache 500 layout_head %}
 <!doctype html>
 <html lang="da">
 <head>
@@ -20,8 +23,11 @@ SPDX-License-Identifier: MPL-2.0
     {% block extra_headers %}
     {% endblock %}
 </head>
+{% endcache %}
 <body>
 {% block header %}
+
+{% cache 500 layout_header %}
 {% if user.is_authenticated %}
 <header>
     {% if environment == "staging" %}
@@ -85,6 +91,8 @@ SPDX-License-Identifier: MPL-2.0
 
     <hr class="p-0 m-0"/>
 </header>
+{% endif %}
+{% endcache %}
     {% if messages %}
     {% for message in messages %}
     <div class="alert text-center {% if message.level == 20 %}alert-info
@@ -96,17 +104,18 @@ SPDX-License-Identifier: MPL-2.0
     </div>
     {% endfor %}
     {% endif %}
-{% endif %}
 {% endblock %}
 {% block content %}
 {% endblock %}
 {% block extra_footers %}
 {% endblock %}
 
+{% cache 500 layout_scripts %}
 <script>
     $("#logout-link").on('click', function () {
         return confirm("{% translate 'Er du sikker på at du vil logge ud?' %}");
     });
 </script>
+{% endcache %}
 </body>
 </html>
