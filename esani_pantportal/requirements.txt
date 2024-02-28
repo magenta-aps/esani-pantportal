@@ -31,3 +31,5 @@ devtools==0.12.2
 django-two-factor-auth==1.15.5
 django-override-autonow==0.0.1
 unittest-parametrize==1.4.0
+django-cprofile-middleware==1.0.5
+django-debug-toolbar-template-profiler==2.1.0
