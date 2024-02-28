@@ -50,6 +50,12 @@ To run tests only in a specific file run
 docker exec esani_pantportal bash -c 'coverage run manage.py test esani_pantportal.tests.test_productlist'
 ```
 
+# Profiling
+To profile the application, add `prof` to the url. For example:
+```
+http://localhost:8000/bruger/?prof
+```
+
 # Brugerhåndtering
 Der findes 4 forskellige slags brugere:
 - ESANI admins (`EsaniUser`)
