@@ -35,7 +35,6 @@ from django.db.models.functions import Coalesce, Concat
 from django.forms import model_to_dict
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import redirect
-from django.template import loader
 from django.urls import reverse
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
@@ -815,12 +814,9 @@ class ReverseVendingMachineSearchView(BranchSearchView):
     search_fields = ["serial_number"]
     actions = {_("Fjern"): "btn btn-sm btn-danger"}
 
-    def get_action_html(self, item, *args):
-        return loader.render_to_string(
-            "esani_pantportal/reverse_vending_machine/actions.html",
-            {"item": item},
-            self.request,
-        )
+    def get_action_html(self, item, label, button_class):
+        id = item.id
+        return f'<a id="delete_{id}" value="{id}" class="{button_class}">{label}</a>'
 
     def get_context_data(self, *args, **kwargs):
         self.fixed_columns = {
