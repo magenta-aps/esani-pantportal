@@ -220,7 +220,10 @@ class CompanyListTest(BaseCompanyTest):
         # Edit preferences
         self.client.post(
             reverse("pant:preferences_update", kwargs={"pk": user.pk}),
-            data={"show_company_municipality": "false"},
+            data={
+                "show_company_municipality": "false",
+                "preferences_class_name": "CompanyListViewPreferences",
+            },
         )
 
         # Reload the page

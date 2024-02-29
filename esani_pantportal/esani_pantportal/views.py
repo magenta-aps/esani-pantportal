@@ -4,6 +4,7 @@
 import datetime
 import logging
 import os
+import sys
 from functools import cached_property
 from io import BytesIO
 from typing import Any, Dict
@@ -368,7 +369,6 @@ class SearchView(LoginRequiredMixin, FormView):
     search_fields_exact = []
     fixed_columns = {}
     preferences_class = None
-    preferences_prefix = ""
     can_edit_multiple = False
     actions = {}
 
@@ -497,18 +497,21 @@ class SearchView(LoginRequiredMixin, FormView):
 
     @cached_property
     def filterable_columns(self):
-        return (
-            [
+        if self.preferences_class:
+            user = self.request.user
+            meta = self.preferences_class._meta
+            preferences, _ = self.preferences_class.objects.get_or_create(user=user)
+            fields = [f for f in meta.fields if f.name.startswith("show_")]
+            return [
                 [
-                    f.name.replace("show_" + self.preferences_prefix, ""),
+                    f.name.replace("show_", ""),
                     f.verbose_name,
-                    getattr(self.request.user, f.name),
+                    getattr(preferences, f.name),
                 ]
-                for f in self.preferences_class._meta.fields
+                for f in fields
             ]
-            if self.preferences_class
-            else []
-        )
+        else:
+            return []
 
     @cached_property
     def columns(self):
@@ -520,11 +523,12 @@ class SearchView(LoginRequiredMixin, FormView):
         context["filterable_columns"] = self.filterable_columns
         context["columns"] = self.columns
         context["actions"] = self.actions
-        context["preferences_prefix"] = self.preferences_prefix
         context["data_defer_url"] = add_parameters_to_url(
             self.request.get_full_path(), {"json": 1}
         )
         context["can_edit_multiple"] = self.can_edit_multiple
+        if self.preferences_class:
+            context["preferences_class_name"] = self.preferences_class.__name__
         return context
 
     def get_fields(self, model=None):
@@ -563,7 +567,6 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
     model = AbstractCompany
     form_class = CompanyFilterForm
     preferences_class = CompanyListViewPreferences
-    preferences_prefix = "company_"
 
     external_customer_id = AbstractCompany.annotate_external_customer_id
 
@@ -1705,25 +1708,17 @@ class NewsEmailView(PermissionRequiredMixin, FormView):
         return reverse("pant:newsletter_send")
 
 
-class UpdateListViewPreferences(UpdateView):
-    model = User
-    fields = [
-        field.name for field in User._meta.fields if field.name.startswith("show_")
-    ]
+class UpdateListViewPreferences(View):
+    def post(self, request, *args, **kwargs):
+        preferences_class_name = request.POST.get("preferences_class_name")
+        model = getattr(sys.modules[__name__], preferences_class_name)
+        preferences, _ = model.objects.get_or_create(user=self.request.user)
 
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        obj = self.get_object()
-
-        # Set initial values
-        data = kwargs.get("data", {}).copy()
-        for field in [f for f in self.fields if f not in data]:
-            data[field] = getattr(obj, field)
-        kwargs["data"] = data
-        return kwargs
-
-    def form_valid(self, form):
-        self.object = form.save()
+        for field in model._meta.fields:
+            if field.name in request.POST and field.name.startswith("show_"):
+                show_field = request.POST[field.name].lower() == "true"
+                setattr(preferences, field.name, show_field)
+        preferences.save()
         return HttpResponse("ok")
 
 

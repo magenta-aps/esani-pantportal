@@ -729,97 +729,8 @@ class QRCodeInterval(models.Model):
         return f"{gen_name}[{start}:{end}] - {self.salt}"
 
 
-class ProductListViewPreferences(models.Model):
-    class Meta:
-        abstract = True
-
-    show_material = models.BooleanField(default=True, verbose_name=_("Materiale"))
-    show_shape = models.BooleanField(default=True, verbose_name=_("Form"))
-    show_danish = models.BooleanField(default=True, verbose_name=_("Dansk pant"))
-    show_height = models.BooleanField(default=False, verbose_name=_("Højde"))
-    show_diameter = models.BooleanField(default=False, verbose_name=_("Diameter"))
-    show_weight = models.BooleanField(default=False, verbose_name=_("Vægt"))
-    show_capacity = models.BooleanField(default=False, verbose_name=_("Volumen"))
-    show_approval_date = models.BooleanField(
-        default=False, verbose_name=_("Godkendt dato")
-    )
-    show_creation_date = models.BooleanField(
-        default=False, verbose_name=_("Oprettelsesdato")
-    )
-    show_file_name = models.BooleanField(default=False, verbose_name=_("Filnavn"))
-
-
-class UserListViewPreferences(models.Model):
-    class Meta:
-        abstract = True
-
-    show_branch = models.BooleanField(default=True, verbose_name=_("Butik"))
-    show_company = models.BooleanField(default=True, verbose_name=_("Virksomhed"))
-    show_is_admin = models.BooleanField(
-        default=True, verbose_name=_("Har admin-rettigheder")
-    )
-    show_approved = models.BooleanField(default=True, verbose_name=_("Godkendt"))
-    show_phone = models.BooleanField(default=False, verbose_name=_("Telefonnummer"))
-    show_newsletter = models.BooleanField(
-        default=False, verbose_name=_("Modtager Nyhedsbreve")
-    )
-    show_email = models.BooleanField(default=False, verbose_name=_("Mail"))
-
-
-class CompanyListViewPreferences(models.Model):
-    class Meta:
-        abstract = True
-
-    show_company_address = models.BooleanField(default=True, verbose_name=_("Adresse"))
-    show_company_postal_code = models.BooleanField(
-        default=False, verbose_name=_("Postnr.")
-    )
-    show_company_municipality = models.BooleanField(
-        default=True, verbose_name=_("Kommune")
-    )
-    show_company_city = models.BooleanField(default=True, verbose_name=_("By"))
-    show_company_country = models.BooleanField(default=False, verbose_name=_("Land"))
-    show_company_phone = models.BooleanField(
-        default=False, verbose_name=_("Telefonnummer")
-    )
-    show_company_registration_number = models.BooleanField(
-        default=False, verbose_name=_("Registreringsnummer")
-    )
-    show_company_account_number = models.BooleanField(
-        default=False, verbose_name=_("Kontonummer")
-    )
-    show_company_invoice_mail = models.BooleanField(
-        default=False, verbose_name=_("Fakturamail")
-    )
-    show_company_company_type = models.BooleanField(
-        default=False, verbose_name=_("Virksomhedstype")
-    )
-    show_company_branch_type = models.BooleanField(
-        default=False, verbose_name=_("Butikstype")
-    )
-    show_company_invoice_company_branch = models.BooleanField(
-        default=False, verbose_name=_("Faktura til butik")
-    )
-    show_company_location_id = models.BooleanField(
-        default=False, verbose_name=_("Lokation ID")
-    )
-    show_company_customer_id = models.BooleanField(
-        default=False, verbose_name=_("Kunde ID")
-    )
-    show_company_qr_compensation = models.BooleanField(
-        default=False, verbose_name=_("Håndterings-godtgørelse for QR-poser")
-    )
-    show_company_company = models.BooleanField(
-        default=False, verbose_name=_("Virksomhed")
-    )
-    show_company_cvr = models.BooleanField(default=False, verbose_name=_("CVR"))
-
-
 class User(
     AbstractUser,
-    ProductListViewPreferences,
-    UserListViewPreferences,
-    CompanyListViewPreferences,
 ):
     class Meta:
         verbose_name = _("Bruger")
@@ -981,6 +892,93 @@ class KioskUser(User):
     def __str__(self):
         username = self.username
         return f"{username} - Kiosk User"
+
+
+class ProductListViewPreferences(models.Model):
+    user = models.OneToOneField(
+        User,
+        related_name="product_list_view_preferences",
+        unique=True,
+        default=None,
+        null=True,
+        on_delete=models.PROTECT,
+    )
+    show_material = models.BooleanField(default=True, verbose_name=_("Materiale"))
+    show_shape = models.BooleanField(default=True, verbose_name=_("Form"))
+    show_danish = models.BooleanField(default=True, verbose_name=_("Dansk pant"))
+    show_height = models.BooleanField(default=False, verbose_name=_("Højde"))
+    show_diameter = models.BooleanField(default=False, verbose_name=_("Diameter"))
+    show_weight = models.BooleanField(default=False, verbose_name=_("Vægt"))
+    show_capacity = models.BooleanField(default=False, verbose_name=_("Volumen"))
+    show_approval_date = models.BooleanField(
+        default=False, verbose_name=_("Godkendt dato")
+    )
+    show_creation_date = models.BooleanField(
+        default=False, verbose_name=_("Oprettelsesdato")
+    )
+    show_file_name = models.BooleanField(default=False, verbose_name=_("Filnavn"))
+
+
+class UserListViewPreferences(models.Model):
+    user = models.OneToOneField(
+        User,
+        related_name="user_list_view_preferences",
+        unique=True,
+        default=None,
+        null=True,
+        on_delete=models.PROTECT,
+    )
+    show_branch = models.BooleanField(default=True, verbose_name=_("Butik"))
+    show_company = models.BooleanField(default=True, verbose_name=_("Virksomhed"))
+    show_is_admin = models.BooleanField(
+        default=True, verbose_name=_("Har admin-rettigheder")
+    )
+    show_approved = models.BooleanField(default=True, verbose_name=_("Godkendt"))
+    show_phone = models.BooleanField(default=False, verbose_name=_("Telefonnummer"))
+    show_newsletter = models.BooleanField(
+        default=False, verbose_name=_("Modtager Nyhedsbreve")
+    )
+    show_email = models.BooleanField(default=False, verbose_name=_("Mail"))
+
+
+class CompanyListViewPreferences(models.Model):
+    user = models.OneToOneField(
+        User,
+        related_name="company_list_view_preferences",
+        unique=True,
+        default=None,
+        null=True,
+        on_delete=models.PROTECT,
+    )
+    show_address = models.BooleanField(default=True, verbose_name=_("Adresse"))
+    show_postal_code = models.BooleanField(default=False, verbose_name=_("Postnr."))
+    show_municipality = models.BooleanField(default=True, verbose_name=_("Kommune"))
+    show_city = models.BooleanField(default=True, verbose_name=_("By"))
+    show_country = models.BooleanField(default=False, verbose_name=_("Land"))
+    show_phone = models.BooleanField(default=False, verbose_name=_("Telefonnummer"))
+    show_registration_number = models.BooleanField(
+        default=False, verbose_name=_("Registreringsnummer")
+    )
+    show_account_number = models.BooleanField(
+        default=False, verbose_name=_("Kontonummer")
+    )
+    show_invoice_mail = models.BooleanField(
+        default=False, verbose_name=_("Fakturamail")
+    )
+    show_company_type = models.BooleanField(
+        default=False, verbose_name=_("Virksomhedstype")
+    )
+    show_branch_type = models.BooleanField(default=False, verbose_name=_("Butikstype"))
+    show_invoice_company_branch = models.BooleanField(
+        default=False, verbose_name=_("Faktura til butik")
+    )
+    show_location_id = models.BooleanField(default=False, verbose_name=_("Lokation ID"))
+    show_customer_id = models.BooleanField(default=False, verbose_name=_("Kunde ID"))
+    show_qr_compensation = models.BooleanField(
+        default=False, verbose_name=_("Håndterings-godtgørelse for QR-poser")
+    )
+    show_company = models.BooleanField(default=False, verbose_name=_("Virksomhed"))
+    show_cvr = models.BooleanField(default=False, verbose_name=_("CVR"))
 
 
 class DepositPayout(models.Model):
