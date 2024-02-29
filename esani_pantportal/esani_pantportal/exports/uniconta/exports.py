@@ -9,11 +9,14 @@ from uuid import uuid4
 
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import (
+    BooleanField,
     Case,
     CharField,
+    ExpressionWrapper,
     F,
     OuterRef,
     PositiveIntegerField,
+    Q,
     Subquery,
     Sum,
     Value,
@@ -62,7 +65,6 @@ class CreditNoteExport:
             "total",
             "from_date",
             "to_date",
-            "file_id",
         ]
 
         self._qs = self._get_base_queryset(queryset)
@@ -85,7 +87,11 @@ class CreditNoteExport:
             self._queryset.filter(file_id__isnull=True).update(file_id=self._file_id)
 
     def as_csv(self, stream=sys.stdout, delimiter=";"):
-        writer = csv.DictWriter(stream, self._field_names, delimiter=delimiter)
+        if self._dry:
+            field_names = self._field_names + ["already_exported"]
+        else:
+            field_names = self._field_names + ["file_id"]
+        writer = csv.DictWriter(stream, field_names, delimiter=delimiter)
         writer.writeheader()
         writer.writerows(self)
 
@@ -95,37 +101,47 @@ class CreditNoteExport:
         return f"kreditnota_{from_date}_{to_date}_{self._file_id}.csv"
 
     def _get_base_queryset(self, queryset):
-        if not self._dry:
+        annotations = dict(
+            type=F("deposit_payout__source_type"),
+            source=Case(
+                When(company_branch__isnull=False, then=Value("company_branch")),
+                When(kiosk__isnull=False, then=Value("kiosk")),
+                default=Value(""),
+            ),
+            source_id=Coalesce("company_branch__id", "kiosk__id"),
+            product_refund_value=F("product__refund_value"),
+            rvm_refund_value=Subquery(
+                ReverseVendingMachine.objects.filter(
+                    serial_number=Cast(OuterRef("rvm_serial"), output_field=CharField())
+                ).values("compensation")
+            ),
+        )
+
+        group_by = [
+            "source",
+            "source_id",
+            "type",
+            "product_refund_value",
+            "rvm_refund_value",
+        ]
+
+        if self._dry:
+            annotations.update(
+                already_exported=ExpressionWrapper(
+                    Q(file_id__isnull=False),
+                    output_field=BooleanField(),
+                ),
+            )
+            group_by.append("already_exported")
+        else:
             queryset = queryset.filter(file_id__isnull=True)
 
         return (
             queryset.select_related("product", "company_branch__company", "kiosk")
-            .annotate(
-                type=F("deposit_payout__source_type"),
-                source=Case(
-                    When(company_branch__isnull=False, then=Value("company_branch")),
-                    When(kiosk__isnull=False, then=Value("kiosk")),
-                    default=Value(""),
-                ),
-                source_id=Coalesce("company_branch__id", "kiosk__id"),
-                product_refund_value=F("product__refund_value"),
-                rvm_refund_value=Subquery(
-                    ReverseVendingMachine.objects.filter(
-                        serial_number=Cast(
-                            OuterRef("rvm_serial"), output_field=CharField()
-                        )
-                    ).values("compensation")
-                ),
-            )
+            .annotate(**annotations)
             .exclude(product__isnull=True)
             .exclude(source_id__isnull=True)
-            .values(
-                "source",
-                "source_id",
-                "type",
-                "product_refund_value",
-                "rvm_refund_value",
-            )
+            .values(*group_by)
             .annotate(
                 count=Sum("count"),
                 bag_qrs=ArrayAgg("consumer_identity", distinct=True),
@@ -148,7 +164,8 @@ class CreditNoteExport:
         def line(category, specifier, quantity, unit_price=None):
             rate = self._get_rate(category, specifier)
             unit_price = int(unit_price if unit_price is not None else rate.rate)
-            return {
+
+            result = {
                 "customer_id": customer.external_customer_id,
                 "customer_invoice_account_id": customer.customer_invoice_account_id,
                 "customer_name": customer.name,
@@ -165,8 +182,14 @@ class CreditNoteExport:
                 "total": quantity * unit_price,
                 "from_date": self._from_date.strftime("%Y-%m-%d"),
                 "to_date": self._to_date.strftime("%Y-%m-%d"),
-                "file_id": str(self._file_id),
             }
+
+            if self._dry:
+                result["already_exported"] = "y" if row["already_exported"] else "n"
+            else:
+                result["file_id"] = self._file_id
+
+            return result
 
         # Produce "Pant (pose)", "Håndteringsgodtgørelse (pose)" and
         # "Lille pose"/"Stor pose" lines.
