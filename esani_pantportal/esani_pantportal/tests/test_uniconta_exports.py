@@ -245,7 +245,6 @@ class TestCreditNoteExport(_SharedBase):
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
                         "source": "company_branch",
-                        "source_id": 1,
                         "type": "csv",
                     },
                     {
@@ -255,7 +254,6 @@ class TestCreditNoteExport(_SharedBase):
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
                         "source": "company_branch",
-                        "source_id": 1,
                         "type": "api",
                     },
                     {
@@ -265,7 +263,6 @@ class TestCreditNoteExport(_SharedBase):
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
                         "source": "company_branch",
-                        "source_id": 1,
                         "type": "api",
                     },
                     {
@@ -275,7 +272,6 @@ class TestCreditNoteExport(_SharedBase):
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
                         "source": "kiosk",
-                        "source_id": 1,
                         "type": "csv",
                     },
                 ],
@@ -291,7 +287,6 @@ class TestCreditNoteExport(_SharedBase):
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
                         "source": "company_branch",
-                        "source_id": 1,
                         "type": "csv",
                     },
                     {
@@ -300,7 +295,6 @@ class TestCreditNoteExport(_SharedBase):
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
                         "source": "company_branch",
-                        "source_id": 1,
                         "type": "api",
                     },
                     {
@@ -309,7 +303,6 @@ class TestCreditNoteExport(_SharedBase):
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
                         "source": "kiosk",
-                        "source_id": 1,
                         "type": "csv",
                     },
                 ],
@@ -322,7 +315,15 @@ class TestCreditNoteExport(_SharedBase):
         # Act
         actual = instance._get_base_queryset(DepositPayoutItem.objects.all())
         # Assert
-        self.assertQuerySetEqual(actual, expected)
+        self.assertQuerySetEqual(
+            # Drop `source_id` from actual result items, as we cannot reliably test
+            # against it (it is a database ID which may change.)
+            [
+                {key: value for key, value in val.items() if key != "source_id"}
+                for val in actual
+            ],
+            expected,
+        )
 
     @parametrize(
         "row,expected_lines",
