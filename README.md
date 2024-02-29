@@ -56,6 +56,25 @@ To profile the application, add `prof` to the url. For example:
 http://localhost:8000/bruger/?prof
 ```
 
+# Troubleshooting
+If the application does not start up, make sure to check that you own the `data/er` and
+`data/startup_flags` folders. An `ls -all` command should give the following output:
+
+```
+>>> ~/git/esani-pantportal/data$ ls -all
+
+total 28
+drwxrwxr-x  7 your_username your_username 4096 feb 26 10:37 .
+drwxrwxr-x 12 your_username your_username 4096 feb 28 12:33 ..
+drwxrwxr-x  2 your_username your_username 4096 jan  3 10:20 deposit_payouts
+drwxr-xr-x  8 your_username your_username 4096 feb 28 15:14 er
+drwxrwxr-x  2 your_username your_username 4096 feb 28 15:00 product_lists
+drwxrwxr-x  2 your_username your_username 4096 feb  9 11:05 qr_codes
+drwxrwxr-x  2 your_username your_username 4096 feb 28 15:17 startup_flags
+```
+
+When inspecting the output, make sure that none of the folders are owned by `root`
+
 # Brugerhåndtering
 Der findes 4 forskellige slags brugere:
 - ESANI admins (`EsaniUser`)
