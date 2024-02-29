@@ -16,9 +16,9 @@ SPDX-License-Identifier: MPL-2.0
             <a class="dropdown-item">
                 <div class="form-check">
                     {% if show|default_if_none:True %}
-                        <input class="form-check-input" type="checkbox" value="" id="{{name}}Toggle" prefix="{{prefix}}" checked />
+                        <input class="form-check-input" type="checkbox" value="" id="{{name}}Toggle" checked />
                     {% else %}
-                        <input class="form-check-input" type="checkbox" value="" id="{{name}}Toggle" prefix="{{prefix}}" />
+                        <input class="form-check-input" type="checkbox" value="" id="{{name}}Toggle" />
                     {% endif %}
                     <label class="form-check-label" for="{{name}}Toggle" style="display: block">{{verbose_name}}</label>
                 </div>
@@ -44,7 +44,6 @@ $('input[type=checkbox][id$=Toggle]').change(function (evt) {
 
     const $this = $(this);
     const id = $this.attr('id');
-    const prefix = $this.attr('prefix');
     const itemName = id.replace("Toggle", "");
     const itemState = $this.is(":checked");
 
@@ -57,7 +56,8 @@ $('input[type=checkbox][id$=Toggle]').change(function (evt) {
     let data = {
         csrfmiddlewaretoken: '{{ csrf_token }}'
     };
-    data["show_" + prefix + itemName] = itemState;
+    data["show_" + itemName] = itemState;
+    data["preferences_class_name"] = "{{ preferences_class_name }}";
 
     $.ajax({
         type: 'POST',

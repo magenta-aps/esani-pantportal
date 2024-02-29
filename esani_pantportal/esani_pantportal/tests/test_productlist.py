@@ -4,7 +4,6 @@
 import datetime
 import json
 from http import HTTPStatus
-from unittest.mock import MagicMock
 
 from bs4 import BeautifulSoup
 from django import forms
@@ -290,13 +289,14 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         view.form_class = InvalidProductFilterForm
         view.request = HttpRequest()
         view.request.method = "GET"
-        view.request.user = MagicMock(is_esani_admin=True)
+        view.request.user = self.login()
         view.kwargs = {}
         response = view.get(view.request)
         self.assertEquals(response.status_code, 200)
         self.assertFalse(response.context_data["form"].is_valid())
 
     def test_form_valid(self):
+        user = self.login()
         self.maxDiff = None
         view = ProductSearchView()
         view.paginate_by = 20
@@ -304,7 +304,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         view.form.cleaned_data = {"offset": 0, "limit": 10, "json": "1"}
         view.request = HttpRequest()
         view.request.method = "GET"
-        view.request.user = MagicMock(is_esani_admin=True)
+        view.request.user = user
         view.kwargs = {}
         response = view.form_valid(view.form)
         self.assertEquals(response.status_code, 200)
@@ -364,7 +364,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         }
         view.request = HttpRequest()
         view.request.method = "GET"
-        view.request.user = MagicMock(is_esani_admin=True)
+        view.request.user = user
         view.kwargs = {}
         response = view.form_valid(view.form)
         self.assertEquals(response.status_code, 200)
@@ -594,7 +594,10 @@ class ProductListGuiTest(LoginMixin, TestCase):
         # Edit preferences
         self.client.post(
             reverse("pant:preferences_update", kwargs={"pk": self.user.pk}),
-            data={"show_material": "false"},
+            data={
+                "show_material": "false",
+                "preferences_class_name": "ProductListViewPreferences",
+            },
         )
 
         # Reload the page
