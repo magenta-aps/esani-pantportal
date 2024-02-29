@@ -18,6 +18,7 @@ from esani_pantportal.views import (
     CsvProductsView,
     CsvTemplateView,
     CsvUsersView,
+    DepositPayoutArchiveView,
     DepositPayoutSearchView,
     ExcelTemplateView,
     GenerateQRView,
@@ -139,6 +140,11 @@ urlpatterns = [
         name="rvm_delete",
     ),
     path("udbetaling/", DepositPayoutSearchView.as_view(), name="deposit_payout_list"),
+    path(
+        "udbetaling/arkiv/",
+        DepositPayoutArchiveView.as_view(),
+        name="deposit_payout_archive",
+    ),
     path("produkt/<int:pk>", ProductUpdateView.as_view(), name="product_view"),
     path(
         "produkt/<int:pk>/history",

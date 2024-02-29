@@ -1193,6 +1193,66 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
         return json_dict
 
 
+class DepositPayoutArchiveView(PermissionRequiredMixin, SearchView):
+    template_name = "esani_pantportal/deposit_payout/archive.html"
+    form_class = DepositPayoutItemFilterForm  # FIXME: not actually used
+    model = DepositPayoutItem
+    required_permissions = ["esani_pantportal.view_depositpayout"]
+
+    search_fields = []
+    fixed_columns = {
+        "file_id": _("Fil-ID"),
+        "from_date": _("Fra-dato"),
+        "to_date": _("Til-dato"),
+    }
+    actions = {_("Download"): "btn btn-sm btn-primary"}
+
+    def get(self, request, *args, **kwargs):
+        file_id = self.request.GET.get("file_id")
+        if file_id:
+            qs = self.model.objects.filter(file_id=file_id)
+            from_date = qs.aggregate(Min("date"))["date__min"]
+            to_date = qs.aggregate(Max("date"))["date__max"]
+            if qs.exists() and (from_date is not None) and (to_date is not None):
+                export = CreditNoteExport(
+                    from_date, to_date, qs, dry=True, file_id=file_id
+                )
+                response = HttpResponse(content_type="text/csv")
+                response["Content-Disposition"] = (
+                    f"attachment; filename={export.get_filename()}"
+                )
+                export.as_csv(response)
+                return response
+            else:
+                messages.add_message(
+                    request,
+                    messages.ERROR,
+                    _("Ingen linjer fundet for det angivne fil-ID"),
+                )
+                return redirect(".")
+
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        qs = (
+            qs.exclude(file_id__isnull=True)
+            .values("file_id")
+            .annotate(from_date=Min("date"), to_date=Max("date"))
+            .order_by("-from_date")
+        )
+        return qs
+
+    def item_to_json_dict(self, item_obj, context, index):
+        url = f"?file_id={item_obj['file_id']}"
+        item_obj["id"] = index
+        item_obj["actions"] = "".join(
+            f'<a href="{url}" class="{button_class}">{label}</a>'
+            for label, button_class in self.actions.items()
+        )
+        return item_obj
+
+
 class ProductUpdateView(UpdateViewMixin):
     model = Product
     template_name = "esani_pantportal/product/view.html"
