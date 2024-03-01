@@ -31,7 +31,9 @@ from esani_pantportal.views import DepositPayoutSearchView
 from .conftest import LoginMixin
 
 
-class BaseDepositPayoutSearchView(LoginMixin, TestCase):
+class _BaseTestCase(LoginMixin, TestCase):
+    url = None
+
     @classmethod
     def setUpTestData(cls) -> None:
         cls.esani_admin = EsaniUser.objects.create_user(
@@ -133,7 +135,7 @@ class BaseDepositPayoutSearchView(LoginMixin, TestCase):
         self.client.login(username="esani_admin", password="12345")
 
     def _get_url(self, **query_params):
-        return reverse("pant:deposit_payout_list") + (
+        return reverse(self.url) + (
             f"?{urlencode(query_params)}" if query_params else ""
         )
 
@@ -179,8 +181,17 @@ class BaseDepositPayoutSearchView(LoginMixin, TestCase):
         )
         self.assertEqual(len(csv_rows), expected_length)
 
+    def _assert_response_is_redirect_with_message(self, response, message):
+        self.assertEqual(response.status_code, HttpResponseRedirect.status_code)
+        self.assertEqual(
+            str(list(get_messages(response.wsgi_request))[0]),
+            message,
+        )
 
-class TestDepositPayoutSearchView(BaseDepositPayoutSearchView):
+
+class TestDepositPayoutSearchView(_BaseTestCase):
+    url = "pant:deposit_payout_list"
+
     def test_esani_admin_can_access_view(self):
         response = self._get_response()
         self.assertEqual(response.status_code, HTTPStatus.OK)
@@ -342,25 +353,20 @@ class TestDepositPayoutSearchView(BaseDepositPayoutSearchView):
         self._assert_csv_response(response, expected_length=4)
 
     def test_post_handles_empty_queryset(self):
-        def assert_response_is_redirect_with_message(response):
-            self.assertEqual(response.status_code, HttpResponseRedirect.status_code)
-            self.assertEqual(
-                str(list(get_messages(response.wsgi_request))[0]),
-                _("Ingen linjer er valgt"),
-            )
+        expected_message = _("Ingen linjer er valgt")
 
         self._login()
 
         # Test 1: POST invalid item IDs, resulting in an empty queryset
         response = self.client.post(self._get_url(), data={"id": "-1"})
-        assert_response_is_redirect_with_message(response)
+        self._assert_response_is_redirect_with_message(response, expected_message)
 
         # Test 2: POST invalid filter data, resulting in an invalid form
         response = self.client.post(
             self._get_url(from_date="99"),
             data={"selection": "all"},
         )
-        assert_response_is_redirect_with_message(response)
+        self._assert_response_is_redirect_with_message(response, expected_message)
 
     def test_invalid_filters_returns_empty_queryset(self):
         self._login()
@@ -376,7 +382,9 @@ class TestDepositPayoutSearchView(BaseDepositPayoutSearchView):
         )
 
 
-class MissingDataTest(BaseDepositPayoutSearchView):
+class TestDepositPayoutSearchViewMissingData(_BaseTestCase):
+    url = "pant:deposit_payout_list"
+
     @classmethod
     def setUpTestData(cls) -> None:
         super().setUpTestData()
@@ -418,3 +426,52 @@ class MissingDataTest(BaseDepositPayoutSearchView):
         item4 = items[self.deposit_payout_item_4.id]
 
         self.assertIn("Intet matchende produkt", item4["product"])
+
+
+class TestDepositPayoutArchiveView(_BaseTestCase):
+    url = "pant:deposit_payout_archive"
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        super().setUpTestData()
+        # Arrange: give both deposit payout items the same `file_id`
+        cls.file_id = uuid.uuid4()
+        DepositPayoutItem.objects.filter(
+            id__in=[
+                cls.deposit_payout_item_1.id,
+                cls.deposit_payout_item_2.id,
+            ]
+        ).update(file_id=cls.file_id)
+
+    def test_get_displays_single_archive_item(self):
+        # Act
+        response = self._get_response()
+        # Assert: page contains a single item, as both deposit payout items are grouped
+        # by the same file ID.
+        items = response.context["items"]
+        self.assertEqual(len(items), 1)
+        # Assert: check attributes of this single item
+        self.assertEqual(items[0]["file_id"], self.file_id)
+        self.assertEqual(items[0]["from_date"], self.deposit_payout_item_1.date)
+        self.assertEqual(items[0]["to_date"], self.deposit_payout_item_2.date)
+        self.assertEqual(items[0]["count"], 2)
+        self.assertIn(
+            f'<a href="?file_id={self.file_id}" ',
+            items[0]["actions"],
+        )
+
+    def test_get_valid_file_id_returns_csv(self):
+        # Act
+        response = self._get_response(file_id=self.file_id)
+        # Assert
+        self.assertEqual(response["Content-Type"], "text/csv")
+        self._assert_csv_response(response, expected_length=4)
+
+    def test_get_invalid_file_id_displays_message(self):
+        # Act
+        response = self._get_response(file_id=uuid.uuid4())
+        # Assert
+        self._assert_response_is_redirect_with_message(
+            response,
+            _("Ingen linjer fundet for det angivne fil-ID"),
+        )
