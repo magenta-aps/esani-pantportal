@@ -1235,13 +1235,12 @@ class DepositPayoutArchiveView(PermissionRequiredMixin, SearchView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        qs = super().get_queryset()
         # Group deposit payout items by their file ID, and exclude items without a file
         # ID.
         # Annotate each item with count, from date and to date. These are referenced by
         # `fixed_columns`.
         qs = (
-            qs.exclude(file_id__isnull=True)
+            self.model.objects.exclude(file_id__isnull=True)
             .values("file_id")
             .annotate(
                 count=Count("id"),
@@ -1250,6 +1249,8 @@ class DepositPayoutArchiveView(PermissionRequiredMixin, SearchView):
             )
             .order_by("-from_date")
         )
+        qs = self.filter_qs(qs)
+        qs = self.sort_qs(qs)
         return qs
 
     def item_to_json_dict(self, item_obj, context, index):
@@ -1259,9 +1260,8 @@ class DepositPayoutArchiveView(PermissionRequiredMixin, SearchView):
         # produced by the `.values(...).annotate(...)` expression in `get_queryset`.
         json_dict = item_obj
 
-        # The template requires each item to have an ID. We just use the index as an ID
-        # here.
-        json_dict["id"] = index
+        # The template requires each item to have an ID
+        json_dict["id"] = item_obj["file_id"]
 
         # Construct action URL pointing to the view itself, but with a `file_id` query
         # parameter.
