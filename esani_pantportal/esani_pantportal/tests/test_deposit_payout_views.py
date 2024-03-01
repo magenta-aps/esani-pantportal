@@ -434,7 +434,7 @@ class TestDepositPayoutArchiveView(_BaseTestCase):
     @classmethod
     def setUpTestData(cls) -> None:
         super().setUpTestData()
-        # Arrange: give both deposit payout items the same `file_id`
+        # Arrange: give deposit payout items 1 and 2 (the same) `file_id`
         cls.file_id = uuid.uuid4()
         DepositPayoutItem.objects.filter(
             id__in=[
@@ -446,18 +446,21 @@ class TestDepositPayoutArchiveView(_BaseTestCase):
     def test_get_displays_single_archive_item(self):
         # Act
         response = self._get_response()
-        # Assert: page contains a single item, as both deposit payout items are grouped
-        # by the same file ID.
+        # Assert: page contains two items:
+        # - deposit payout items 1 and 3 are grouped by the same file ID.
+        # - deposit payout item 3 has its own file ID (and therefore its own group.)
         items = response.context["items"]
-        self.assertEqual(len(items), 1)
-        # Assert: check attributes of this single item
-        self.assertEqual(items[0]["file_id"], self.file_id)
-        self.assertEqual(items[0]["from_date"], self.deposit_payout_item_1.date)
-        self.assertEqual(items[0]["to_date"], self.deposit_payout_item_2.date)
-        self.assertEqual(items[0]["count"], 2)
+        self.assertEqual(len(items), 2)
+        # Assert: check attributes of the group belonging to `self.file_id`, i.e. the
+        # group consisting of deposit payout items 1 and 2.
+        group = [it for it in items if it["file_id"] == self.file_id][0]
+        self.assertEqual(group["file_id"], self.file_id)
+        self.assertEqual(group["from_date"], self.deposit_payout_item_1.date)
+        self.assertEqual(group["to_date"], self.deposit_payout_item_2.date)
+        self.assertEqual(group["count"], 2)
         self.assertIn(
             f'<a href="?file_id={self.file_id}" ',
-            items[0]["actions"],
+            group["actions"],
         )
 
     def test_get_valid_file_id_returns_csv(self):
