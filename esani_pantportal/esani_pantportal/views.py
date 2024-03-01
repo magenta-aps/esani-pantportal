@@ -21,8 +21,10 @@ from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.core.management import call_command
 from django.db.models import (
+    BooleanField,
     Case,
     Count,
+    ExpressionWrapper,
     F,
     FloatField,
     Max,
@@ -1080,9 +1082,16 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
         "product__refund_value": _("Pantværdi (i øre)"),
         "count": _("Antal"),
         "date": _("Dato"),
+        "already_exported": _("Allerede eksporteret"),
     }
 
-    annotations = {"source": Coalesce("company_branch__company__name", "kiosk__name")}
+    annotations = {
+        "source": Coalesce("company_branch__company__name", "kiosk__name"),
+        "already_exported": ExpressionWrapper(
+            Q(file_id__isnull=False),
+            output_field=BooleanField(),
+        ),
+    }
 
     def post(self, request, *args, **kwargs):
         # Instantiate form and trigger validation.
@@ -1175,7 +1184,11 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
         else:
             json_dict["product"] = self.span(item_obj.barcode, barcode_error)
             json_dict["product__refund_value"] = "-"
+
         json_dict["date"] = item_obj.date.strftime("%-d. %b %Y")
+        json_dict["already_exported"] = (
+            _("Ja") if item_obj.already_exported else _("Nej")
+        )
 
         return json_dict
 

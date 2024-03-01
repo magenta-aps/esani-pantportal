@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
+import uuid
 from csv import DictReader
 from datetime import date
 from io import StringIO
@@ -62,6 +63,7 @@ def _line_vals():
         "customer_location_id": CUSTOMER_1_LOCATION_ID,
         "from_date": "2020-01-01",
         "to_date": "2020-02-01",
+        "already_exported": "n",
     }
 
 
@@ -113,6 +115,11 @@ class TestCreditNoteExport(_SharedBase):
             company_branch=cls.company_branch,
             qr_bag=cls.qr_bag,
         )
+        cls.deposit_payout_item_with_file_id = cls._add_deposit_payout_item(
+            cls.deposit_payout_bag,
+            company_branch=cls.company_branch,
+            file_id=uuid.uuid4(),
+        )
 
     @classmethod
     def _add_deposit_payout(cls, source_type):
@@ -157,34 +164,63 @@ class TestCreditNoteExport(_SharedBase):
         # `cls.deposit_payout_item_rvm_1`.
         self.assertGreaterEqual(len(items), 4)
 
-    def test_as_csv(self):
+    @parametrize(
+        "dry,expected_keys,expected_list",
+        [
+            (
+                True,
+                ["already_exported"],
+                [
+                    # From `cls.deposit_payout_item_rvm_1`
+                    ("101", "250"),
+                    ("201", "15"),
+                    # From `cls.deposit_payout_item_bag_1`
+                    ("102", "250"),
+                    ("202", "30"),
+                    # From `cls.deposit_payout_item_file_id`
+                    ("102", "250"),
+                    ("202", "30"),
+                    # From `cls.deposit_payout_item_rvm_2`
+                    ("101", "250"),
+                    ("201", "15"),
+                ],
+            ),
+            (
+                False,
+                ["file_id"],
+                [
+                    # From `cls.deposit_payout_item_rvm_1`
+                    ("101", "250"),
+                    ("201", "15"),
+                    # From `cls.deposit_payout_item_bag_1`
+                    ("102", "250"),
+                    ("202", "30"),
+                    # From `cls.deposit_payout_item_rvm_2`
+                    ("101", "250"),
+                    ("201", "15"),
+                ],
+            ),
+        ],
+    )
+    def test_as_csv(self, dry, expected_keys, expected_list):
         # Arrange
+        instance = self._get_instance(dry=dry)
         stream = StringIO()
         # Act
-        self.instance.as_csv(stream)
+        instance.as_csv(stream)
         # Assert that we got the expected lines by looking at the product IDs
         self.assertListEqual(
             [
                 (row["product_id"], row["unit_price"])
                 for row in self._get_csv_rows(stream)
             ],
-            [
-                # From `cls.deposit_payout_item_rvm_1`
-                ("101", "250"),
-                ("201", "15"),
-                # From `cls.deposit_payout_item_bag_1`
-                ("102", "250"),
-                ("202", "30"),
-                # From `cls.deposit_payout_item_rvm_2`
-                ("101", "250"),
-                ("201", "15"),
-            ],
+            expected_list,
         )
         # Assert that all lines have the expected fields
+        expected_keys = set(self.instance._field_names + expected_keys)
         self.assertTrue(
             all(
-                (set(row.keys()) == set(self.instance._field_names))
-                for row in self._get_csv_rows(stream)
+                (set(row.keys()) == expected_keys) for row in self._get_csv_rows(stream)
             )
         )
 
@@ -193,6 +229,101 @@ class TestCreditNoteExport(_SharedBase):
         filename = self.instance.get_filename()
         # Assert
         self.assertRegex(filename, r"kreditnota_2020\-01\-01_2020\-02\-01_(.*?)\.csv")
+
+    @parametrize(
+        "dry,expected",
+        [
+            (
+                # Dry?
+                True,
+                # Expected result
+                [
+                    {
+                        "already_exported": False,
+                        "bag_qrs": [None],
+                        "count": 20,
+                        "product_refund_value": 250,
+                        "rvm_refund_value": None,
+                        "source": "company_branch",
+                        "type": "csv",
+                    },
+                    {
+                        "already_exported": False,
+                        "bag_qrs": [None],
+                        "count": 20,
+                        "product_refund_value": 250,
+                        "rvm_refund_value": None,
+                        "source": "company_branch",
+                        "type": "api",
+                    },
+                    {
+                        "already_exported": True,
+                        "bag_qrs": [None],
+                        "count": 20,
+                        "product_refund_value": 250,
+                        "rvm_refund_value": None,
+                        "source": "company_branch",
+                        "type": "api",
+                    },
+                    {
+                        "already_exported": False,
+                        "bag_qrs": [None],
+                        "count": 20,
+                        "product_refund_value": 250,
+                        "rvm_refund_value": None,
+                        "source": "kiosk",
+                        "type": "csv",
+                    },
+                ],
+            ),
+            (
+                # Dry?
+                False,
+                # Expected result
+                [
+                    {
+                        "bag_qrs": [None],
+                        "count": 20,
+                        "product_refund_value": 250,
+                        "rvm_refund_value": None,
+                        "source": "company_branch",
+                        "type": "csv",
+                    },
+                    {
+                        "bag_qrs": [None],
+                        "count": 20,
+                        "product_refund_value": 250,
+                        "rvm_refund_value": None,
+                        "source": "company_branch",
+                        "type": "api",
+                    },
+                    {
+                        "bag_qrs": [None],
+                        "count": 20,
+                        "product_refund_value": 250,
+                        "rvm_refund_value": None,
+                        "source": "kiosk",
+                        "type": "csv",
+                    },
+                ],
+            ),
+        ],
+    )
+    def test_get_base_queryset(self, dry, expected):
+        # Arrange
+        instance = self._get_instance(dry=dry)
+        # Act
+        actual = instance._get_base_queryset(DepositPayoutItem.objects.all())
+        # Assert
+        self.assertQuerySetEqual(
+            # Drop `source_id` from actual result items, as we cannot reliably test
+            # against it (it is a database ID which may change.)
+            [
+                {key: value for key, value in val.items() if key != "source_id"}
+                for val in actual
+            ],
+            expected,
+        )
 
     @parametrize(
         "row,expected_lines",
@@ -208,6 +339,7 @@ class TestCreditNoteExport(_SharedBase):
                     "rvm_refund_value": 15,
                     "count": 1000,
                     "bag_qrs": [],
+                    "already_exported": False,
                 },
                 [
                     # First line is "Pant (automat)"
@@ -245,6 +377,7 @@ class TestCreditNoteExport(_SharedBase):
                     # with 1 (known prefix), and one bag QR starting with 2 (unknown
                     # prefix.)
                     "bag_qrs": ["001", "100", "101", "200"],
+                    "already_exported": False,
                 },
                 [
                     # First line is "Pant (pose)"
@@ -287,25 +420,51 @@ class TestCreditNoteExport(_SharedBase):
             ),
         ],
     )
-    def test_get_lines_for_row(self, row, expected_lines):
-        def filter_items(lines, remove=("file_id",)):
-            for line in lines:
-                for key in remove:
-                    del line[key]
-                yield line
+    def test_get_lines_for_row_dry(self, row, expected_lines):
+        # Arrange: get "dry" instance
+        instance = self._get_instance(dry=True)
 
         # Arrange: add `source_id` to `row` at runtime (to avoid hardcoding object IDs)
         customer = CompanyBranch.objects.get(name=row["_source_name"])
         row["source_id"] = customer.id
         del row["_source_name"]
+
         # Arrange: add `customer_id` to all `expected_lines`
         for line in expected_lines:
             line["customer_id"] = customer.external_customer_id
 
         # Act
-        actual_lines = self.instance._get_lines_for_row(row)
+        actual_lines = instance._get_lines_for_row(row)
+
         # Assert
-        self.assertListEqual(list(filter_items(actual_lines)), expected_lines)
+        self.assertListEqual(list(actual_lines), expected_lines)
+
+    def test_get_lines_for_row_wet(self):
+        # Arrange: get "wet" instance
+        instance = self._get_instance(dry=False)
+
+        # Arrange: construct `row` input
+        customer = CompanyBranch.objects.get(name=CUSTOMER_1_NAME)
+        row = {
+            "source_id": customer.id,
+            "customer_id": customer.external_customer_id,
+            "type": DepositPayout.SOURCE_TYPE_CSV,
+            "source": "company_branch",
+            "product_refund_value": 200,
+            "rvm_refund_value": 15,
+            "count": 1000,
+            "bag_qrs": [],
+            "file_id": None,
+        }
+
+        # Act
+        actual_lines = instance._get_lines_for_row(row)
+
+        # Assert: all lines contain `file_id`
+        self.assertIsNotNone(instance._file_id)
+        self.assertTrue(
+            all([line["file_id"] == instance._file_id for line in actual_lines])
+        )
 
     @parametrize(
         "bag_qrs,expected_groups",
