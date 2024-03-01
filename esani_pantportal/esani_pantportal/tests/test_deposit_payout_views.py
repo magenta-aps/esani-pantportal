@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import datetime
+import uuid
 from csv import DictReader
 from http import HTTPStatus
 from io import StringIO
@@ -120,6 +121,14 @@ class BaseDepositPayoutSearchView(LoginMixin, TestCase):
             **shared,
         )
 
+        cls.deposit_payout_item_3 = DepositPayoutItem.objects.create(
+            deposit_payout=cls.deposit_payout,
+            kiosk=cls.kiosk,
+            date=datetime.date(2024, 1, 29),
+            file_id=uuid.uuid4(),
+            **shared,
+        )
+
     def _login(self):
         self.client.login(username="esani_admin", password="12345")
 
@@ -132,11 +141,21 @@ class BaseDepositPayoutSearchView(LoginMixin, TestCase):
         self._login()
         return self.client.get(self._get_url(**query_params))
 
-    def _assert_list_contents(self, response, values, count):
+    def _assert_list_contents(
+        self,
+        response,
+        values,
+        count,
+        already_exported=None,
+    ):
         items = response.context["items"]
         self.assertEqual(
             sorted([item["source"].split(" - ")[0] for item in items]),
             sorted([v.name for v in values]),
+        )
+        self.assertListEqual(
+            [item["already_exported"] for item in items],
+            [_("Nej")] * len(values) if already_exported is None else already_exported,
         )
         self.assertEqual(response.context["total"], count)
 
@@ -172,7 +191,9 @@ class TestDepositPayoutSearchView(BaseDepositPayoutSearchView):
         self._assert_list_contents(
             response,
             [self.company_branch, self.kiosk],
-            DepositPayoutItem.objects.count(),
+            # `self.deposit_payout_item_3` is not displayed by default, as it has a
+            # `file_id` and thus is considered already exported.
+            2,
         )
         self._assert_page_parameters(response)
 
@@ -203,6 +224,16 @@ class TestDepositPayoutSearchView(BaseDepositPayoutSearchView):
         self._assert_list_contents(response, [self.company_branch], 1)
         self._assert_page_parameters(response)
 
+        # Test filtering on `already_exported`
+        response = self._get_response(already_exported="on")
+        # All three items are included when `already_exported` is True
+        self._assert_list_contents(
+            response,
+            [self.company_branch, self.kiosk, self.kiosk],
+            3,
+            already_exported=[_("Ja"), _("Nej"), _("Nej")],
+        )
+
     def test_sorting(self):
         # Sort items on "source" in reverse order
         response = self._get_response(sort="source", order="desc")
@@ -223,7 +254,9 @@ class TestDepositPayoutSearchView(BaseDepositPayoutSearchView):
         self._assert_page_parameters(response, size=1)
         self.assertEqual(
             response.context["total"],
-            DepositPayoutItem.objects.count(),
+            # `self.deposit_payout_item_3` is not displayed by default, as it has a
+            # `file_id` and thus is considered already exported.
+            2,
         )
         self.assertEqual(len(response.context["items"]), 1)
         self.assertEqual(response.context["total"], 2)
