@@ -156,6 +156,11 @@ class TestCreditNoteExport(_SharedBase):
         super().setUp()
         self.instance = self._get_instance()
 
+    def test_init_raises_on_dry_true_and_file_id_given(self):
+        """Raise ValueError if a `file_id` is passed, and `dry=False`"""
+        with self.assertRaises(ValueError):
+            self._get_instance(dry=False, file_id=uuid.uuid4())
+
     def test_iter(self):
         # Act (consume iterable)
         items = list(self.instance)
