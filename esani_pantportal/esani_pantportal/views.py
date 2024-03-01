@@ -1204,6 +1204,7 @@ class DepositPayoutArchiveView(PermissionRequiredMixin, SearchView):
         "file_id": _("Fil-ID"),
         "from_date": _("Fra-dato"),
         "to_date": _("Til-dato"),
+        "count": _("Antal pantdata-linjer"),
     }
     actions = {_("Download"): "btn btn-sm btn-primary"}
 
@@ -1235,22 +1236,42 @@ class DepositPayoutArchiveView(PermissionRequiredMixin, SearchView):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        # Group deposit payout items by their file ID, and exclude items without a file
+        # ID.
+        # Annotate each item with count, from date and to date. These are referenced by
+        # `fixed_columns`.
         qs = (
             qs.exclude(file_id__isnull=True)
             .values("file_id")
-            .annotate(from_date=Min("date"), to_date=Max("date"))
+            .annotate(
+                count=Count("id"),
+                from_date=Min("date"),
+                to_date=Max("date"),
+            )
             .order_by("-from_date")
         )
         return qs
 
     def item_to_json_dict(self, item_obj, context, index):
-        url = f"?file_id={item_obj['file_id']}"
-        item_obj["id"] = index
-        item_obj["actions"] = "".join(
+        # We don't call `super().item_to_json_dict` here, as the parent method assumes
+        # that `item_obj` is a Django model instance.
+        # But in this view, `item_obj` is already a dict-like object, since it is
+        # produced by the `.values(...).annotate(...)` expression in `get_queryset`.
+        json_dict = item_obj
+
+        # The template requires each item to have an ID. We just use the index as an ID
+        # here.
+        json_dict["id"] = index
+
+        # Construct action URL pointing to the view itself, but with a `file_id` query
+        # parameter.
+        url = f"?file_id={json_dict['file_id']}"
+        json_dict["actions"] = "".join(
             f'<a href="{url}" class="{button_class}">{label}</a>'
             for label, button_class in self.actions.items()
         )
-        return item_obj
+
+        return json_dict
 
 
 class ProductUpdateView(UpdateViewMixin):
