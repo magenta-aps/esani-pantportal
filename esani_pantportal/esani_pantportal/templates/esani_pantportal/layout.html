@@ -73,8 +73,16 @@ SPDX-License-Identifier: MPL-2.0
         <a class="p-2 text-muted" href="{% url 'pant:user_list' %}">{% translate "Brugere" %}</a>
         {% endif %}
         {% if user.is_esani_admin %}
-	<a class="p-2 text-muted" href="{% url 'pant:company_list' %}">{% translate "Virksomheder" %}</a>
-        <a class="p-2 text-muted" href="{% url 'pant:deposit_payout_list' %}">{% translate "Udbetalinger" %}</a>
+        <a class="p-2 text-muted" href="{% url 'pant:company_list' %}">{% translate "Virksomheder" %}</a>
+        <div class="dropdown p-2">
+            <a class="text-muted dropdown-toggle text-decoration-none" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                {% translate "Udbetalinger" %}
+            </a>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{% url 'pant:deposit_payout_list' %}">{% translate "Udbetalinger" %}</a></li>
+                <li><a class="dropdown-item" href="{% url 'pant:erp_credit_note_export_list' %}">{% translate "Arkiv" %}</a></li>
+            </ul>
+        </div>
         {% endif %}
         <div class="dropdown p-2 ms-auto">
         <a class="text-muted dropdown-toggle text-decoration-none" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">

@@ -15,6 +15,7 @@ from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import CharField, CheckConstraint, Q, Value
 from django.db.models.functions import Cast, Concat, LPad
+from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.translation import gettext as _
 from simple_history.models import HistoricalRecords
@@ -1254,3 +1255,42 @@ class ERPProductMapping(models.Model):
 
     def __str__(self):
         return f"{self.item_number} ({self.get_category_display()})"
+
+
+class ERPCreditNoteExport(models.Model):
+    """
+    This model contains metadata on every credit note export created.
+    """
+
+    class Meta:
+        verbose_name = _("Kreditnota-eksport til ERP")
+        verbose_name_plural = _("Kreditnota-eksporter til ERP")
+
+    file_id = models.UUIDField(
+        verbose_name=_("Fil-ID"),
+        unique=True,
+    )
+
+    from_date = models.DateField(
+        verbose_name=_("Fra-dato for de eksporterede pantdata"),
+    )
+
+    to_date = models.DateField(
+        verbose_name=_("Til-dato for de eksporterede pantdata"),
+    )
+
+    created_at = models.DateTimeField(
+        verbose_name=_("Oprettelses-dato og -tid for denne eksport"),
+        default=timezone.now,
+    )
+
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_("Bruger, der har oprettet denne fil-eksport"),
+    )
+
+    def __str__(self):
+        return f"{self.file_id}"

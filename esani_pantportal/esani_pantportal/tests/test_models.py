@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
+from datetime import date
+from uuid import uuid4
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection
@@ -17,6 +20,7 @@ from esani_pantportal.models import (
     CompanyUser,
     DepositPayout,
     DepositPayoutItem,
+    ERPCreditNoteExport,
     ERPProductMapping,
     EsaniUser,
     Kiosk,
@@ -477,3 +481,14 @@ class TestERPProductMapping(TestCase):
             specifier=ERPProductMapping.SPECIFIER_RVM,
         )
         self.assertEqual(str(obj), "101 (Pant)")
+
+
+class TestERPCreditNoteExport(TestCase):
+    def test_str(self):
+        file_id = uuid4()
+        obj = ERPCreditNoteExport.objects.create(
+            file_id=file_id,
+            from_date=date(2023, 1, 1),
+            to_date=date(2023, 1, 31),
+        )
+        self.assertEqual(str(obj), str(file_id))
