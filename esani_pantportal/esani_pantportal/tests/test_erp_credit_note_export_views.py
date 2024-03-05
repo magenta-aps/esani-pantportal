@@ -5,6 +5,7 @@ import uuid
 from datetime import date
 
 from django.http import HttpResponseNotFound
+from django.templatetags.l10n import localize
 from django.test import TestCase
 from django.utils.translation import gettext as _
 
@@ -51,8 +52,9 @@ class TestERPCreditNoteExportSearchView(ViewTestMixin, TestCase):
                 {
                     "id": self.erp_export_1.id,
                     "file_id": self.erp_export_1.file_id,
-                    "from_date": self.erp_export_1.from_date,
-                    "to_date": self.erp_export_1.to_date,
+                    "from_date": localize(self.erp_export_1.from_date),
+                    "to_date": localize(self.erp_export_1.to_date),
+                    "created_at": localize(self.erp_export_1.created_at),
                     "count": DepositPayoutItem.objects.count(),
                     "actions": f'<a href="?file_id={self.file_id_1}" '
                     'class="btn btn-sm btn-primary">Download</a>',
@@ -60,8 +62,9 @@ class TestERPCreditNoteExportSearchView(ViewTestMixin, TestCase):
                 {
                     "id": self.erp_export_2.id,
                     "file_id": self.erp_export_2.file_id,
-                    "from_date": self.erp_export_2.from_date,
-                    "to_date": self.erp_export_2.to_date,
+                    "from_date": localize(self.erp_export_2.from_date),
+                    "to_date": localize(self.erp_export_2.to_date),
+                    "created_at": localize(self.erp_export_2.created_at),
                     "count": None,
                     "actions": f'<a href="?file_id={self.file_id_2}"'
                     ' class="btn btn-sm btn-primary">Download</a>',

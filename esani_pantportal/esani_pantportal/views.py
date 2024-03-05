@@ -45,6 +45,7 @@ from django.http import (
     JsonResponse,
 )
 from django.shortcuts import redirect
+from django.templatetags.l10n import localize
 from django.urls import reverse
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
@@ -1219,6 +1220,7 @@ class ERPCreditNoteExportSearchView(PermissionRequiredMixin, SearchView):
         "file_id": _("Fil-ID"),
         "from_date": _("Fra-dato"),
         "to_date": _("Til-dato"),
+        "created_at": _("Oprettet d."),
         "count": _("Antal pantdata-linjer"),
     }
     actions = {_("Download"): "btn btn-sm btn-primary"}
@@ -1272,6 +1274,12 @@ class ERPCreditNoteExportSearchView(PermissionRequiredMixin, SearchView):
 
     def get_action_url(self, item, label):
         return f"?file_id={item.file_id}"
+
+    def item_to_json_dict(self, item_obj, context, index):
+        json_dict = super().item_to_json_dict(item_obj, context, index)
+        for field in ("from_date", "to_date", "created_at"):
+            json_dict[field] = localize(json_dict[field])
+        return json_dict
 
 
 class ProductUpdateView(UpdateViewMixin):
