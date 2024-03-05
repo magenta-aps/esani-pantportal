@@ -39,7 +39,7 @@ see the `docker` directory and the `docker-compose.yml` file for
 details.
 
 
-# Testing
+# Testing & type checks
 To run the tests run
 ```
 docker exec esani_pantportal bash -c 'coverage run manage.py test --parallel 4 ; coverage combine ; coverage report --show-missing'
@@ -49,6 +49,19 @@ To run tests only in a specific file run
 ```
 docker exec esani_pantportal bash -c 'coverage run manage.py test esani_pantportal.tests.test_productlist'
 ```
+
+This project uses `mypy` for type-checks. The `mypy` package requires a running
+docker-container, because of the `django-stubs` package. You can run `mypy` using the
+following command:
+```
+docker exec esani_pantportal mypy --config mypy.ini esani_pantportal/
+```
+
+To run all the tests and mypy type-checks in one command run
+```
+docker exec esani_pantportal bash -c 'coverage run manage.py test --parallel 4 ; coverage combine ; coverage report --show-missing; mypy --config mypy.ini esani_pantportal/'
+```
+
 
 # Profiling
 To profile the application, add `prof` to the url. For example:

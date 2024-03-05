@@ -5,7 +5,7 @@ import csv
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from urllib.parse import urlparse
 
 import paramiko
@@ -21,14 +21,14 @@ from esani_pantportal.models import (
 )
 
 
-def parse_csv_date(val, format="%Y%m%d") -> datetime.date:
+def parse_csv_date(val, format="%Y%m%d") -> date:
     return datetime.strptime(val, format).date()
 
 
 @dataclass
 class TomraCSVFile:
-    from_date: datetime.date
-    to_date: datetime.date
+    from_date: date
+    to_date: date
     total_count: int
     items: list["TomraCSVFileLine"]
 
@@ -37,7 +37,7 @@ class TomraCSVFile:
 class TomraCSVFileLine:
     location_id: int
     rvm_serial: int
-    date: datetime.date
+    date: date
     barcode: str
     count: int
 

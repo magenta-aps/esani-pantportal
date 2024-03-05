@@ -5,7 +5,8 @@ from typing import Iterable, Optional
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse
+from django.contrib.auth.models import AnonymousUser
+from django.http import HttpRequest, HttpResponse
 from django.template.response import TemplateResponse
 from django.views.generic import UpdateView
 
@@ -23,6 +24,7 @@ from esani_pantportal.models import (
 class PermissionRequiredMixin(LoginRequiredMixin):
     # Liste af permissions påkræves for adgang
     required_permissions: Iterable[str] = ()
+    request: HttpRequest
 
     @property
     def access_denied(self):
@@ -51,8 +53,9 @@ class PermissionRequiredMixin(LoginRequiredMixin):
         if not self.has_permissions:
             return self.access_denied
         elif (
-            self.request.user.is_esani_admin
-            and not self.request.user.is_verified()
+            not isinstance(self.request.user, AnonymousUser)
+            and self.request.user.is_esani_admin
+            and not self.request.user.is_verified()  # type: ignore
             and not settings.BYPASS_2FA
         ):
             return self.two_factor_setup_required

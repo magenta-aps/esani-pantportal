@@ -167,15 +167,15 @@ class AbstractCompany(models.Model):
 
     @staticmethod
     def get_from_id(external_id: str) -> Union["Company", "CompanyBranch", "Kiosk"]:
-        type_map = {
+        type_map: dict[str, type[Company] | type[CompanyBranch] | type[Kiosk]] = {
             Company.customer_id_prefix: Company,
             CompanyBranch.customer_id_prefix: CompanyBranch,
             Kiosk.customer_id_prefix: Kiosk,
         }
         try:
-            prefix, pk = external_id.split("-")
+            prefix, pk_str = external_id.split("-")
             cls = type_map[prefix]
-            pk = int(pk)
+            pk = int(pk_str)
         except (AttributeError, KeyError, ValueError):
             logger.exception("could not process external id %r", external_id)
             raise

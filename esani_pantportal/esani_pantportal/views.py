@@ -59,6 +59,7 @@ from django.views.generic import (
     View,
 )
 from django_otp import devices_for_user
+from django_stubs_ext import StrPromise
 from project.settings import DEFAULT_FROM_EMAIL
 from simple_history.utils import bulk_update_with_history, update_change_reason
 from two_factor.views import LoginView, SetupView
@@ -123,6 +124,7 @@ from esani_pantportal.templatetags.pant_tags import (
     shape,
     user_type,
 )
+from esani_pantportal.types import ANNOTATION, BOOTSTRAP_BUTTON, PREFERENCES_CLASS
 from esani_pantportal.util import (
     add_parameters_to_url,
     default_dataframe,
@@ -376,12 +378,13 @@ class RegisterKioskUserAdminView(PermissionRequiredMixin, RegisterKioskUserView)
 
 class SearchView(LoginRequiredMixin, FormView):
     paginate_by = 20
-    annotations = {}
-    search_fields_exact = []
-    fixed_columns = {}
-    preferences_class = None
+    annotations: dict[str, ANNOTATION] = {}
+    search_fields_exact: list[str] = []
+    search_fields: list[str] = []
+    fixed_columns: dict[str, StrPromise] = {}
+    preferences_class: PREFERENCES_CLASS | None = None
     can_edit_multiple = False
-    actions = {}
+    actions: dict[StrPromise, BOOTSTRAP_BUTTON] = {}
 
     def get(self, request, *args, **kwargs):
         self.form = self.get_form()
@@ -1470,6 +1473,7 @@ class SetPasswordView(SameCompanyMixin, UpdateView):
 
 
 class UserDeleteView(SameCompanyMixin, DeleteView):
+    object: User
     model = User
 
     def get_success_url(self):
@@ -1485,22 +1489,27 @@ class UserDeleteView(SameCompanyMixin, DeleteView):
 
 
 class BaseCompanyDeleteView(PermissionRequiredMixin, DeleteView):
+    object: Company | CompanyBranch | Kiosk
+
     def get_success_url(self):
         back_url = get_back_url(self.request, reverse("pant:company_list"))
         return add_parameters_to_url(back_url, {"delete_success": 1})
 
 
 class CompanyDeleteView(BaseCompanyDeleteView):
+    object: Company
     model = Company
     required_permissions = ["esani_pantportal.delete_company"]
 
 
 class CompanyBranchDeleteView(BaseCompanyDeleteView):
+    object: CompanyBranch
     model = CompanyBranch
     required_permissions = ["esani_pantportal.delete_companybranch"]
 
 
 class KioskDeleteView(BaseCompanyDeleteView):
+    object: Kiosk
     model = Kiosk
     required_permissions = ["esani_pantportal.delete_kiosk"]
 
@@ -1743,6 +1752,7 @@ class CsvProductsView(CsvTemplateView):
 
 
 class ProductDeleteView(PermissionRequiredMixin, DeleteView):
+    object: Product
     model = Product
     required_permissions = ["esani_pantportal.delete_product"]
 
@@ -1757,6 +1767,7 @@ class ProductDeleteView(PermissionRequiredMixin, DeleteView):
 
 
 class ReverseVendingMachineDeleteView(PermissionRequiredMixin, DeleteView):
+    object: ReverseVendingMachine
     model = ReverseVendingMachine
     required_permissions = ["esani_pantportal.delete_reversevendingmachine"]
 
