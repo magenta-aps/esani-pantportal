@@ -54,7 +54,8 @@ class TestERPCreditNoteExportSearchView(ViewTestMixin, TestCase):
                     "from_date": self.erp_export_1.from_date,
                     "to_date": self.erp_export_1.to_date,
                     "count": DepositPayoutItem.objects.count(),
-                    "actions": f'<a href="?file_id={self.file_id_1}" class="btn btn-sm btn-primary">Download</a>',
+                    "actions": f'<a href="?file_id={self.file_id_1}" '
+                    'class="btn btn-sm btn-primary">Download</a>',
                 },
                 {
                     "id": self.erp_export_2.id,
@@ -62,7 +63,8 @@ class TestERPCreditNoteExportSearchView(ViewTestMixin, TestCase):
                     "from_date": self.erp_export_2.from_date,
                     "to_date": self.erp_export_2.to_date,
                     "count": None,
-                    "actions": f'<a href="?file_id={self.file_id_2}" class="btn btn-sm btn-primary">Download</a>',
+                    "actions": f'<a href="?file_id={self.file_id_2}"'
+                    ' class="btn btn-sm btn-primary">Download</a>',
                 },
             ],
         )
