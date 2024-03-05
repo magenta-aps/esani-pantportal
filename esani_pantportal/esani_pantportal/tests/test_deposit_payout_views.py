@@ -2,147 +2,19 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import datetime
-import uuid
-from csv import DictReader
 from http import HTTPStatus
-from io import StringIO
 
-from django.contrib.auth.models import Group
-from django.contrib.messages import get_messages
-from django.core.management import call_command
-from django.http import HttpResponseRedirect
 from django.test import TestCase
 from django.urls import reverse
-from django.utils.http import urlencode
 from django.utils.translation import gettext as _
 
-from esani_pantportal.models import (
-    Company,
-    CompanyBranch,
-    DepositPayout,
-    DepositPayoutItem,
-    EsaniUser,
-    Kiosk,
-    Product,
-    QRBag,
-)
+from esani_pantportal.models import DepositPayoutItem
 from esani_pantportal.views import DepositPayoutSearchView
 
-from .conftest import LoginMixin
+from .helpers import ViewTestMixin
 
 
-class _BaseTestCase(LoginMixin, TestCase):
-    url = None
-
-    @classmethod
-    def setUpTestData(cls) -> None:
-        cls.esani_admin = EsaniUser.objects.create_user(
-            username="esani_admin",
-            password="12345",
-            email="test@example.org",
-            phone="+4500000000",
-        )
-        call_command("create_groups")
-        cls.esani_admin.groups.add(Group.objects.get(name="EsaniAdmins"))
-
-        cls.product = Product.objects.create(
-            product_name="product_name",
-            barcode="barcode",
-            refund_value=3,
-            approved=True,
-            material="A",
-            height=100,
-            diameter=60,
-            weight=20,
-            capacity=500,
-            shape="F",
-            danish="J",
-        )
-
-        shared = {
-            "address": "foo",
-            "postal_code": "123",
-            "city": "test city",
-            "phone": "+4500000000",
-        }
-
-        cls.company = Company.objects.create(
-            name="company",
-            cvr=12345678,
-            **shared,
-        )
-
-        cls.company_branch = CompanyBranch.objects.create(
-            company=cls.company,
-            name="company branch",
-            location_id=123,
-            **shared,
-        )
-
-        cls.kiosk = Kiosk.objects.create(
-            name="kiosk",
-            location_id=456,
-            cvr=12345678,
-            **shared,
-        )
-
-        cls.qr_bag = QRBag.objects.create(
-            company_branch=cls.company_branch,
-            qr="1234",
-            status="esani_optalt",
-        )
-
-        cls.deposit_payout = DepositPayout.objects.create(
-            source_type=DepositPayout.SOURCE_TYPE_API,
-            source_identifier="unused",
-            from_date=datetime.date(2024, 1, 1),
-            to_date=datetime.date(2024, 2, 1),
-            item_count=0,
-        )
-
-        shared = {
-            "product": cls.product,
-            "location_id": 123,
-            "rvm_serial": 123,
-            "barcode": "barcode",
-            "count": 42,
-        }
-
-        cls.deposit_payout_item_1 = DepositPayoutItem.objects.create(
-            deposit_payout=cls.deposit_payout,
-            company_branch=cls.company_branch,
-            date=datetime.date(2024, 1, 28),
-            qr_bag=cls.qr_bag,
-            **shared,
-        )
-
-        cls.deposit_payout_item_2 = DepositPayoutItem.objects.create(
-            deposit_payout=cls.deposit_payout,
-            kiosk=cls.kiosk,
-            date=datetime.date(2024, 1, 29),
-            **shared,
-        )
-
-        cls.deposit_payout_item_3 = DepositPayoutItem.objects.create(
-            deposit_payout=cls.deposit_payout,
-            kiosk=cls.kiosk,
-            date=datetime.date(2024, 1, 29),
-            file_id=uuid.uuid4(),
-            **shared,
-        )
-
-    def _login(self):
-        self.client.login(username="esani_admin", password="12345")
-
-    def _get_url(self, **query_params):
-        return reverse(self.url) + (
-            f"?{urlencode(query_params)}" if query_params else ""
-        )
-
-    def _get_response(self, **query_params):
-        self._login()
-        return self.client.get(self._get_url(**query_params))
-
+class _BaseTestCase(ViewTestMixin, TestCase):
     def _assert_list_contents(
         self,
         response,
@@ -174,19 +46,6 @@ class _BaseTestCase(LoginMixin, TestCase):
         self.assertEqual(search_data.get("page_number"), page)
         self.assertEqual(search_data.get("sort", ""), sort)
         self.assertEqual(search_data.get("order", ""), order)
-
-    def _assert_csv_response(self, response, expected_length=None):
-        csv_rows = list(
-            DictReader(StringIO(response.content.decode("utf-8")), delimiter=";")
-        )
-        self.assertEqual(len(csv_rows), expected_length)
-
-    def _assert_response_is_redirect_with_message(self, response, message):
-        self.assertEqual(response.status_code, HttpResponseRedirect.status_code)
-        self.assertEqual(
-            str(list(get_messages(response.wsgi_request))[0]),
-            message,
-        )
 
 
 class TestDepositPayoutSearchView(_BaseTestCase):
@@ -426,55 +285,3 @@ class TestDepositPayoutSearchViewMissingData(_BaseTestCase):
         item4 = items[self.deposit_payout_item_4.id]
 
         self.assertIn("Intet matchende produkt", item4["product"])
-
-
-class TestDepositPayoutArchiveView(_BaseTestCase):
-    url = "pant:deposit_payout_archive"
-
-    @classmethod
-    def setUpTestData(cls) -> None:
-        super().setUpTestData()
-        # Arrange: give deposit payout items 1 and 2 (the same) `file_id`
-        cls.file_id = uuid.uuid4()
-        DepositPayoutItem.objects.filter(
-            id__in=[
-                cls.deposit_payout_item_1.id,
-                cls.deposit_payout_item_2.id,
-            ]
-        ).update(file_id=cls.file_id)
-
-    def test_get_displays_single_archive_item(self):
-        # Act
-        response = self._get_response()
-        # Assert: page contains two items:
-        # - deposit payout items 1 and 3 are grouped by the same file ID.
-        # - deposit payout item 3 has its own file ID (and therefore its own group.)
-        items = response.context["items"]
-        self.assertEqual(len(items), 2)
-        # Assert: check attributes of the group belonging to `self.file_id`, i.e. the
-        # group consisting of deposit payout items 1 and 2.
-        group = [it for it in items if it["file_id"] == self.file_id][0]
-        self.assertEqual(group["file_id"], self.file_id)
-        self.assertEqual(group["from_date"], self.deposit_payout_item_1.date)
-        self.assertEqual(group["to_date"], self.deposit_payout_item_2.date)
-        self.assertEqual(group["count"], 2)
-        self.assertIn(
-            f'<a href="?file_id={self.file_id}" ',
-            group["actions"],
-        )
-
-    def test_get_valid_file_id_returns_csv(self):
-        # Act
-        response = self._get_response(file_id=self.file_id)
-        # Assert
-        self.assertEqual(response["Content-Type"], "text/csv")
-        self._assert_csv_response(response, expected_length=4)
-
-    def test_get_invalid_file_id_displays_message(self):
-        # Act
-        response = self._get_response(file_id=uuid.uuid4())
-        # Assert
-        self._assert_response_is_redirect_with_message(
-            response,
-            _("Ingen linjer fundet for det angivne fil-ID"),
-        )
