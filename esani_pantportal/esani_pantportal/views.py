@@ -1943,12 +1943,14 @@ class CsvUsersView(CsvTemplateView):
 
         df = pd.DataFrame(users_all_query.values(*field_names))
 
+        users_map = {user.id: user for user in users_all_query}
+
         def company_attr(user_id, field):
-            user_model = User.objects.get(pk=user_id)
-            company = user_model.company or user_model.branch
+            user = users_map[user_id]
+            company = user.company or user.branch
             if company:
                 return getattr(company, field)
-            elif user_model.user_type == ESANI_USER and field == "name":
+            elif user.user_type == ESANI_USER and field == "name":
                 return "ESANI"
 
         for field in [f.name for f in AbstractCompany._meta.fields]:
