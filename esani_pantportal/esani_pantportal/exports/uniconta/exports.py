@@ -103,6 +103,9 @@ class CreditNoteExport:
         to_date = self._to_date.strftime("%Y-%m-%d")
         return f"kreditnota_{from_date}_{to_date}_{self._file_id}.csv"
 
+    def get_file_id(self):
+        return None if self._dry else self._file_id
+
     def _get_base_queryset(self, queryset):
         annotations = dict(
             type=F("deposit_payout__source_type"),

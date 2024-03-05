@@ -18,8 +18,8 @@ from esani_pantportal.views import (
     CsvProductsView,
     CsvTemplateView,
     CsvUsersView,
-    DepositPayoutArchiveView,
     DepositPayoutSearchView,
+    ERPCreditNoteExportSearchView,
     ExcelTemplateView,
     GenerateQRView,
     KioskDeleteView,
@@ -142,8 +142,8 @@ urlpatterns = [
     path("udbetaling/", DepositPayoutSearchView.as_view(), name="deposit_payout_list"),
     path(
         "udbetaling/arkiv/",
-        DepositPayoutArchiveView.as_view(),
-        name="deposit_payout_archive",
+        ERPCreditNoteExportSearchView.as_view(),
+        name="erp_credit_note_export_list",
     ),
     path("produkt/<int:pk>", ProductUpdateView.as_view(), name="product_view"),
     path(

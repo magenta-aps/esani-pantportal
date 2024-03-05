@@ -12,6 +12,7 @@ from esani_pantportal.models import (  # isort: skip
     DepositPayout,
     DepositPayoutItem,
     EsaniUser,
+    ERPCreditNoteExport,
     KioskUser,
     Product,
     QRBag,
@@ -77,6 +78,10 @@ class Command(BaseCommand):
         )
         deposit_payout_item_model = ContentType.objects.get_for_model(
             DepositPayoutItem, for_concrete_model=False
+        )
+        erp_credit_note_export_model = ContentType.objects.get_for_model(
+            ERPCreditNoteExport,
+            for_concrete_model=False,
         )
         email_model = ContentType.objects.get_for_model(
             SentEmail, for_concrete_model=False
@@ -241,5 +246,6 @@ class Command(BaseCommand):
             ("view", deposit_payout_model),
             ("view", deposit_payout_item_model),
             ("change", deposit_payout_item_model),
+            ("view", erp_credit_note_export_model),
         ):
             esani_admins.permissions.add(get_permission(action, model))

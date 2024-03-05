@@ -29,14 +29,21 @@ from django.db.models import (
     FloatField,
     Max,
     Min,
+    OuterRef,
     PositiveIntegerField,
     Q,
+    Subquery,
     Value,
     When,
 )
 from django.db.models.functions import Coalesce, Concat
 from django.forms import model_to_dict
-from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
+from django.http import (
+    HttpResponse,
+    HttpResponseForbidden,
+    HttpResponseNotFound,
+    JsonResponse,
+)
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.timezone import now
@@ -95,6 +102,7 @@ from esani_pantportal.models import (
     CompanyListViewPreferences,
     CompanyUser,
     DepositPayoutItem,
+    ERPCreditNoteExport,
     EsaniUser,
     ImportJob,
     Kiosk,
@@ -1121,6 +1129,13 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
                 f"attachment; filename={export.get_filename()}"
             )
             export.as_csv(response)
+            if not dry:
+                ERPCreditNoteExport.objects.create(
+                    file_id=export.get_file_id(),
+                    from_date=from_date,
+                    to_date=to_date,
+                    created_by=request.user,
+                )
             return response
         else:
             messages.add_message(
@@ -1193,11 +1208,11 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
         return json_dict
 
 
-class DepositPayoutArchiveView(PermissionRequiredMixin, SearchView):
-    template_name = "esani_pantportal/deposit_payout/archive.html"
+class ERPCreditNoteExportSearchView(PermissionRequiredMixin, SearchView):
+    template_name = "esani_pantportal/erp_credit_note_export/list.html"
     form_class = DepositPayoutItemFilterForm  # FIXME: not actually used
-    model = DepositPayoutItem
-    required_permissions = ["esani_pantportal.view_depositpayout"]
+    model = ERPCreditNoteExport
+    required_permissions = ["esani_pantportal.view_erpcreditnoteexport"]
 
     search_fields = []
     fixed_columns = {
@@ -1208,15 +1223,36 @@ class DepositPayoutArchiveView(PermissionRequiredMixin, SearchView):
     }
     actions = {_("Download"): "btn btn-sm btn-primary"}
 
+    def get_queryset(self):
+        qs = self.model.objects.annotate(
+            count=Subquery(
+                DepositPayoutItem.objects.filter(file_id=OuterRef("file_id"))
+                .values("file_id")
+                .annotate(_count=Count("id"))
+                .values("_count"),
+                output_field=PositiveIntegerField(),
+            )
+        )
+        qs = self.filter_qs(qs)
+        qs = self.sort_qs(qs)
+        return qs
+
     def get(self, request, *args, **kwargs):
         file_id = self.request.GET.get("file_id")
         if file_id:
-            qs = self.model.objects.filter(file_id=file_id)
-            from_date = qs.aggregate(Min("date"))["date__min"]
-            to_date = qs.aggregate(Max("date"))["date__max"]
-            if qs.exists() and (from_date is not None) and (to_date is not None):
+            try:
+                erp_export = ERPCreditNoteExport.objects.get(file_id=file_id)
+            except ERPCreditNoteExport.DoesNotExist:
+                return HttpResponseNotFound()
+
+            items = DepositPayoutItem.objects.filter(file_id=file_id)
+            if items.exists():
                 export = CreditNoteExport(
-                    from_date, to_date, qs, dry=True, file_id=file_id
+                    erp_export.from_date,
+                    erp_export.to_date,
+                    items,
+                    dry=True,
+                    file_id=file_id,
                 )
                 response = HttpResponse(content_type="text/csv")
                 response["Content-Disposition"] = (
@@ -1234,44 +1270,8 @@ class DepositPayoutArchiveView(PermissionRequiredMixin, SearchView):
 
         return super().get(request, *args, **kwargs)
 
-    def get_queryset(self):
-        # Group deposit payout items by their file ID, and exclude items without a file
-        # ID.
-        # Annotate each item with count, from date and to date. These are referenced by
-        # `fixed_columns`.
-        qs = (
-            self.model.objects.exclude(file_id__isnull=True)
-            .values("file_id")
-            .annotate(
-                count=Count("id"),
-                from_date=Min("date"),
-                to_date=Max("date"),
-            )
-            .order_by("-from_date")
-        )
-        qs = self.filter_qs(qs)
-        qs = self.sort_qs(qs)
-        return qs
-
-    def item_to_json_dict(self, item_obj, context, index):
-        # We don't call `super().item_to_json_dict` here, as the parent method assumes
-        # that `item_obj` is a Django model instance.
-        # But in this view, `item_obj` is already a dict-like object, since it is
-        # produced by the `.values(...).annotate(...)` expression in `get_queryset`.
-        json_dict = item_obj
-
-        # The template requires each item to have an ID
-        json_dict["id"] = item_obj["file_id"]
-
-        # Construct action URL pointing to the view itself, but with a `file_id` query
-        # parameter.
-        url = f"?file_id={json_dict['file_id']}"
-        json_dict["actions"] = "".join(
-            f'<a href="{url}" class="{button_class}">{label}</a>'
-            for label, button_class in self.actions.items()
-        )
-
-        return json_dict
+    def get_action_url(self, item, label):
+        return f"?file_id={item.file_id}"
 
 
 class ProductUpdateView(UpdateViewMixin):
