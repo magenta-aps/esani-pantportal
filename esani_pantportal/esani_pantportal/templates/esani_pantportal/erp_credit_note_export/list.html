@@ -1,0 +1,22 @@
+<!--
+SPDX-FileCopyrightText: 2024 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+{% load bootstrap_icons %}
+
+{% block content %}
+<div class="mx-5">
+    <div class="row">
+        <div class="col-6">
+            <h1>{% translate "Arkiv" %}</h1>
+            <p>{% translate "Her finder du tidligere eksporter til ERP-systemet, og kan hente dem igen." %}</p>
+        </div>
+    </div>
+    {% include "../list_view_table.html" %}
+</div>
+{% endblock %}

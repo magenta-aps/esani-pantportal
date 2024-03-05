@@ -44,13 +44,16 @@ class CreditNoteExport:
         to_date,
         queryset,
         dry=True,  # False: updates underlying objects
+        file_id=None,
     ):
         self._from_date = from_date
         self._to_date = to_date
         self._queryset = queryset
         self._dry = dry
 
-        self._file_id = uuid4()
+        if (dry is False) and (file_id is not None):
+            raise ValueError("You cannot specify a `file_id` when `dry` is False")
+        self._file_id = file_id or uuid4()
 
         self._field_names = [
             "customer_id",
@@ -99,6 +102,9 @@ class CreditNoteExport:
         from_date = self._from_date.strftime("%Y-%m-%d")
         to_date = self._to_date.strftime("%Y-%m-%d")
         return f"kreditnota_{from_date}_{to_date}_{self._file_id}.csv"
+
+    def get_file_id(self):
+        return None if self._dry else self._file_id
 
     def _get_base_queryset(self, queryset):
         annotations = dict(

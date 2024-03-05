@@ -4,7 +4,12 @@
 
 from django.contrib import admin
 
-from esani_pantportal.models import DepositPayout, DepositPayoutItem, ERPProductMapping
+from esani_pantportal.models import (
+    DepositPayout,
+    DepositPayoutItem,
+    ERPCreditNoteExport,
+    ERPProductMapping,
+)
 
 
 class DepositPayoutItemAdmin(admin.TabularInline):
@@ -33,6 +38,19 @@ class DepositPayoutAdmin(admin.ModelAdmin):
     ]
 
 
+class ERPCreditNoteExportAdmin(admin.ModelAdmin):
+    _fields = [
+        "file_id",
+        "from_date",
+        "to_date",
+        "created_by",
+        "created_at",
+    ]
+    list_display = _fields
+    readonly_fields = _fields
+    ordering = ["-to_date"]
+
+
 class ERPProductMappingAdmin(admin.ModelAdmin):
     list_display = [
         "item_number",
@@ -45,4 +63,5 @@ class ERPProductMappingAdmin(admin.ModelAdmin):
 
 
 admin.site.register(DepositPayout, DepositPayoutAdmin)
+admin.site.register(ERPCreditNoteExport, ERPCreditNoteExportAdmin)
 admin.site.register(ERPProductMapping, ERPProductMappingAdmin)

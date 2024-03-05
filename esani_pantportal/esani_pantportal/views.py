@@ -29,15 +29,23 @@ from django.db.models import (
     FloatField,
     Max,
     Min,
+    OuterRef,
     PositiveIntegerField,
     Q,
+    Subquery,
     Value,
     When,
 )
 from django.db.models.functions import Coalesce, Concat
 from django.forms import model_to_dict
-from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
+from django.http import (
+    HttpResponse,
+    HttpResponseForbidden,
+    HttpResponseNotFound,
+    JsonResponse,
+)
 from django.shortcuts import redirect
+from django.templatetags.l10n import localize
 from django.urls import reverse
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
@@ -95,6 +103,7 @@ from esani_pantportal.models import (
     CompanyListViewPreferences,
     CompanyUser,
     DepositPayoutItem,
+    ERPCreditNoteExport,
     EsaniUser,
     ImportJob,
     Kiosk,
@@ -1121,6 +1130,13 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
                 f"attachment; filename={export.get_filename()}"
             )
             export.as_csv(response)
+            if not dry:
+                ERPCreditNoteExport.objects.create(
+                    file_id=export.get_file_id(),
+                    from_date=from_date,
+                    to_date=to_date,
+                    created_by=request.user,
+                )
             return response
         else:
             messages.add_message(
@@ -1190,6 +1206,79 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
             _("Ja") if item_obj.already_exported else _("Nej")
         )
 
+        return json_dict
+
+
+class ERPCreditNoteExportSearchView(PermissionRequiredMixin, SearchView):
+    template_name = "esani_pantportal/erp_credit_note_export/list.html"
+    form_class = DepositPayoutItemFilterForm  # FIXME: not actually used
+    model = ERPCreditNoteExport
+    required_permissions = ["esani_pantportal.view_erpcreditnoteexport"]
+
+    search_fields = []
+    fixed_columns = {
+        "file_id": _("Fil-ID"),
+        "from_date": _("Fra-dato"),
+        "to_date": _("Til-dato"),
+        "created_at": _("Oprettet d."),
+        "count": _("Antal pantdata-linjer"),
+    }
+    actions = {_("Download"): "btn btn-sm btn-primary"}
+
+    def get_queryset(self):
+        qs = self.model.objects.annotate(
+            count=Subquery(
+                DepositPayoutItem.objects.filter(file_id=OuterRef("file_id"))
+                .values("file_id")
+                .annotate(_count=Count("id"))
+                .values("_count"),
+                output_field=PositiveIntegerField(),
+            )
+        )
+        qs = self.filter_qs(qs)
+        qs = self.sort_qs(qs)
+        return qs
+
+    def get(self, request, *args, **kwargs):
+        file_id = self.request.GET.get("file_id")
+        if file_id:
+            try:
+                erp_export = ERPCreditNoteExport.objects.get(file_id=file_id)
+            except ERPCreditNoteExport.DoesNotExist:
+                return HttpResponseNotFound()
+
+            items = DepositPayoutItem.objects.filter(file_id=file_id)
+            if items.exists():
+                export = CreditNoteExport(
+                    erp_export.from_date,
+                    erp_export.to_date,
+                    items,
+                    dry=True,
+                    file_id=file_id,
+                )
+                response = HttpResponse(content_type="text/csv")
+                response["Content-Disposition"] = (
+                    f"attachment; filename={export.get_filename()}"
+                )
+                export.as_csv(response)
+                return response
+            else:
+                messages.add_message(
+                    request,
+                    messages.ERROR,
+                    _("Ingen linjer fundet for det angivne fil-ID"),
+                )
+                return redirect(".")
+
+        return super().get(request, *args, **kwargs)
+
+    def get_action_url(self, item, label):
+        return f"?file_id={item.file_id}"
+
+    def item_to_json_dict(self, item_obj, context, index):
+        json_dict = super().item_to_json_dict(item_obj, context, index)
+        for field in ("from_date", "to_date", "created_at"):
+            json_dict[field] = localize(json_dict[field])
         return json_dict
 
 
