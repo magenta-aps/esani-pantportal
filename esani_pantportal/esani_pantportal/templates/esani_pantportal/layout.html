@@ -28,7 +28,7 @@ SPDX-License-Identifier: MPL-2.0
 {% block header %}
 
 {% if user.is_authenticated %}
-{% cache 500 layout_header %}
+{% cache 500 layout_header user.username %}
 <header>
     {% if environment == "staging" %}
     <nav class="bg-warning">
