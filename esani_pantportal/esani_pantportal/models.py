@@ -15,6 +15,7 @@ from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import CharField, CheckConstraint, Q, Value
 from django.db.models.functions import Cast, Concat, LPad
+from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.translation import gettext as _
 from simple_history.models import HistoricalRecords
@@ -1276,6 +1277,11 @@ class ERPCreditNoteExport(models.Model):
 
     to_date = models.DateField(
         verbose_name=_("Til-dato for de eksporterede pantdata"),
+    )
+
+    created_at = models.DateTimeField(
+        verbose_name=_("Oprettelses-dato og -tid for denne eksport"),
+        default=timezone.now,
     )
 
     created_by = models.ForeignKey(

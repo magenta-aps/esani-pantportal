@@ -44,6 +44,7 @@ class ERPCreditNoteExportAdmin(admin.ModelAdmin):
         "from_date",
         "to_date",
         "created_by",
+        "created_at",
     ]
     list_display = _fields
     readonly_fields = _fields
