@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import datetime
+import io
 import os
 from http import HTTPStatus
 from io import StringIO
@@ -13,6 +14,11 @@ from django.test import TestCase
 from django.urls import reverse
 
 from esani_pantportal.models import (
+    BRANCH_USER,
+    COMPANY_USER,
+    ESANI_USER,
+    KIOSK_USER,
+    AbstractCompany,
     BranchUser,
     Company,
     CompanyBranch,
@@ -20,6 +26,7 @@ from esani_pantportal.models import (
     Kiosk,
     KioskUser,
     Product,
+    User,
 )
 
 from .conftest import LoginMixin
@@ -113,7 +120,7 @@ class ExportProductsToCSVTests(TestCase):
 class CSVExportViewTest(LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
-        test_company = Company.objects.create(
+        cls.test_company = Company.objects.create(
             name="test-company",
             cvr=10000000,
             address="Væskevej 1337",
@@ -123,15 +130,15 @@ class CSVExportViewTest(LoginMixin, TestCase):
             country="Grønland",
             company_type="A",
         )
-        _ = CompanyUser.objects.create_user(
+        cls.company_user = CompanyUser.objects.create_user(
             username="testuser_CompanyUsers",
             password="12345",
             email="test-company-admins@test.com",
-            company_id=test_company.id,
+            company_id=cls.test_company.id,
         )
 
-        test_branch = CompanyBranch.objects.create(
-            company=test_company,
+        cls.test_branch = CompanyBranch.objects.create(
+            company=cls.test_company,
             name="test-branch",
             address="Væskevej 1337",
             city="Nuuk",
@@ -139,24 +146,28 @@ class CSVExportViewTest(LoginMixin, TestCase):
             phone="(+299) 363542",
             location_id=1,
         )
-        _ = BranchUser.objects.create_user(
-            branch=test_branch,
+        cls.branch_user = BranchUser.objects.create_user(
+            branch=cls.test_branch,
             username="testuser_BranchUsers",
             password="12345",
             email="test-branch-admins@test.com",
         )
 
-        test_kiosk_branch = Kiosk.objects.create(
+        cls.test_kiosk_branch = Kiosk.objects.create(
             cvr=10000000,
             name="test-kiosk",
             address="Væskevej 1337",
+            municipality="Aarhus",
             city="Nuuk",
             postal_code="1234",
             phone="(+299) 363542",
             location_id=1,
+            registration_number=123,
+            account_number=234,
+            invoice_mail="foo@bar.com",
         )
-        _ = KioskUser.objects.create_user(
-            branch=test_kiosk_branch,
+        cls.kiosk_user = KioskUser.objects.create_user(
+            branch=cls.test_kiosk_branch,
             username="testuser_KioskUsers",
             password="12345",
             email="test-kiosk-admins@test.com",
@@ -164,6 +175,50 @@ class CSVExportViewTest(LoginMixin, TestCase):
 
 
 class CSVExportUsersViewTest(CSVExportViewTest):
+    company_fields = [f.name for f in AbstractCompany._meta.fields]
+    user_fields = [f.name for f in User._meta.fields if f.name != "password"]
+
+    user_type_map = {
+        ESANI_USER: "ESANI_USER",
+        BRANCH_USER: "BRANCH_USER",
+        COMPANY_USER: "COMPANY_USER",
+        KIOSK_USER: "KIOSK_USER",
+    }
+
+    def assert_contents_equal(self, field_csv_value, field_obj_value):
+        if type(field_obj_value) is datetime.datetime:
+            field_obj_value = field_obj_value.isoformat()
+            field_csv_value = datetime.datetime.fromisoformat(
+                field_csv_value
+            ).isoformat()
+
+        if field_obj_value or type(field_obj_value) is bool:
+            self.assertEqual(field_csv_value, field_obj_value)
+        else:
+            self.assertTrue(pd.isnull(field_csv_value))
+
+    def assert_company_fields(self, df, user_id, company):
+        """
+        Assert that all company cells contain the expected data
+        """
+        for field in self.company_fields:
+            field_csv_value = df.loc[user_id, f"company_{field}"]
+            field_obj_value = getattr(company, field)
+            self.assert_contents_equal(field_csv_value, field_obj_value)
+
+    def assert_user_fields(self, df, user):
+        """
+        Assert that all user cells contain the expected data
+        """
+        for field in self.user_fields:
+            field_csv_value = df.loc[user.id, field]
+            field_obj_value = getattr(user, field)
+
+            if field == "user_type":
+                field_obj_value = self.user_type_map.get(field_obj_value)
+
+            self.assert_contents_equal(field_csv_value, field_obj_value)
+
     def test_admin_user(self):
         self.login()
         url = reverse("pant:all_users_csv_download")
@@ -187,3 +242,26 @@ class CSVExportUsersViewTest(CSVExportViewTest):
         url = reverse("pant:all_users_csv_download")
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_contents(self):
+        esani_user = self.login()
+        esani_user.refresh_from_db()
+        response = self.client.get(reverse("pant:all_users_csv_download"))
+
+        data = io.StringIO(str(response.content, "utf-8"))
+        dtype = {"company_postal_code": str}
+        df = pd.read_csv(data, sep=";", index_col="id", dtype=dtype)
+        df["id"] = df.index
+
+        self.assert_company_fields(df, self.kiosk_user.id, self.test_kiosk_branch)
+        self.assert_company_fields(df, self.branch_user.id, self.test_branch)
+        self.assert_company_fields(df, self.company_user.id, self.test_company)
+
+        self.assertEqual(df.loc[esani_user.id, "company_name"], "ESANI")
+        for field in [f for f in self.company_fields if f != "name"]:
+            self.assertTrue(pd.isnull(df.loc[esani_user.id, f"company_{field}"]))
+
+        self.assert_user_fields(df, self.kiosk_user)
+        self.assert_user_fields(df, self.branch_user)
+        self.assert_user_fields(df, self.company_user)
+        self.assert_user_fields(df, esani_user)
