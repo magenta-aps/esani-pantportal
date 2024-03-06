@@ -48,7 +48,7 @@ table.scrollbody tbody {
     overflow-x: hidden;  /* Hide the horizontal scroll */
 }
 
-input[class$="form-control"] { border: 1px solid var(--bs-gray) }
-select[class$="form-select"] { border: 1px solid var(--bs-gray) }
-textarea[class$="form-control"] { border: 1px solid var(--bs-gray) }
-input[class$="form-check-input"] { border: 2px solid var(--bs-gray) }
+input[class*="form-control"] { border: 1px solid var(--bs-gray) }
+select[class*="form-select"] { border: 1px solid var(--bs-gray) }
+textarea[class*="form-control"] { border: 1px solid var(--bs-gray) }
+input[class*="form-check-input"] { border: 2px solid var(--bs-gray) }
