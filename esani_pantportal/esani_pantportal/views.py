@@ -1943,27 +1943,18 @@ class CsvUsersView(CsvTemplateView):
 
         df = pd.DataFrame(users_all_query.values(*field_names))
 
-        # Add an extra column "company_name", right after "user_info",
-        # which will use "user_info" to determine its value
-        df["company_name"] = ""
-        for index, row in df.iterrows():
-            if row["user_type"] == ESANI_USER:
-                df.at[index, "company_name"] = "ESANI"
-            elif row["user_type"] == COMPANY_USER:
-                user_model = User.objects.get(pk=row["id"])
-                company = user_model.get_company()
-                df.at[index, "company_name"] = company.name
-            elif row["user_type"] == BRANCH_USER:
-                user_model = User.objects.get(pk=row["id"])
-                branch = user_model.get_branch()
-                df.at[index, "company_name"] = branch.name
-            elif row["user_type"] == KIOSK_USER:
-                user_model = User.objects.get(pk=row["id"])
-                kiosk_user_model = KioskUser.objects.get(user_ptr_id=row["id"])
-                kiosk = Kiosk.objects.get(pk=kiosk_user_model.branch_id)
-                df.at[index, "company_name"] = kiosk.name
+        users_map = {user.id: user for user in users_all_query}
 
-        df = self.move_pd_column_after(df, "company_name", "user_type")
+        def company_attr(user_id, field):
+            user = users_map[user_id]
+            company = user.branch or user.company
+            if company:
+                return getattr(company, field)
+            elif user.user_type == ESANI_USER and field == "name":
+                return "ESANI"
+
+        for field in [f.name for f in AbstractCompany._meta.fields]:
+            df[f"company_{field}"] = df["id"].map(lambda id: company_attr(id, field))
 
         # Convert column "user_type" to a text instead of the integer value
         df["user_type"] = df["user_type"].map(
@@ -1981,13 +1972,3 @@ class CsvUsersView(CsvTemplateView):
         response["Content-Disposition"] = f"attachment; filename={filename}"
         df.to_csv(path_or_buf=response, sep=";", index=False)
         return response
-
-    def move_pd_column_after(self, df: pd.DataFrame, column_to_move, after_column):
-        after_column_position = df.columns.get_loc(after_column) + 1
-        column_data = df[column_to_move]
-
-        if after_column_position - 1 != df.columns.get_loc(column_to_move):
-            df.drop(columns=[column_to_move], inplace=True)
-            df.insert(after_column_position, column_to_move, column_data)
-
-        return df
