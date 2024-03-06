@@ -1947,7 +1947,7 @@ class CsvUsersView(CsvTemplateView):
 
         def company_attr(user_id, field):
             user = users_map[user_id]
-            company = user.company or user.branch
+            company = user.branch or user.company
             if company:
                 return getattr(company, field)
             elif user.user_type == ESANI_USER and field == "name":
