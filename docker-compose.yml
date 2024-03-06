@@ -20,6 +20,7 @@ services:
       - ./data/deposit_payouts:/srv/media/deposit_payouts
       - ./data/er:/app/esani_pantportal/static/doc:ro
       - ./data/startup_flags:/tmp
+      - ./data/log/pantportal.log:/var/log/pantportal.log:rw
 
     depends_on:
       - pantportal-db
@@ -55,8 +56,11 @@ services:
       - ./dev-environment/esani-pantportal.env
     volumes:
       - ./esani_pantportal/:/app
+      - ./dev-environment/logrotate.conf:/logrotate.conf:ro
       - ./data/product_lists:/srv/media/product_lists
       - ./dev-environment/crontab:/crontab
+      - ./data/log/cron.log:/var/log/pantportal.log:rw
+      - ./data/log/:/var/log:rw
     networks:
       - postgres
       - sftp
