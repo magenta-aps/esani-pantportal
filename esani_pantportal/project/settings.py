@@ -333,3 +333,50 @@ DEBUG_TOOLBAR_PANELS = [
     "debug_toolbar.panels.profiling.ProfilingPanel",
     "template_profiler_panel.panels.template.TemplateProfilerPanel",
 ]
+
+# Logging
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": True,
+    "filters": {
+        "require_debug_false": {
+            "()": "django.utils.log.RequireDebugFalse",
+        },
+    },
+    "formatters": {
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "gunicorn": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["gunicorn"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["gunicorn"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
+
+log_filename = "/var/log/pantportal.log"
+if os.path.isfile(log_filename) and ENVIRONMENT != "development":
+    LOGGING["handlers"]["file"] = {
+        "class": "logging.FileHandler",  # eller WatchedFileHandler
+        "filename": log_filename,
+        "formatter": "simple",
+    }
+    LOGGING["root"] = {
+        "handlers": ["gunicorn", "file"],
+        "level": "INFO",
+    }
+    LOGGING["loggers"]["django"]["handlers"].append("file")
