@@ -1782,7 +1782,8 @@ class NewsEmailView(PermissionRequiredMixin, FormView):
             subject=data["subject"],
             body=data["body"],
             from_email=DEFAULT_FROM_EMAIL,
-            to=to_list,
+            to=[DEFAULT_FROM_EMAIL],
+            bcc=to_list,
             reply_to=[DEFAULT_FROM_EMAIL],
         )
         if settings.ENVIRONMENT != "production":

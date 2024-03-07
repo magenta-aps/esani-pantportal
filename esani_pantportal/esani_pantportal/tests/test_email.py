@@ -154,10 +154,12 @@ class NewsEmailViewTest(EmailTest):
 
         # Verify that everyone with newsletter=True receive
         for email_address in self.emails[0:-1]:
-            self.assertIn(email_address, mail.outbox[0].to)
+            self.assertNotIn(email_address, mail.outbox[0].to)
+            self.assertIn(email_address, mail.outbox[0].bcc)
 
         # Verify that everyone with newsletter=False do NOT receive
         self.assertNotIn(self.emails[-1], mail.outbox[0].to)
+        self.assertNotIn(self.emails[-1], mail.outbox[0].bcc)
 
         # Verify tags
         self.assertEqual(mail.outbox[0].tags, ["newsletter"])
@@ -181,5 +183,5 @@ class NoReceiversEmailViewTest(EmailTest):
             },
         )
 
-        # Test that one message was sent:
-        self.assertEqual(len(mail.outbox), 0)
+        # Test that no messages were sent:
+        self.assertEqual(len(mail.outbox[0].bcc), 0)
