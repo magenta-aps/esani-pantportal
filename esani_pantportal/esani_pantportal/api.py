@@ -38,8 +38,8 @@ class DjangoPermission(permissions.BasePermission):
         self.modelname = modelname
 
     def has_permission(self, request: HttpRequest, controller: ControllerBase) -> bool:
-        method = request.method
-        operation = self.method_map[method] if isinstance(method, str) else ""
+        method = str(request.method)
+        operation = self.method_map[method]
         return request.user.has_perm(f"{self.appname}.{operation}_{self.modelname}")
 
 
