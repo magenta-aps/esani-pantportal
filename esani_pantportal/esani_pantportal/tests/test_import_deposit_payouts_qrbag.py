@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from io import StringIO
 from unittest.mock import Mock, patch
 
@@ -48,6 +48,11 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
     rvm_serial_number = 2000
     consumer_session_id = uuid.uuid4()
 
+    _mock_api_path = (
+        "esani_pantportal.management.commands.import_deposit_payouts_qrbag."
+        "TomraAPI.from_settings"
+    )
+
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
@@ -84,6 +89,25 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
         )
 
         cls.consumer_identity_ext_id = f"80003{cls.kiosk.id:05}"
+
+    def test_handle_processes_to_and_from_args(self):
+        # Arrange
+        mock_api = self._get_mock_api()
+        with patch(self._mock_api_path, return_value=mock_api):
+            buf = StringIO()
+            # Act
+            call_command(
+                Command(),
+                stdout=buf,
+                stderr=buf,
+                from_date="2020-01-01",
+                to_date="2020-01-31",
+            )
+            # Assert
+            mock_api.get_consumer_sessions.assert_called_once_with(
+                datetime(2020, 1, 1),
+                datetime(2020, 1, 31),
+            )
 
     def test_import_creates_expected_objects(self):
         # Arrange
@@ -153,11 +177,7 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
             ),
         ]
 
-        with patch(
-            "esani_pantportal.management.commands.import_deposit_payouts_qrbag."
-            "TomraAPI.from_settings",
-            return_value=self._get_mock_api(data),
-        ):
+        with patch(self._mock_api_path, return_value=self._get_mock_api(data)):
             # Act: run command twice on same input to ensure idempotency
             buf = StringIO()
             call_command(Command(), stdout=buf, stderr=buf)
@@ -378,3 +398,42 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
         result = cmd._get_qr_bag(self.bag_qr, Kiosk)
         # Assert
         self.assertIsNone(result)
+
+    @parametrize(
+        "val,db_value,expected_result",
+        [
+            (None, None, date.today() - timedelta(days=30)),
+            (None, date(2019, 1, 1), date(2019, 1, 1)),
+            ("2020-01-31", None, date(2020, 1, 31)),
+        ],
+    )
+    def test_get_previous_to_date(self, val, db_value, expected_result):
+        # Arrange
+        if db_value is not None:
+            DepositPayout.objects.create(
+                source_type=DepositPayout.SOURCE_TYPE_API,
+                source_identifier="testing",
+                from_date=db_value,
+                to_date=db_value,
+                item_count=0,
+            )
+        cmd = Command()
+        # Act
+        actual_result = cmd._get_previous_to_date(val)
+        # Assert
+        self.assertEqual(actual_result, expected_result)
+
+    @parametrize(
+        "val,expected_result",
+        [
+            (None, date.today()),
+            ("2020-01-31", date(2020, 1, 31)),
+        ],
+    )
+    def test_get_todays_to_date(self, val, expected_result):
+        # Arrange
+        cmd = Command()
+        # Act
+        actual_result = cmd._get_todays_to_date(val)
+        # Assert
+        self.assertEqual(actual_result, expected_result)
