@@ -112,7 +112,7 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
     def test_import_creates_expected_objects(self):
         # Arrange
         data = [
-            # First datum uses a consumer identity matching out QR bag, and contains
+            # First datum uses a consumer identity matching our QR bag, and contains
             # two items both with a known product barcode.
             Datum(
                 consumer_session=ConsumerSession(
@@ -175,6 +175,25 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
                     ],
                 ),
             ),
+            # Fourth datum uses a consumer identity matching our QR bag, and contains
+            # one item, which has no barcode.
+            Datum(
+                consumer_session=ConsumerSession(
+                    id=self.consumer_session_id,
+                    identity=Identity(consumer_identity=self.bag_qr),
+                    metadata=Metadata(
+                        location=Location(customer_id=self.location_customer_id),
+                        rvm=Rvm(serial_number=self.rvm_serial_number),
+                    ),
+                    started_at=datetime(2020, 1, 1, 12, 0),
+                    items=[
+                        Item1(
+                            product_code=None,
+                            count=self.product_count_1,
+                        ),
+                    ],
+                ),
+            ),
         ]
 
         with patch(self._mock_api_path, return_value=self._get_mock_api(data)):
@@ -209,7 +228,7 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
     def _assert_objects_created(self):
         # Assert we create exactly one `DepositPayout` (even though we run the same
         # import twice.)
-        expected_item_count = 4  # 2 + 1 + 1 objects
+        expected_item_count = 5  # 2 + 1 + 1 + 1 = 5 objects
         self.assertQuerySetEqual(
             DepositPayout.objects.all(),
             [(DepositPayout.SOURCE_TYPE_API, "url", expected_item_count)],
@@ -267,6 +286,17 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
                     date(2020, 1, 1),
                     self.consumer_session_id,
                     self.consumer_identity_ext_id,
+                ),
+                # Fourth datum produces one object
+                (
+                    self.kiosk_cvr,
+                    None,  # product
+                    None,  # barcode
+                    self.product_count_1,
+                    self.rvm_serial_number,
+                    date(2020, 1, 1),
+                    self.consumer_session_id,
+                    self.bag_qr,
                 ),
             ],
             transform=lambda obj: (

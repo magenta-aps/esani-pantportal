@@ -80,12 +80,8 @@ class Command(BaseCommand):
             datum.consumer_session
             for datum in consumer_sessions.data
             if isinstance(datum.consumer_session, ConsumerSession)
-            and self._all_items_have_barcode(datum.consumer_session.items)
             and not self._session_is_already_imported(datum.consumer_session.id)
         ]
-
-    def _all_items_have_barcode(self, items) -> bool:
-        return all(it.product_code is not None for it in items) if items else False
 
     @cache
     def _session_is_already_imported(self, consumer_session_id: UUID) -> bool:

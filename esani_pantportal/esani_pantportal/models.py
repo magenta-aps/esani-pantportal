@@ -1084,6 +1084,8 @@ class DepositPayoutItem(models.Model):
 
     barcode = models.CharField(
         validators=[validate_barcode_length, validate_digit],
+        null=True,
+        blank=True,
     )
     """Holds the raw value of the barcode in the CSV file line"""
 
