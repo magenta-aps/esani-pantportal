@@ -29,11 +29,19 @@ from esani_pantportal.models import (
 class Command(BaseCommand):
     help = "Import deposit payouts for 'QR bags' from Tomra 'consumer sessions' API"
 
-    num_days = 1  # How many days of data to fetch from Tomra
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--from-date",
+            help="Override default 'from date'",
+        )
+        parser.add_argument(
+            "--to-date",
+            help="Override default 'to date'",
+        )
 
-    def handle(self, **kwargs):
-        from_date = self._get_previous_to_date()
-        to_date = self._get_todays_to_date(from_date)
+    def handle(self, *args, **options):
+        from_date = self._get_previous_to_date(options["from_date"])
+        to_date = self._get_todays_to_date(options["to_date"])
 
         api = TomraAPI.from_settings()
 
@@ -136,18 +144,27 @@ class Command(BaseCommand):
         )
         qr_bags.update(status="esani_optalt")
 
-    def _get_previous_to_date(self) -> date:
+    def _get_previous_to_date(self, val: str | None) -> date:
+        if val is not None:
+            return self._to_date(val)
+
         try:
             latest_api_import = DepositPayout.objects.filter(
                 source_type=DepositPayout.SOURCE_TYPE_API
             ).latest("to_date")
         except DepositPayout.DoesNotExist:
-            return date(2024, 1, 1)
+            # Tomra API limits the available data to the latest 30 days.
+            return date.today() - timedelta(days=30)
         else:
             return latest_api_import.to_date
 
-    def _get_todays_to_date(self, from_date: date) -> date:
-        return from_date + timedelta(days=self.num_days)
+    def _get_todays_to_date(self, val: str | None) -> date:
+        if val is not None:
+            return self._to_date(val)
+        return date.today()
+
+    def _to_date(self, val: str) -> date:
+        return datetime.strptime(val, "%Y-%m-%d").date()
 
     def _to_datetime(self, val: date) -> datetime:
         return datetime(val.year, val.month, val.day)
