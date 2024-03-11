@@ -37,13 +37,13 @@ from .data_models import ConsumerSessionQueryResponse, Datum
 
 @dataclass
 class _APIResponse:
-    url: str
+    url: str | None
     doc: dict
 
 
 @dataclass
 class ConsumerSessionCollection:
-    url: str
+    url: str | None
     from_date: datetime
     to_date: datetime
     data: list[Datum]
@@ -101,7 +101,7 @@ class TomraAPI:
         return response.json()["access_token"]
 
     def _api_request(
-        self, method: str, resource: str, query: dict = None
+        self, method: str, resource: str, query: dict | None = None
     ) -> _APIResponse:
         # TODO: don't request a new access token on every API request.
         # (Tomra access tokens are valid for 1 hour.)
@@ -128,8 +128,8 @@ class TomraAPI:
         rvm_serials: list[int] | None = None,
     ) -> ConsumerSessionCollection:
         data: list[Datum] = []
-        continuation_token: str = "initial"
-        initial_url: str
+        continuation_token: str | None = "initial"
+        initial_url: str | None
 
         while continuation_token is not None:
             next = None if continuation_token == "initial" else continuation_token

@@ -193,7 +193,7 @@ class ReverseVendingMachineRegisterForm(forms.ModelForm, BootstrapForm):
 
 
 class PhoneForm(forms.Form):
-    prefix = forms.CharField(
+    prefix = forms.CharField(  # type: ignore
         label=_("Landekode"),
         widget=PhonePrefixSelect(initial="GL"),
     )

@@ -79,7 +79,8 @@ class Command(BaseCommand):
         return [
             datum.consumer_session
             for datum in consumer_sessions.data
-            if self._all_items_have_barcode(datum.consumer_session.items)
+            if isinstance(datum.consumer_session, ConsumerSession)
+            and self._all_items_have_barcode(datum.consumer_session.items)
             and not self._session_is_already_imported(datum.consumer_session.id)
         ]
 
@@ -209,7 +210,7 @@ class Command(BaseCommand):
                 f"Not looking up `QRBag` for code of unexpected length: "
                 f"{bag_qr=} (length={len(bag_qr)})"
             )
-            return
+            return None
 
         try:
             qr_bag = qs.get(lookup)
@@ -217,6 +218,7 @@ class Command(BaseCommand):
             self.stdout.write(f"No QRBag matches {bag_qr}")
         else:
             return qr_bag
+        return None
 
     def _get_from_qr(
         self,
@@ -264,20 +266,19 @@ class Command(BaseCommand):
                     f"{ext_id_with_separator}"
                 )
             else:
-                if isinstance(obj, source_type):
+                if isinstance(obj, (CompanyBranch, Kiosk)) and isinstance(
+                    obj, source_type
+                ):
                     return obj
                 else:
                     self.stdout.write(
                         f"Unexpected match on `{obj.__class__.__name__}` "
                         f"(expected `{source_type.__name__}`): {ext_id_with_separator}"
                     )
+        return None
 
-    def _get_consumer_identity(self, consumer_session: ConsumerSession):
-        try:
-            return consumer_session.identity.consumer_identity
-        except AttributeError:
-            # 'NoneType' object has no attribute 'consumer_identity'
-            pass
+    def _get_consumer_identity(self, consumer_session: ConsumerSession) -> str | None:
+        return getattr(consumer_session.identity, "consumer_identity", None)
 
     def _get_source(
         self,
@@ -288,15 +289,8 @@ class Command(BaseCommand):
         Find the "source" of the given `consumer_session` - either a `CompanyBranch`,
         a `Kiosk`, or None.
         """
-
-        try:
-            consumer_identity = consumer_session.identity.consumer_identity
-        except AttributeError:
-            # 'NoneType' object has no attribute 'consumer_identity'
-            self.stdout.write(
-                f"No `identity` in {consumer_session.id} ({consumer_session.metadata=})"
-            )
-        else:
+        consumer_identity = self._get_consumer_identity(consumer_session)
+        if consumer_identity and isinstance(consumer_identity, str):
             # First, try looking for an external customer ID encoded directly in the
             # `consumer_identity`.
             source = self._get_direct(consumer_identity, source_type)
@@ -304,6 +298,11 @@ class Command(BaseCommand):
                 # Then, look for a `QRBag` matching `consumer_identity`
                 source = self._get_from_qr(consumer_identity, source_type)
             return source
+        else:
+            self.stdout.write(
+                f"No `identity` in {consumer_session.id} ({consumer_session.metadata=})"
+            )
+            return None
 
     @cache
     def _get_product_from_barcode(self, barcode) -> Product | None:
