@@ -2,7 +2,7 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: ESANI Pantportal
 Upstream-Contact: Magenta ApS <info@magenta.dk>
 
-Files: dev-environment/*  esani_pantportal/requirements.txt esani_pantportal/.coveragerc esani_pantportal/barcode_scanner/static/images/* esani_pantportal/esani_pantportal/migrations/* .gitignore .gitlab-ci.yml .pre-commit-config.yaml data/* esani_pantportal/esani_pantportal/templates/esani_pantportal/*/actions.html esani_pantportal/esani_pantportal/templates/esani_pantportal/*/select.html esani_pantportal/esani_pantportal/clients/tomra/data_models.py
+Files: dev-environment/*  esani_pantportal/requirements.txt esani_pantportal/.coveragerc esani_pantportal/barcode_scanner/static/images/* esani_pantportal/esani_pantportal/migrations/* .gitignore .gitlab-ci.yml .pre-commit-config.yaml data/* esani_pantportal/esani_pantportal/templates/esani_pantportal/*/actions.html esani_pantportal/esani_pantportal/templates/esani_pantportal/*/select.html esani_pantportal/esani_pantportal/clients/tomra/data_models.py esani_pantportal/mypy.ini
 Copyright: 2023 Magenta ApS <info@magenta.dk>
 License: MPL-2.0
 

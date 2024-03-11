@@ -22,6 +22,7 @@ RUN mkdir /app && \
     chown pant:pant /srv/media && chown pant:pant /static && chmod a+w /static && \
     chown pant:pant /srv/media/deposit_payouts
 COPY esani_pantportal/requirements.txt /app/requirements.txt
+COPY esani_pantportal/mypy.ini /app/mypy.ini
 # hadolint ignore=DL3008
 RUN apt-get update && \
     apt-get install -y --no-install-recommends gettext apt-utils python3-distutils graphviz libxmlsec1-dev xmlsec1 locales libz-dev libjpeg-dev libfreetype6-dev postgresql-client-common && \

@@ -1,4 +1,4 @@
-django==4.2.2
+django==4.2.11
 gunicorn==20.1.0
 psycopg2==2.9.3
 coverage==7.3.0
@@ -33,3 +33,7 @@ django-override-autonow==0.0.1
 unittest-parametrize==1.4.0
 django-cprofile-middleware==1.0.5
 django-debug-toolbar-template-profiler==2.1.0
+mypy==1.7.0
+django-stubs[compatible-mypy]==4.2.7
+types-paramiko==3.4.0.20240205
+types-requests==2.31.0.20240218

@@ -18,6 +18,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 from project.util import strtobool
 
@@ -221,7 +222,7 @@ QR_URL_PREFIX = "http://pant.gl?QR="
 QR_ID_LENGTH = 9  # Length of QR ID part, default 9 (one BILLION different codes)
 QR_HASH_LENGTH = 8  # Length of QR control code, default 8
 
-QR_GENERATOR_SERIES = {
+QR_GENERATOR_SERIES: dict[str, dict[str, str | int]] = {
     "small": {"name": "Små sække", "prefix": 0},
     "large": {"name": "Store sække", "prefix": 1},
     "test": {"name": "QR-koder til test", "prefix": 9},
@@ -268,7 +269,7 @@ MAX_HEIGHT = max(MAX_BOTTLE_HEIGHT, MAX_CAN_HEIGHT)
 MAX_VOLUME = max(MAX_BOTTLE_VOLUME, MAX_CAN_VOLUME)
 
 
-PRODUCT_CONSTRAINTS = {
+PRODUCT_CONSTRAINTS: dict[str, dict[str, tuple]] = {
     "diameter": {
         "F": (MIN_BOTTLE_DIAMETER, MAX_BOTTLE_DIAMETER),
         "D": (MIN_CAN_DIAMETER, MAX_CAN_DIAMETER),
@@ -336,7 +337,7 @@ DEBUG_TOOLBAR_PANELS = [
 
 # Logging
 
-LOGGING = {
+LOGGING: dict[str, Any] = {
     "version": 1,
     "disable_existing_loggers": True,
     "filters": {

@@ -99,7 +99,7 @@ def add_parameters_to_url(url, keys_to_add: dict):
     u = urlparse(url)
     query = parse_qs(u.query, keep_blank_values=True)
     for key, value in keys_to_add.items():
-        query[key] = str(value)
+        query[key] = [str(value)]
     u = u._replace(query=urlencode(query, True))
     return urlunparse(u)
 

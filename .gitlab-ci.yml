@@ -216,6 +216,12 @@ Django check:
     - cd /app
     - python3 manage.py check esani_pantportal
 
+Mypy:
+  <<: *test-pantportal
+  script:
+    - cd /app
+    - mypy --config mypy.ini esani_pantportal/
+
 # Release stage
 #############
 

@@ -38,9 +38,9 @@ class DjangoPermission(permissions.BasePermission):
         self.modelname = modelname
 
     def has_permission(self, request: HttpRequest, controller: ControllerBase) -> bool:
-        return request.user.has_perm(
-            f"{self.appname}.{self.method_map[request.method]}_{self.modelname}"
-        )
+        method = str(request.method)
+        operation = self.method_map[method]
+        return request.user.has_perm(f"{self.appname}.{operation}_{self.modelname}")
 
 
 class ApprovedProductsOut(ModelSchema):
@@ -62,7 +62,7 @@ class ApprovedProductsFilterSchema(FilterSchema):
     tags=["Produkter"],
     permissions=[permissions.IsAuthenticatedOrReadOnly],
 )
-class ApprovedProductsAPI:
+class ApprovedProductsAPI:  # type: ignore [call-arg]
     @route.get(
         "",
         response=NinjaPaginationResponseSchema[ApprovedProductsOut],
@@ -73,8 +73,8 @@ class ApprovedProductsAPI:
     def list_approved_products(
         self,
         filters: ApprovedProductsFilterSchema = Query(...),
-        sort: str = None,
-        order: str = None,
+        sort: str | None = None,
+        order: str | None = None,
     ):
         qs = filters.filter(Product.objects.filter(approved=True))
         qs.order_by("product_name", "barcode")
@@ -107,7 +107,7 @@ class QRBagOut(ModelSchema):
 
     @staticmethod
     def resolve_owner(obj: QRBag):
-        return obj.owner.username
+        return getattr(obj.owner, "username")
 
     @staticmethod
     def resolve_company(obj: QRBag):
@@ -129,7 +129,7 @@ class QRBagHistoryOut(QRBagOut):
         DjangoPermission("esani_pantportal", "qrbag"),
     ],
 )
-class QRBagAPI:
+class QRBagAPI:  # type: ignore [call-arg]
     @route.get(
         "/{qr}",
         auth=JWTAuth(),
@@ -152,7 +152,7 @@ class QRBagAPI:
     )
     def create(self, qr: str, payload: QRBagIn):
         try:
-            user = self.context.request.user
+            user = self.context.request.user  # type: ignore
             branch = user.branch
             company_branch = branch if isinstance(branch, CompanyBranch) else None
             kiosk = branch if isinstance(branch, Kiosk) else None
@@ -191,7 +191,7 @@ class QRBagAPI:
         data = payload.dict(exclude_unset=True)
         for attr, value in data.items():
             setattr(item, attr, value)
-        user = self.context.request.user
+        user = self.context.request.user  # type: ignore
         item.owner = user
         item.save()
         return item
@@ -225,7 +225,7 @@ class QRStatusOut(ModelSchema):
         permissions.AllowAny,
     ],
 )
-class QRStatusAPI:
+class QRStatusAPI:  # type: ignore [call-arg]
     @route.get("/", response=List[QRStatusOut])
     def list(self):
         return QRStatus.objects.all()
