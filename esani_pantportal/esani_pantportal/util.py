@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
 import pandas as pd
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.http import HttpRequest
 from django.utils.translation import get_language
 from django.utils.translation import gettext as _
 from django.utils.translation import to_locale
@@ -40,7 +41,7 @@ def read_excel(*args, **kwargs):
         raise ValidationError(e)
 
 
-def default_dataframe():
+def default_dataframe() -> pd.DataFrame:
     """
     Returns a dataframe with default column titles and some example values
     """
@@ -65,7 +66,7 @@ def default_dataframe():
     return df
 
 
-def join_strings_human_readable(strings: list[str]):
+def join_strings_human_readable(strings: list[str]) -> str:
     """
     Joins strings together in a gramatically correct way.
     """
@@ -77,14 +78,14 @@ def join_strings_human_readable(strings: list[str]):
         return ", ".join(strings[:-1]) + " " + _("og") + " " + strings[-1]
 
 
-def make_valid_choices_str(choices):
+def make_valid_choices_str(choices: list[tuple[str, str]]) -> str:
     """
     takes a  'choices' tuple and returns a human-readable string
     """
     return join_strings_human_readable([f"'{c[0]}' ({c[1]})" for c in choices])
 
 
-def remove_parameter_from_url(url, key_to_remove):
+def remove_parameter_from_url(url: str, key_to_remove: str) -> str:
     """
     Remove a parameter from an URL.
     """
@@ -95,7 +96,7 @@ def remove_parameter_from_url(url, key_to_remove):
     return urlunparse(u)
 
 
-def add_parameters_to_url(url, keys_to_add: dict):
+def add_parameters_to_url(url: str, keys_to_add: dict) -> str:
     u = urlparse(url)
     query = parse_qs(u.query, keep_blank_values=True)
     for key, value in keys_to_add.items():
@@ -104,7 +105,7 @@ def add_parameters_to_url(url, keys_to_add: dict):
     return urlunparse(u)
 
 
-def float_to_string(value):
+def float_to_string(value: float) -> str:
     if (value).is_integer():
         return str(int(value))
     else:
@@ -113,16 +114,16 @@ def float_to_string(value):
         return locale.format("%.1f", value)
 
 
-def clean_url(url):
+def clean_url(url: str) -> str:
     u = urlparse(url)
     query = parse_qs(u.query, keep_blank_values=True)
     for key, value in query.items():
-        query[key] = value[-1]
+        query[key] = [value[-1]]
 
     u = u._replace(query=urlencode(query, True))
     return urlunparse(u)
 
 
-def get_back_url(request, fallback_url):
+def get_back_url(request: HttpRequest, fallback_url: str) -> str:
     back_url = clean_url(unquote(request.GET.get("back", "")))
     return remove_parameter_from_url(back_url, "json") if back_url else fallback_url
