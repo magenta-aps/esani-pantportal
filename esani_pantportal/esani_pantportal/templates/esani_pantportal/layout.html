@@ -42,9 +42,11 @@ SPDX-License-Identifier: MPL-2.0
             {% bs_icon "list" size="1.8em" %}
             </a>
             <ul class="dropdown-menu">
+                <!--
                 {% if user.is_esani_admin %}
                     <li><a class="dropdown-item" href="{% url 'pant:newsletter_send' %}">{% bs_icon "envelope"  size="1.3em"%}{% translate "Send Nyhedsbrev" %}</a></li>
                 {% endif %}
+                -->
                 {% if user.is_admin %}
                     <li><a class="dropdown-item" href="{% url 'pant:product_register' %}">{% bs_icon "bag-plus" size="1.3em" %}{% translate "Registrér et enkelt produkt" %}</a></li>
                     <li><a class="dropdown-item" href="{% url 'pant:product_multiple_register' %}">{% bs_icon "bag-plus" size="1.3em" %}{% translate "Importér produkter fra fil" %}</a></li>
