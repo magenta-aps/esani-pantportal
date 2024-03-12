@@ -12,6 +12,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import Q
 from django.db.models.functions import Substr
+from simple_history.utils import bulk_update_with_history
 
 from esani_pantportal.clients.tomra.api import ConsumerSessionCollection, TomraAPI
 from esani_pantportal.clients.tomra.data_models import ConsumerSession
@@ -139,7 +140,9 @@ class Command(BaseCommand):
                 if deposit_payout_item.qr_bag is not None
             ]
         )
-        qr_bags.update(status="esani_optalt")
+        for qr_bag in qr_bags:
+            qr_bag.status = "esani_optalt"
+        bulk_update_with_history(qr_bags, QRBag, ["status"], batch_size=500)
 
     def _get_previous_to_date(self, val: str | None) -> date:
         if val is not None:

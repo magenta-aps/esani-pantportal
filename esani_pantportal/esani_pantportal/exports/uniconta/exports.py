@@ -23,6 +23,7 @@ from django.db.models import (
     When,
 )
 from django.db.models.functions import Cast, Coalesce, Concat, LPad
+from simple_history.utils import bulk_update_with_history
 
 from esani_pantportal.models import (
     Company,
@@ -84,7 +85,9 @@ class CreditNoteExport:
             qr_bags = QRBag.objects.filter(
                 id__in=has_qr_bag.values_list("qr_bag__id", flat=True)
             )
-            qr_bags.update(status="esani_udbetalt")
+            for qr_bag in qr_bags:
+                qr_bag.status = "esani_udbetalt"
+            bulk_update_with_history(qr_bags, QRBag, ["status"], batch_size=500)
 
             # Mark all deposit payout items as exported
             self._queryset.filter(file_id__isnull=True).update(file_id=self._file_id)
