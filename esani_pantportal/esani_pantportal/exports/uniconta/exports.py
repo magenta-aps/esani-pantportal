@@ -148,6 +148,7 @@ class CreditNoteExport:
         return (
             queryset.select_related("product", "company_branch__company", "kiosk")
             .annotate(**annotations)
+            .exclude(Q(barcode__isnull=True) & ~Q(location_id__isnull=True))
             .exclude(source_id__isnull=True)
             .values(*group_by)
             .annotate(
