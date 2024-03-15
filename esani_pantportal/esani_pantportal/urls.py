@@ -18,6 +18,7 @@ from esani_pantportal.views import (
     CsvProductsView,
     CsvTemplateView,
     CsvUsersView,
+    DepositItemFormSetView,
     DepositPayoutSearchView,
     ERPCreditNoteExportSearchView,
     ExcelTemplateView,
@@ -234,4 +235,9 @@ urlpatterns = [
     path("about/", AboutView.as_view(), name="about"),
     path("two_factor/setup", TwoFactorSetup.as_view(), name="two_factor_setup"),
     path("qr/generate", GenerateQRView.as_view(), name="qr_generate"),
+    path(
+        "udbetaling/opret",
+        DepositItemFormSetView.as_view(),
+        name="deposit_payout_register",
+    ),
 ]

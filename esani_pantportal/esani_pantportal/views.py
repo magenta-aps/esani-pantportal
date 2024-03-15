@@ -20,6 +20,7 @@ from django.contrib.auth.views import LogoutView, PasswordChangeView
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.core.management import call_command
+from django.db import transaction
 from django.db.models import (
     BooleanField,
     Case,
@@ -68,7 +69,9 @@ from esani_pantportal.exports.uniconta.exports import CreditNoteExport, DebtorEx
 from esani_pantportal.forms import (
     ChangePasswordForm,
     CompanyFilterForm,
+    DepositPayoutForm,
     DepositPayoutItemFilterForm,
+    DepositPayoutItemFormSet,
     GenerateQRForm,
     MultipleProductRegisterForm,
     NewsEmailForm,
@@ -103,8 +106,10 @@ from esani_pantportal.models import (
     CompanyBranch,
     CompanyListViewPreferences,
     CompanyUser,
+    DepositPayout,
     DepositPayoutItem,
     ERPCreditNoteExport,
+    ERPProductMapping,
     EsaniUser,
     ImportJob,
     Kiosk,
@@ -132,6 +137,7 @@ from esani_pantportal.util import (
     get_back_url,
 )
 from esani_pantportal.view_mixins import (
+    FormWithFormsetView,
     IsAdminMixin,
     PermissionRequiredMixin,
     UpdateViewMixin,
@@ -1188,7 +1194,10 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
         product = item_obj.product
 
         source_error = _("Ingen matchende kæde eller butik, viser RVM-serienummer")
-        barcode_error = _("Intet matchende produkt, viser stregkoden")
+        barcode_not_found_error = _("Intet matchende produkt, viser stregkoden")
+        manual_payout_error = _(
+            "Intet produkt tilknyttet - udbetaling er oprettet manuelt"
+        )
 
         if company_branch:
             json_dict["source"] = str(company_branch) + ", " + company_branch.city
@@ -1201,7 +1210,12 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
             json_dict["product"] = product.product_name
             json_dict["product__refund_value"] = product.refund_value
         else:
-            json_dict["product"] = self.span(item_obj.barcode, barcode_error)
+            barcode = item_obj.barcode
+            if item_obj.deposit_payout.source_type == "manual":
+                json_dict["product"] = self.span("x" * 12, manual_payout_error)
+            elif barcode:
+                json_dict["product"] = self.span(barcode, barcode_not_found_error)
+
             json_dict["product__refund_value"] = "-"
 
         json_dict["date"] = item_obj.date.strftime("%-d. %b %Y")
@@ -1984,3 +1998,70 @@ class CsvUsersView(CsvTemplateView):
         response["Content-Disposition"] = f"attachment; filename={filename}"
         df.to_csv(path_or_buf=response, sep=";", index=False)
         return response
+
+
+class DepositItemFormSetView(PermissionRequiredMixin, FormWithFormsetView):
+    model = DepositPayout
+    form_class = DepositPayoutForm
+    formset_class = DepositPayoutItemFormSet
+    template_name = "esani_pantportal/deposit_payout/formset.html"
+
+    required_permissions = [
+        "esani_pantportal.add_depositpayout",
+        "esani_pantportal.add_depositpayoutitem",
+    ]
+
+    def get_success_url(self):
+        return reverse("pant:deposit_payout_list")
+
+    def get_context_data(self, *args, **kwargs):
+        mapping = ERPProductMapping.objects.get(
+            specifier=ERPProductMapping.SPECIFIER_MANUAL,
+            category=ERPProductMapping.CATEGORY_HANDLING,
+        )
+
+        context = super().get_context_data(*args, **kwargs)
+        context["rate"] = mapping.rate
+        return context
+
+    def form_valid(self, form, formset):
+        if formset.is_valid():
+            items = []
+            from_date = None
+            to_date = None
+            for subform in formset:
+                item = subform.save(commit=False)
+                items.append(item)
+
+                if not from_date or from_date > item.date:
+                    from_date = item.date
+
+                if not to_date or to_date < item.date:
+                    to_date = item.date
+
+        item_count = len(items)
+        source_identifier = " - ".join(
+            [
+                self.request.user.username,
+                now().strftime("%Y-%m-%d %H:%M:%S"),
+            ]
+        )
+
+        with transaction.atomic():
+            deposit_payout = self.model.objects.create(
+                source_type="manual",
+                item_count=item_count,
+                from_date=from_date,
+                to_date=to_date,
+                source_identifier=source_identifier,
+            )
+            for item in items:
+                item.deposit_payout = deposit_payout
+            DepositPayoutItem.objects.bulk_create(items)
+
+        messages.add_message(
+            self.request,
+            messages.INFO,
+            _("{item_count} pantdata-linjer oprettet").format(item_count=item_count),
+        )
+        return super().form_valid(form, formset)

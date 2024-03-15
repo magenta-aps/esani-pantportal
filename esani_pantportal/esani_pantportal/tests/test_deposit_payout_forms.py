@@ -6,11 +6,11 @@ from datetime import date
 from django.core.exceptions import NON_FIELD_ERRORS
 from django.test import TestCase
 
-from esani_pantportal.forms import DepositPayoutItemFilterForm
+from esani_pantportal.forms import DepositPayoutItemFilterForm, DepositPayoutItemForm
 from esani_pantportal.models import Company, CompanyBranch, Kiosk
 
 
-class TestDepositPayoutItemFilterForm(TestCase):
+class BaseDepositPayoutFormTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
@@ -26,6 +26,9 @@ class TestDepositPayoutItemFilterForm(TestCase):
             name="kiosk name",
             cvr=2222,
         )
+
+
+class TestDepositPayoutItemFilterForm(BaseDepositPayoutFormTest):
 
     def test_form_rejects_both_company_branch_and_kiosk(self):
         form = DepositPayoutItemFilterForm(
@@ -56,3 +59,41 @@ class TestDepositPayoutItemFilterForm(TestCase):
                 code="to_date_is_before_from_date",
             )
         )
+
+
+class TestDepositPayoutItemForm(BaseDepositPayoutFormTest):
+    def test_choices(self):
+        form = DepositPayoutItemForm()
+        choices = [c[0] for c in form.fields["company_branch_or_kiosk"].choices]
+
+        # Test that "company_branch_or_kiosk" contains both kiosks and branches
+        self.assertEqual(len(choices), 3)
+        self.assertIn(None, choices)
+        self.assertEqual(f"company_branch-{self.company_branch.id}", choices[1])
+        self.assertEqual(f"kiosk-{self.kiosk.id}", choices[2])
+
+    def test_clean_kiosk(self):
+        # Select a kiosk in the dropdown-menu
+        form = DepositPayoutItemForm(
+            {
+                "date": date(2020, 1, 1).strftime("%Y-%m-%d"),
+                "count": 1,
+                "company_branch_or_kiosk": f"kiosk-{self.kiosk.id}",
+            }
+        )
+
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["kiosk"], self.kiosk)
+
+    def test_clean_company_branch(self):
+        # Select a company_branch in the dropdown-menu
+        form = DepositPayoutItemForm(
+            {
+                "date": date(2020, 1, 1).strftime("%Y-%m-%d"),
+                "count": 1,
+                "company_branch_or_kiosk": f"company_branch-{self.company_branch.id}",
+            }
+        )
+
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["company_branch"], self.company_branch)

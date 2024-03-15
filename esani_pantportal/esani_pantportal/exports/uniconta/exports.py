@@ -148,7 +148,7 @@ class CreditNoteExport:
         return (
             queryset.select_related("product", "company_branch__company", "kiosk")
             .annotate(**annotations)
-            .exclude(product__isnull=True)
+            .exclude(Q(barcode__isnull=True) & ~Q(location_id__isnull=True))
             .exclude(source_id__isnull=True)
             .values(*group_by)
             .annotate(
@@ -229,6 +229,19 @@ class CreditNoteExport:
             yield line(
                 ERPProductMapping.CATEGORY_HANDLING,
                 ERPProductMapping.SPECIFIER_RVM,
+                row["count"],
+                unit_price=row["rvm_refund_value"],
+            )
+        elif row["type"] == DepositPayout.SOURCE_TYPE_MANUAL:
+            yield line(
+                ERPProductMapping.CATEGORY_DEPOSIT,
+                ERPProductMapping.SPECIFIER_MANUAL,
+                row["count"],
+                unit_price=row["product_refund_value"],
+            )
+            yield line(
+                ERPProductMapping.CATEGORY_HANDLING,
+                ERPProductMapping.SPECIFIER_MANUAL,
                 row["count"],
                 unit_price=row["rvm_refund_value"],
             )

@@ -1,14 +1,14 @@
 # SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
-from typing import Iterable, Optional
+from typing import Any, Iterable, Optional
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import AnonymousUser
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.template.response import TemplateResponse
-from django.views.generic import UpdateView
+from django.views.generic import FormView, UpdateView
 
 from esani_pantportal.models import (
     BRANCH_USER,
@@ -80,8 +80,8 @@ class PermissionRequiredMixin(LoginRequiredMixin):
     def get(self, request, *args, **kwargs):
         return self.check_permissions() or super().get(request, *args, **kwargs)
 
-    def form_valid(self, form):
-        return self.check_permissions() or super().form_valid(form)
+    def form_valid(self, form, *args, **kwargs):
+        return self.check_permissions() or super().form_valid(form, *args, **kwargs)
 
     @property
     def users_in_same_company(self):
@@ -180,3 +180,57 @@ class IsAdminMixin:
         if not user.is_anonymous and user.user_type == ESANI_USER:
             kwargs["esani_admin"] = True
         return kwargs
+
+
+class FormWithFormsetView(FormView):
+    formset_class: Any = None
+
+    def get_formset(self, formset_class=None):
+        if formset_class is None:
+            formset_class = self.get_formset_class()
+        return formset_class(**self.get_formset_kwargs())
+
+    def get_formset_kwargs(self):
+        """Return the keyword arguments for instantiating the form."""
+        kwargs = {
+            "initial": self.get_initial(),
+            "prefix": self.get_prefix(),
+        }
+        if self.request.method in ("POST", "PUT"):
+            kwargs.update(
+                {
+                    "data": self.request.POST,
+                    "files": self.request.FILES,
+                }
+            )
+
+        return kwargs
+
+    def get_formset_class(self):
+        return self.formset_class
+
+    def get_context_data(self, **kwargs):
+        if "formset" not in kwargs:
+            kwargs["formset"] = self.get_formset()
+        return super().get_context_data(**kwargs)
+
+    def form_valid(self, form, formset):
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form, formset):
+        return self.render_to_response(
+            self.get_context_data(form=form, formset=formset)
+        )
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        formset = self.get_formset()
+        for subform in formset:
+            if hasattr(subform, "set_parent_form"):
+                subform.set_parent_form(form)
+        form.full_clean()
+        formset.full_clean()
+        if form.is_valid() and formset.is_valid():
+            return self.form_valid(form, formset)
+        else:
+            return self.form_invalid(form, formset)
