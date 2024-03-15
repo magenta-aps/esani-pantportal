@@ -9,7 +9,8 @@ from django.db import IntegrityError
 from django.http import Http404, HttpRequest, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 from ninja import FilterSchema, ModelSchema, Query
-from ninja_extra import ControllerBase, api_controller, permissions, route
+from ninja_extra import ControllerBase, api_controller, permissions, route, status
+from ninja_extra.exceptions import APIException
 from ninja_extra.pagination import paginate
 from ninja_extra.schemas import NinjaPaginationResponseSchema
 from ninja_jwt.authentication import JWTAuth
@@ -121,6 +122,20 @@ class QRBagHistoryOut(QRBagOut):
     history_date: datetime
 
 
+class InvalidQRBagStatus(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+
+    def __init__(self, value) -> None:
+        self.detail = f"Invalid value {value!r} for status"
+
+
+class StatusChangeNotAllowed(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+
+    def __init__(self, value) -> None:
+        self.detail = f"This user is not allowed to set status to {value!r}"
+
+
 @api_controller(
     "/qrbag",
     tags=["QR-Pose"],
@@ -165,7 +180,7 @@ class QRBagAPI:  # type: ignore [call-arg]
                 )
 
             return QRBag.objects.create(
-                **payload.dict(),
+                **{k: v for k, v in payload.dict().items() if k != "status"},
                 qr=qr,
                 owner=user,
                 company_branch=company_branch,
@@ -190,7 +205,22 @@ class QRBagAPI:  # type: ignore [call-arg]
             return self.create(qr, payload)
         data = payload.dict(exclude_unset=True)
         for attr, value in data.items():
-            setattr(item, attr, value)
+            if attr != "status":
+                setattr(item, attr, value)
+            else:
+                is_backbone_user = self.context.request.user.groups.filter(
+                    name="BackboneUsers"
+                ).exists()
+                if value == QRBag.STATE_VENDOR_REGISTERED:
+                    item.increment_tour()
+                elif value == QRBag.STATE_BACKBONE_COLLECTED:
+                    if is_backbone_user:
+                        item.set_backbone_collected()
+                    else:
+                        raise StatusChangeNotAllowed(value)
+                else:
+                    raise InvalidQRBagStatus(value)
+
         user = self.context.request.user  # type: ignore
         item.owner = user
         item.save()

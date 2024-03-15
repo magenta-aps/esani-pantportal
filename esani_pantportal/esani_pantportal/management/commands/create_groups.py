@@ -39,6 +39,10 @@ class Command(BaseCommand):
             name="KioskUsers",
         )
 
+        backbone_users, _ = Group.objects.update_or_create(
+            name="BackboneUsers",
+        )
+
         company_admins, _ = Group.objects.update_or_create(
             name="CompanyAdmins",
         )
@@ -192,6 +196,13 @@ class Command(BaseCommand):
             ("change", qrbagmodel),
         ):
             branch_users.permissions.add(get_permission(action, model))
+
+        for action, model in (
+            ("view", qrbagmodel),
+            ("add", qrbagmodel),
+            ("change", qrbagmodel),
+        ):
+            backbone_users.permissions.add(get_permission(action, model))
 
         for action, model in (
             ("view", product_model),

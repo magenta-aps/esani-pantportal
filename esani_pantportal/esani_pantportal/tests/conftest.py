@@ -22,7 +22,7 @@ class LoginMixin:
         if group == "EsaniAdmins":
             user_model = EsaniUser
             kwargs = {}
-        elif group in ["BranchAdmins", "BranchUsers"]:
+        elif group in ["BranchAdmins", "BranchUsers", "BackboneUsers"]:
             user_model = BranchUser
 
             company = Company.objects.create(
