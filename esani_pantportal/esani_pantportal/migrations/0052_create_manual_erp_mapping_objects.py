@@ -7,7 +7,7 @@ def create_manual_ERP_product_mapping(apps, schema_editor):
     model = apps.get_model("esani_pantportal", "ERPProductMapping")
 
     model.objects.create(
-        item_number=103,  # TODO: Confirm item number with Jonas
+        item_number=103,
         rate=200,
         text="Pant (manuelt oprettet)",
         category="deposit",
@@ -15,8 +15,8 @@ def create_manual_ERP_product_mapping(apps, schema_editor):
     )
 
     model.objects.create(
-        item_number=203,  # TODO: Confirm item number with Jonas
-        rate=10,  # TODO: Confirm rate with Jonas
+        item_number=203,
+        rate=10,
         text="Håndteringsgodtgørelse (manuelt oprettet)",
         category="handling",
         specifier="manual",

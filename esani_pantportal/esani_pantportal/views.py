@@ -109,6 +109,7 @@ from esani_pantportal.models import (
     DepositPayout,
     DepositPayoutItem,
     ERPCreditNoteExport,
+    ERPProductMapping,
     EsaniUser,
     ImportJob,
     Kiosk,
@@ -2012,6 +2013,16 @@ class DepositItemFormSetView(PermissionRequiredMixin, FormWithFormsetView):
 
     def get_success_url(self):
         return reverse("pant:deposit_payout_list")
+
+    def get_context_data(self, *args, **kwargs):
+        mapping = ERPProductMapping.objects.get(
+            specifier=ERPProductMapping.SPECIFIER_MANUAL,
+            category=ERPProductMapping.CATEGORY_HANDLING,
+        )
+
+        context = super().get_context_data(*args, **kwargs)
+        context["rate"] = mapping.rate
+        return context
 
     def form_valid(self, form, formset):
         if formset.is_valid():
