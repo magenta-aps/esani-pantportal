@@ -1172,7 +1172,7 @@ class QRBag(models.Model):
         target=STATE_BACKBONE_COLLECTED,
     )
     def set_backbone_collected(self):
-        pass
+        pass  # pragma: nocover
 
     @transition(
         field=status,
@@ -1180,7 +1180,7 @@ class QRBag(models.Model):
         target=STATE_ESANI_COLLECTED,
     )
     def set_esani_collected(self):
-        pass
+        pass  # pragma: nocover
 
     @transition(
         field=status,
@@ -1188,7 +1188,7 @@ class QRBag(models.Model):
         target=STATE_ESANI_REGISTERED,
     )
     def set_esani_registered(self):
-        pass
+        pass  # pragma: nocover
 
     @transition(
         field=status,
@@ -1196,7 +1196,7 @@ class QRBag(models.Model):
         target=STATE_ESANI_COMPENSATED,
     )
     def set_esani_compensated(self):
-        pass
+        pass  # pragma: nocover
 
     @transition(
         field=status,
@@ -1204,7 +1204,7 @@ class QRBag(models.Model):
         target=STATE_VENDOR_REGISTERED,
     )
     def increment_tour(self):
-        pass
+        pass  # pragma: nocover
 
 
 class QRStatus(models.Model):
