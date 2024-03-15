@@ -6,7 +6,7 @@ Files: dev-environment/*  esani_pantportal/requirements.txt esani_pantportal/.co
 Copyright: 2023 Magenta ApS <info@magenta.dk>
 License: MPL-2.0
 
-Files: esani_pantportal/esani_pantportal/static/bootstrap/*.map esani_pantportal/barcode_scanner/static/bootstrap/*.map
+Files: esani_pantportal/esani_pantportal/static/bootstrap/* esani_pantportal/barcode_scanner/static/bootstrap/*.map
 Copyright: 2011-2023 The Bootstrap Authors
 License: MIT
 

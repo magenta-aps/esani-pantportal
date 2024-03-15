@@ -1,0 +1,52 @@
+<!--
+SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+{% extends 'esani_pantportal/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load l10n %}
+
+{% block extra_headers %}
+<script type="text/javascript" src="{% static 'jquery/formset.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="mx-5">
+    <div class="row">
+        <h1>{% translate "Manuel oprettelse af pantdata" %}</h1>
+    </div>
+    <div class="row">
+        <form method="post">
+            {% csrf_token %}
+            <div id="formset">
+            {{ formset.management_form }}
+                <div id="formset_header">
+                    <div class="row">
+                        <div class="col-2 pe-0">
+                            {% translate "Dato" %}
+                        </div>
+                        <div class="col-1 px-0">
+                            {% translate "Antal" %}
+                        </div>
+                        <div class="col-4 px-0">
+                            {% translate "Butik" %}
+                        </div>
+                    </div>
+                </div>
+                <div id="formset_container">
+                {% for subform in formset %}
+                    {% include "./subform.html" with subform=subform %}
+                {% endfor %}
+                </div>
+            </div>
+            <div id="formset_prototype" style="display: none">
+                {% include "./subform.html" with subform=formset.empty_form %}
+            </div>
+            <input class="btn btn-primary" type="submit" value={% translate "Opret" %} />
+        </form>
+    </div>
+</div>
+<script src="{% static 'jquery/form.js' %}"></script>
+{% endblock %}

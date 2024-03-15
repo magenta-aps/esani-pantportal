@@ -8,7 +8,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils.translation import gettext as _
 
-from esani_pantportal.models import DepositPayoutItem
+from esani_pantportal.models import DepositPayout, DepositPayoutItem
 from esani_pantportal.views import DepositPayoutSearchView
 
 from .helpers import ViewTestMixin
@@ -285,3 +285,123 @@ class TestDepositPayoutSearchViewMissingData(_BaseTestCase):
         item4 = items[self.deposit_payout_item_4.id]
 
         self.assertIn("Intet matchende produkt", item4["product"])
+
+
+class TestManuallyUploadedData(_BaseTestCase):
+    url = "pant:deposit_payout_list"
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        super().setUpTestData()
+        cls.deposit_payout_manual = DepositPayout.objects.create(
+            source_type=DepositPayout.SOURCE_TYPE_MANUAL,
+            source_identifier="unused",
+            from_date=datetime.date(2024, 1, 1),
+            to_date=datetime.date(2024, 2, 1),
+            item_count=1,
+        )
+
+        cls.deposit_payout_item_3 = DepositPayoutItem.objects.create(
+            deposit_payout=cls.deposit_payout_manual,
+            date=datetime.date(2024, 1, 29),
+            kiosk=cls.kiosk,
+            count=2,
+        )
+
+    def test_manually_uploaded_item(self):
+        response = self._get_response()
+
+        items = {d["id"]: d for d in response.context["items"]}
+        item3 = items[self.deposit_payout_item_3.id]
+
+        self.assertIn("udbetaling er oprettet manuelt", item3["product"])
+
+    def test_post_ids(self):
+        self._login()
+        # Post the ID of the manually uploaded deposit payout item
+        response = self.client.post(
+            reverse("pant:deposit_payout_list"),
+            data={
+                "id": [
+                    self.deposit_payout_item_3.pk,
+                ]
+            },
+        )
+        # Assert that we receive the expected CSV response
+        self.assertEqual(response["Content-Type"], "text/csv")
+        self._assert_csv_response(response, expected_length=2)
+
+
+class TestDepositItemFormSetView(_BaseTestCase):
+
+    def test_create_deposit_payout_items(self):
+        self._login()
+
+        url = reverse("pant:deposit_payout_register")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+        company_branch_id = self.company_branch.id
+        kiosk_id = self.kiosk.id
+
+        data = {
+            "form-TOTAL_FORMS": "3",
+            "form-INITIAL_FORMS": "0",
+            "form-MIN_NUM_FORMS": "1",
+            "form-MAX_NUM_FORMS": "1000",
+            "form-0-date": "2024-02-01",
+            "form-0-count": 123,
+            "form-0-company_branch_or_kiosk": f"kiosk-{kiosk_id}",
+            "form-1-date": "2024-03-01",
+            "form-1-count": 111,
+            "form-1-company_branch_or_kiosk": f"company_branch-{company_branch_id}",
+            "form-2-date": "2024-01-01",
+            "form-2-count": 234,
+            "form-2-company_branch_or_kiosk": f"company_branch-{company_branch_id}",
+        }
+
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+        uploaded_item1 = DepositPayoutItem.objects.filter(kiosk=self.kiosk).latest("id")
+        uploaded_item2 = DepositPayoutItem.objects.filter(
+            company_branch=self.company_branch
+        ).latest("id")
+
+        self.assertEqual(uploaded_item1.count, 123)
+        self.assertEqual(uploaded_item2.count, 234)
+
+        deposit_payout = DepositPayout.objects.latest("id")
+
+        self.assertEqual(deposit_payout.item_count, 3)
+        self.assertEqual(deposit_payout.from_date, datetime.date(2024, 1, 1))
+        self.assertEqual(deposit_payout.to_date, datetime.date(2024, 3, 1))
+
+        # Assert that the identifier is "username" - "YYYY-MM-DD HH:MM:SS"
+        regex = r"^esani_admin - \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"
+        self.assertRegex(deposit_payout.source_identifier, regex)
+
+    def test_form_invalid(self):
+        self._login()
+
+        url = reverse("pant:deposit_payout_register")
+
+        data = {
+            "form-TOTAL_FORMS": "1",
+            "form-INITIAL_FORMS": "0",
+            "form-MIN_NUM_FORMS": "1",
+            "form-MAX_NUM_FORMS": "1000",
+            "form-0-date": "2024-02-01",
+            "form-0-count": "",
+            "form-0-company_branch_or_kiosk": "kiosk-5555",
+        }
+
+        response = self.client.post(url, data=data)
+        forms = response.context["formset"].forms
+        errors = forms[0].errors
+
+        error1 = str(errors["company_branch_or_kiosk"])
+        self.assertIn("kiosk-5555 er ikke en af de tilgængelige valgmuligheder", error1)
+
+        error2 = str(errors["count"])
+        self.assertIn("Dette felt er påkrævet", error2)

@@ -64,6 +64,7 @@ SPDX-License-Identifier: MPL-2.0
                     <li><a class="dropdown-item" href="{% url 'pant:kiosk_user_register_by_admin' %}">{% bs_icon "person-plus" size="1.3em" %}{% translate "Registrér kioskadministrator" %}</a></li>
                     <li><a class="dropdown-item" href="{% url 'pant:esani_user_register' %}">{% bs_icon "person-plus" size="1.3em" %}{% translate "Registrér ESANI administrator" %}</a></li>
                     <li><a class="dropdown-item" href="{% url 'pant:qr_generate' %}">{% bs_icon "qr-code" size="1.3em" %}{% translate "Generér QR-koder" %}</a></li>
+                    <li><a class="dropdown-item" href="{% url 'pant:deposit_payout_register' %}">{% bs_icon "cart-plus" size="1.3em" %}{% translate "Manuel oprettelse af pantdata" %}</a></li>
                 {% endif %}
                 <li><a class="dropdown-item" href="{% url 'pant:about' %}">{% bs_icon "question-square" size="1.3em" %}{% translate "Om pantportal" %}</a></li>
             </ul>

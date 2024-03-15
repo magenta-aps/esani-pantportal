@@ -244,8 +244,10 @@ class Command(BaseCommand):
             ("change", company_branch_model),
             ("delete", company_branch_model),
             ("view", deposit_payout_model),
+            ("add", deposit_payout_model),
             ("view", deposit_payout_item_model),
             ("change", deposit_payout_item_model),
+            ("add", deposit_payout_item_model),
             ("view", erp_credit_note_export_model),
         ):
             esani_admins.permissions.add(get_permission(action, model))

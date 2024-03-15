@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
+import datetime
 import os
 
 import pandas as pd
@@ -13,6 +14,7 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import EMPTY_VALUES
+from django.forms import formset_factory
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 from phonenumber_field.widgets import PhonePrefixSelect
@@ -29,6 +31,8 @@ from esani_pantportal.models import (
     Company,
     CompanyBranch,
     CompanyUser,
+    DepositPayout,
+    DepositPayoutItem,
     EsaniUser,
     ImportJob,
     Kiosk,
@@ -884,11 +888,12 @@ class UserFilterForm(SortPaginateForm):
     company = forms.CharField(required=False)
 
 
-class DepositPayoutItemFilterForm(SortPaginateForm, BootstrapForm):
-    class HTML5DateWidget(forms.widgets.Input):
-        input_type = "date"
-        template_name = "django/forms/widgets/date.html"
+class HTML5DateWidget(forms.widgets.Input):
+    input_type = "date"
+    template_name = "django/forms/widgets/date.html"
 
+
+class DepositPayoutItemFilterForm(SortPaginateForm, BootstrapForm):
     company_branch = forms.ModelChoiceField(
         CompanyBranch.objects.select_related("company").order_by(
             "name", "company__name"
@@ -1287,3 +1292,48 @@ class GenerateQRForm(BootstrapForm):
         label=_("Sækketype"),
     )
     number_of_codes = forms.IntegerField(label=_("Antal koder"))
+
+
+class DepositPayoutForm(forms.ModelForm, BootstrapForm):
+    class Meta:
+        model = DepositPayout
+        fields: list[str] = []  # All fields are filled automatically
+
+
+class DepositPayoutItemForm(forms.ModelForm, BootstrapForm):
+    class Meta:
+        model = DepositPayoutItem
+        fields = ("date", "count", "company_branch_or_kiosk", "kiosk", "company_branch")
+
+    company_branch_or_kiosk = forms.ChoiceField(choices=[])
+    date = forms.DateField(initial=datetime.date.today, widget=HTML5DateWidget())
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        choices = [(None, "-------------------------")]
+        for kiosk in Kiosk.objects.all():
+            choices.append((f"kiosk-{kiosk.id}", str(kiosk)))
+        for company_branch in CompanyBranch.objects.select_related("company").all():
+            choices.append((f"company_branch-{company_branch.id}", str(company_branch)))
+
+        self.fields["company_branch_or_kiosk"].choices = sorted(
+            choices, key=lambda c: c[1]
+        )
+
+    def set_parent_form(self, form):
+        self.parent_form = form
+
+    def clean_kiosk(self):
+        company_branch_or_kiosk = self.cleaned_data.get("company_branch_or_kiosk")
+        if company_branch_or_kiosk and "kiosk" in company_branch_or_kiosk:
+            id = int(company_branch_or_kiosk.split("-")[-1])
+            return Kiosk.objects.get(id=id)
+
+    def clean_company_branch(self):
+        company_branch_or_kiosk = self.cleaned_data.get("company_branch_or_kiosk")
+        if company_branch_or_kiosk and "company_branch" in company_branch_or_kiosk:
+            id = int(company_branch_or_kiosk.split("-")[-1])
+            return CompanyBranch.objects.get(id=id)
+
+
+DepositPayoutItemFormSet = formset_factory(DepositPayoutItemForm, min_num=1, extra=0)
