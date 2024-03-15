@@ -987,20 +987,22 @@ class DepositPayout(models.Model):
 
     SOURCE_TYPE_CSV = "csv"
     SOURCE_TYPE_API = "api"
+    SOURCE_TYPE_MANUAL = "manual"
 
     SOURCE_TYPES = [
         (SOURCE_TYPE_CSV, _("Clearing-rapporter (CSV)")),
         (SOURCE_TYPE_API, _("QR-sække (API)")),
+        (SOURCE_TYPE_MANUAL, _("Manuelt oprettet af esani-admin")),
     ]
 
     source_identifier = models.CharField(
-        _("Kilde-ID (filnavn eller URL)"),
+        _("Kilde-ID (filnavn, URL eller brugernavn+dato)"),
         max_length=255,
     )
 
     source_type = models.CharField(
         _("Kilde-type"),
-        max_length=3,
+        max_length=6,
         choices=SOURCE_TYPES,
     )
 
@@ -1072,10 +1074,10 @@ class DepositPayoutItem(models.Model):
     """If the consumer session identity matches a known QR bag, we link this item to
     the QR bag"""
 
-    location_id = models.PositiveIntegerField()
+    location_id = models.PositiveIntegerField(null=True, blank=True)
     """Holds the raw value of the location ID in the CSV file line"""
 
-    rvm_serial = models.PositiveIntegerField()
+    rvm_serial = models.PositiveIntegerField(null=True, blank=True)
     """Serial number of RVM (= 'Reverse vending machine', aka. 'flaskeautomat')"""
 
     date = models.DateField(db_index=True)
@@ -1083,9 +1085,7 @@ class DepositPayoutItem(models.Model):
     Can be before `DepositPayout.from_date` in case of offline situations.`"""
 
     barcode = models.CharField(
-        validators=[validate_barcode_length, validate_digit],
-        null=True,
-        blank=True,
+        validators=[validate_barcode_length, validate_digit], null=True, blank=True
     )
     """Holds the raw value of the barcode in the CSV file line"""
 
@@ -1218,9 +1218,14 @@ class ERPProductMapping(models.Model):
 
     SPECIFIER_RVM = "rvm"
     SPECIFIER_BAG = "bag"
+    SPECIFIER_MANUAL = "manual"
     SPECIFIER_CHOICES = [
         (SPECIFIER_RVM, _("Pant eller håndteringsgodtgørelse, fra automat")),
         (SPECIFIER_BAG, _("Pant eller håndteringsgodtgørelse, fra QR-pose")),
+        (
+            SPECIFIER_MANUAL,
+            _("Pant eller håndteringsgodtgørelse, fra manuelt oprettede pant-data"),
+        ),
     ]
 
     item_number = models.PositiveSmallIntegerField(

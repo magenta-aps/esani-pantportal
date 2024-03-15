@@ -105,20 +105,40 @@ class TestCreditNoteExport(_SharedBase):
         cls.deposit_payout_item_rvm_1 = cls._add_deposit_payout_item(
             cls.deposit_payout_rvm,
             company_branch=cls.company_branch,
+            barcode="barcode",
         )
         cls.deposit_payout_item_rvm_2 = cls._add_deposit_payout_item(
             cls.deposit_payout_rvm,
             kiosk=cls.kiosk,
+            barcode="barcode",
         )
         cls.deposit_payout_item_bag_1 = cls._add_deposit_payout_item(
             cls.deposit_payout_bag,
             company_branch=cls.company_branch,
+            barcode="barcode",
             qr_bag=cls.qr_bag,
         )
         cls.deposit_payout_item_with_file_id = cls._add_deposit_payout_item(
             cls.deposit_payout_bag,
             company_branch=cls.company_branch,
+            barcode="barcode",
             file_id=uuid.uuid4(),
+        )
+        # Manually created item - must be exported
+        cls.deposit_payout_item_manual = cls._add_deposit_payout_item(
+            cls.deposit_payout_bag,
+            kiosk=cls.kiosk,
+            barcode=None,
+            location_id=None,
+            count=1000,
+        )
+        # "Null" item (#59706) from Tomra API - must not be exported
+        cls.deposit_payout_item_null_barcode = cls._add_deposit_payout_item(
+            cls.deposit_payout_bag,
+            kiosk=cls.kiosk,
+            barcode=None,
+            location_id=cls.kiosk.location_id,
+            count=1,
         )
 
     @classmethod
@@ -133,14 +153,11 @@ class TestCreditNoteExport(_SharedBase):
 
     @classmethod
     def _add_deposit_payout_item(cls, deposit_payout, **kwargs):
+        kwargs.setdefault("count", 20)
         return DepositPayoutItem.objects.create(
             deposit_payout=deposit_payout,
             product=cls.product,
-            rvm_serial=0,
-            location_id=0,
-            barcode="",
             date=date(2020, 1, 1),
-            count=20,
             **kwargs,
         )
 
@@ -188,6 +205,9 @@ class TestCreditNoteExport(_SharedBase):
                     # From `cls.deposit_payout_item_rvm_2`
                     ("101", "250"),
                     ("201", "15"),
+                    # From `self.deposit_payout_item_manual`
+                    ("102", "250"),
+                    ("202", "0"),
                 ],
             ),
             (
@@ -203,6 +223,9 @@ class TestCreditNoteExport(_SharedBase):
                     # From `cls.deposit_payout_item_rvm_2`
                     ("101", "250"),
                     ("201", "15"),
+                    # From `self.deposit_payout_item_manual`
+                    ("102", "250"),
+                    ("202", "0"),
                 ],
             ),
         ],
@@ -279,6 +302,16 @@ class TestCreditNoteExport(_SharedBase):
                         "source": "kiosk",
                         "type": "csv",
                     },
+                    # Data from `self.deposit_payout_item_manual`
+                    {
+                        "already_exported": False,
+                        "bag_qrs": [None],
+                        "count": 1000,
+                        "product_refund_value": 250,
+                        "rvm_refund_value": None,
+                        "source": "kiosk",
+                        "type": "api",
+                    },
                 ],
             ),
             (
@@ -309,6 +342,15 @@ class TestCreditNoteExport(_SharedBase):
                         "rvm_refund_value": None,
                         "source": "kiosk",
                         "type": "csv",
+                    },
+                    # Data from `self.deposit_payout_item_manual`
+                    {
+                        "bag_qrs": [None],
+                        "count": 1000,
+                        "product_refund_value": 250,
+                        "rvm_refund_value": None,
+                        "source": "kiosk",
+                        "type": "api",
                     },
                 ],
             ),
