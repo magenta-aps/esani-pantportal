@@ -208,9 +208,8 @@ class QRBagAPI:  # type: ignore [call-arg]
             if attr != "status":
                 setattr(item, attr, value)
             else:
-                is_backbone_user = self.context.request.user.groups.filter(
-                    name="BackboneUsers"
-                ).exists()
+                user = self.context.request.user  # type: ignore
+                is_backbone_user = user.groups.filter(name="BackboneUsers").exists()
                 if value == QRBag.STATE_VENDOR_REGISTERED:
                     item.increment_tour()
                 elif value == QRBag.STATE_BACKBONE_COLLECTED:
