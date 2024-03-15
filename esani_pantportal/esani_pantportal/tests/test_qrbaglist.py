@@ -114,9 +114,9 @@ class BaseQRBagTest(TestCase):
         cls.company_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
 
         # Two bags are created by a branch-admin
+        # Their initial status is `butik_oprettet`.
         qrbag1 = QRBag(
             qr="qr1",
-            status="Oprettet",
             company_branch=cls.branch1,
             owner=cls.branch_admin,
         )
@@ -124,7 +124,6 @@ class BaseQRBagTest(TestCase):
         qrbag1.save()
         qrbag2 = QRBag(
             qr="qr2",
-            status="Oprettet",
             company_branch=cls.branch1,
             owner=cls.branch_admin,
         )
@@ -132,17 +131,25 @@ class BaseQRBagTest(TestCase):
         qrbag2.save()
 
         # One of them is edited by an ESANI-admin
-        qrbag1.status = "Under transport"
+        qrbag1.set_esani_collected()  # status is now `pantsystem_modtaget`
         qrbag1._history_user = cls.esani_admin
         qrbag1.save()
 
         # This QR bag belongs to a kiosk (and branch-admins should therefore not see it)
-        qrbag3 = QRBag(qr="qr3", status="Oprettet", kiosk=cls.kiosk)
+        # The initial status is `butik_oprettet`.
+        qrbag3 = QRBag(
+            qr="qr3",
+            kiosk=cls.kiosk,
+        )
         qrbag3._history_user = cls.esani_admin
         qrbag3.save()
 
         # This QR bag belongs to another branch in the same company
-        qrbag4 = QRBag(qr="qr4", status="Oprettet", company_branch=cls.branch2)
+        # The initial status is `butik_oprettet`.
+        qrbag4 = QRBag(
+            qr="qr4",
+            company_branch=cls.branch2,
+        )
         qrbag4._history_user = cls.esani_admin
         qrbag4.save()
 
@@ -185,10 +192,10 @@ class QRBagListViewTest(BaseQRBagTest):
         self.assertEqual(bags["qr3"]["Butik"], "kiosk")
         self.assertEqual(bags["qr4"]["Butik"], "branch2")
 
-        self.assertEqual(bags["qr1"]["Status"], "Under transport")
-        self.assertEqual(bags["qr2"]["Status"], "Oprettet")
-        self.assertEqual(bags["qr3"]["Status"], "Oprettet")
-        self.assertEqual(bags["qr4"]["Status"], "Oprettet")
+        self.assertEqual(bags["qr1"]["Status"], QRBag.STATE_ESANI_COLLECTED)
+        self.assertEqual(bags["qr2"]["Status"], QRBag.STATE_VENDOR_REGISTERED)
+        self.assertEqual(bags["qr3"]["Status"], QRBag.STATE_VENDOR_REGISTERED)
+        self.assertEqual(bags["qr4"]["Status"], QRBag.STATE_VENDOR_REGISTERED)
 
     def test_company_admin_view(self):
         self.client.login(username="company_admin", password="12345")
@@ -204,15 +211,15 @@ class QRBagListViewTest(BaseQRBagTest):
         self.client.login(username="esani_admin", password="12345")
         response = self.client.get(reverse("pant:qrbag_list"))
         count = response.context["status_dict"]
-        self.assertEqual(count["Oprettet"], 3)
-        self.assertEqual(count["Under transport"], 1)
+        self.assertEqual(count[QRBag.STATE_VENDOR_REGISTERED], 3)
+        self.assertEqual(count[QRBag.STATE_ESANI_COLLECTED], 1)
 
     def test_counts_as_company_admin(self):
         self.client.login(username="company_admin", password="12345")
         response = self.client.get(reverse("pant:qrbag_list"))
         count = response.context["status_dict"]
-        self.assertEqual(count["Oprettet"], 2)
-        self.assertEqual(count["Under transport"], 1)
+        self.assertEqual(count[QRBag.STATE_VENDOR_REGISTERED], 2)
+        self.assertEqual(count[QRBag.STATE_ESANI_COLLECTED], 1)
 
 
 class QRBagHistoryViewTest(BaseQRBagTest):
@@ -233,5 +240,5 @@ class QRBagHistoryViewTest(BaseQRBagTest):
         self.assertEqual(len(histories), 2)
 
         history_dict = {h["Status"]: h["Ændringsansvarlig"] for h in histories}
-        self.assertEqual(history_dict["Oprettet"], "branch_admin")
-        self.assertEqual(history_dict["Under transport"], "esani_admin")
+        self.assertEqual(history_dict[QRBag.STATE_VENDOR_REGISTERED], "branch_admin")
+        self.assertEqual(history_dict[QRBag.STATE_ESANI_COLLECTED], "esani_admin")

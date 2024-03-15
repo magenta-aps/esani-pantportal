@@ -86,8 +86,10 @@ class ViewTestMixin(LoginMixin):
         cls.qr_bag = QRBag.objects.create(
             company_branch=cls.company_branch,
             qr="1234",
-            status="esani_optalt",
         )
+        cls.qr_bag.set_esani_collected()
+        cls.qr_bag.set_esani_registered()
+        cls.qr_bag.save()
 
         cls.deposit_payout = DepositPayout.objects.create(
             source_type=DepositPayout.SOURCE_TYPE_API,

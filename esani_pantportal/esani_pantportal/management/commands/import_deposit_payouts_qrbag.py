@@ -141,7 +141,7 @@ class Command(BaseCommand):
             ]
         )
         for qr_bag in qr_bags:
-            qr_bag.status = "esani_optalt"
+            qr_bag.set_esani_registered()
         bulk_update_with_history(qr_bags, QRBag, ["status"], batch_size=500)
 
     def _get_previous_to_date(self, val: str | None) -> date:

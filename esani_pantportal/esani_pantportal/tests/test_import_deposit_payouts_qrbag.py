@@ -68,6 +68,8 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
 
         # Add `QRBag` object
         cls.qr_bag, _ = QRBag.objects.update_or_create(qr=cls.bag_qr, kiosk=cls.kiosk)
+        cls.qr_bag.set_esani_collected()
+        cls.qr_bag.save()
 
         # Add `Product` objects
         defaults = {
@@ -210,8 +212,8 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
             self._assert_objects_created()
 
             # Assert: check the `QRBag` object was updated as expected
-            self.qr_bag.refresh_from_db()
-            self.assertEqual(self.qr_bag.status, "esani_optalt")
+            self.qr_bag = QRBag.objects.get(id=self.qr_bag.id)
+            self.assertEqual(self.qr_bag.status, QRBag.STATE_ESANI_REGISTERED)
 
     def _get_mock_api(self, data=None):
         mock_api = Mock(spec=TomraAPI)

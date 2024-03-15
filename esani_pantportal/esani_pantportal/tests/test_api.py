@@ -357,24 +357,19 @@ class QRStatusTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         QRStatus.objects.create(
-            code="butik_oprettet",
+            code=QRBag.STATE_VENDOR_REGISTERED,
             name_da="Oprettet af forhandler",
             name_kl="Oprettet af forhandler",
         )
         QRStatus.objects.create(
-            code="pantsystem_modtaget",
+            code=QRBag.STATE_ESANI_COLLECTED,
             name_da="Modtaget af pantsystemet",
             name_kl="Modtaget af pantsystemet",
         )
         QRStatus.objects.create(
-            code="backbone_modtaget",
+            code=QRBag.STATE_BACKBONE_COLLECTED,
             name_da="Modtaget af Backbone",
             name_kl="Modtaget af Backbone",
-        )
-        QRStatus.objects.create(
-            code="esani_modtaget",
-            name_da="Modtaget af ESANI",
-            name_kl="Modtaget af ESANI",
         )
 
     def test_list(self):
@@ -383,24 +378,19 @@ class QRStatusTest(TestCase):
             response.json(),
             [
                 {
-                    "code": "butik_oprettet",
+                    "code": QRBag.STATE_VENDOR_REGISTERED,
                     "name_da": "Oprettet af forhandler",
                     "name_kl": "Oprettet af forhandler",
                 },
                 {
-                    "code": "pantsystem_modtaget",
+                    "code": QRBag.STATE_ESANI_COLLECTED,
                     "name_da": "Modtaget af pantsystemet",
                     "name_kl": "Modtaget af pantsystemet",
                 },
                 {
-                    "code": "backbone_modtaget",
+                    "code": QRBag.STATE_BACKBONE_COLLECTED,
                     "name_da": "Modtaget af Backbone",
                     "name_kl": "Modtaget af Backbone",
-                },
-                {
-                    "code": "esani_modtaget",
-                    "name_da": "Modtaget af ESANI",
-                    "name_kl": "Modtaget af ESANI",
                 },
             ],
         )

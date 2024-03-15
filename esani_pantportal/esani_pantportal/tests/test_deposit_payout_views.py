@@ -8,7 +8,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils.translation import gettext as _
 
-from esani_pantportal.models import DepositPayout, DepositPayoutItem
+from esani_pantportal.models import DepositPayout, DepositPayoutItem, QRBag
 from esani_pantportal.views import DepositPayoutSearchView
 
 from .helpers import ViewTestMixin
@@ -195,8 +195,8 @@ class TestDepositPayoutSearchView(_BaseTestCase):
         self.assertIsNone(self.deposit_payout_item_2.file_id)
 
         # Assert that the underlying QR bag object is updated
-        self.qr_bag.refresh_from_db()
-        self.assertEqual(self.qr_bag.status, "esani_udbetalt")
+        self.qr_bag = QRBag.objects.get(id=self.qr_bag.id)
+        self.assertEqual(self.qr_bag.status, QRBag.STATE_ESANI_COMPENSATED)
 
     def test_post_selection_all_dry_with_hidden_items(self):
         self._login()

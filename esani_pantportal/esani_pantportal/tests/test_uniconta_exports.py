@@ -83,11 +83,15 @@ class TestCreditNoteExport(_SharedBase):
             kiosk=cls.kiosk,
             compensation=25.0,
         )
+
         cls.qr_bag = QRBag.objects.create(
             company_branch=cls.company_branch,
             qr=cls.qr_code,
-            status="esani_optalt",
         )
+        cls.qr_bag.set_esani_collected()
+        cls.qr_bag.set_esani_registered()
+        cls.qr_bag.save()
+
         cls.product = Product.objects.create(
             product_name="product",
             barcode="0010",
@@ -572,8 +576,8 @@ class TestCreditNoteExport(_SharedBase):
             item.refresh_from_db()
             self.assertEqual(item.file_id, instance._file_id)
         # Assert: QR bag status is updated
-        self.qr_bag.refresh_from_db()
-        self.assertEqual(self.qr_bag.status, "esani_udbetalt")
+        self.qr_bag = QRBag.objects.get(id=self.qr_bag.id)
+        self.assertEqual(self.qr_bag.status, QRBag.STATE_ESANI_COMPENSATED)
 
     def test_dry_true(self):
         """Passing `dry=True` should *not* update the underlying objects"""
@@ -588,8 +592,8 @@ class TestCreditNoteExport(_SharedBase):
             item.refresh_from_db()
             self.assertEqual(item.file_id, None)
         # Assert: QR bag status is *not* updated
-        self.qr_bag.refresh_from_db()
-        self.assertEqual(self.qr_bag.status, "esani_optalt")
+        self.qr_bag = QRBag.objects.get(id=self.qr_bag.id)
+        self.assertEqual(self.qr_bag.status, QRBag.STATE_ESANI_REGISTERED)
 
 
 class TestDebtorExport(_SharedBase):

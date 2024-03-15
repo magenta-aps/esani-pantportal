@@ -86,7 +86,7 @@ class CreditNoteExport:
                 id__in=has_qr_bag.values_list("qr_bag__id", flat=True)
             )
             for qr_bag in qr_bags:
-                qr_bag.status = "esani_udbetalt"
+                qr_bag.set_esani_compensated()
             bulk_update_with_history(qr_bags, QRBag, ["status"], batch_size=500)
 
             # Mark all deposit payout items as exported

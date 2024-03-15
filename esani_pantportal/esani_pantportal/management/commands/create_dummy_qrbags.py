@@ -84,7 +84,7 @@ class Command(BaseCommand):
                 }
 
                 for status in statusses:
-                    kwargs["status"] = status
+                    # kwargs["status"] = status
                     kwargs["updated"] = date_dict[status]
 
                     with override_autonow():

@@ -4,7 +4,7 @@
 
 from django.core.management.base import BaseCommand
 
-from esani_pantportal.models import QRStatus
+from esani_pantportal.models import QRBag, QRStatus
 
 
 class Command(BaseCommand):
@@ -12,42 +12,42 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         QRStatus.objects.update_or_create(
-            code="butik_oprettet",
+            code=QRBag.STATE_VENDOR_REGISTERED,
             defaults={
                 "name_da": "Oprettet af forhandler",
                 "name_kl": "Oprettet af forhandler",
             },
         )
         QRStatus.objects.update_or_create(
-            code="pantsystem_modtaget",
+            code=QRBag.STATE_ESANI_COLLECTED,
             defaults={
                 "name_da": "Modtaget af pantsystemet",
                 "name_kl": "Modtaget af pantsystemet",
             },
         )
         QRStatus.objects.update_or_create(
-            code="backbone_modtaget",
+            code=QRBag.STATE_BACKBONE_COLLECTED,
             defaults={
                 "name_da": "Modtaget af Backbone",
                 "name_kl": "Modtaget af Backbone",
             },
         )
         QRStatus.objects.update_or_create(
-            code="esani_modtaget",
+            code=QRBag.STATE_ESANI_COLLECTED,
             defaults={
                 "name_da": "Modtaget af ESANI",
                 "name_kl": "Modtaget af ESANI",
             },
         )
         QRStatus.objects.update_or_create(
-            code="esani_optalt",
+            code=QRBag.STATE_ESANI_REGISTERED,
             defaults={
                 "name_da": "Optalt hos ESANI",
                 "name_kl": "Optalt hos ESANI",
             },
         )
         QRStatus.objects.update_or_create(
-            code="esani_udbetalt",
+            code=QRBag.STATE_ESANI_COMPENSATED,
             defaults={
                 "name_da": "Udbetalt af ESANI",
                 "name_kl": "Udbetalt af ESANI",
