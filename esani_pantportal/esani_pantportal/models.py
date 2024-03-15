@@ -18,6 +18,7 @@ from django.db.models.functions import Cast, Concat, LPad
 from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.translation import gettext as _
+from django_fsm import FSMField, transition
 from simple_history.models import HistoricalRecords
 
 logger = logging.getLogger(__name__)
@@ -1116,6 +1117,12 @@ class DepositPayoutItem(models.Model):
 
 
 class QRBag(models.Model):
+    STATE_VENDOR_REGISTERED = "butik_oprettet"
+    STATE_BACKBONE_COLLECTED = "backbone_modtaget"
+    STATE_ESANI_COLLECTED = "pantsystem_modtaget"
+    STATE_ESANI_REGISTERED = "esani_optalt"
+    STATE_ESANI_COMPENSATED = "esani_udbetalt"
+
     qr = models.CharField(
         unique=True,
         max_length=200,  # TODO: Hvor lange er vores QR-koder?
@@ -1141,8 +1148,9 @@ class QRBag(models.Model):
     active = models.BooleanField(
         default=True,
     )
-    status = models.CharField(
-        max_length=20,
+    status = FSMField(
+        default=STATE_VENDOR_REGISTERED,
+        protected=True,
     )
     updated = models.DateTimeField(
         auto_now=True,
@@ -1157,6 +1165,46 @@ class QRBag(models.Model):
             )
         ]
         ordering = ["-updated"]
+
+    @transition(
+        field=status,
+        source=STATE_VENDOR_REGISTERED,
+        target=STATE_BACKBONE_COLLECTED,
+    )
+    def set_backbone_collected(self):
+        pass
+
+    @transition(
+        field=status,
+        source=[STATE_VENDOR_REGISTERED, STATE_BACKBONE_COLLECTED],
+        target=STATE_ESANI_COLLECTED,
+    )
+    def set_esani_collected(self):
+        pass
+
+    @transition(
+        field=status,
+        source=STATE_ESANI_COLLECTED,
+        target=STATE_ESANI_REGISTERED,
+    )
+    def set_esani_registered(self):
+        pass
+
+    @transition(
+        field=status,
+        source=STATE_ESANI_REGISTERED,
+        target=STATE_ESANI_COMPENSATED,
+    )
+    def set_esani_compensated(self):
+        pass
+
+    @transition(
+        field=status,
+        source=[STATE_ESANI_REGISTERED, STATE_ESANI_COMPENSATED],
+        target=STATE_VENDOR_REGISTERED,
+    )
+    def increment_tour(self):
+        pass
 
 
 class QRStatus(models.Model):
