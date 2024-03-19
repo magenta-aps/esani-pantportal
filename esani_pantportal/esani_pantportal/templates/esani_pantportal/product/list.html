@@ -8,6 +8,11 @@ SPDX-License-Identifier: MPL-2.0
 {% load i18n %}
 {% load l10n %}
 {% load bootstrap_icons %}
+
+{% block extra_headers %}
+<script src="{%  url 'javascript-catalog' %}"></script>
+{% endblock %}
+
 {% block content %}
 <div class="mx-5">
     <div class="row">
@@ -152,7 +157,17 @@ deleteButton.on("click", function() {
                 $("#pending_count").text(pending_count-resp.deleted_products);
 
                 if (resp.protected_products>0) {
-                    alert(resp.protected_products_message);
+                    alert(
+                        interpolate(
+                            ngettext(
+                                "Nedlagde %(protected_products)s produkt",
+                                "Nedlagde %(protected_products)s produkter",
+                                resp.protected_products,
+                            ),
+                            resp,
+                            true,  // use named interpolation
+                        )
+                    );
                 }
             },
             error: function(resp){

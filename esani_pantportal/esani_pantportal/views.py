@@ -1879,27 +1879,36 @@ class MultipleProductDeleteView(View, PermissionRequiredMixin):
             response.status_code = 403
             return response
 
+        # The products which are not related to a `DepositPayoutItem` can be deleted
         products_to_delete = products.filter(deposit_items__isnull=True)
-        protected_products = products.difference(products_to_delete)
 
+        # The remaining products can be marked closed, if they are not closed already
+        protected_products = products.exclude(closed=True).difference(
+            products_to_delete
+        )
+
+        # Get counts before actual deletes or updates are performed
         deleted_products_count = products_to_delete.count()
         protected_products_count = protected_products.count()
 
-        protected_products_message = _(
-            "Kunne ikke fjerne følgende {amount} produkter: {products}; {reason}"
-        ).format(
-            amount=protected_products_count,
-            products=", ".join([p.product_name for p in protected_products]),
-            reason=_("Produkt er tilknyttet en eller flere udbetalings-objekter"),
+        # Delete the products which are not related to a `DepositPayoutItem`
+        products_to_delete.delete()
+
+        # Mark the remaining products as closed
+        for p in protected_products:
+            p.closed = True
+        bulk_update_with_history(
+            protected_products,
+            Product,
+            ["closed"],
+            default_change_reason="Gjort Inaktiv",
         )
 
-        products_to_delete.delete()
         return JsonResponse(
             {
                 "status_code": 200,
                 "deleted_products": deleted_products_count,
                 "protected_products": protected_products_count,
-                "protected_products_message": protected_products_message,
             }
         )
 

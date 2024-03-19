@@ -746,12 +746,15 @@ class ProductListBulkDeleteTest(LoginMixin, TestCase):
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
     def test_bulk_delete_payout_item_products(self):
-        data = {"ids[]": [self.prod1.id, self.prod3.id]}
-
         self.assertTrue(Product.objects.filter(id=self.prod1.id).exists())
         self.assertTrue(Product.objects.filter(id=self.prod3.id).exists())
+
+        data = {"ids[]": [self.prod1.id, self.prod3.id]}
         response = self.client.post(self.delete_multiple_url, data)
+
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertFalse(Product.objects.filter(id=self.prod1.id).exists())
         self.assertTrue(Product.objects.filter(id=self.prod3.id).exists())
         self.assertEqual(response.json()["protected_products"], 1)
+        self.prod3.refresh_from_db()
+        self.assertTrue(self.prod3.closed)
