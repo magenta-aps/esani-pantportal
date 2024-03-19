@@ -238,6 +238,8 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
 
 
 class ProductListFormValidTest(LoginMixin, TestCase):
+    maxDiff = None
+
     @classmethod
     def setUpTestData(cls):
         cls.user = EsaniUser.objects.create_user(
@@ -307,51 +309,52 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         view.request.user = user
         view.kwargs = {}
         response = view.form_valid(view.form)
+        doc = json.loads(response.content)
         self.assertEquals(response.status_code, 200)
-        self.assertEquals(
-            json.loads(response.content),
-            {
-                "items": [
-                    {
-                        "actions": '<a href="/produkt/1?back=" class="btn btn-sm '
-                        'btn-primary">Vis</a>',
-                        "approved": "Nej",
-                        "approval_date": "-",
-                        "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
-                        "barcode": "0010",
-                        "capacity": 500,
-                        "diameter": 60,
-                        "height": 100,
-                        "id": 1,
-                        "material": "Aluminium",
-                        "product_name": "prod1",
-                        "shape": "Flaske",
-                        "weight": 20,
-                        "danish": "Ukendt",
-                        "file_name": self.job.file_name,
-                    },
-                    {
-                        "actions": '<a href="/produkt/2?back=" class="btn btn-sm '
-                        'btn-primary">Vis</a>',
-                        "approved": "Ja",
-                        "approval_date": datetime.date.today().strftime("%-d. %b %Y"),
-                        "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
-                        "barcode": "0002",
-                        "capacity": 500,
-                        "diameter": 60,
-                        "height": 100,
-                        "id": 2,
-                        "material": "Aluminium",
-                        "product_name": "prod2",
-                        "shape": "Flaske",
-                        "weight": 20,
-                        "danish": "Ukendt",
-                        "file_name": "-",
-                    },
-                ],
-                "total": 2,
-            },
+        self.assertListEqual(
+            doc["items"],
+            [
+                {
+                    "actions": '<a href="/produkt/1?back=" class="btn btn-sm '
+                    'btn-primary">Vis</a>',
+                    "approved": "Nej",
+                    "approval_date": "-",
+                    "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
+                    "barcode": "0010",
+                    "capacity": 500,
+                    "diameter": 60,
+                    "height": 100,
+                    "id": 1,
+                    "material": "Aluminium",
+                    "product_name": "prod1",
+                    "shape": "Flaske",
+                    "weight": 20,
+                    "danish": "Ukendt",
+                    "file_name": self.job.file_name,
+                    "closed": "Nej",
+                },
+                {
+                    "actions": '<a href="/produkt/2?back=" class="btn btn-sm '
+                    'btn-primary">Vis</a>',
+                    "approved": "Ja",
+                    "approval_date": datetime.date.today().strftime("%-d. %b %Y"),
+                    "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
+                    "barcode": "0002",
+                    "capacity": 500,
+                    "diameter": 60,
+                    "height": 100,
+                    "id": 2,
+                    "material": "Aluminium",
+                    "product_name": "prod2",
+                    "shape": "Flaske",
+                    "weight": 20,
+                    "danish": "Ukendt",
+                    "file_name": "-",
+                    "closed": "Nej",
+                },
+            ],
         )
+        self.assertEqual(doc["total"], 2)
 
         view = ProductSearchView()
         view.paginate_by = 20
@@ -367,33 +370,33 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         view.request.user = user
         view.kwargs = {}
         response = view.form_valid(view.form)
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(
-            json.loads(response.content),
-            {
-                "items": [
-                    {
-                        "actions": '<a href="/produkt/1?back=" class="btn btn-sm '
-                        'btn-primary">Vis</a>',
-                        "approved": "Nej",
-                        "approval_date": "-",
-                        "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
-                        "barcode": "0010",
-                        "capacity": 500,
-                        "diameter": 60,
-                        "height": 100,
-                        "id": 1,
-                        "material": "Aluminium",
-                        "product_name": "prod1",
-                        "shape": "Flaske",
-                        "weight": 20,
-                        "danish": "Ukendt",
-                        "file_name": self.job.file_name,
-                    }
-                ],
-                "total": 1,
-            },
+        doc = json.loads(response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertListEqual(
+            doc["items"],
+            [
+                {
+                    "actions": '<a href="/produkt/1?back=" class="btn btn-sm '
+                    'btn-primary">Vis</a>',
+                    "approved": "Nej",
+                    "approval_date": "-",
+                    "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
+                    "barcode": "0010",
+                    "capacity": 500,
+                    "diameter": 60,
+                    "height": 100,
+                    "id": 1,
+                    "material": "Aluminium",
+                    "product_name": "prod1",
+                    "shape": "Flaske",
+                    "weight": 20,
+                    "danish": "Ukendt",
+                    "file_name": self.job.file_name,
+                    "closed": "Nej",
+                }
+            ],
         )
+        self.assertEqual(doc["total"], 1)
 
 
 class ProductListGuiTest(LoginMixin, TestCase):
@@ -454,6 +457,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
             "Dansk pant": "Ukendt",
             "Filnavn": cls.job.file_name,
             "Handlinger": "Vis",
+            "Nedlagt": "Nej",
         }
 
         cls.prod2_expected_response = {
@@ -471,6 +475,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
             "Dansk pant": "Ukendt",
             "Filnavn": "-",
             "Handlinger": "Vis",
+            "Nedlagt": "Nej",
         }
 
     @staticmethod
@@ -519,6 +524,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
                 "Oprettelsesdato": item["creation_date"],
                 "Filnavn": item["file_name"],
                 "Handlinger": "Vis",
+                "Nedlagt": item["closed"],
             }
             for item in data["items"]
         ]

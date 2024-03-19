@@ -43,10 +43,14 @@ SPDX-License-Identifier: MPL-2.0
                 </div>
                 {% if user.is_esani_admin %}
                 <div class="row">
+                    <div class="col-4">{% translate "Nedlagt" %}</div>
+                    <div class="col-8">{{ form.closed }}</div>
+                </div>
+                <div class="row">
                     <div class="col-4">{% translate "Import job" %}</div>
                     <div class="col-8">{{form.import_job}}</div>
                 </div>
-            	{% endif %}
+                {% endif %}
                 <div class="row">
                     <div class="col-12"><button type="submit" class="btn btn-primary float-end">Søg</button></div>
                 </div>
