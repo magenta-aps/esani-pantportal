@@ -58,7 +58,10 @@ class Command(BaseCommand):
         shape_map = {"F": "Bottle", "A": "Other", "D": "Other"}
 
         all_products = list(
-            Product.objects.filter(approved=True).values(
+            Product.objects.filter(
+                approved=True,
+                closed=False,
+            ).values(
                 "barcode",
                 "product_name",
                 "material",
