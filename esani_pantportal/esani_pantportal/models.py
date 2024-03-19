@@ -522,6 +522,12 @@ class Product(models.Model):
         default=False,
         choices=((True, "Ja"), (False, "Nej")),
     )
+    closed = models.BooleanField(
+        verbose_name=_("Nedlagt"),
+        help_text=_("Produkt nedlagt af en ESANI medarbejder"),
+        default=False,
+        choices=((True, "Ja"), (False, "Nej")),
+    )
     approval_date = models.DateField(
         verbose_name=_("Godkendt dato"),
         help_text=_("Dato som dette produkt blev godkendt på"),
