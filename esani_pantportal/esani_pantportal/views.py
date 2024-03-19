@@ -731,12 +731,13 @@ class ProductSearchView(SearchView):
     can_edit_multiple = True
 
     search_fields = ["product_name", "barcode"]
-    search_fields_exact = ["approved", "import_job"]
+    search_fields_exact = ["approved", "closed", "import_job"]
 
     fixed_columns = {
         "product_name": _("Produktnavn"),
         "barcode": _("Stregkode"),
         "approved": _("Godkendt"),
+        "closed": _("Nedlagt"),
     }
     actions = {_("Vis"): "btn btn-sm btn-primary"}
 
@@ -753,7 +754,7 @@ class ProductSearchView(SearchView):
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)
 
-        if key == "approved":
+        if key in ("approved", "closed"):
             value = _("Ja") if value else _("Nej")
         elif key == "material":
             value = material(value)

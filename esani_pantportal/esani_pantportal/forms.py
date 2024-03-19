@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import datetime
 import os
+from typing import Any
 
 import pandas as pd
 from betterforms.multiform import MultiModelForm
@@ -49,6 +50,12 @@ from esani_pantportal.util import (
     read_csv,
     read_excel,
 )
+
+EMPTY_CHOICE: list[tuple[Any, str]] = [(None, "-" * 10)]
+NULL_BOOLEAN_CHOICES: list[tuple[Any, str]] = EMPTY_CHOICE + [
+    (True, _("Ja")),
+    (False, _("Nej")),
+]
 
 
 class PantPortalAuthenticationForm(AuthenticationForm):
@@ -832,9 +839,11 @@ class ProductFilterForm(SortPaginateForm):
     )
     approved = forms.NullBooleanField(
         required=False,
-        widget=forms.Select(
-            choices=((None, "---------"), (True, _("Ja")), (False, _("Nej")))
-        ),
+        widget=forms.Select(choices=NULL_BOOLEAN_CHOICES),
+    )
+    closed = forms.NullBooleanField(
+        required=False,
+        widget=forms.Select(choices=NULL_BOOLEAN_CHOICES),
     )
 
 
@@ -1317,7 +1326,7 @@ class DepositPayoutItemForm(forms.ModelForm, BootstrapForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        choices = [(None, "-------------------------")]
+        choices = EMPTY_CHOICE
         for kiosk in Kiosk.objects.all():
             choices.append((f"kiosk-{kiosk.id}", str(kiosk)))
         for company_branch in CompanyBranch.objects.select_related("company").all():
