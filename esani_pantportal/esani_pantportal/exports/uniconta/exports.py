@@ -7,6 +7,7 @@ import sys
 from itertools import groupby
 from uuid import uuid4
 
+from django.conf import settings
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import (
     BooleanField,
@@ -132,6 +133,7 @@ class CreditNoteExport:
             "type",
             "product_refund_value",
             "rvm_refund_value",
+            "compensation",
         ]
 
         if self._dry:
@@ -236,13 +238,13 @@ class CreditNoteExport:
                 ERPProductMapping.CATEGORY_DEPOSIT,
                 ERPProductMapping.SPECIFIER_MANUAL,
                 row["count"],
-                unit_price=row["product_refund_value"],
+                unit_price=settings.DEFAULT_REFUND_VALUE,
             )
             yield line(
                 ERPProductMapping.CATEGORY_HANDLING,
                 ERPProductMapping.SPECIFIER_MANUAL,
                 row["count"],
-                unit_price=row["rvm_refund_value"],
+                unit_price=row["compensation"],
             )
 
     def _get_bag_groups(self, row) -> list[tuple[str, int]]:

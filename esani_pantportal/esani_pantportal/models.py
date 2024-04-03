@@ -1111,6 +1111,15 @@ class DepositPayoutItem(models.Model):
         db_index=True,
     )
 
+    # Compensation (Only for manually created items)
+    compensation = models.FloatField(
+        verbose_name=_("Håndterings-godtgørelse"),
+        help_text=_("Håndterings-godtgørelse, angivet i øre (100=1DKK, 25=0.25DKK)"),
+        default=None,
+        null=True,
+        blank=True,
+    )
+
     def __str__(self):
         return f"{self.count}x {self.barcode}"
 
