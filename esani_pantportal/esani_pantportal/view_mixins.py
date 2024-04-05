@@ -228,6 +228,7 @@ class FormWithFormsetView(FormView):
         for subform in formset:
             if hasattr(subform, "set_parent_form"):
                 subform.set_parent_form(form)
+            subform.empty_permitted = False
         form.full_clean()
         formset.full_clean()
         if form.is_valid() and formset.is_valid():

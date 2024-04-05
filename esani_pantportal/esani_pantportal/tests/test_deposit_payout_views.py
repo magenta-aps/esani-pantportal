@@ -405,3 +405,30 @@ class TestDepositItemFormSetView(_BaseTestCase):
 
         error2 = str(errors["count"])
         self.assertIn("Dette felt er påkrævet", error2)
+
+    def test_empty_form(self):
+        self._login()
+
+        url = reverse("pant:deposit_payout_register")
+        kiosk_id = self.kiosk.id
+        data = {
+            "form-TOTAL_FORMS": "2",
+            "form-INITIAL_FORMS": "0",
+            "form-MIN_NUM_FORMS": "1",
+            "form-MAX_NUM_FORMS": "1000",
+            "form-0-date": "2024-02-01",
+            "form-0-count": 123,
+            "form-0-company_branch_or_kiosk": f"kiosk-{kiosk_id}",
+            "form-1-date": "2024-03-01",
+            "form-1-count": "",
+            "form-1-company_branch_or_kiosk": "",
+        }
+
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+        forms = response.context["formset"].forms
+        errors = forms[1].errors
+
+        self.assertIn("Dette felt er påkrævet", str(errors["company_branch_or_kiosk"]))
+        self.assertIn("Dette felt er påkrævet", str(errors["count"]))
