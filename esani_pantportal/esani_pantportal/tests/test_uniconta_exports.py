@@ -7,6 +7,7 @@ from datetime import date
 from io import StringIO
 from operator import itemgetter
 
+from django.conf import settings
 from django.test import TestCase
 from unittest_parametrize import ParametrizedTestCase, parametrize
 
@@ -667,3 +668,42 @@ class TestDebtorExport(_SharedBase):
         instance.as_csv(stream=stream)
         # Assert
         self._assert_expected_csv_rows(stream)
+
+
+class TestManuallyCreatedItemsExport(_SharedBase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.manually_added_payout = DepositPayout.objects.create(
+            source_type=DepositPayout.SOURCE_TYPE_MANUAL,
+            source_identifier="unused",
+            from_date=date(2020, 1, 1),
+            to_date=date(2020, 1, 1),
+            item_count=1,
+        )
+        cls.manually_added_item = DepositPayoutItem.objects.create(
+            deposit_payout=cls.manually_added_payout,
+            date=date(2020, 1, 1),
+            compensation=66,
+            count=666,
+            company_branch=cls.company_branch,
+        )
+
+    def test_export(self):
+        instance = CreditNoteExport(
+            date(2020, 1, 1),
+            date(2020, 2, 1),
+            DepositPayoutItem.objects.all(),
+        )
+
+        stream = StringIO()
+        instance.as_csv(stream)
+
+        output = [
+            (row["product_id"], row["unit_price"]) for row in self._get_csv_rows(stream)
+        ]
+        output_dict = {k: v for k, v in output}
+
+        self.assertEqual(len(output), 2)
+        self.assertEqual(output_dict["103"], str(settings.DEFAULT_REFUND_VALUE))
+        self.assertEqual(output_dict["203"], str(self.manually_added_item.compensation))

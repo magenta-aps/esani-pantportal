@@ -1112,7 +1112,7 @@ class DepositPayoutItem(models.Model):
     )
 
     # Compensation (Only used for manually created items)
-    compensation = models.FloatField(
+    compensation = models.PositiveSmallIntegerField(
         verbose_name=_("Håndterings-godtgørelse"),
         help_text=_("Håndterings-godtgørelse, angivet i øre (100=1DKK, 25=0.25DKK)"),
         default=None,
