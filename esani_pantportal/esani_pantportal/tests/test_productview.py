@@ -30,6 +30,8 @@ locale.setlocale(locale.LC_ALL, locale_name + ".UTF-8")
 
 
 class ProductViewGuiTest(LoginMixin, TestCase):
+    maxDiff = None
+
     @classmethod
     def setUpTestData(cls):
         cls.company = Company.objects.create(
@@ -95,6 +97,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         )
 
         call_command("create_groups")
+
         company_admin_group = Group.objects.get(name="CompanyAdmins")
         branch_admin_group = Group.objects.get(name="BranchAdmins")
         branch_user_group = Group.objects.get(name="BranchUsers")
@@ -146,18 +149,24 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         return Product.objects.get(id=product.id)
 
     @staticmethod
-    def get_html_data(html):
+    def get_html_data(html, exclude=None):
         soup = BeautifulSoup(html, "html.parser")
         output = []
 
         def key(row):
-            return row.find("th").text
+            return row.find("th").text.strip()
 
         def value(row):
             return row.find("td").text.strip().split("\n")[0].strip()
 
         for table in soup.find_all("table"):
-            output.append({key(row): value(row) for row in table.tbody.find_all("tr")})
+            output.append(
+                {
+                    key(row): value(row)
+                    for row in table.tbody.find_all("tr")
+                    if (exclude is None) or (key(row) not in exclude)
+                }
+            )
         return output
 
     def test_render_esani_admin(self):
@@ -165,7 +174,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         response = self.client.get(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
         )
-        data = self.get_html_data(response.content)
+        data = self.get_html_data(response.content, exclude=["Produkthistorik"])
         self.assertEquals(
             data,
             [
@@ -194,7 +203,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         response = self.client.get(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
         )
-        data = self.get_html_data(response.content)
+        data = self.get_html_data(response.content, exclude=["Produkthistorik"])
         self.assertEquals(
             data,
             [
@@ -218,21 +227,25 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         )
 
     @staticmethod
-    def make_form_data(form):
+    def make_form_data(form, exclude=None):
         form_data = {}
         for field_name, field in form.fields.items():
-            form_data[field_name] = form.get_initial_for_field(field, field_name)
+            if exclude and field_name in exclude:
+                continue
+            initial_value = form.get_initial_for_field(field, field_name)
+            if initial_value is not None:
+                form_data[field_name] = initial_value
 
         return form_data
 
-    def get_form_data(self, pk=None):
+    def get_form_data(self, pk=None, exclude=None):
         if not pk:
             pk = self.prod1.pk
         response = self.client.get(reverse("pant:product_view", kwargs={"pk": pk}))
 
         form = response.context_data["form"]
 
-        form_data = self.make_form_data(form)
+        form_data = self.make_form_data(form, exclude=exclude)
         return form_data
 
     def test_approve(self):
@@ -297,12 +310,12 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         response = self.client.get(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
         )
-        self.assertNotIn(
-            "Oprettet d.",
+        self.assertIn(
+            "Produkthistorik",
             response.content.decode(),
         )
         self.assertIn(
-            "Produkthistorik",
+            "Godkendt",
             response.content.decode(),
         )
 
@@ -340,7 +353,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
 
     def test_edit(self):
         self.login()
-        form_data = self.get_form_data()
+        form_data = self.get_form_data(exclude=["approved"])
         form_data["weight"] = 1223
 
         response = self.client.post(

@@ -1850,11 +1850,15 @@ class MultipleProductApproveView(View, PermissionRequiredMixin):
 
         ids = [int(id) for id in self.request.POST.getlist("ids[]")]
         products = Product.objects.filter(id__in=ids)
+
         for product in products:
-            product.approved = True
+            product.approve()
 
         bulk_update_with_history(
-            products, Product, ["approved"], default_change_reason="Godkendt"
+            products,
+            Product,
+            ["state"],
+            default_change_reason="Godkendt",
         )
 
         return JsonResponse({"status_code": 200})
