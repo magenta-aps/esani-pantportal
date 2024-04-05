@@ -238,15 +238,15 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         self.login()
         form_data = self.get_form_data()
         form_data["approved"] = True
+        self.prod1 = Product.objects.get(id=self.prod1.id)
         self.assertFalse(self.prod1.approved)
         prod1_url = reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
         response = self.client.post(
             prod1_url,
             form_data,
         )
-
         self.assertEquals(response.status_code, HTTPStatus.FOUND)
-        self.prod1.refresh_from_db()
+        self.prod1 = Product.objects.get(id=self.prod1.id)
         self.assertTrue(self.prod1.approved)
         self.assertRedirects(response, reverse("pant:product_list"))
 
@@ -256,7 +256,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
             form_data,
         )
-        self.prod1.refresh_from_db()
+        self.prod1 = Product.objects.get(id=self.prod1.id)
         self.assertEqual(self.prod1.product_name, "foo")
         self.assertRedirects(response, prod1_url)
 
@@ -286,6 +286,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         self.login()
         form_data = self.get_form_data()
         form_data["approved"] = True
+        self.prod1 = Product.objects.get(id=self.prod1.id)
         self.assertFalse(self.prod1.approved)
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
@@ -347,7 +348,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         )
 
         self.assertEquals(response.status_code, HTTPStatus.FOUND)
-        self.prod1.refresh_from_db()
+        self.prod1 = Product.objects.get(id=self.prod1.id)
         self.assertEqual(self.prod1.weight, 1223)
         self.assertRedirects(
             response, reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
@@ -375,6 +376,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         form_data = self.get_form_data()
         form_data["weight"] = 1223
 
+        self.prod1 = Product.objects.get(id=self.prod1.id)
         self.assertEqual(self.prod1.created_by.username, "esani_admin")
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
@@ -386,6 +388,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         form_data = self.get_form_data(self.prod2.pk)
         form_data["weight"] = 1223
 
+        self.prod2 = Product.objects.get(id=self.prod2.id)
         self.assertEqual(self.prod2.created_by.username, "branch_admin")
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod2.pk}),
@@ -408,6 +411,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         form_data = self.get_form_data(self.prod4.pk)
         form_data["weight"] = 1223
 
+        self.prod4 = Product.objects.get(id=self.prod4.id)
         self.assertEqual(self.prod4.created_by.username, "favorite_colleague")
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod4.pk}),
@@ -419,6 +423,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         form_data = self.get_form_data(self.prod5.pk)
         form_data["weight"] = 1223
 
+        self.prod5 = Product.objects.get(id=self.prod5.id)
         self.assertEqual(self.prod5.created_by.username, "rival_colleague")
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod5.pk}),
@@ -448,6 +453,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         }
         form_data = self.get_form_data(self.prod3.pk)
         form_data["weight"] = 1223
+        self.prod3 = Product.objects.get(id=self.prod3.id)
         self.assertEqual(self.prod3.approved, True)
 
         for username, expected_status in expected_status_dict.items():
@@ -464,6 +470,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         form_data = self.get_form_data()
         form_data["weight"] = 1223
 
+        self.prod1 = Product.objects.get(id=self.prod1.id)
         self.assertEqual(self.prod1.created_by.username, "esani_admin")
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
@@ -475,6 +482,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         form_data = self.get_form_data(self.prod2.pk)
         form_data["weight"] = 1223
 
+        self.prod2 = Product.objects.get(id=self.prod2.id)
         self.assertEqual(self.prod2.created_by.username, "branch_admin")
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod2.pk}),
@@ -516,7 +524,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
                 + "?back=foo",
                 form_data,
             )
-            self.prod1.refresh_from_db()
+            self.prod1 = Product.objects.get(id=self.prod1.id)
             self.assertDictEqual(model_to_dict(self.prod1), original)
 
     def test_remove(self):
@@ -553,7 +561,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
             form_data,
         )
-        self.prod1.refresh_from_db()
+        self.prod1 = Product.objects.get(id=self.prod1.id)
 
         # History should now show approval of product
         response = self.client.get(

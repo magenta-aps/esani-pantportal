@@ -642,12 +642,9 @@ class ProductListBulkApprovalTest(LoginMixin, TestCase):
         self.user = self.login("EsaniAdmins")
         data = {"ids[]": [self.prod1.id, self.prod2.id]}
         response = self.client.post(reverse("pant:product_multiple_approve"), data)
-
         self.assertEqual(response.status_code, HTTPStatus.OK)
-
-        self.prod1.refresh_from_db()
-        self.prod2.refresh_from_db()
-
+        self.prod1 = Product.objects.get(id=self.prod1.id)
+        self.prod2 = Product.objects.get(id=self.prod2.id)
         self.assertTrue(self.prod1.approved)
         self.assertTrue(self.prod2.approved)
 
