@@ -98,6 +98,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         branch_admin_group = Group.objects.get(name="BranchAdmins")
         branch_user_group = Group.objects.get(name="BranchUsers")
         esani_admin_group = Group.objects.get(name="EsaniAdmins")
+
         cls.admin_user.groups.add(esani_admin_group)
         cls.branch_admin.groups.add(branch_admin_group)
         cls.branch_user.groups.add(branch_user_group)
@@ -105,11 +106,23 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         cls.branch_admin_from_other_branch.groups.add(branch_admin_group)
         cls.company_admin.groups.add(company_admin_group)
 
-        cls.prod1 = Product.objects.create(
-            product_name="prod1",
-            barcode="00101122",
+        cls.prod1 = cls._create_product("prod1", "00101122", False, cls.admin_user)
+        cls.prod2 = cls._create_product("prod2", "00020002", False, cls.branch_admin)
+        cls.prod3 = cls._create_product("prod3", "00020003", True, cls.branch_admin)
+        cls.prod4 = cls._create_product(
+            "prod4", "00020004", False, cls.another_branch_admin
+        )
+        cls.prod5 = cls._create_product(
+            "prod5", "00020005", False, cls.branch_admin_from_other_branch
+        )
+
+    @classmethod
+    def _create_product(cls, name, barcode, approved, created_by):
+        product = Product.objects.create(
+            product_name=name,
+            barcode=barcode,
+            # Values below are not used in tests
             refund_value=3,
-            approved=False,
             material="A",
             height=100,
             diameter=60,
@@ -117,60 +130,19 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
             danish="J",
-            created_by=cls.admin_user,
         )
-        cls.prod2 = Product.objects.create(
-            product_name="prod2",
-            barcode="00020002",
-            refund_value=3,
-            approved=False,
-            material="A",
-            height=100,
-            diameter=60,
-            weight=20,
-            capacity=500,
-            shape="F",
-            created_by=cls.branch_admin,
-        )
-        cls.prod3 = Product.objects.create(
-            product_name="prod3",
-            barcode="00020003",
-            refund_value=3,
-            approved=True,
-            material="A",
-            height=100,
-            diameter=60,
-            weight=20,
-            capacity=500,
-            shape="F",
-            created_by=cls.branch_admin,
-        )
-        cls.prod4 = Product.objects.create(
-            product_name="prod4",
-            barcode="00020004",
-            refund_value=3,
-            approved=False,
-            material="A",
-            height=100,
-            diameter=60,
-            weight=20,
-            capacity=500,
-            shape="F",
-            created_by=cls.another_branch_admin,
-        )
-        cls.prod5 = Product.objects.create(
-            product_name="prod5",
-            barcode="00020005",
-            refund_value=3,
-            approved=False,
-            material="A",
-            height=100,
-            diameter=60,
-            weight=20,
-            capacity=500,
-            shape="F",
-            created_by=cls.branch_admin_from_other_branch,
-        )
+
+        if approved:
+            product.approve()
+            product.save()
+
+        history_entry = product.history.first()
+        history_entry.history_user = created_by
+        history_entry.save()
+
+        # Re-read product using its manager - which decorates the Product instance with
+        # `approved`, etc.
+        return Product.objects.get(id=product.id)
 
     @staticmethod
     def get_html_data(html):

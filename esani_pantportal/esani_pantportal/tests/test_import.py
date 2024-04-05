@@ -384,7 +384,6 @@ class MultipleProductRegisterFormIntegrationTests(
         Product.objects.create(
             barcode=df.loc[0, "Stregkode [str]"],
             product_name="foo",
-            approved=False,
             material=PRODUCT_MATERIAL_CHOICES[0][0],
             height=100,
             diameter=50,

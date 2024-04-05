@@ -46,7 +46,6 @@ class ViewTestMixin(LoginMixin):
             product_name="product_name",
             barcode="barcode",
             refund_value=3,
-            approved=True,
             material="A",
             height=100,
             diameter=60,

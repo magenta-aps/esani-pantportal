@@ -68,7 +68,6 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
             product_name="prod1",
             barcode="0010",
             refund_value=3,
-            approved=False,
             material="A",
             height=100,
             diameter=60,
@@ -80,7 +79,6 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
             product_name="prod2",
             barcode="0002",
             refund_value=3,
-            approved=True,
             material="A",
             height=100,
             diameter=60,
@@ -88,6 +86,8 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
         )
+        cls.prod2.approve()
+        cls.prod2.save()
 
     def test_get_queryset_normal(self):
         view = ProductSearchView()
@@ -256,7 +256,6 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             product_name="prod1",
             barcode="0010",
             refund_value=3,
-            approved=False,
             material="A",
             height=100,
             diameter=60,
@@ -264,14 +263,13 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
             id=1,
-            created_by=cls.user,
+            # created_by=cls.user,
             import_job=cls.job,
         )
         cls.prod2 = Product.objects.create(
             product_name="prod2",
             barcode="0002",
             refund_value=3,
-            approved=True,
             material="A",
             height=100,
             diameter=60,
@@ -279,8 +277,10 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
             id=2,
-            created_by=cls.user,
+            # created_by=cls.user,
         )
+        cls.prod2.approve()
+        cls.prod2.save()
 
     def test_form_invalid(self):
         class InvalidProductFilterForm(ProductFilterForm):
@@ -420,7 +420,6 @@ class ProductListGuiTest(LoginMixin, TestCase):
             product_name="prod1",
             barcode="0010",
             refund_value=3,
-            approved=False,
             material="A",
             height=100,
             diameter=60,
@@ -433,7 +432,6 @@ class ProductListGuiTest(LoginMixin, TestCase):
             product_name="prod2",
             barcode="0002",
             refund_value=3,
-            approved=True,
             material="A",
             height=100,
             diameter=60,
@@ -441,6 +439,8 @@ class ProductListGuiTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
         )
+        cls.prod2.approve()
+        cls.prod2.save()
 
         cls.prod1_expected_response = {
             "Produktnavn": cls.prod1.product_name,
@@ -619,7 +619,6 @@ class ProductListBulkApprovalTest(LoginMixin, TestCase):
             product_name="prod1",
             barcode="0010",
             refund_value=3,
-            approved=False,
             material="A",
             height=100,
             diameter=60,
@@ -631,7 +630,6 @@ class ProductListBulkApprovalTest(LoginMixin, TestCase):
             product_name="prod2",
             barcode="0002",
             refund_value=3,
-            approved=False,
             material="A",
             height=100,
             diameter=60,
@@ -682,7 +680,6 @@ class ProductListBulkDeleteTest(LoginMixin, TestCase):
             product_name="prod1",
             barcode="0010",
             refund_value=3,
-            approved=False,
             material="A",
             height=100,
             diameter=60,
@@ -696,7 +693,6 @@ class ProductListBulkDeleteTest(LoginMixin, TestCase):
             product_name="prod2",
             barcode="0002",
             refund_value=3,
-            approved=True,
             material="A",
             height=100,
             diameter=60,
@@ -704,13 +700,14 @@ class ProductListBulkDeleteTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
         )
+        cls.prod2.approve()
+        cls.prod2.save()
 
         # Product linked to DepositPayoutItem - cannot be deleted
         cls.prod3 = Product.objects.create(
             product_name="prod3",
             barcode="0003",
             refund_value=3,
-            approved=False,
             material="A",
             height=100,
             diameter=60,
