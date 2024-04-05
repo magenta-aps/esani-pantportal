@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
-from typing import Any, Iterable, Optional
+from typing import Iterable
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -49,7 +49,7 @@ class PermissionRequiredMixin(LoginRequiredMixin):
             template="two_factor/core/otp_required.html",
         )
 
-    def check_permissions(self) -> Optional[HttpResponse]:
+    def check_permissions(self) -> HttpResponse | None:
         if not self.has_permissions:
             return self.access_denied
         elif (
@@ -183,7 +183,7 @@ class IsAdminMixin:
 
 
 class FormWithFormsetView(FormView):
-    formset_class: Any = None
+    formset_class: object = None
 
     def get_formset(self, formset_class=None):
         if formset_class is None:
