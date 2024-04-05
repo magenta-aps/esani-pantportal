@@ -1758,7 +1758,15 @@ class ProductDeleteView(PermissionRequiredMixin, DeleteView):
     def form_valid(self, form):
         if not self.request.user.is_esani_admin and not self.same_workplace:
             return self.access_denied
-        return super().form_valid(form)
+
+        if can_proceed(self.object.delete):
+            self.object.delete()
+            self.object.save()
+            update_change_reason(self.object, "Slettet")
+        else:
+            return self.access_denied
+
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         back_url = get_back_url(self.request, reverse("pant:product_list"))
@@ -1859,42 +1867,24 @@ class MultipleProductDeleteView(View, PermissionRequiredMixin):
 
         ids = [int(id) for id in self.request.POST.getlist("ids[]")]
         products = Product.objects.filter(id__in=ids)
+        num = 0
 
-        if products.filter(approved=True):
-            response = JsonResponse({"error": _("Godkendte produkter må ikke fjernes")})
-            response.status_code = 403
-            return response
+        for p in products:
+            if can_proceed(p.delete):
+                p.delete()
+                num += 1
 
-        # The products which are not related to a `DepositPayoutItem` can be deleted
-        products_to_delete = products.filter(deposit_items__isnull=True)
-
-        # The remaining products can be marked closed, if they are not closed already
-        protected_products = products.exclude(closed=True).difference(
-            products_to_delete
-        )
-
-        # Get counts before actual deletes or updates are performed
-        deleted_products_count = products_to_delete.count()
-        protected_products_count = protected_products.count()
-
-        # Delete the products which are not related to a `DepositPayoutItem`
-        products_to_delete.delete()
-
-        # Mark the remaining products as closed
-        for p in protected_products:
-            p.closed = True
         bulk_update_with_history(
-            protected_products,
+            products,
             Product,
-            ["closed"],
-            default_change_reason="Gjort Inaktiv",
+            ["state"],
+            default_change_reason="Slettet",
         )
 
         return JsonResponse(
             {
                 "status_code": 200,
-                "deleted_products": deleted_products_count,
-                "protected_products": protected_products_count,
+                "deleted_products": num,
             }
         )
 

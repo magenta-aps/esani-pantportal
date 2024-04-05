@@ -724,10 +724,18 @@ class ProductListBulkDeleteTest(LoginMixin, TestCase):
     def test_bulk_delete(self):
         data = {"ids[]": [self.prod1.id]}
 
-        self.assertTrue(Product.objects.filter(id=self.prod1.id).exists())
+        self.assertQuerySetEqual(
+            Product.objects.filter(id=self.prod1.id).values("state"),
+            [{"state": ProductState.AWAITING_APPROVAL}],
+        )
+
         response = self.client.post(self.delete_multiple_url, data)
+
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertFalse(Product.objects.filter(id=self.prod1.id).exists())
+        self.assertQuerySetEqual(
+            Product.objects.filter(id=self.prod1.id).values("state"),
+            [{"state": ProductState.DELETED}],
+        )
 
     def test_bulk_delete_as_company_user(self):
         self.login("BranchAdmins")
@@ -738,18 +746,31 @@ class ProductListBulkDeleteTest(LoginMixin, TestCase):
     def test_bulk_delete_approved_products(self):
         data = {"ids[]": [self.prod1.id, self.prod2.id]}
         response = self.client.post(self.delete_multiple_url, data)
-        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_bulk_delete_payout_item_products(self):
-        self.assertTrue(Product.objects.filter(id=self.prod1.id).exists())
-        self.assertTrue(Product.objects.filter(id=self.prod3.id).exists())
+        # self.assertTrue(Product.objects.filter(id=self.prod1.id).exists())
+        # self.assertTrue(Product.objects.filter(id=self.prod3.id).exists())
+        self.assertQuerySetEqual(
+            Product.objects.filter(id__in=(self.prod1.id, self.prod3.id)).values(
+                "id", "state"
+            ),
+            [
+                {"id": self.prod1.id, "state": ProductState.AWAITING_APPROVAL},
+                {"id": self.prod3.id, "state": ProductState.AWAITING_APPROVAL},
+            ],
+        )
 
         data = {"ids[]": [self.prod1.id, self.prod3.id]}
         response = self.client.post(self.delete_multiple_url, data)
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertFalse(Product.objects.filter(id=self.prod1.id).exists())
-        self.assertTrue(Product.objects.filter(id=self.prod3.id).exists())
-        self.assertEqual(response.json()["protected_products"], 1)
-        self.prod3.refresh_from_db()
-        self.assertTrue(self.prod3.closed)
+        self.assertQuerySetEqual(
+            Product.objects.filter(id__in=(self.prod1.id, self.prod3.id)).values(
+                "id", "state"
+            ),
+            [
+                {"id": self.prod1.id, "state": ProductState.DELETED},
+                {"id": self.prod3.id, "state": ProductState.DELETED},
+            ],
+        )

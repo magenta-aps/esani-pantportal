@@ -20,6 +20,7 @@ from esani_pantportal.models import (
     CompanyUser,
     EsaniUser,
     Product,
+    ProductState,
 )
 
 from .conftest import LoginMixin
@@ -539,7 +540,10 @@ class ProductViewGuiTest(LoginMixin, TestCase):
 
         response = self.client.post(url_prod2)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
-        self.assertFalse(Product.objects.filter(pk=self.prod2.pk).exists())
+        self.assertQuerySetEqual(
+            Product.objects.filter(pk=self.prod2.pk).values_list("state", flat=True),
+            [ProductState.DELETED],
+        )
 
     def test_history(self):
         self.login()
