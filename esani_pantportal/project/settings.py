@@ -92,18 +92,11 @@ MIDDLEWARE = [
 ROOT_URLCONF = "project.urls"
 APPEND_SLASH = True
 
-default_loaders = [
-    "django.template.loaders.filesystem.Loader",
-    "django.template.loaders.app_directories.Loader",
-]
-
-cached_loaders = [("django.template.loaders.cached.Loader", default_loaders)]
-
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [],
-        # "APP_DIRS": True,
+        "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
@@ -112,7 +105,6 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "esani_pantportal.context_processors.environment",
             ],
-            "loaders": default_loaders if DEBUG else cached_loaders,
         },
     },
 ]
