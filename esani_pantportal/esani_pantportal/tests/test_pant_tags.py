@@ -21,3 +21,9 @@ class TestGetDisplayName(ParametrizedTestCase, SimpleTestCase):
         obj = Company(invoice_company_branch=input_value)
         result = get_display_name(obj, "invoice_company_branch")
         self.assertEqual(result, expected_output)
+
+    def test_get_display_name_for_invalid_annotation(self):
+        """Passing an invalid annotation name does not cause an exception"""
+        obj = Company()  # we just need any Django model instance
+        result = get_display_name(obj, "invalid_annotation_name")
+        self.assertEqual(result, gettext("Udefineret"))

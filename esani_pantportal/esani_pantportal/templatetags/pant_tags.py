@@ -51,7 +51,7 @@ def get_display_name(obj, attr):
     try:
         return getattr(obj, f"get_{attr}_display")()
     except AttributeError:
-        value = getattr(obj, attr)
+        value = getattr(obj, attr, None)
         field = None
         try:
             # Look for field on model instance
