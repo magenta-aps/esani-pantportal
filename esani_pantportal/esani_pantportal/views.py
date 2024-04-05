@@ -208,7 +208,6 @@ class ProductRegisterView(PermissionRequiredMixin, CreateView):
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object._change_reason = "Oprettet"
-        self.object.created_by = self.request.user
         return super().form_valid(form)
 
     def get_context_data(self, *args, **kwargs):
@@ -1559,11 +1558,9 @@ class MultipleProductRegisterView(PermissionRequiredMixin, FormView):
                 existing_products_count += 1
                 continue
             try:
-                product_dict["approved"] = False
                 product = Product(**product_dict)
-                product.created_by = self.request.user
                 product.import_job = job
-                product.full_clean()
+                product.full_clean(exclude=["state"])
                 products_to_save.append(product)
                 success_count += 1
             except ValidationError as e:

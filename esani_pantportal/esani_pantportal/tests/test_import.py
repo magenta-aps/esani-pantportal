@@ -7,6 +7,7 @@ from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
+from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, TestCase
@@ -18,6 +19,7 @@ from esani_pantportal.models import (
     PRODUCT_SHAPE_CHOICES,
     ImportJob,
     Product,
+    ProductState,
 )
 from esani_pantportal.util import default_dataframe
 
@@ -311,7 +313,7 @@ class MultipleProductRegisterFormIntegrationTests(
     LoginMixin, TestCase, MultipleProductRegisterFormTests
 ):
     def test_view_post(self):
-        self.login()
+        user = self.login()
         df = default_dataframe()
         file = self.make_excel_file_dict(df)
         url = reverse("pant:product_multiple_register")
@@ -322,6 +324,35 @@ class MultipleProductRegisterFormIntegrationTests(
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.context_data["success_count"], len(df))
         self.assertTrue(ImportJob.objects.filter(file_name=file["file"]).exists())
+
+        # Assert products are created with the expected state and `created_by` user
+        # instance.
+        imported_products = Product.objects.filter(import_job__file_name=file["file"])
+        self.assertQuerySetEqual(
+            imported_products.values_list("state", flat=True),
+            [ProductState.AWAITING_APPROVAL] * len(imported_products),
+        )
+        self.assertListEqual(
+            [p.created_by.username for p in imported_products],
+            [user.username] * len(imported_products),
+        )
+
+        # Assert historical entries are created as expected
+        HistoricalProduct = apps.get_model("esani_pantportal", "HistoricalProduct")
+        history_entries = HistoricalProduct.objects.filter(
+            history_relation__in=imported_products
+        )
+        self.assertQuerySetEqual(
+            history_entries.values("state", "history_change_reason", "history_user"),
+            [
+                {
+                    "state": ProductState.AWAITING_APPROVAL,
+                    "history_change_reason": "Oprettet",
+                    "history_user": user.pk,
+                }
+            ]
+            * len(imported_products),
+        )
 
     def test_view_get(self):
         self.login("BranchAdmins")
