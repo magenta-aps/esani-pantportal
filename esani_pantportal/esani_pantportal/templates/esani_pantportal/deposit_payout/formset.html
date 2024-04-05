@@ -43,6 +43,22 @@ SPDX-License-Identifier: MPL-2.0
                     {% include "./subform.html" with subform=subform %}
                 {% endfor %}
                 </div>
+                <div id="formset_footer">
+                    <div class="row">
+                        <div class="col-2 pe-0">
+                        </div>
+                        <div class="col-1 px-0">
+                        </div>
+                        <div class="col-4 px-0">
+                        </div>
+                        <div class="col-2 px-0 form-text">
+                            {{formset.empty_form.compensation.help_text}}
+                        </div>
+                        <div class="col-3 px-3 form-text">
+                        {% translate "Hint: Brug '+' knappen på tastaturet for at tilføje rækker" %}
+                        </div>
+                    </div>
+                </div>
             </div>
             <div id="formset_prototype" style="display: none">
                 {% include "./subform.html" with subform=formset.empty_form %}
