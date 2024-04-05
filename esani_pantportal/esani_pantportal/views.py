@@ -42,6 +42,7 @@ from django.http import (
     HttpResponse,
     HttpResponseForbidden,
     HttpResponseNotFound,
+    HttpResponseRedirect,
     JsonResponse,
 )
 from django.shortcuts import redirect
@@ -58,6 +59,7 @@ from django.views.generic import (
     UpdateView,
     View,
 )
+from django_fsm import can_proceed
 from django_otp import devices_for_user
 from django_stubs_ext import StrPromise
 from project.settings import DEFAULT_FROM_EMAIL
@@ -1293,6 +1295,9 @@ class ProductUpdateView(UpdateViewMixin):
     template_name = "esani_pantportal/product/view.html"
     form_class = ProductUpdateForm
 
+    def get_queryset(self):
+        return self.model.objects.get_queryset()
+
     def check_permissions(self):
         if self.request.method == "GET":
             self.required_permissions = ["esani_pantportal.view_product"]
@@ -1305,9 +1310,7 @@ class ProductUpdateView(UpdateViewMixin):
         return self.object.history.filter(
             Q(history_change_reason="Oprettet")
             | Q(history_change_reason="Godkendt")
-            | Q(  # NOTE: Gjort Inaktiv not yet implemented
-                history_change_reason="Gjort Inaktiv"
-            )
+            | Q(history_change_reason="Gjort Inaktiv")
         )
 
     def get_context_data(self, **kwargs):
@@ -1329,30 +1332,25 @@ class ProductUpdateView(UpdateViewMixin):
                 return self.access_denied
             if "approved" in form.changed_data:
                 return self.access_denied
-        return super().form_valid(form)
 
-    def get_success_url(self):
-        back_url = get_back_url(self.request, reverse("pant:product_list"))
-        approved = self.get_object().approved
-        latest_history_qs = self.get_latest_relevant_history()
-        recently_approved = bool(
-            latest_history_qs
-            and latest_history_qs.order_by("-history_date")[0].history_change_reason
-            == "Godkendt"
-        )
-        if approved:
-            if recently_approved:
-                update_change_reason(self.get_object(), "Ændret")
-                return self.request.get_full_path()
+        success_url = get_back_url(self.request, reverse("pant:product_list"))
+
+        if self.request.user.is_esani_admin:
+            approved = form.cleaned_data.get("approved")
+            if approved is True and can_proceed(self.object.approve):
+                self.object.approve()
+                self.object.save()
+                update_change_reason(self.object, "Godkendt")
+            elif approved is False and can_proceed(self.object.reject):
+                self.object.reject()
+                self.object.save()
+                update_change_reason(self.object, "Gjort Inaktiv")
             else:
-                update_change_reason(self.get_object(), "Godkendt")
-            return back_url
-        else:
-            if recently_approved:
-                update_change_reason(self.get_object(), "Gjort Inaktiv")
-            else:
-                update_change_reason(self.get_object(), "Ændret")
-            return self.request.get_full_path()
+                self.object.save()
+                update_change_reason(self.object, "Ændret")
+                success_url = self.request.get_full_path()
+
+        return HttpResponseRedirect(success_url)
 
 
 class ProductHistoryView(LoginRequiredMixin, DetailView):
