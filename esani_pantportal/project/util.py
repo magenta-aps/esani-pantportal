@@ -4,7 +4,6 @@
 
 import base64
 from decimal import Decimal
-from typing import Dict, List, Union
 
 import orjson
 from django.core.files import File
@@ -30,7 +29,7 @@ class ORJSONRenderer(BaseRenderer):
         return orjson.dumps(data, default=self.default)
 
 
-def json_dump(data: Union[Dict, List]):
+def json_dump(data: dict | list):
     return ORJSONRenderer().dumps(data)
 
 

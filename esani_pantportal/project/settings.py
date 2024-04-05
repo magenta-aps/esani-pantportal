@@ -18,7 +18,6 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any
 
 from project.util import strtobool
 
@@ -337,7 +336,7 @@ DEBUG_TOOLBAR_PANELS = [
 
 # Logging
 
-LOGGING: dict[str, Any] = {
+LOGGING: dict = {
     "version": 1,
     "disable_existing_loggers": True,
     "filters": {

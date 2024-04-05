@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-from typing import Any
-
 from django.contrib import admin
 
 from esani_pantportal.models import (
@@ -41,7 +39,7 @@ class DepositPayoutAdmin(admin.ModelAdmin):
 
 
 class ERPCreditNoteExportAdmin(admin.ModelAdmin):
-    _fields: list[Any] = [
+    _fields: list = [
         "file_id",
         "from_date",
         "to_date",

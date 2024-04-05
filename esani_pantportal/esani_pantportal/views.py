@@ -7,7 +7,6 @@ import os
 import sys
 from functools import cached_property
 from io import BytesIO
-from typing import Any, Dict
 from urllib.parse import quote
 
 import pandas as pd
@@ -562,8 +561,8 @@ class SearchView(LoginRequiredMixin, FormView):
         return model_dict
 
     def item_to_json_dict(
-        self, item_obj: Any, context: Dict[str, Any], index: int
-    ) -> Dict[str, Any]:
+        self, item_obj: object, context: dict[str, object], index: int
+    ) -> dict[str, object]:
         item = self.model_to_dict(item_obj)
         json_dict = {
             key: self.map_value(item, key, context) for key in list(item.keys())

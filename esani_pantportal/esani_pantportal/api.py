@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MPL-2.0
 import json
 from datetime import datetime
-from typing import List, Optional
 
 from django.db import IntegrityError
 from django.http import Http404, HttpRequest, HttpResponseBadRequest
@@ -53,8 +52,8 @@ class ApprovedProductsOut(ModelSchema):
 
 
 class ApprovedProductsFilterSchema(FilterSchema):
-    product_name: Optional[str]
-    barcode: Optional[int]
+    product_name: str | None
+    barcode: int | None
 
 
 @api_controller(
@@ -226,6 +225,6 @@ class QRStatusOut(ModelSchema):
     ],
 )
 class QRStatusAPI:  # type: ignore [call-arg]
-    @route.get("/", response=List[QRStatusOut])
+    @route.get("/", response=list[QRStatusOut])
     def list(self):
         return QRStatus.objects.all()
