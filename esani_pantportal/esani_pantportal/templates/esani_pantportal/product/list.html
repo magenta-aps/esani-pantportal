@@ -32,20 +32,10 @@ SPDX-License-Identifier: MPL-2.0
                     <div class="col-8">{{form.barcode}}</div>
                 </div>
                 <div class="row">
-                    <div class="col-4">
-                        {% translate "Godkendt" %}
-                        {% if user.is_esani_admin %}
-                        ({% bs_icon "bag-check" size="1em" color="green" %}: <span id="approved_count">{{approved_products}}</span>,
-                        {% bs_icon "bag-x" size="1em" color="red" %}: <span id="pending_count">{{pending_products}}</span>)
-                        {% endif %}
-                    </div>
-                    <div class="col-8">{{form.approved}}</div>
+                    <div class="col-4">{% translate "Status" %}</div>
+                    <div class="col-8">{{form.state}}</div>
                 </div>
                 {% if user.is_esani_admin %}
-                <div class="row">
-                    <div class="col-4">{% translate "Nedlagt" %}</div>
-                    <div class="col-8">{{ form.closed }}</div>
-                </div>
                 <div class="row">
                     <div class="col-4">{% translate "Import job" %}</div>
                     <div class="col-8">{{form.import_job}}</div>
@@ -88,7 +78,7 @@ function getUnapprovedRows(){
     const selectedRows = $("#table").bootstrapTable("getSelections");
     const rowIds = [];
     for (let row of selectedRows) {
-        if (row.approved==='{{ _("Nej") }}') {
+        if (row.status === "afventer") {
             rowIds.push(getRowId(row));
         }
     };
@@ -134,10 +124,6 @@ approveButton.on("click", function() {
                        ids : rowIds },
                 success: function(){
                     $table.bootstrapTable('refresh');
-                    let approved_count = parseInt($("#approved_count").text());
-                    let pending_count = parseInt($("#pending_count").text());
-                    $("#approved_count").text(approved_count+rowIds.length);
-                    $("#pending_count").text(pending_count-rowIds.length);
                 }
             });
         }
@@ -157,26 +143,10 @@ deleteButton.on("click", function() {
                    ids : rowIds },
             success: function(resp){
                 $table.bootstrapTable('refresh');
-                let pending_count = parseInt($("#pending_count").text());
-                $("#pending_count").text(pending_count-resp.deleted_products);
-
-                if (resp.protected_products>0) {
-                    alert(
-                        interpolate(
-                            ngettext(
-                                "Nedlagde %(protected_products)s produkt",
-                                "Nedlagde %(protected_products)s produkter",
-                                resp.protected_products,
-                            ),
-                            resp,
-                            true,  // use named interpolation
-                        )
-                    );
-                }
             },
             error: function(resp){
                 alert(resp.responseJSON.error);
-                }
+            }
         });
     }
 });

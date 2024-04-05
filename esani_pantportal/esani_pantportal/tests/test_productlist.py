@@ -8,7 +8,7 @@ from http import HTTPStatus
 from bs4 import BeautifulSoup
 from django import forms
 from django.http import HttpRequest
-from django.test import SimpleTestCase, TestCase
+from django.test import TestCase
 from django.urls import reverse
 from django.utils.timezone import make_aware
 
@@ -20,13 +20,14 @@ from esani_pantportal.models import (
     ImportJob,
     Kiosk,
     Product,
+    ProductState,
 )
 from esani_pantportal.views import ProductSearchView
 
 from .conftest import LoginMixin
 
 
-class ProductListSearchDataTest(SimpleTestCase):
+class ProductListSearchDataTest(TestCase):
     def test_search_data_pagination_int(self):
         view = ProductSearchView()
         view.paginate_by = 20
@@ -317,7 +318,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                 {
                     "actions": '<a href="/produkt/1?back=" class="btn btn-sm '
                     'btn-primary">Vis</a>',
-                    "approved": "Nej",
+                    "status": ProductState.AWAITING_APPROVAL,
                     "approval_date": "-",
                     "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
                     "barcode": "0010",
@@ -331,12 +332,11 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                     "weight": 20,
                     "danish": "Ukendt",
                     "file_name": self.job.file_name,
-                    "closed": "Nej",
                 },
                 {
                     "actions": '<a href="/produkt/2?back=" class="btn btn-sm '
                     'btn-primary">Vis</a>',
-                    "approved": "Ja",
+                    "status": ProductState.APPROVED,
                     "approval_date": datetime.date.today().strftime("%-d. %b %Y"),
                     "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
                     "barcode": "0002",
@@ -350,7 +350,6 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                     "weight": 20,
                     "danish": "Ukendt",
                     "file_name": "-",
-                    "closed": "Nej",
                 },
             ],
         )
@@ -378,7 +377,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                 {
                     "actions": '<a href="/produkt/1?back=" class="btn btn-sm '
                     'btn-primary">Vis</a>',
-                    "approved": "Nej",
+                    "status": ProductState.AWAITING_APPROVAL,
                     "approval_date": "-",
                     "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
                     "barcode": "0010",
@@ -392,7 +391,6 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                     "weight": 20,
                     "danish": "Ukendt",
                     "file_name": self.job.file_name,
-                    "closed": "Nej",
                 }
             ],
         )
@@ -445,7 +443,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
         cls.prod1_expected_response = {
             "Produktnavn": cls.prod1.product_name,
             "Stregkode": cls.prod1.barcode,
-            "Godkendt": "Nej",
+            "Status": ProductState.AWAITING_APPROVAL,
             "Godkendt dato": "-",
             "Oprettelsesdato": datetime.date.today().strftime("%-d. %b %Y"),
             "Volumen": str(cls.prod1.capacity),
@@ -457,13 +455,12 @@ class ProductListGuiTest(LoginMixin, TestCase):
             "Dansk pant": "Ukendt",
             "Filnavn": cls.job.file_name,
             "Handlinger": "Vis",
-            "Nedlagt": "Nej",
         }
 
         cls.prod2_expected_response = {
             "Produktnavn": cls.prod2.product_name,
             "Stregkode": cls.prod2.barcode,
-            "Godkendt": "Ja",
+            "Status": ProductState.APPROVED,
             "Godkendt dato": datetime.date.today().strftime("%-d. %b %Y"),
             "Oprettelsesdato": datetime.date.today().strftime("%-d. %b %Y"),
             "Volumen": str(cls.prod2.capacity),
@@ -475,7 +472,6 @@ class ProductListGuiTest(LoginMixin, TestCase):
             "Dansk pant": "Ukendt",
             "Filnavn": "-",
             "Handlinger": "Vis",
-            "Nedlagt": "Nej",
         }
 
     @staticmethod
@@ -512,7 +508,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
             {
                 "Produktnavn": item["product_name"],
                 "Stregkode": item["barcode"],
-                "Godkendt": item["approved"],
+                "Status": item["status"],
                 "Volumen": str(item["capacity"]),
                 "Materiale": item["material"],
                 "Højde": str(item["height"]),
@@ -524,7 +520,6 @@ class ProductListGuiTest(LoginMixin, TestCase):
                 "Oprettelsesdato": item["creation_date"],
                 "Filnavn": item["file_name"],
                 "Handlinger": "Vis",
-                "Nedlagt": item["closed"],
             }
             for item in data["items"]
         ]

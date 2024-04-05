@@ -727,17 +727,18 @@ class ProductSearchView(SearchView):
     model = Product
     form_class = ProductFilterForm
     preferences_class = ProductListViewPreferences
-    annotations = {"file_name": F("import_job__file_name")}
+    annotations = {
+        "file_name": F("import_job__file_name"),
+        # Alias for `Product.state`; otherwise `bootstrap-table` thinks it is a boolean
+        "status": F("state"),
+    }
     can_edit_multiple = True
-
     search_fields = ["product_name", "barcode"]
-    search_fields_exact = ["approved", "closed", "import_job"]
-
+    search_fields_exact = ["state", "approved", "import_job"]
     fixed_columns = {
         "product_name": _("Produktnavn"),
         "barcode": _("Stregkode"),
-        "approved": _("Godkendt"),
-        "closed": _("Nedlagt"),
+        "status": _("Status"),
     }
     actions = {_("Vis"): "btn btn-sm btn-primary"}
 
@@ -754,8 +755,8 @@ class ProductSearchView(SearchView):
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)
 
-        if key in ("approved", "closed"):
-            value = _("Ja") if value else _("Nej")
+        if key == "state":
+            return value
         elif key == "material":
             value = material(value)
         elif key == "shape":
@@ -766,17 +767,6 @@ class ProductSearchView(SearchView):
             value = value.strftime("%-d. %b %Y")
 
         return value or "-"
-
-    def get_context_data(self, *args, **kwargs):
-        context = super().get_context_data(*args, **kwargs)
-        if self.request.user.is_esani_admin:
-            # Statistics on approved products for ESANI admins
-            # Other users don't need to see this because they cannot approve anyway.
-            qs = Product.objects.values("approved").annotate(count=Count("id"))
-            approval_count_dict = {item["approved"]: item["count"] for item in qs}
-            context["approved_products"] = approval_count_dict.get(True, 0)
-            context["pending_products"] = approval_count_dict.get(False, 0)
-        return context
 
 
 class BranchSearchView(PermissionRequiredMixin, SearchView):

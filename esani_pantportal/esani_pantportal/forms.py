@@ -15,7 +15,9 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import EMPTY_VALUES
+from django.db.models import Count
 from django.forms import formset_factory
+from django.forms.widgets import HiddenInput
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 from phonenumber_field.widgets import PhonePrefixSelect
@@ -51,11 +53,7 @@ from esani_pantportal.util import (
     read_excel,
 )
 
-EMPTY_CHOICE: list[tuple[Any, str]] = [(None, "-" * 10)]
-NULL_BOOLEAN_CHOICES: list[tuple[Any, str]] = EMPTY_CHOICE + [
-    (True, _("Ja")),
-    (False, _("Nej")),
-]
+EMPTY_CHOICE: tuple[Any, str] = (None, "-" * 10)
 
 
 class PantPortalAuthenticationForm(AuthenticationForm):
@@ -122,7 +120,6 @@ class ProductUpdateForm(ProductRegisterForm):
     class Meta:
         model = Product
         fields = (
-            "approved",
             "product_name",
             "barcode",
             "shape",
@@ -133,6 +130,8 @@ class ProductUpdateForm(ProductRegisterForm):
             "weight",
             "capacity",
         )
+
+    approved = forms.NullBooleanField(initial=None, required=False)
 
 
 class UserUpdateForm(forms.ModelForm, BootstrapForm):
@@ -834,17 +833,18 @@ class SortPaginateForm(BootstrapForm):
 class ProductFilterForm(SortPaginateForm):
     product_name = forms.CharField(required=False)
     barcode = forms.CharField(required=False)
+    state = forms.ChoiceField(required=False, choices=[])
+    approved = forms.NullBooleanField(required=False, widget=HiddenInput())
     import_job = forms.ModelChoiceField(
         queryset=ImportJob.objects.all().select_related("imported_by"), required=False
     )
-    approved = forms.NullBooleanField(
-        required=False,
-        widget=forms.Select(choices=NULL_BOOLEAN_CHOICES),
-    )
-    closed = forms.NullBooleanField(
-        required=False,
-        widget=forms.Select(choices=NULL_BOOLEAN_CHOICES),
-    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        qs = Product.objects.order_by().values("state").annotate(count=Count("id"))
+        self.fields["state"].choices = [EMPTY_CHOICE] + [
+            (it["state"], _("%(state)s (%(count)s)") % it) for it in qs
+        ]
 
 
 class CompanyFilterForm(SortPaginateForm):
@@ -1326,7 +1326,7 @@ class DepositPayoutItemForm(forms.ModelForm, BootstrapForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        choices = EMPTY_CHOICE
+        choices = [EMPTY_CHOICE]
         for kiosk in Kiosk.objects.all():
             choices.append((f"kiosk-{kiosk.id}", str(kiosk)))
         for company_branch in CompanyBranch.objects.select_related("company").all():
