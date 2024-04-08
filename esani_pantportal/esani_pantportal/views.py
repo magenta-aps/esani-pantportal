@@ -1322,6 +1322,10 @@ class ProductUpdateView(UpdateViewMixin):
         return context
 
     def form_valid(self, form):
+        super().form_valid(form)
+
+        success_url = self.get_success_url()
+
         if not self.request.user.is_esani_admin:
             approved = self.get_object().approved
             if approved:
@@ -1330,10 +1334,7 @@ class ProductUpdateView(UpdateViewMixin):
                 return self.access_denied
             if "approved" in form.changed_data:
                 return self.access_denied
-
-        success_url = get_back_url(self.request, reverse("pant:product_list"))
-
-        if self.request.user.is_esani_admin:
+        else:
             approved = form.cleaned_data.get("approved")
             if approved is True and can_proceed(self.object.approve):
                 self.object.approve()
@@ -1349,6 +1350,9 @@ class ProductUpdateView(UpdateViewMixin):
                 success_url = self.request.get_full_path()
 
         return HttpResponseRedirect(success_url)
+
+    def get_success_url(self):
+        return get_back_url(self.request, reverse("pant:product_list"))
 
 
 class ProductHistoryView(LoginRequiredMixin, DetailView):
