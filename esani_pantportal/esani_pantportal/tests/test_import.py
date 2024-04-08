@@ -468,28 +468,92 @@ class TemplateViewTests(LoginMixin, TestCase):
 
 
 class TestProductRegisterView(LoginMixin, TestCase):
+    post_data = {
+        "product_name": "foo",
+        "barcode": "12341234",
+        "product_type": "Øl",
+        "material": "P",
+        "height": 100,
+        "diameter": 100,
+        "weight": 100,
+        "capacity": 150,
+        "shape": "F",
+        "danish": "U",
+    }
+
     def setUp(self) -> None:
+        super().setUp()
         self.login()
 
     def test_view(self):
         url = reverse("pant:product_register")
-
-        data = {
-            "product_name": "foo",
-            "barcode": "12341234",
-            "product_type": "Øl",
-            "material": "P",
-            "height": 100,
-            "diameter": 100,
-            "weight": 100,
-            "capacity": 150,
-            "shape": "F",
-            "danish": "U",
-        }
-        response = self.client.post(url, data)
-
+        response = self.client.post(url, self.post_data)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertRedirects(response, reverse("pant:product_register_success"))
+
+    def test_duplicate_barcode_disallowed(self):
+        """Registering the same barcode twice should not cause a duplicated product"""
+        # Try to create the same product twice
+        url = reverse("pant:product_register")
+        self.client.post(url, self.post_data)
+        self.client.post(url, self.post_data)
+
+        # Assert that only a single product exists
+        self.assertEqual(
+            Product.objects.filter(barcode=self.post_data["barcode"]).count(),
+            1,
+        )
+
+    def test_duplicate_barcode_disallowed_when_other_is_rejected(self):
+        """Creating a product with an existing barcode should cause an error if the
+        other product is rejected.
+        """
+        # Create the first instance of the product
+        url = reverse("pant:product_register")
+        self.client.post(url, self.post_data)
+
+        # Then, reject it
+        product = Product.objects.get(barcode=self.post_data["barcode"])
+        product.reject()
+        product.save()
+
+        # Now try to create another product sharing the same barcode
+        self.client.post(url, self.post_data)
+
+        # Assert that only a single product exists, and has the expected state (i.e. we
+        # only have the first, rejected, product.
+        self.assertQuerySetEqual(
+            Product.objects.filter(barcode=self.post_data["barcode"]).values_list(
+                "state", flat=True
+            ),
+            [ProductState.REJECTED],
+            ordered=False,
+        )
+
+    def test_duplicate_barcode_allowed_when_other_is_deleted(self):
+        """Creating a product with an existing barcode is allowed if the other product
+        is deleted."""
+        # Create the first instance of the product
+        url = reverse("pant:product_register")
+        self.client.post(url, self.post_data)
+
+        # Then, delete it
+        product = Product.objects.get(barcode=self.post_data["barcode"])
+        product.delete()
+        product.save()
+
+        # Now create another product sharing the same barcode
+        self.client.post(url, self.post_data)
+
+        # Assert that we have two products sharing the same barcode, but their
+        # states differ.
+        self.assertQuerySetEqual(
+            Product.objects.filter(barcode=self.post_data["barcode"]).values_list(
+                "state", flat=True
+            ),
+            [ProductState.AWAITING_APPROVAL, ProductState.DELETED],
+            ordered=False,
+        )
 
 
 class SingleProductRegisterFormTests(LoginMixin, TestCase):

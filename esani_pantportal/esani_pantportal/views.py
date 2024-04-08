@@ -19,7 +19,7 @@ from django.contrib.auth.views import LogoutView, PasswordChangeView
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.core.management import call_command
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import (
     BooleanField,
     Case,
@@ -117,6 +117,7 @@ from esani_pantportal.models import (
     KioskUser,
     Product,
     ProductListViewPreferences,
+    ProductState,
     QRBag,
     ReverseVendingMachine,
     User,
@@ -210,12 +211,29 @@ class ProductRegisterView(PermissionRequiredMixin, CreateView):
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object._change_reason = "Oprettet"
-        return super().form_valid(form)
+        try:
+            with transaction.atomic():
+                return super().form_valid(form)
+        except IntegrityError:
+            # Expected error: 'duplicate key value violates unique constraint
+            # "barcode_unique_when_not_deleted"'.
+            messages.add_message(
+                self.request,
+                messages.ERROR,
+                _("Der eksisterer allerede et produkt med denne stregkode"),
+            )
+            return super().form_invalid(form)
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         context["product_constraints"] = settings.PRODUCT_CONSTRAINTS
-        context["barcodes"] = [product.barcode for product in Product.objects.all()]
+        context["barcodes"] = {
+            product.barcode: {
+                "state": product.state,
+                "rejection": product.rejection,
+            }
+            for product in Product.objects.exclude(state=ProductState.DELETED)
+        }
         return context
 
     def get_success_url(self):
@@ -1910,7 +1928,7 @@ class MultipleProductRejectView(_MultipleProductStateUpdate):
 
 
 class MultipleProductDeleteView(_MultipleProductStateUpdate):
-    def can_proceed(self, product: Product) -> None:
+    def can_proceed(self, product: Product) -> bool:
         return can_proceed(product.delete)
 
     def update(self, product: Product) -> None:
