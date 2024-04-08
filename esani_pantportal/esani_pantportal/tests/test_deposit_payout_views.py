@@ -352,12 +352,15 @@ class TestDepositItemFormSetView(_BaseTestCase):
             "form-0-date": "2024-02-01",
             "form-0-count": 123,
             "form-0-company_branch_or_kiosk": f"kiosk-{kiosk_id}",
+            "form-0-compensation": 10,
             "form-1-date": "2024-03-01",
             "form-1-count": 111,
             "form-1-company_branch_or_kiosk": f"company_branch-{company_branch_id}",
+            "form-1-compensation": 10,
             "form-2-date": "2024-01-01",
             "form-2-count": 234,
             "form-2-company_branch_or_kiosk": f"company_branch-{company_branch_id}",
+            "form-2-compensation": 10,
         }
 
         response = self.client.post(url, data=data)
@@ -394,6 +397,7 @@ class TestDepositItemFormSetView(_BaseTestCase):
             "form-0-date": "2024-02-01",
             "form-0-count": "",
             "form-0-company_branch_or_kiosk": "kiosk-5555",
+            "form-0-compensation": "",
         }
 
         response = self.client.post(url, data=data)
@@ -405,6 +409,9 @@ class TestDepositItemFormSetView(_BaseTestCase):
 
         error2 = str(errors["count"])
         self.assertIn("Dette felt er påkrævet", error2)
+
+        error3 = str(errors["compensation"])
+        self.assertIn("Dette felt er påkrævet", error3)
 
     def test_empty_form(self):
         self._login()
@@ -419,9 +426,11 @@ class TestDepositItemFormSetView(_BaseTestCase):
             "form-0-date": "2024-02-01",
             "form-0-count": 123,
             "form-0-company_branch_or_kiosk": f"kiosk-{kiosk_id}",
+            "form-0-compensation": 200,
             "form-1-date": "2024-03-01",
             "form-1-count": "",
             "form-1-company_branch_or_kiosk": "",
+            "form-1-compensation": "",
         }
 
         response = self.client.post(url, data=data)
@@ -432,3 +441,4 @@ class TestDepositItemFormSetView(_BaseTestCase):
 
         self.assertIn("Dette felt er påkrævet", str(errors["company_branch_or_kiosk"]))
         self.assertIn("Dette felt er påkrævet", str(errors["count"]))
+        self.assertIn("Dette felt er påkrævet", str(errors["compensation"]))
