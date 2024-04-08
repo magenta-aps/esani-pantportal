@@ -756,9 +756,7 @@ class ProductSearchView(SearchView):
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)
 
-        if key == "state":
-            return value
-        elif key == "material":
+        if key == "material":
             value = material(value)
         elif key == "shape":
             value = shape(value)
