@@ -548,15 +548,25 @@ class ProductViewGuiTest(LoginMixin, TestCase):
 
         url_prod1 = reverse("pant:product_delete", kwargs={"pk": self.prod1.pk})
         url_prod2 = reverse("pant:product_delete", kwargs={"pk": self.prod2.pk})
+        url_prod3 = reverse("pant:product_delete", kwargs={"pk": self.prod3.pk})
+
+        # Test 1: we cannot delete product 1 as it is not created/owned by us
         response = self.client.post(url_prod1)
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
+        # Test 2: we can delete product 2 as it is owned by us, and not yet approved
         response = self.client.post(url_prod2)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertQuerySetEqual(
             Product.objects.filter(pk=self.prod2.pk).values_list("state", flat=True),
             [ProductState.DELETED],
         )
+
+        # Test 3: we cannot delete product 3 as it is approved (even though it is
+        # owned by us.)
+        self.client.login(username="esani_admin", password="12345")
+        response = self.client.post(url_prod3)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
     def test_history(self):
         self.login()
