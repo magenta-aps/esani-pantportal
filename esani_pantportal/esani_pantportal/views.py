@@ -846,7 +846,7 @@ class ReverseVendingMachineSearchView(BranchSearchView):
             "company_branch_or_kiosk": _("Butik"),
         }
         if self.request.user.is_esani_admin:
-            self.fixed_columns["compensation"] = _("Håndterings-godtgørelse")
+            self.fixed_columns["compensation"] = _("Håndteringsgodtgørelse")
 
         return super().get_context_data(*args, **kwargs)
 
