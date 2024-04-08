@@ -1864,7 +1864,7 @@ class _MultipleProductStateUpdate(View, PermissionRequiredMixin):
         bulk_update_with_history(
             products,
             Product,
-            ["state"],
+            self.get_affected_fields(),
             default_change_reason=self.get_change_reason(),
         )
 
@@ -1878,6 +1878,9 @@ class _MultipleProductStateUpdate(View, PermissionRequiredMixin):
 
     def get_change_reason(self) -> str:
         raise NotImplementedError("must be implemented by subclass")  # pragma: nocover
+
+    def get_affected_fields(self) -> list[str]:
+        return ["state"]
 
 
 class MultipleProductApproveView(_MultipleProductStateUpdate):
@@ -1897,9 +1900,13 @@ class MultipleProductRejectView(_MultipleProductStateUpdate):
 
     def update(self, product: Product) -> None:
         product.reject()
+        product.rejection = self.request.POST.get("rejection")
 
     def get_change_reason(self) -> str:
         return "Gjort Inaktiv"
+
+    def get_affected_fields(self) -> list[str]:
+        return super().get_affected_fields() + ["rejection"]
 
 
 class MultipleProductDeleteView(_MultipleProductStateUpdate):

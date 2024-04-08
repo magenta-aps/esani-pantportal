@@ -35,14 +35,20 @@
             return rowIds;
         }
 
-        const updateProducts = function (url, ids) {
+        const updateProducts = function (url, ids, extra) {
+            let data = {
+                csrfmiddlewaretoken: $("input[name=csrfmiddlewaretoken]").val(),
+                ids: ids,
+            };
+
+            if (extra) {
+                data = {...data, ...extra};
+            }
+
             $.ajax({
                 type: "POST",
                 url: url,
-                data: {
-                    csrfmiddlewaretoken: $("input[name=csrfmiddlewaretoken]").val(),
-                    ids: ids
-                },
+                data: data,
                 success: function (result) {
                     $table.bootstrapTable("refresh");
                     alert(
@@ -119,17 +125,25 @@
         rejectButton.on("click", function () {
             const rowIds = getRows();
 
-            confirmAndUpdateSelected(
-                $(this).data("post-url"),
-                rowIds,
-                // The `ngettext` function is provided by the Django
-                // `javascript-catalog` view, which returns a JS file.
+            const promptText = interpolate(
                 ngettext(
-                    "Er du sikker på at du vil afvise %(num)s produkt?",
-                    "Er du sikker på at du vil afvise %(num)s produkter?",
+                    "Angiv venligst en afvisnings-besked for %(num)s valgte produkt",
+                    "Angiv venligst en afvisnings-besked for %(num)s valgte produkter",
                     rowIds.length,
-                )
+                ),
+                {"num": rowIds.length},  // interpolation context
+                true,  // use named interpolation
             );
+
+            const rejectionText = prompt(promptText);
+
+            if ((rowIds.length > 0) && rejectionText) {
+                updateProducts(
+                    $(this).data("post-url"),
+                    rowIds,
+                    {"rejection": rejectionText},
+                );
+            }
         });
 
         deleteButton.on("click", function () {
