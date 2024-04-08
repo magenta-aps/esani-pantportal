@@ -269,9 +269,9 @@ class Branch(AbstractCompany):
     )
 
     qr_compensation = models.FloatField(
-        verbose_name=_("Håndterings-godtgørelse for QR-poser"),
+        verbose_name=_("Håndteringsgodtgørelse for QR-poser"),
         help_text=_(
-            "Håndterings-godtgørelse for QR-poser, angivet i øre (100=1DKK, 25=0.25DKK)"
+            "Håndteringsgodtgørelse for QR-poser, angivet i øre (100=1DKK, 25=0.25DKK)"
         ),
         default=0,
     )
@@ -351,8 +351,8 @@ class ReverseVendingMachine(models.Model):
     # https://danskretursystem.dk/app/uploads/2023/05/Haandteringsgodtgoerelse_2023.pdf
     # For a possible (future?) scenario.
     compensation = models.FloatField(
-        verbose_name=_("Håndterings-godtgørelse"),
-        help_text=_("Håndterings-godtgørelse, angivet i øre (100=1DKK, 25=0.25DKK)"),
+        verbose_name=_("Håndteringsgodtgørelse"),
+        help_text=_("Håndteringsgodtgørelse, angivet i øre (100=1DKK, 25=0.25DKK)"),
         default=0,
     )
 
@@ -976,7 +976,7 @@ class CompanyListViewPreferences(models.Model):
     show_location_id = models.BooleanField(default=False, verbose_name=_("Lokation ID"))
     show_customer_id = models.BooleanField(default=False, verbose_name=_("Kunde ID"))
     show_qr_compensation = models.BooleanField(
-        default=False, verbose_name=_("Håndterings-godtgørelse for QR-poser")
+        default=False, verbose_name=_("Håndteringsgodtgørelse for QR-poser")
     )
     show_company = models.BooleanField(default=False, verbose_name=_("Virksomhed"))
     show_cvr = models.BooleanField(default=False, verbose_name=_("CVR"))
@@ -1113,8 +1113,8 @@ class DepositPayoutItem(models.Model):
 
     # Compensation (Only used for manually created items)
     compensation = models.PositiveSmallIntegerField(
-        verbose_name=_("Håndterings-godtgørelse"),
-        help_text=_("Håndterings-godtgørelse, angivet i øre (100=1DKK, 25=0.25DKK)"),
+        verbose_name=_("Håndteringsgodtgørelse"),
+        help_text=_("Håndteringsgodtgørelse, angivet i øre (100=1DKK, 25=0.25DKK)"),
         default=None,
         null=True,
         blank=True,

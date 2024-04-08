@@ -171,17 +171,17 @@ class CompanyListTest(BaseCompanyTest):
         self.assertEqual(companies["facebook"]["Fakturamail"], "fb@bar.com")
 
         self.assertEqual(
-            companies["kiosk"]["Håndterings-godtgørelse for QR-poser"], "2.5 øre"
+            companies["kiosk"]["Håndteringsgodtgørelse for QR-poser"], "2.5 øre"
         )
         self.assertEqual(
-            companies["facebook_branch"]["Håndterings-godtgørelse for QR-poser"],
+            companies["facebook_branch"]["Håndteringsgodtgørelse for QR-poser"],
             "2 øre",
         )
         self.assertEqual(
-            companies["google"]["Håndterings-godtgørelse for QR-poser"], "-"
+            companies["google"]["Håndteringsgodtgørelse for QR-poser"], "-"
         )
         self.assertEqual(
-            companies["facebook"]["Håndterings-godtgørelse for QR-poser"],
+            companies["facebook"]["Håndteringsgodtgørelse for QR-poser"],
             "-",
         )
 
