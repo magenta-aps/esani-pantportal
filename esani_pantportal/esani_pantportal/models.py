@@ -631,6 +631,16 @@ class Product(models.Model):
         related_name="products",
     )
 
+    rejection = models.CharField(
+        verbose_name=_("Besked ved afvist produkt"),
+        help_text=_(
+            "Denne besked vises, hvis produktet er afvist, og alligevel forsøges "
+            "scannet, etc."
+        ),
+        null=True,
+        blank=True,
+    )
+
     def save(self, *args, **kwargs):
         initial = self.pk is None
         super().save(*args, **kwargs)
