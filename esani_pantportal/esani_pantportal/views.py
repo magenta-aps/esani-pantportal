@@ -1845,28 +1845,9 @@ class UpdateListViewPreferences(View):
         return HttpResponse("ok")
 
 
-class MultipleProductApproveView(View, PermissionRequiredMixin):
-    def post(self, request, *args, **kwargs):
-        if not self.request.user.is_esani_admin:
-            return self.access_denied
+class _MultipleProductStateUpdate(View, PermissionRequiredMixin):
+    """Base class for views that can update the state of multiple products"""
 
-        ids = [int(id) for id in self.request.POST.getlist("ids[]")]
-        products = Product.objects.filter(id__in=ids)
-
-        for product in products:
-            product.approve()
-
-        bulk_update_with_history(
-            products,
-            Product,
-            ["state"],
-            default_change_reason="Godkendt",
-        )
-
-        return JsonResponse({"status_code": 200})
-
-
-class MultipleProductDeleteView(View, PermissionRequiredMixin):
     def post(self, request, *args, **kwargs):
         if not self.request.user.is_esani_admin:
             return self.access_denied
@@ -1875,24 +1856,61 @@ class MultipleProductDeleteView(View, PermissionRequiredMixin):
         products = Product.objects.filter(id__in=ids)
         num = 0
 
-        for p in products:
-            if can_proceed(p.delete):
-                p.delete()
+        for product in products:
+            if self.can_proceed(product):
+                self.update(product)
                 num += 1
 
         bulk_update_with_history(
             products,
             Product,
             ["state"],
-            default_change_reason="Slettet",
+            default_change_reason=self.get_change_reason(),
         )
 
-        return JsonResponse(
-            {
-                "status_code": 200,
-                "deleted_products": num,
-            }
-        )
+        return JsonResponse({"total": len(ids), "updated": num})
+
+    def can_proceed(self, product: Product) -> bool:
+        raise NotImplementedError("must be implemented by subclass")  # pragma: nocover
+
+    def update(self, product: Product) -> None:
+        raise NotImplementedError("must be implemented by subclass")  # pragma: nocover
+
+    def get_change_reason(self) -> str:
+        raise NotImplementedError("must be implemented by subclass")  # pragma: nocover
+
+
+class MultipleProductApproveView(_MultipleProductStateUpdate):
+    def can_proceed(self, product: Product) -> bool:
+        return can_proceed(product.approve)
+
+    def update(self, product: Product) -> None:
+        product.approve()
+
+    def get_change_reason(self) -> str:
+        return "Godkendt"
+
+
+class MultipleProductRejectView(_MultipleProductStateUpdate):
+    def can_proceed(self, product: Product) -> bool:
+        return can_proceed(product.reject)
+
+    def update(self, product: Product) -> None:
+        product.reject()
+
+    def get_change_reason(self) -> str:
+        return "Gjort Inaktiv"
+
+
+class MultipleProductDeleteView(_MultipleProductStateUpdate):
+    def can_proceed(self, product: Product) -> None:
+        return can_proceed(product.delete)
+
+    def update(self, product: Product) -> None:
+        product.delete()
+
+    def get_change_reason(self) -> str:
+        return "Slettet"
 
 
 class TwoFactorSetup(SetupView):
