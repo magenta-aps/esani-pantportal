@@ -1303,7 +1303,14 @@ class DepositPayoutForm(forms.ModelForm, BootstrapForm):
 class DepositPayoutItemForm(forms.ModelForm, BootstrapForm):
     class Meta:
         model = DepositPayoutItem
-        fields = ("date", "count", "company_branch_or_kiosk", "kiosk", "company_branch")
+        fields = (
+            "date",
+            "count",
+            "company_branch_or_kiosk",
+            "kiosk",
+            "company_branch",
+            "compensation",
+        )
 
     company_branch_or_kiosk = forms.ChoiceField(choices=[])
     date = forms.DateField(initial=datetime.date.today, widget=HTML5DateWidget())
@@ -1334,6 +1341,12 @@ class DepositPayoutItemForm(forms.ModelForm, BootstrapForm):
         if company_branch_or_kiosk and "company_branch" in company_branch_or_kiosk:
             id = int(company_branch_or_kiosk.split("-")[-1])
             return CompanyBranch.objects.get(id=id)
+
+    def clean_compensation(self):
+        compensation = self.cleaned_data.get("compensation")
+        if not compensation:
+            raise ValidationError(_("Dette felt er påkrævet"))
+        return compensation
 
 
 DepositPayoutItemFormSet = formset_factory(DepositPayoutItemForm, min_num=1, extra=0)

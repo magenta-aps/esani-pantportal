@@ -79,6 +79,7 @@ class TestDepositPayoutItemForm(BaseDepositPayoutFormTest):
                 "date": date(2020, 1, 1).strftime("%Y-%m-%d"),
                 "count": 1,
                 "company_branch_or_kiosk": f"kiosk-{self.kiosk.id}",
+                "compensation": 10,
             }
         )
 
@@ -92,6 +93,7 @@ class TestDepositPayoutItemForm(BaseDepositPayoutFormTest):
                 "date": date(2020, 1, 1).strftime("%Y-%m-%d"),
                 "count": 1,
                 "company_branch_or_kiosk": f"company_branch-{self.company_branch.id}",
+                "compensation": 10,
             }
         )
 
