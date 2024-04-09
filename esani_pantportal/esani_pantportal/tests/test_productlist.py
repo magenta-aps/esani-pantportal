@@ -774,3 +774,87 @@ class ProductListBulkDeleteTest(LoginMixin, TestCase):
                 {"id": self.prod3.id, "state": ProductState.DELETED},
             ],
         )
+
+
+class ProductListBulkRejectionTest(LoginMixin, TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.prod1 = cls._create_product("prod1", "0001", ProductState.AWAITING_APPROVAL)
+        cls.prod2 = cls._create_product("prod2", "0002", ProductState.APPROVED)
+        cls.prod3 = cls._create_product("prod3", "0003", ProductState.REJECTED)
+        cls.prod4 = cls._create_product("prod4", "0004", ProductState.DELETED)
+
+    @classmethod
+    def _create_product(cls, name: str, barcode: str, state: ProductState) -> Product:
+        product = Product.objects.create(
+            product_name=name,
+            barcode=barcode,
+            # Not used in test
+            refund_value=3,
+            material="A",
+            height=100,
+            diameter=60,
+            weight=20,
+            capacity=500,
+            shape="F",
+        )
+
+        if state in (ProductState.APPROVED, ProductState.REJECTED):
+            product.approve()
+
+        if state == ProductState.REJECTED:
+            product.reject()
+            product.rejection = "Produktet er afvist"
+
+        if state == ProductState.DELETED:
+            product.delete()
+
+        product.save()
+
+        return product
+
+    def _post_rejection(self, product: Product, **data):
+        post_data = {"ids[]": [product.id]}
+        post_data.update(**data)
+        return self.client.post(
+            reverse("pant:product_multiple_reject"),
+            data=post_data,
+        )
+
+    def _assert_state(self, product: Product, state: ProductState):
+        product = Product.objects.get(id=product.id)
+        self.assertEqual(product.state, state)
+
+    def test_allowed_states(self):
+        self.login()
+
+        # Test 1: a product awaiting approval can be rejected
+        response = self._post_rejection(self.prod1)
+        self._assert_state(self.prod1, ProductState.REJECTED)
+        self.assertEqual(response.json()["updated"], 1)
+
+        # Test 2: an approved product can be rejected
+        response = self._post_rejection(self.prod2)
+        self._assert_state(self.prod2, ProductState.REJECTED)
+        self.assertEqual(response.json()["updated"], 1)
+
+        # Test 3: a rejected product *cannot* be rejected
+        response = self._post_rejection(self.prod3)
+        self._assert_state(self.prod3, ProductState.REJECTED)
+        self.assertEqual(response.json()["updated"], 0)
+
+        # Test 4: a deleted product *cannot* be rejected
+        response = self._post_rejection(self.prod4)
+        self._assert_state(self.prod4, ProductState.DELETED)
+        self.assertEqual(response.json()["updated"], 0)
+
+    def test_rejection_message(self):
+        self.login()
+        rejection = "Produktet kan ikke pantes"
+        self._post_rejection(self.prod1, rejection=rejection)
+        self.assertQuerySetEqual(
+            Product.objects.filter(id=self.prod1.id).values_list(
+                "rejection", flat=True
+            ),
+            [rejection],
+        )
