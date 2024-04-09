@@ -41,6 +41,7 @@ from esani_pantportal.models import (
     Kiosk,
     KioskUser,
     Product,
+    ProductState,
     ReverseVendingMachine,
     User,
     validate_barcode_length,
@@ -841,7 +842,12 @@ class ProductFilterForm(SortPaginateForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        qs = Product.objects.order_by().values("state").annotate(count=Count("id"))
+        qs = (
+            Product.objects.exclude(state=ProductState.DELETED)
+            .order_by()
+            .values("state")
+            .annotate(count=Count("id"))
+        )
         self.fields["state"].choices = [EMPTY_CHOICE] + [
             (it["state"], _("%(state)s (%(count)s)") % it) for it in qs
         ]

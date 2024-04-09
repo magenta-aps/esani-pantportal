@@ -11,6 +11,7 @@ from django.contrib.auth.models import Group
 from django.contrib.messages import get_messages
 from django.core.management import call_command
 from django.http import HttpResponseRedirect
+from django.test import TestCase
 from django.urls import reverse
 from django.utils.http import urlencode
 
@@ -22,6 +23,7 @@ from esani_pantportal.models import (
     EsaniUser,
     Kiosk,
     Product,
+    ProductState,
     QRBag,
 )
 
@@ -151,3 +153,42 @@ class ViewTestMixin(LoginMixin):
             str(list(get_messages(response.wsgi_request))[0]),
             message,
         )
+
+
+class ProductFixtureMixin(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.prod1 = cls._create_product("prod1", "0001", ProductState.AWAITING_APPROVAL)
+        cls.prod2 = cls._create_product("prod2", "0002", ProductState.APPROVED)
+        cls.prod3 = cls._create_product("prod3", "0003", ProductState.REJECTED)
+        cls.prod4 = cls._create_product("prod4", "0004", ProductState.DELETED)
+        super().setUpTestData()
+
+    @classmethod
+    def _create_product(cls, name: str, barcode: str, state: ProductState) -> Product:
+        product = Product.objects.create(
+            product_name=name,
+            barcode=barcode,
+            # Not used in test
+            refund_value=3,
+            material="A",
+            height=100,
+            diameter=60,
+            weight=20,
+            capacity=500,
+            shape="F",
+        )
+
+        if state in (ProductState.APPROVED, ProductState.REJECTED):
+            product.approve()
+
+        if state == ProductState.REJECTED:
+            product.reject()
+            product.rejection = "Produktet er afvist"
+
+        if state == ProductState.DELETED:
+            product.delete()
+
+        product.save()
+
+        return product

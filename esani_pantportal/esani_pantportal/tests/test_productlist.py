@@ -25,6 +25,7 @@ from esani_pantportal.models import (
 from esani_pantportal.views import ProductSearchView
 
 from .conftest import LoginMixin
+from .helpers import ProductFixtureMixin
 
 
 class ProductListSearchDataTest(TestCase):
@@ -776,43 +777,7 @@ class ProductListBulkDeleteTest(LoginMixin, TestCase):
         )
 
 
-class ProductListBulkRejectionTest(LoginMixin, TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.prod1 = cls._create_product("prod1", "0001", ProductState.AWAITING_APPROVAL)
-        cls.prod2 = cls._create_product("prod2", "0002", ProductState.APPROVED)
-        cls.prod3 = cls._create_product("prod3", "0003", ProductState.REJECTED)
-        cls.prod4 = cls._create_product("prod4", "0004", ProductState.DELETED)
-
-    @classmethod
-    def _create_product(cls, name: str, barcode: str, state: ProductState) -> Product:
-        product = Product.objects.create(
-            product_name=name,
-            barcode=barcode,
-            # Not used in test
-            refund_value=3,
-            material="A",
-            height=100,
-            diameter=60,
-            weight=20,
-            capacity=500,
-            shape="F",
-        )
-
-        if state in (ProductState.APPROVED, ProductState.REJECTED):
-            product.approve()
-
-        if state == ProductState.REJECTED:
-            product.reject()
-            product.rejection = "Produktet er afvist"
-
-        if state == ProductState.DELETED:
-            product.delete()
-
-        product.save()
-
-        return product
-
+class ProductListBulkRejectionTest(LoginMixin, ProductFixtureMixin):
     def _post_rejection(self, product: Product, **data):
         post_data = {"ids[]": [product.id]}
         post_data.update(**data)
