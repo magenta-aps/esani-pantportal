@@ -1738,7 +1738,6 @@ class CsvProductsView(CsvTemplateView):
         }
 
         shape_map = {"F": "Bottle", "A": "Other", "D": "Other"}
-        approval_map = {True: "Approved", False: "Pending"}
 
         if bool(approved):
             qs = Product.objects.filter(approved=True)
@@ -1756,8 +1755,8 @@ class CsvProductsView(CsvTemplateView):
                 )
             )
         else:
-            column_map["approved"] = "Approved by ESANI A/S"
-            qs = Product.objects.all()
+            column_map["state"] = "Status"
+            qs = Product.objects.exclude(state=ProductState.DELETED)
             filename = f"{timestamp}_full_product_list.csv"
             all_products = list(
                 qs.values(
@@ -1769,7 +1768,7 @@ class CsvProductsView(CsvTemplateView):
                     "weight",
                     "capacity",
                     "shape",
-                    "approved",
+                    "state",
                 )
             )
 
@@ -1780,8 +1779,6 @@ class CsvProductsView(CsvTemplateView):
                 "shape": shape_map,
             }
         )
-        if not bool(approved):
-            df = df.replace({"approved": approval_map})
         df = df.rename(column_map, axis=1)
 
         response = HttpResponse(content_type="text/csv")
