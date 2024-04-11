@@ -786,6 +786,11 @@ class ProductSearchView(SearchView):
 
         return value or "-"
 
+    def filter_qs(self, qs):
+        qs = super().filter_qs(qs)
+        qs = qs.exclude(state=ProductState.DELETED)
+        return qs
+
 
 class BranchSearchView(PermissionRequiredMixin, SearchView):
     """
