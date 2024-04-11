@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: 2024 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
+from unittest_parametrize import ParametrizedTestCase, parametrize
+
 from esani_pantportal.forms import EMPTY_CHOICE, ProductFilterForm
 from esani_pantportal.models import ProductState
 
@@ -8,20 +10,30 @@ from .conftest import LoginMixin
 from .helpers import ProductFixtureMixin
 
 
-class TestProductFilterForm(LoginMixin, ProductFixtureMixin):
-    def test_state_choices(self):
-        """The choices for `state` should exclude "deleted" and contain a product count
-        for each distinct state.
+class TestProductFilterForm(ParametrizedTestCase, LoginMixin, ProductFixtureMixin):
+    @parametrize(
+        "group,expected_fmt",
+        [
+            ("EsaniAdmins", "%(state)s (1)"),
+            ("BranchUsers", "%(state)s"),
+        ],
+    )
+    def test_state_choices(self, group, expected_fmt):
+        """The choices for `state` should exclude "deleted"
+        The choices should contain a product count for each distinct state, but
+        only if the user is an ESANI admin. Otherwise, only the state names
+        should be visible.
         """
+        user = self.login(group)
         expected_choices = [EMPTY_CHOICE] + [
-            (state, f"{state} (1)")
+            (state, expected_fmt % dict(state=state))
             for state in (
                 ProductState.AWAITING_APPROVAL,
                 ProductState.APPROVED,
                 ProductState.REJECTED,
             )
         ]
-        form = ProductFilterForm()
+        form = ProductFilterForm(user=user)
         self.assertSetEqual(
             set(form.fields["state"].choices),
             set(expected_choices),

@@ -841,15 +841,26 @@ class ProductFilterForm(SortPaginateForm):
     )
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
+
+        # Count number of products in each state (except DELETED)
         qs = (
             Product.objects.exclude(state=ProductState.DELETED)
             .order_by()
             .values("state")
             .annotate(count=Count("id"))
         )
+
+        # Only ESANI admins can see product counts for each state
+        if user and user.is_esani_admin:  # type: ignore
+            fmt = _("%(state)s (%(count)s)")
+        else:
+            fmt = _("%(state)s")
+
+        # Populate `state` choices
         self.fields["state"].choices = [EMPTY_CHOICE] + [
-            (it["state"], _("%(state)s (%(count)s)") % it) for it in qs
+            (it["state"], fmt % it) for it in qs
         ]
 
 

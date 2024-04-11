@@ -762,6 +762,11 @@ class ProductSearchView(SearchView):
     }
     actions = {_("Vis"): "btn btn-sm btn-primary"}
 
+    def get_form_kwargs(self):
+        form_kwargs = super().get_form_kwargs()
+        form_kwargs["user"] = self.request.user
+        return form_kwargs
+
     def get_action_url(self, item, *args):
         base_url = reverse("pant:product_view", kwargs={"pk": item.id})
         back_url = self.request.get_full_path()
