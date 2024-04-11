@@ -674,7 +674,7 @@ class Product(models.Model):
 
     @transition(
         field=state,
-        source=ProductState.AWAITING_APPROVAL,
+        source=[ProductState.AWAITING_APPROVAL, ProductState.REJECTED],
         target=ProductState.APPROVED,
     )
     def approve(self):
