@@ -49,6 +49,7 @@ from django.shortcuts import redirect
 from django.templatetags.l10n import localize
 from django.urls import reverse
 from django.utils.timezone import now
+from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import (
     CreateView,
@@ -1559,21 +1560,31 @@ class MultipleProductRegisterView(PermissionRequiredMixin, FormView):
             return self.access_denied
 
         products = form.df.rename(form.rename_dict, axis=1).to_dict(orient="records")
-        existing_barcodes = Product.objects.values_list("barcode", flat=True).distinct()
+
+        existing_barcodes = {
+            product.barcode: (product.state, product.rejection)
+            for product in Product.objects.exclude(state=ProductState.DELETED)
+        }
+
         job = ImportJob(
             imported_by=self.request.user,
             file_name=form.filename,
             date=now(),
         )
+
         failures = []
         success_count = 0
         existing_products_count = 0
         products_to_save = []
+
         for product_dict in products:
             barcode = product_dict["barcode"]
             product_name = product_dict["product_name"]
             if barcode in existing_barcodes:
                 existing_products_count += 1
+                state, rejection = existing_barcodes[barcode]
+                if state == ProductState.REJECTED:
+                    failures.append({product_name: {gettext("Afvist"): [rejection]}})
                 continue
             try:
                 product = Product(**product_dict)
