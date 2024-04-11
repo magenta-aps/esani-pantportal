@@ -121,12 +121,12 @@ class ProductAdmin(SimpleHistoryAdmin):
     def creation_date(self, obj):
         return obj.creation_date
 
-    creation_date.admin_order_field = "creation_date"
+    creation_date.admin_order_field = "creation_date"  # type: ignore
 
     def approval_date(self, obj):
         return obj.approval_date
 
-    approval_date.admin_order_field = "approval_date"
+    approval_date.admin_order_field = "approval_date"  # type: ignore
 
 
 admin.site.register(DepositPayout, DepositPayoutAdmin)
