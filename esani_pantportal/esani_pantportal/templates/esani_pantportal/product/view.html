@@ -121,10 +121,9 @@ SPDX-License-Identifier: MPL-2.0
         </div>
     </form>
     {% if can_edit and user.is_admin %}
-        {% translate "Når man fjerner et produkt, fjernes det helt fra databasen." as delete_text %}
         {% url 'pant:product_delete' object.id as delete_url %}
         <div class="row"><div class="col-6">
-        {% include "../delete_button.html" with url=delete_url|add_back_url:back_url text=delete_text %}
+        {% include "../delete_button.html" with url=delete_url|add_back_url:back_url %}
         </div></div>
     {% endif %}
 </div>
