@@ -12,6 +12,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
+from django.utils.translation import gettext
 
 from esani_pantportal.forms import MultipleProductRegisterForm, ProductRegisterForm
 from esani_pantportal.models import (
@@ -412,6 +413,8 @@ class MultipleProductRegisterFormIntegrationTests(
         data = self.defaults
         data["file"] = file["file"]
 
+        # Create a product which duplicates one of the barcodes in the uploaded
+        # Excel file, and which has `state` = `ProductState.AWAITING_APPROVAL`.
         Product.objects.create(
             barcode=df.loc[0, "Stregkode [str]"],
             product_name="foo",
@@ -423,11 +426,33 @@ class MultipleProductRegisterFormIntegrationTests(
             shape=PRODUCT_SHAPE_CHOICES[0][0],
         )
 
+        # Create a product which duplicates one of the barcodes in the uploaded
+        # Excel file, and which has `state` = `ProductState.REJECTED`, plus a
+        # `rejection` message.
+        rejection_message = "Dette produkt er afvist"
+        rejected_product = Product.objects.create(
+            barcode=df.loc[1, "Stregkode [str]"],
+            product_name="foo",
+            material=PRODUCT_MATERIAL_CHOICES[0][0],
+            height=100,
+            diameter=50,
+            weight=1,
+            capacity=200,
+            shape=PRODUCT_SHAPE_CHOICES[0][0],
+        )
+        rejected_product.reject()
+        rejected_product.rejection = rejection_message
+        rejected_product.save()
+
         response = self.client.post(url, data=data)
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertEqual(response.context_data["success_count"], len(df) - 1)
-        self.assertEqual(response.context_data["existing_products_count"], 1)
+        self.assertEqual(response.context["success_count"], len(df) - 2)
+        self.assertEqual(response.context["existing_products_count"], 2)
+        self.assertEqual(
+            response.context["failures"],
+            [{"Produkt 1": {gettext("Afvist"): [rejection_message]}}],
+        )
 
 
 class TemplateViewTests(LoginMixin, TestCase):
