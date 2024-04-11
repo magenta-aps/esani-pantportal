@@ -4,11 +4,7 @@ import django.db.models.deletion
 
 def populate_history_relation(apps, schema_editor) -> None:
     HistoricalProduct = apps.get_model("esani_pantportal", "HistoricalProduct")
-    num_updated = (
-        HistoricalProduct.objects.filter(history_relation=0)
-        .update(history_relation=models.F("id"))
-    )
-    print("Updated %d product history entries" % num_updated)
+    HistoricalProduct.objects.filter(history_relation=0).update(history_relation=models.F("id"))
 
 
 class Migration(migrations.Migration):
