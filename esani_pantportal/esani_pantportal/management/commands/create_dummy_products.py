@@ -17,6 +17,7 @@ from esani_pantportal.models import (
     EsaniUser,
     ImportJob,
     Product,
+    ProductState,
 )
 
 
@@ -80,16 +81,13 @@ class Command(BaseCommand):
             product = Product.objects.create(
                 product_name=product_name,
                 barcode=barcode,
-                approved=False,
+                state=ProductState.AWAITING_APPROVAL,
                 material=random.choice(PRODUCT_MATERIAL_CHOICES)[0],
                 height=random.randint(85, 200),
                 diameter=random.randint(50, 100),
                 weight=random.randint(100, 1000),
                 capacity=random.randint(150, 1000),
                 shape=random.choice(PRODUCT_SHAPE_CHOICES)[0],
-                created_by=user,
-                approval_date=None,
-                creation_date=creation_date,
                 import_job=random.choice(jobs + [None]),
             )
 
