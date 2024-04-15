@@ -372,6 +372,21 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             response, reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
         )
 
+    def test_edit_fails_on_duplicate_barcode(self):
+        # Try to give product 1 the same barcode as product 2, and observe that
+        # a form error is displayed.
+        self.login()
+        form_data = self.get_form_data()
+        form_data["barcode"] = self.prod2.barcode
+        response = self.client.post(
+            reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
+            form_data,
+        )
+        self.assertEqual(
+            response.context["form"].errors["barcode"],
+            [f"Der findes allerede et produkt med stregkoden {self.prod2.barcode}"],
+        )
+
     def test_view_as_branch_user(self):
         self.client.login(username="branch_user", password="12345")
         response = self.client.get(

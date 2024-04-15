@@ -149,6 +149,21 @@ class ProductUpdateForm(ProductRegisterForm):
 
         self.fields["state"].choices = choices
 
+    def clean_barcode(self):
+        val = self.cleaned_data["barcode"]
+        others = (
+            Product.objects.exclude(state=ProductState.DELETED)
+            .exclude(id=self.instance.id)
+            .filter(barcode=val)
+        )
+        if others.exists():
+            raise ValidationError(
+                _("Der findes allerede et produkt med stregkoden %(value)s"),
+                code="barcode_already_in_use",
+                params={"value": val},
+            )
+        return val
+
 
 class UserUpdateForm(forms.ModelForm, BootstrapForm):
     class Meta:
