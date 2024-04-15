@@ -28,7 +28,7 @@
             const selectedRows = $("#table").bootstrapTable("getSelections");
             const rowIds = [];
             for (let row of selectedRows) {
-                if ((row.status === "afventer") || (row.status === "afvist")) {
+                if ((row.status === gettext("Afventer godkendelse")) || (row.status === gettext("Afvist"))) {
                     rowIds.push(getRowId(row));
                 }
             }
