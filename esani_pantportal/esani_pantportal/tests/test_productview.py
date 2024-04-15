@@ -181,7 +181,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
                 {
                     "Produktnavn": "prod1",
                     "Stregkode": "00101122",
-                    "Godkendt": "Nej",
+                    "Status": "afventer",
                     "Dansk pant": "Ja",
                     "Oprettet af": "esani_admin (test@test.com)",
                     "Godkendt dato": "-",
@@ -210,7 +210,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
                 {
                     "Produktnavn": "prod1",
                     "Stregkode": "00101122",
-                    "Godkendt": "Nej",
+                    "Status": "afventer",
                     "Dansk pant": "Ja",
                     "Godkendt dato": "-",
                     "Oprettelsesdato": datetime.date.today().strftime("%-d. %B %Y"),
@@ -251,7 +251,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
     def test_approve(self):
         self.login()
         form_data = self.get_form_data()
-        form_data["approved"] = True
+        form_data["state"] = ProductState.APPROVED
         self.prod1 = Product.objects.get(id=self.prod1.id)
         self.assertFalse(self.prod1.approved)
         prod1_url = reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
@@ -264,6 +264,10 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         self.assertTrue(self.prod1.approved)
         self.assertRedirects(response, reverse("pant:product_list"))
 
+        # An approved product cannot be approved again. So we unapprove it instead, as
+        # we are testing that submitting a new `state` along with a different field
+        # works as expected.
+        form_data["state"] = ProductState.AWAITING_APPROVAL
         form_data["product_name"] = "foo"
 
         response = self.client.post(
@@ -277,7 +281,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
     def test_approve_with_back_url(self):
         self.login()
         form_data = self.get_form_data()
-        form_data["approved"] = True
+        form_data["state"] = ProductState.APPROVED
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
             + "?back=/produkt/%3Fproduct_name%3Dprod1",
@@ -299,7 +303,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
     def test_disapprove(self):
         self.login()
         form_data = self.get_form_data()
-        form_data["approved"] = True
+        form_data["state"] = ProductState.APPROVED
         self.prod1 = Product.objects.get(id=self.prod1.id)
         self.assertFalse(self.prod1.approved)
         response = self.client.post(
@@ -320,7 +324,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
         )
 
         form_data = self.get_form_data()
-        form_data["approved"] = False
+        form_data["state"] = ProductState.REJECTED
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
             + "?back=/produkt/%3Fproduct_name%3Dprod1",
@@ -342,7 +346,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
     def test_approve_forbidden(self):
         self.client.login(username="branch_admin", password="12345")
         form_data = self.get_form_data()
-        form_data["approved"] = True
+        form_data["state"] = ProductState.APPROVED
 
         # Test that branch-users cannot approve products
         response = self.client.post(
@@ -353,7 +357,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
 
     def test_edit(self):
         self.login()
-        form_data = self.get_form_data(exclude=["approved"])
+        form_data = self.get_form_data(exclude=["state"])
         form_data["weight"] = 1223
 
         response = self.client.post(
@@ -412,7 +416,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
 
         # But he should not be allowed to approve his own product
         form_data = self.get_form_data(self.prod2.pk)
-        form_data["approved"] = True
+        form_data["state"] = ProductState.APPROVED
 
         self.assertEqual(self.prod2.created_by.username, "branch_admin")
         response = self.client.post(
@@ -583,7 +587,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
 
         # Approve the product
         form_data = self.get_form_data()
-        form_data["approved"] = True
+        form_data["state"] = ProductState.APPROVED
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
             form_data,

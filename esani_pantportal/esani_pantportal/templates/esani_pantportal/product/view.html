@@ -26,10 +26,10 @@ SPDX-License-Identifier: MPL-2.0
                     <tbody>
                     {% include "../edit_field.html" with field_name="product_name" field=form.product_name %}
                     {% include "../edit_field.html" with field_name="barcode" field=form.barcode %}
-                    {% if can_approve and object.approved %}
-                        {% include "../edit_field.html" with field_name="approved" field=form.approved %}
+                    {% if can_change_state %}
+                        {% include "../edit_field.html" with field_name="state" field=form.state %}
                     {% else %}
-                        {% include "../edit_field.html" with field_name="approved" field=form.approved show_pencil=False %}
+                        {% include "../edit_field.html" with field_name="state" field=form.state show_pencil=False %}
                     {% endif %}
                     {% include "../edit_field.html" with field_name="danish" field=form.danish %}
                     {% if can_approve %}
@@ -62,8 +62,7 @@ SPDX-License-Identifier: MPL-2.0
                             {{ latest_history.history_change_reason }} d. {{ latest_history.history_date }} af {{ latest_history.history_user }}
                         </td>
                     </tr>
-                        {% endif %}
-
+                    {% endif %}
                     </tbody>
                 </table>
             </div>

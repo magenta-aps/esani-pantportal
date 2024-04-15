@@ -567,6 +567,7 @@ class Product(models.Model):
     )
 
     state = FSMField(
+        verbose_name=_("Status"),
         default=ProductState.AWAITING_APPROVAL,
         protected=True,
         db_index=True,
@@ -678,6 +679,14 @@ class Product(models.Model):
         target=ProductState.APPROVED,
     )
     def approve(self):
+        pass
+
+    @transition(
+        field=state,
+        source=ProductState.APPROVED,
+        target=ProductState.AWAITING_APPROVAL,
+    )
+    def unapprove(self):
         pass
 
     @transition(

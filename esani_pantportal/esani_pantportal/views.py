@@ -1334,15 +1334,13 @@ class ProductUpdateView(UpdateViewMixin):
         return super().check_permissions()
 
     def get_latest_relevant_history(self):
-        return self.object.history.filter(
-            Q(history_change_reason="Oprettet")
-            | Q(history_change_reason="Godkendt")
-            | Q(history_change_reason="Gjort Inaktiv")
-        )
+        return self.object.history.exclude(history_change_reason="Ændret")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["back_url"] = get_back_url(self.request, "")
+        if self.request.user.is_esani_admin:
+            context["can_change_state"] = True
         if context["object"].approved and not self.request.user.is_esani_admin:
             context["can_edit"] = False
         qs = self.get_latest_relevant_history()
@@ -1353,6 +1351,7 @@ class ProductUpdateView(UpdateViewMixin):
     def form_valid(self, form):
         super().form_valid(form)
 
+        # Go back to list view
         success_url = self.get_success_url()
 
         if not self.request.user.is_esani_admin:
@@ -1361,27 +1360,48 @@ class ProductUpdateView(UpdateViewMixin):
                 return self.access_denied
             if not self.same_workplace:
                 return self.access_denied
-            if "approved" in form.changed_data:
+            if "state" in form.changed_data:
                 return self.access_denied
         else:
-            approved = form.cleaned_data.get("approved")
-            if approved is True and can_proceed(self.object.approve):
-                self.object.approve()
-                self.object.save()
-                update_change_reason(self.object, "Godkendt")
-            elif approved is False and can_proceed(self.object.reject):
-                self.object.reject()
-                self.object.save()
-                update_change_reason(self.object, "Gjort Inaktiv")
+            if "state" in form.changed_data:
+                state = form.cleaned_data.get("state")
+                if self._is_approving(state):
+                    self.object.approve()
+                    self.object.save()
+                    update_change_reason(self.object, "Godkendt")
+                elif self._is_unapproving(state):
+                    self.object.unapprove()
+                    self.object.save()
+                    update_change_reason(self.object, "Godkendelse fjernet")
+                elif self._is_rejecting(state):
+                    self.object.reject()
+                    self.object.save()
+                    update_change_reason(self.object, "Gjort Inaktiv")
             else:
                 self.object.save()
                 update_change_reason(self.object, "Ændret")
+
+            # This is weird - but it matches the assertions currently made by
+            # `ProductViewGuiTest.test_approve`, etc.
+            if form.changed_data != ["state"]:
+                # Stay on detail view
                 success_url = self.request.get_full_path()
 
         return HttpResponseRedirect(success_url)
 
     def get_success_url(self):
         return get_back_url(self.request, reverse("pant:product_list"))
+
+    def _is_approving(self, state):
+        return (state == ProductState.APPROVED) and can_proceed(self.object.approve)
+
+    def _is_unapproving(self, state):
+        return (state == ProductState.AWAITING_APPROVAL) and can_proceed(
+            self.object.unapprove
+        )
+
+    def _is_rejecting(self, state):
+        return (state == ProductState.REJECTED) and can_proceed(self.object.reject)
 
 
 class ProductHistoryView(LoginRequiredMixin, DetailView):
@@ -1391,10 +1411,8 @@ class ProductHistoryView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["histories"] = self.object.history.filter(
-            Q(history_change_reason="Oprettet")
-            | Q(history_change_reason="Godkendt")
-            | Q(history_change_reason="Gjort Inaktiv")
+        context["histories"] = self.object.history.exclude(
+            Q(history_change_reason="Ændret") | Q(history_change_reason__isnull=True)
         ).order_by("-history_date")
         return context
 

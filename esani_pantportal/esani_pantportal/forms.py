@@ -20,6 +20,7 @@ from django.forms import formset_factory
 from django.forms.widgets import HiddenInput
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
+from django_fsm import can_proceed
 from phonenumber_field.widgets import PhonePrefixSelect
 from phonenumbers import country_code_for_region
 from two_factor.forms import AuthenticationTokenForm
@@ -132,7 +133,21 @@ class ProductUpdateForm(ProductRegisterForm):
             "capacity",
         )
 
-    approved = forms.NullBooleanField(initial=None, required=False)
+    state = forms.ChoiceField(required=False, choices=[])
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Populate `state` choices
+        choices = [EMPTY_CHOICE]
+        if can_proceed(self.instance.unapprove):
+            choices.append((ProductState.AWAITING_APPROVAL, _("Afventer godkendelse")))
+        if can_proceed(self.instance.approve):
+            choices.append((ProductState.APPROVED, _("Godkendt")))
+        if can_proceed(self.instance.reject):
+            choices.append((ProductState.REJECTED, _("Afvist")))
+
+        self.fields["state"].choices = choices
 
 
 class UserUpdateForm(forms.ModelForm, BootstrapForm):
