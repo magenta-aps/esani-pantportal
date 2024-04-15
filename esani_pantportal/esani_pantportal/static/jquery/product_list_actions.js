@@ -50,7 +50,6 @@
                 url: url,
                 data: data,
                 success: function (result) {
-                    $table.bootstrapTable("refresh");
                     alert(
                         interpolate(
                             ngettext(
@@ -66,6 +65,8 @@
                             true,  // use named interpolation
                         )
                     );
+
+                    window.location.reload();
                 }
             });
         }
