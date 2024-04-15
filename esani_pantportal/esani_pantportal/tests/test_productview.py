@@ -181,7 +181,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
                 {
                     "Produktnavn": "prod1",
                     "Stregkode": "00101122",
-                    "Status": "afventer",
+                    "Status": "Afventer godkendelse",
                     "Dansk pant": "Ja",
                     "Oprettet af": "esani_admin (test@test.com)",
                     "Godkendt dato": "-",
@@ -210,7 +210,7 @@ class ProductViewGuiTest(LoginMixin, TestCase):
                 {
                     "Produktnavn": "prod1",
                     "Stregkode": "00101122",
-                    "Status": "afventer",
+                    "Status": "Afventer godkendelse",
                     "Dansk pant": "Ja",
                     "Godkendt dato": "-",
                     "Oprettelsesdato": datetime.date.today().strftime("%-d. %B %Y"),

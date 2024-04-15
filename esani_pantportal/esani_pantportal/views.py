@@ -749,8 +749,6 @@ class ProductSearchView(SearchView):
     preferences_class = ProductListViewPreferences
     annotations = {
         "file_name": F("import_job__file_name"),
-        # Alias for `Product.state`; otherwise `bootstrap-table` thinks it is a boolean
-        "status": F("state"),
     }
     can_edit_multiple = True
     search_fields = ["product_name", "barcode"]
@@ -1757,6 +1755,8 @@ class CsvProductsView(CsvTemplateView):
 
         shape_map = {"F": "Bottle", "A": "Other", "D": "Other"}
 
+        state_map = dict(ProductState.choices)
+
         if bool(approved):
             qs = Product.objects.filter(approved=True)
             filename = f"{timestamp}_product_list.csv"
@@ -1797,6 +1797,8 @@ class CsvProductsView(CsvTemplateView):
                 "shape": shape_map,
             }
         )
+        if not bool(approved):
+            df = df.replace({"state": state_map})
         df = df.rename(column_map, axis=1)
 
         response = HttpResponse(content_type="text/csv")

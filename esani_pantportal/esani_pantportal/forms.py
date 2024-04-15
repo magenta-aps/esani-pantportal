@@ -867,16 +867,24 @@ class ProductFilterForm(SortPaginateForm):
             .annotate(count=Count("id"))
         )
 
+        # Populate `state` choices
+        self.fields["state"].choices = [EMPTY_CHOICE] + [
+            (val["state"], self._format_state_choice(user, val)) for val in qs
+        ]
+
+    def _format_state_choice(self, user, val):
         # Only ESANI admins can see product counts for each state
         if user and user.is_esani_admin:  # type: ignore
             fmt = _("%(state)s (%(count)s)")
         else:
             fmt = _("%(state)s")
 
-        # Populate `state` choices
-        self.fields["state"].choices = [EMPTY_CHOICE] + [
-            (it["state"], fmt % it) for it in qs
-        ]
+        choices_map = dict(ProductState.choices)
+
+        return fmt % {
+            "state": choices_map[val["state"]],
+            "count": val["count"],
+        }
 
 
 class CompanyFilterForm(SortPaginateForm):

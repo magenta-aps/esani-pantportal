@@ -319,7 +319,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                 {
                     "actions": '<a href="/produkt/1?back=" class="btn btn-sm '
                     'btn-primary">Vis</a>',
-                    "status": ProductState.AWAITING_APPROVAL,
+                    "status": ProductState.AWAITING_APPROVAL.label,
                     "approval_date": "-",
                     "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
                     "barcode": "0010",
@@ -337,7 +337,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                 {
                     "actions": '<a href="/produkt/2?back=" class="btn btn-sm '
                     'btn-primary">Vis</a>',
-                    "status": ProductState.APPROVED,
+                    "status": ProductState.APPROVED.label,
                     "approval_date": datetime.date.today().strftime("%-d. %b %Y"),
                     "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
                     "barcode": "0002",
@@ -378,7 +378,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                 {
                     "actions": '<a href="/produkt/1?back=" class="btn btn-sm '
                     'btn-primary">Vis</a>',
-                    "status": ProductState.AWAITING_APPROVAL,
+                    "status": ProductState.AWAITING_APPROVAL.label,
                     "approval_date": "-",
                     "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
                     "barcode": "0010",
@@ -444,7 +444,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
         cls.prod1_expected_response = {
             "Produktnavn": cls.prod1.product_name,
             "Stregkode": cls.prod1.barcode,
-            "Status": ProductState.AWAITING_APPROVAL,
+            "Status": ProductState.AWAITING_APPROVAL.label,
             "Godkendt dato": "-",
             "Oprettelsesdato": datetime.date.today().strftime("%-d. %b %Y"),
             "Volumen": str(cls.prod1.capacity),
@@ -461,7 +461,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
         cls.prod2_expected_response = {
             "Produktnavn": cls.prod2.product_name,
             "Stregkode": cls.prod2.barcode,
-            "Status": ProductState.APPROVED,
+            "Status": ProductState.APPROVED.label,
             "Godkendt dato": datetime.date.today().strftime("%-d. %b %Y"),
             "Oprettelsesdato": datetime.date.today().strftime("%-d. %b %Y"),
             "Volumen": str(cls.prod2.capacity),

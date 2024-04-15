@@ -14,8 +14,8 @@ class TestProductFilterForm(ParametrizedTestCase, LoginMixin, ProductFixtureMixi
     @parametrize(
         "group,expected_fmt",
         [
-            ("EsaniAdmins", "%(state)s (1)"),
-            ("BranchUsers", "%(state)s"),
+            ("EsaniAdmins", "%(label)s (1)"),
+            ("BranchUsers", "%(label)s"),
         ],
     )
     def test_state_choices(self, group, expected_fmt):
@@ -26,7 +26,7 @@ class TestProductFilterForm(ParametrizedTestCase, LoginMixin, ProductFixtureMixi
         """
         user = self.login(group)
         expected_choices = [EMPTY_CHOICE] + [
-            (state, expected_fmt % dict(state=state))
+            (state, expected_fmt % dict(label=state.label))
             for state in (
                 ProductState.AWAITING_APPROVAL,
                 ProductState.APPROVED,

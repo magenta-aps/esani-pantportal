@@ -436,11 +436,11 @@ class ImportJob(models.Model):
         )
 
 
-class ProductState:
-    AWAITING_APPROVAL = "afventer"
-    APPROVED = "godkendt"
-    REJECTED = "afvist"
-    DELETED = "slettet"
+class ProductState(models.TextChoices):
+    AWAITING_APPROVAL = "afventer", _("Afventer godkendelse")
+    APPROVED = "godkendt", _("Godkendt")
+    REJECTED = "afvist", _("Afvist")
+    DELETED = "slettet", _("Slettet")
 
 
 class ProductManager(models.Manager):
@@ -456,6 +456,7 @@ class ProductManager(models.Manager):
                 ),
             )
             .annotate(
+                status=self._get_state_display(),
                 # Dates
                 creation_date=self._get_date_of(ProductState.AWAITING_APPROVAL),
                 approval_date=self._get_date_of(ProductState.APPROVED),
@@ -466,6 +467,11 @@ class ProductManager(models.Manager):
                 deleted=self._get_case(ProductState.DELETED),
             )
             .order_by("product_name", "barcode")
+        )
+
+    def _get_state_display(self):
+        return Case(
+            *[When(state=state, then=Value(state.label)) for state in ProductState]
         )
 
     def _get_case(self, state):
@@ -568,6 +574,7 @@ class Product(models.Model):
 
     state = FSMField(
         verbose_name=_("Status"),
+        choices=ProductState.choices,
         default=ProductState.AWAITING_APPROVAL,
         protected=True,
         db_index=True,
