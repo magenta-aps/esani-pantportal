@@ -139,7 +139,10 @@ class ProductUpdateForm(ProductRegisterForm):
         super().__init__(*args, **kwargs)
 
         # Populate `state` choices
-        choices = [EMPTY_CHOICE]
+        # First, add current state as first choice in dropdown
+        state = self.instance.state
+        choices = [(state, self.instance.get_state_display())]
+        # Then, add other possible choices, depending on the current state
         if can_proceed(self.instance.unapprove):
             choices.append((ProductState.AWAITING_APPROVAL, _("Afventer godkendelse")))
         if can_proceed(self.instance.approve):
