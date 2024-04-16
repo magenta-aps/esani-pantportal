@@ -1330,7 +1330,9 @@ class ProductUpdateView(UpdateViewMixin):
         return super().check_permissions()
 
     def get_latest_relevant_history(self):
-        return self.object.history.exclude(history_change_reason="Ændret")
+        return self.object.history.exclude(
+            Q(history_change_reason="Ændret") | Q(history_change_reason__isnull=True)
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
