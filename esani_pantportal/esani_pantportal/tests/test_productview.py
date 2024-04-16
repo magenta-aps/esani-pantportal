@@ -12,6 +12,7 @@ from django.forms import model_to_dict
 from django.test import TestCase
 from django.urls import reverse
 from django.utils.translation import get_language, to_locale
+from unittest_parametrize import ParametrizedTestCase, parametrize
 
 from esani_pantportal.models import (
     BranchUser,
@@ -29,7 +30,7 @@ locale_name = to_locale(get_language())
 locale.setlocale(locale.LC_ALL, locale_name + ".UTF-8")
 
 
-class ProductViewGuiTest(LoginMixin, TestCase):
+class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
     maxDiff = None
 
     @classmethod
@@ -343,12 +344,13 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             response.content.decode(),
         )
 
-    def test_approve_forbidden(self):
-        self.client.login(username="branch_admin", password="12345")
+    @parametrize("username", [("branch_admin",), ("company_admin",)])
+    def test_approve_forbidden(self, username):
+        """Branch users and company users cannot change product state"""
+        self.client.login(username=username, password="12345")
         form_data = self.get_form_data()
         form_data["state"] = ProductState.APPROVED
-
-        # Test that branch-users cannot approve products
+        # Try to approve product 1 (which is awaiting approval)
         response = self.client.post(
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
             form_data,
