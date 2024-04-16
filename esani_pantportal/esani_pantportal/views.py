@@ -1932,7 +1932,13 @@ class _MultipleProductStateUpdate(View, PermissionRequiredMixin):
             default_change_reason=self.get_change_reason(),
         )
 
-        return JsonResponse({"total": len(ids), "updated": num})
+        return JsonResponse(
+            {
+                "total": len(ids),
+                "updated": num,
+                "state_choices": self._get_state_choices(),
+            }
+        )
 
     def can_proceed(self, product: Product) -> bool:
         raise NotImplementedError("must be implemented by subclass")  # pragma: nocover
@@ -1945,6 +1951,14 @@ class _MultipleProductStateUpdate(View, PermissionRequiredMixin):
 
     def get_affected_fields(self) -> list[str]:
         return ["state"]
+
+    def _get_state_choices(self) -> list[tuple[str, str]]:
+        form = ProductFilterForm(user=self.request.user)
+        choices = [
+            {"value": value, "label": label}
+            for value, label in form.fields["state"].choices
+        ]
+        return choices
 
 
 class MultipleProductApproveView(_MultipleProductStateUpdate):

@@ -50,6 +50,20 @@
                 url: url,
                 data: data,
                 success: function (result) {
+                    // Update table contents
+                    $table.bootstrapTable("refresh");
+
+                    // Update `state` dropdown items (counts have changed)
+                    const stateDropdown = $("#id_state");
+                    stateDropdown.html("");  // clear current option elements
+                    for (const choice of result.state_choices) {
+                        const option = $(
+                            "<option value=" + choice.value + ">" + choice.label + "</option>"
+                        );
+                        stateDropdown.append(option);
+                    }
+
+                    // Alert user
                     alert(
                         interpolate(
                             ngettext(
@@ -65,8 +79,6 @@
                             true,  // use named interpolation
                         )
                     );
-
-                    window.location.reload();
                 }
             });
         }
