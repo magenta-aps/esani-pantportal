@@ -7,6 +7,7 @@ import os
 import sys
 from functools import cached_property
 from io import BytesIO
+from typing import Any
 from urllib.parse import quote
 
 import pandas as pd
@@ -1952,11 +1953,12 @@ class _MultipleProductStateUpdate(View, PermissionRequiredMixin):
     def get_affected_fields(self) -> list[str]:
         return ["state"]
 
-    def _get_state_choices(self) -> list[tuple[str, str]]:
+    def _get_state_choices(self) -> list[dict[str, Any]]:
         form = ProductFilterForm(user=self.request.user)
+        field = form.fields["state"]
         choices = [
             {"value": value, "label": label}
-            for value, label in form.fields["state"].choices
+            for value, label in field.choices  # type: ignore
         ]
         return choices
 
