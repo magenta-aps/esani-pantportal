@@ -766,9 +766,7 @@ class ProductSearchView(SearchView):
         return form_kwargs
 
     def get_action_url(self, item, *args):
-        base_url = reverse("pant:product_view", kwargs={"pk": item.id})
-        back_url = self.request.get_full_path()
-        return add_parameters_to_url(base_url, {"back": quote(back_url)})
+        return reverse("pant:product_view", kwargs={"pk": item.id})
 
     def item_to_json_dict(self, item_obj, context, index):
         json_dict = super().item_to_json_dict(item_obj, context, index)
@@ -1349,9 +1347,6 @@ class ProductUpdateView(UpdateViewMixin):
     def form_valid(self, form):
         super().form_valid(form)
 
-        # Go back to list view
-        success_url = self.get_success_url()
-
         if not self.request.user.is_esani_admin:
             approved = self.get_object().approved
             if approved:
@@ -1379,16 +1374,10 @@ class ProductUpdateView(UpdateViewMixin):
                 self.object.save()
                 update_change_reason(self.object, "Ændret")
 
-            # This is weird - but it matches the assertions currently made by
-            # `ProductViewGuiTest.test_approve`, etc.
-            if form.changed_data != ["state"]:
-                # Stay on detail view
-                success_url = self.request.get_full_path()
-
-        return HttpResponseRedirect(success_url)
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
-        return get_back_url(self.request, reverse("pant:product_list"))
+        return get_back_url(self.request, self.request.get_full_path())
 
     def _is_approving(self, state):
         return (state == ProductState.APPROVED) and can_proceed(self.object.approve)

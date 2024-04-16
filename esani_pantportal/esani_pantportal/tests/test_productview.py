@@ -263,7 +263,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
         self.assertEquals(response.status_code, HTTPStatus.FOUND)
         self.prod1 = Product.objects.get(id=self.prod1.id)
         self.assertTrue(self.prod1.approved)
-        self.assertRedirects(response, reverse("pant:product_list"))
+        self.assertRedirects(response, prod1_url)
 
         # An approved product cannot be approved again. So we unapprove it instead, as
         # we are testing that submitting a new `state` along with a different field

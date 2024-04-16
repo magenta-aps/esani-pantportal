@@ -317,8 +317,8 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             doc["items"],
             [
                 {
-                    "actions": '<a href="/produkt/1?back=" class="btn btn-sm '
-                    'btn-primary">Vis</a>',
+                    "actions": '<a href="/produkt/1" class="btn btn-sm btn-primary">'
+                    "Vis</a>",
                     "status": ProductState.AWAITING_APPROVAL.label,
                     "approval_date": "-",
                     "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
@@ -335,8 +335,8 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                     "file_name": self.job.file_name,
                 },
                 {
-                    "actions": '<a href="/produkt/2?back=" class="btn btn-sm '
-                    'btn-primary">Vis</a>',
+                    "actions": '<a href="/produkt/2" class="btn btn-sm btn-primary">'
+                    "Vis</a>",
                     "status": ProductState.APPROVED.label,
                     "approval_date": datetime.date.today().strftime("%-d. %b %Y"),
                     "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
@@ -376,8 +376,8 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             doc["items"],
             [
                 {
-                    "actions": '<a href="/produkt/1?back=" class="btn btn-sm '
-                    'btn-primary">Vis</a>',
+                    "actions": '<a href="/produkt/1" class="btn btn-sm btn-primary">'
+                    "Vis</a>",
                     "status": ProductState.AWAITING_APPROVAL.label,
                     "approval_date": "-",
                     "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
