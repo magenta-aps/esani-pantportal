@@ -340,7 +340,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             response.content.decode(),
         )
         self.assertIn(
-            "Gjort Inaktiv",
+            "Afvist",
             response.content.decode(),
         )
 

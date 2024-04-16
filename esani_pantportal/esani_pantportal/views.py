@@ -64,7 +64,7 @@ from django_fsm import can_proceed
 from django_otp import devices_for_user
 from django_stubs_ext import StrPromise
 from project.settings import DEFAULT_FROM_EMAIL
-from simple_history.utils import bulk_update_with_history, update_change_reason
+from simple_history.utils import bulk_update_with_history
 from two_factor.views import LoginView, SetupView
 
 from esani_pantportal.exports.uniconta.exports import CreditNoteExport, DebtorExport
@@ -1347,7 +1347,14 @@ class ProductUpdateView(UpdateViewMixin):
         return context
 
     def form_valid(self, form):
-        super().form_valid(form)
+        # Since we are not calling `super().form_valid(...)`, we manually call
+        # `check_permissions`.
+        # We are not calling `super().form_valid(...)` as that will in turn call
+        # `form.save()`, updating `self.object.state` before we have a chance to
+        # capture its old value.
+        response = self.check_permissions()
+        if response:
+            return response
 
         if not self.request.user.is_esani_admin:
             approved = self.get_object().approved
@@ -1358,23 +1365,33 @@ class ProductUpdateView(UpdateViewMixin):
             if "state" in form.changed_data:
                 return self.access_denied
         else:
+            # Capture the old state name
+            old_state_name = form.instance.get_state_display()
+
+            # Populate `self.object` with values from form, but do not update the
+            # underlying DB object yet.
+            self.object = form.save(commit=False)
+
             if "state" in form.changed_data:
                 state = form.cleaned_data.get("state")
                 if self._is_approving(state):
                     self.object.approve()
+                    self.object._change_reason = "Godkendt"
                     self.object.save()
-                    update_change_reason(self.object, "Godkendt")
                 elif self._is_unapproving(state):
+                    new_state_name = dict(ProductState.choices)[state]
                     self.object.unapprove()
+                    self.object._change_reason = (
+                        f"Status ændret fra {old_state_name} til {new_state_name}"
+                    )
                     self.object.save()
-                    update_change_reason(self.object, "Godkendelse fjernet")
                 elif self._is_rejecting(state):
                     self.object.reject()
+                    self.object._change_reason = "Afvist"
                     self.object.save()
-                    update_change_reason(self.object, "Gjort Inaktiv")
             else:
+                self.object._change_reason = "Ændret"
                 self.object.save()
-                update_change_reason(self.object, "Ændret")
 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -1810,8 +1827,8 @@ class ProductDeleteView(PermissionRequiredMixin, DeleteView):
 
         if can_proceed(self.object.delete):
             self.object.delete()
+            self.object._change_reason = "Slettet"
             self.object.save()
-            update_change_reason(self.object, "Slettet")
         else:
             return self.access_denied
 
@@ -1950,7 +1967,7 @@ class MultipleProductRejectView(_MultipleProductStateUpdate):
         product.rejection = self.request.POST.get("rejection")
 
     def get_change_reason(self) -> str:
-        return "Gjort Inaktiv"
+        return "Afvist"
 
     def get_affected_fields(self) -> list[str]:
         return super().get_affected_fields() + ["rejection"]
