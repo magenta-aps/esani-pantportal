@@ -13,7 +13,7 @@ SPDX-License-Identifier: MPL-2.0
             
             {% if can_edit %}
             <a style="display:inline-block" class="icon-link" id="edit_{{field_name}}_button">
-                {% if show_pencil|default_if_none:True %}
+                {% if show_pencil|default_if_none:True and user.is_admin %}
                 {% bs_icon "pencil-square" %}
                 {% endif %}
             </a>
