@@ -54,7 +54,7 @@ SPDX-License-Identifier: MPL-2.0
         </a>
         <a class="btn btn-primary" href="{% url 'pant:registered_products_csv_download' 0 %}">{% translate "Download .csv-fil med alle produkter" %}
         </a>
-        {% if can_edit_multiple %}
+        {% if can_edit_multiple and user.is_esani_admin %}
         <a id="approve_button" class="btn btn-primary disabled" href="#">{% translate "Godkend alle markerede produkter" %}</a>
         <a id="delete_button" class="btn btn-danger disabled" href="#">{% translate "Fjern alle markerede produkter" %}</a>
         {% endif %}
