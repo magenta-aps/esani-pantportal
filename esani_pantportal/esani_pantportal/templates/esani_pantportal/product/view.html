@@ -82,7 +82,7 @@ SPDX-License-Identifier: MPL-2.0
             </div>
         </div>
         <div class="row">
-            {% if can_edit %}
+            {% if can_edit and user.is_admin %}
             <div class="col-6">
                 <div class="card">
                     <div class="card-body">
@@ -101,7 +101,7 @@ SPDX-License-Identifier: MPL-2.0
                 </div>
             </div>
             {% endif %}
-            {% if can_approve and not object.approved %}
+            {% if can_approve and not object.approved and user.is_admin %}
             <div class="col-6">
                 <div class="card">
                     <div class="card-body">
@@ -120,7 +120,7 @@ SPDX-License-Identifier: MPL-2.0
             {% endif %}
         </div>
     </form>
-    {% if can_edit %}
+    {% if can_edit and user.is_admin %}
         {% translate "Når man fjerner et produkt, fjernes det helt fra databasen." as delete_text %}
         {% url 'pant:product_delete' object.id as delete_url %}
         <div class="row"><div class="col-6">
