@@ -119,7 +119,13 @@ class CreditNoteExport:
                 default=Value(""),
             ),
             source_id=Coalesce("company_branch__id", "kiosk__id"),
-            product_refund_value=F("product__refund_value"),
+            product_refund_value=Case(
+                When(
+                    product__isnull=False,
+                    then=F("product__refund_value"),
+                ),
+                default=settings.DEFAULT_REFUND_VALUE,
+            ),
             rvm_refund_value=Subquery(
                 ReverseVendingMachine.objects.filter(
                     serial_number=Cast(OuterRef("rvm_serial"), output_field=CharField())
@@ -163,6 +169,7 @@ class CreditNoteExport:
                 "-type",
                 "product_refund_value",
                 "rvm_refund_value",
+                "compensation",
             )
         )
 
