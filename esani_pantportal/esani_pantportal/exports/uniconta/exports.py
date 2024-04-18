@@ -82,7 +82,7 @@ class CreditNoteExport:
             yield from self._get_lines_for_row(row)
         if not self._dry:
             # Update status of all related QR bags to `esani_udbetalt`
-            has_qr_bag = self._queryset.filter(qr_bag__isnull=False)
+            has_qr_bag = self._qs.filter(qr_bag__isnull=False)
             qr_bags = QRBag.objects.filter(
                 id__in=has_qr_bag.values_list("qr_bag__id", flat=True)
             )
@@ -91,7 +91,7 @@ class CreditNoteExport:
             bulk_update_with_history(qr_bags, QRBag, ["status"], batch_size=500)
 
             # Mark all deposit payout items as exported
-            self._queryset.filter(file_id__isnull=True).update(file_id=self._file_id)
+            self._qs.filter(file_id__isnull=True).update(file_id=self._file_id)
 
     def as_csv(self, stream=sys.stdout, delimiter=";"):
         if self._dry:
