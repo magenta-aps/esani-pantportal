@@ -706,6 +706,14 @@ class Product(models.Model):
 
     @transition(
         field=state,
+        source=ProductState.REJECTED,
+        target=ProductState.AWAITING_APPROVAL,
+    )
+    def unreject(self):
+        pass
+
+    @transition(
+        field=state,
         source=[ProductState.AWAITING_APPROVAL, ProductState.REJECTED],
         target=ProductState.DELETED,
     )

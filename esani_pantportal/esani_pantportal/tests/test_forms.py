@@ -1,9 +1,10 @@
 # SPDX-FileCopyrightText: 2024 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
+from django.core.exceptions import ValidationError
 from unittest_parametrize import ParametrizedTestCase, parametrize
 
-from esani_pantportal.forms import EMPTY_CHOICE, ProductFilterForm
+from esani_pantportal.forms import EMPTY_CHOICE, ProductFilterForm, ProductUpdateForm
 from esani_pantportal.models import ProductState
 
 from .conftest import LoginMixin
@@ -38,3 +39,13 @@ class TestProductFilterForm(ParametrizedTestCase, LoginMixin, ProductFixtureMixi
             set(form.fields["state"].choices),
             set(expected_choices),
         )
+
+
+class TestProductUpdateForm(ProductFixtureMixin):
+    def test_rejection_message_validation(self):
+        instance = ProductUpdateForm(
+            data={"action": "reject", "rejection_message": None}
+        )
+        instance.is_valid()  # Trigger validation
+        with self.assertRaises(ValidationError):
+            instance.clean()

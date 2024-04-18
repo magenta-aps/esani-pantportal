@@ -20,7 +20,6 @@ from django.forms import formset_factory
 from django.forms.widgets import HiddenInput
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
-from django_fsm import can_proceed
 from phonenumber_field.widgets import PhonePrefixSelect
 from phonenumbers import country_code_for_region
 from two_factor.forms import AuthenticationTokenForm
@@ -133,24 +132,18 @@ class ProductUpdateForm(ProductRegisterForm):
             "capacity",
         )
 
-    state = forms.ChoiceField(required=False, choices=[])
+    rejection_message = forms.CharField(required=False, widget=HiddenInput())
+    action = forms.CharField(required=False, widget=HiddenInput())
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # Populate `state` choices
-        # First, add current state as first choice in dropdown
-        state = self.instance.state
-        choices = [(state, self.instance.get_state_display())]
-        # Then, add other possible choices, depending on the current state
-        if can_proceed(self.instance.unapprove):
-            choices.append((ProductState.AWAITING_APPROVAL, _("Afventer godkendelse")))
-        if can_proceed(self.instance.approve):
-            choices.append((ProductState.APPROVED, _("Godkendt")))
-        if can_proceed(self.instance.reject):
-            choices.append((ProductState.REJECTED, _("Afvist")))
-
-        self.fields["state"].choices = choices
+    def clean(self):
+        cleaned_data = super().clean()
+        action = self.cleaned_data.get("action")
+        rejection_message = cleaned_data.get("rejection_message")
+        if action == "reject" and rejection_message in (None, ""):
+            raise ValidationError(
+                _("Når et produkt afvises, skal der angives en afvisnings-besked"),
+                code="rejection_message_required_when_rejecting",
+            )
 
     def clean_barcode(self):
         val = self.cleaned_data["barcode"]

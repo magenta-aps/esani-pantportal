@@ -1337,14 +1337,23 @@ class ProductUpdateView(UpdateViewMixin):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        product = context["object"]
+
         context["back_url"] = get_back_url(self.request, "")
-        if self.request.user.is_esani_admin:
-            context["can_change_state"] = True
-        if context["object"].approved and not self.request.user.is_esani_admin:
+
+        if product.approved and not self.request.user.is_esani_admin:
             context["can_edit"] = False
+
+        if self.request.user.is_esani_admin:
+            context["can_approve"] = can_proceed(product.approve)
+            context["can_unapprove"] = can_proceed(product.unapprove)
+            context["can_reject"] = can_proceed(product.reject)
+            context["can_unreject"] = can_proceed(product.unreject)
+
         qs = self.get_latest_relevant_history()
         if qs:
             context["latest_history"] = qs.order_by("-history_date")[0]
+
         return context
 
     def form_valid(self, form):
@@ -1357,58 +1366,55 @@ class ProductUpdateView(UpdateViewMixin):
         if response:
             return response
 
+        old_state_name = form.instance.get_state_display()
+
+        def get_change_reason(new_state: ProductState) -> str:
+            return f"Status ændret fra {old_state_name} til {new_state.label}"
+
+        # Populate `self.object` with values from form, but do not update the
+        # underlying DB object yet.
+        self.object = form.save(commit=False)
+
         if not self.request.user.is_esani_admin:
             approved = self.get_object().approved
             if approved:
                 return self.access_denied
             if not self.same_workplace:
                 return self.access_denied
-            if "state" in form.changed_data:
+            if "action" in form.changed_data:
                 return self.access_denied
+            self.object._change_reason = "Ændret"
         else:
-            # Capture the old state name
-            old_state_name = form.instance.get_state_display()
-
-            # Populate `self.object` with values from form, but do not update the
-            # underlying DB object yet.
-            self.object = form.save(commit=False)
-
-            if "state" in form.changed_data:
-                state = form.cleaned_data.get("state")
-                if self._is_approving(state):
-                    self.object.approve()
-                    self.object._change_reason = "Godkendt"
-                    self.object.save()
-                elif self._is_unapproving(state):
-                    new_state_name = dict(ProductState.choices)[state]
-                    self.object.unapprove()
-                    self.object._change_reason = (
-                        f"Status ændret fra {old_state_name} til {new_state_name}"
-                    )
-                    self.object.save()
-                elif self._is_rejecting(state):
-                    self.object.reject()
-                    self.object._change_reason = "Afvist"
-                    self.object.save()
+            # Action is one of "approve", "unapprove", "reject" or "unreject".
+            # If "normal" save, "action" is not present in form data.
+            action = form.cleaned_data.get("action")
+            if action == "approve":
+                self.object.approve()
+                self.object._change_reason = "Godkendt"
+            elif action == "unapprove":
+                self.object.unapprove()
+                self.object._change_reason = get_change_reason(
+                    ProductState.AWAITING_APPROVAL
+                )
+            elif action == "reject":
+                rejection_message = form.cleaned_data.get("rejection_message")
+                self.object.rejection = rejection_message
+                self.object.reject()
+                self.object._change_reason = "Afvist"
+            elif action == "unreject":
+                self.object.unreject()
+                self.object._change_reason = get_change_reason(
+                    ProductState.AWAITING_APPROVAL
+                )
             else:
                 self.object._change_reason = "Ændret"
-                self.object.save()
+
+        self.object.save()
 
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return get_back_url(self.request, self.request.get_full_path())
-
-    def _is_approving(self, state):
-        return (state == ProductState.APPROVED) and can_proceed(self.object.approve)
-
-    def _is_unapproving(self, state):
-        return (state == ProductState.AWAITING_APPROVAL) and can_proceed(
-            self.object.unapprove
-        )
-
-    def _is_rejecting(self, state):
-        return (state == ProductState.REJECTED) and can_proceed(self.object.reject)
 
 
 class ProductHistoryView(LoginRequiredMixin, DetailView):
