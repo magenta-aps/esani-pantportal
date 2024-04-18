@@ -113,6 +113,22 @@ class CreditNoteExport:
     def _get_base_queryset(self, queryset):
         annotations = dict(
             type=F("deposit_payout__source_type"),
+            type_ordering=Case(
+                When(
+                    deposit_payout__source_type=DepositPayout.SOURCE_TYPE_CSV,
+                    then=Value(1),
+                ),
+                When(
+                    deposit_payout__source_type=DepositPayout.SOURCE_TYPE_API,
+                    then=Value(2),
+                ),
+                When(
+                    deposit_payout__source_type=DepositPayout.SOURCE_TYPE_MANUAL,
+                    then=Value(3),
+                ),
+                default=Value(0),
+                output_field=PositiveIntegerField(),
+            ),
             source=Case(
                 When(company_branch__isnull=False, then=Value("company_branch")),
                 When(kiosk__isnull=False, then=Value("kiosk")),
@@ -166,7 +182,7 @@ class CreditNoteExport:
             .order_by(
                 "source",
                 "source_id",
-                "-type",
+                "type_ordering",
                 "product_refund_value",
                 "rvm_refund_value",
                 "compensation",
