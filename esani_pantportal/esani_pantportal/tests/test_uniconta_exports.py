@@ -8,7 +8,7 @@ from io import StringIO
 from operator import itemgetter
 
 from django.conf import settings
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from unittest_parametrize import ParametrizedTestCase, parametrize
 
 from esani_pantportal.exports.uniconta.exports import CreditNoteExport, DebtorExport
@@ -68,6 +68,7 @@ def _line_vals():
     }
 
 
+@override_settings(DEFAULT_REFUND_VALUE=250)
 class TestCreditNoteExport(_SharedBase):
     maxDiff = None
 
@@ -103,41 +104,70 @@ class TestCreditNoteExport(_SharedBase):
         )
         cls.deposit_payout_rvm = cls._add_deposit_payout(DepositPayout.SOURCE_TYPE_CSV)
         cls.deposit_payout_bag = cls._add_deposit_payout(DepositPayout.SOURCE_TYPE_API)
+        cls.deposit_payout_manual = cls._add_deposit_payout(
+            DepositPayout.SOURCE_TYPE_MANUAL
+        )
         cls.deposit_payout_item_rvm_1 = cls._add_deposit_payout_item(
             cls.deposit_payout_rvm,
             company_branch=cls.company_branch,
             barcode="barcode",
+            product=cls.product,
         )
         cls.deposit_payout_item_rvm_2 = cls._add_deposit_payout_item(
             cls.deposit_payout_rvm,
             kiosk=cls.kiosk,
             barcode="barcode",
+            product=cls.product,
         )
         cls.deposit_payout_item_bag_1 = cls._add_deposit_payout_item(
             cls.deposit_payout_bag,
             company_branch=cls.company_branch,
             barcode="barcode",
             qr_bag=cls.qr_bag,
+            product=cls.product,
+            count=50,
         )
         cls.deposit_payout_item_with_file_id = cls._add_deposit_payout_item(
             cls.deposit_payout_bag,
             company_branch=cls.company_branch,
             barcode="barcode",
+            product=cls.product,
             file_id=uuid.uuid4(),
+        )
+        # Bag item without product FK - must be exported with default refund amount
+        cls.deposit_payout_item_null_product = cls._add_deposit_payout_item(
+            cls.deposit_payout_bag,
+            company_branch=cls.company_branch,
+            barcode="barcode",
+            product=None,
+            count=100,
+        )
+        # Bag item without source (company branch or kiosk) - must *never* be
+        # exported.
+        cls.deposit_payout_item_null_source = cls._add_deposit_payout_item(
+            cls.deposit_payout_bag,
+            company_branch=None,
+            kiosk=None,
+            barcode="barcode",
+            product=cls.product,
+            count=9000,
         )
         # Manually created item - must be exported
         cls.deposit_payout_item_manual = cls._add_deposit_payout_item(
-            cls.deposit_payout_bag,
+            cls.deposit_payout_manual,
             kiosk=cls.kiosk,
             barcode=None,
+            product=cls.product,
             location_id=None,
             count=1000,
+            compensation=333,
         )
         # "Null" item (#59706) from Tomra API - must not be exported
         cls.deposit_payout_item_null_barcode = cls._add_deposit_payout_item(
             cls.deposit_payout_bag,
             kiosk=cls.kiosk,
             barcode=None,
+            product=cls.product,
             location_id=cls.kiosk.location_id,
             count=1,
         )
@@ -157,7 +187,6 @@ class TestCreditNoteExport(_SharedBase):
         kwargs.setdefault("count", 20)
         return DepositPayoutItem.objects.create(
             deposit_payout=deposit_payout,
-            product=cls.product,
             date=date(2020, 1, 1),
             **kwargs,
         )
@@ -195,20 +224,21 @@ class TestCreditNoteExport(_SharedBase):
                 ["already_exported"],
                 [
                     # From `cls.deposit_payout_item_rvm_1`
-                    ("101", "250"),
-                    ("201", "15"),
-                    # From `cls.deposit_payout_item_bag_1`
-                    ("102", "250"),
-                    ("202", "30"),
+                    ("101", "250", "20"),
+                    ("201", "15", "20"),
+                    # From `cls.deposit_payout_item_bag_1` (count=50)
+                    # and `cls.deposit_payout_item_null_product` (count=100)
+                    ("102", "250", "150"),
+                    ("202", "30", "150"),
                     # From `cls.deposit_payout_item_file_id`
-                    ("102", "250"),
-                    ("202", "30"),
+                    ("102", "250", "20"),
+                    ("202", "30", "20"),
                     # From `cls.deposit_payout_item_rvm_2`
-                    ("101", "250"),
-                    ("201", "15"),
-                    # From `self.deposit_payout_item_manual`
-                    ("102", "250"),
-                    ("202", "0"),
+                    ("101", "250", "20"),
+                    ("201", "15", "20"),
+                    # From `self.deposit_payout_item_manual` (count=1000)
+                    ("103", "250", "1000"),
+                    ("203", "333", "1000"),
                 ],
             ),
             (
@@ -216,17 +246,18 @@ class TestCreditNoteExport(_SharedBase):
                 ["file_id"],
                 [
                     # From `cls.deposit_payout_item_rvm_1`
-                    ("101", "250"),
-                    ("201", "15"),
-                    # From `cls.deposit_payout_item_bag_1`
-                    ("102", "250"),
-                    ("202", "30"),
+                    ("101", "250", "20"),
+                    ("201", "15", "20"),
+                    # From `cls.deposit_payout_item_bag_1` (count=50)
+                    # and `cls.deposit_payout_item_null_product` (count=100)
+                    ("102", "250", "150"),
+                    ("202", "30", "150"),
                     # From `cls.deposit_payout_item_rvm_2`
-                    ("101", "250"),
-                    ("201", "15"),
-                    # From `self.deposit_payout_item_manual`
-                    ("102", "250"),
-                    ("202", "0"),
+                    ("101", "250", "20"),
+                    ("201", "15", "20"),
+                    # From `self.deposit_payout_item_manual` (count=1000)
+                    ("103", "250", "1000"),
+                    ("203", "333", "1000"),
                 ],
             ),
         ],
@@ -238,13 +269,12 @@ class TestCreditNoteExport(_SharedBase):
         # Act
         instance.as_csv(stream)
         # Assert that we got the expected lines by looking at the product IDs
-        self.assertListEqual(
-            [
-                (row["product_id"], row["unit_price"])
-                for row in self._get_csv_rows(stream)
-            ],
-            expected_list,
-        )
+        actual_list = [
+            (row["product_id"], row["unit_price"], row["quantity"])
+            for row in self._get_csv_rows(stream)
+        ]
+
+        self.assertListEqual(actual_list, expected_list)
         # Assert that all lines have the expected fields
         expected_keys = set(self.instance._field_names + expected_keys)
         self.assertTrue(
@@ -277,10 +307,13 @@ class TestCreditNoteExport(_SharedBase):
                         "source": "company_branch",
                         "type": "csv",
                     },
+                    # This line combines the data from
+                    # `self.deposit_payout_item_bag_1` (count=50) and
+                    # `self.deposit_payout_item_null_product` (count=100)
                     {
                         "already_exported": False,
                         "bag_qrs": [None],
-                        "count": 20,
+                        "count": 50 + 100,
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
                         "compensation": None,
@@ -314,9 +347,9 @@ class TestCreditNoteExport(_SharedBase):
                         "count": 1000,
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
-                        "compensation": None,
+                        "compensation": 333,
                         "source": "kiosk",
-                        "type": "api",
+                        "type": "manual",
                     },
                 ],
             ),
@@ -334,9 +367,12 @@ class TestCreditNoteExport(_SharedBase):
                         "source": "company_branch",
                         "type": "csv",
                     },
+                    # This line combines the data from
+                    # `self.deposit_payout_item_bag_1` (count=50) and
+                    # `self.deposit_payout_item_null_product` (count=100)
                     {
                         "bag_qrs": [None],
-                        "count": 20,
+                        "count": 50 + 100,
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
                         "compensation": None,
@@ -358,9 +394,9 @@ class TestCreditNoteExport(_SharedBase):
                         "count": 1000,
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
-                        "compensation": None,
+                        "compensation": 333,
                         "source": "kiosk",
-                        "type": "api",
+                        "type": "manual",
                     },
                 ],
             ),
@@ -576,14 +612,34 @@ class TestCreditNoteExport(_SharedBase):
         # Arrange and act (consume iterable)
         instance = self._get_instance(dry=False)
         list(instance)
+
         # Assert: Deposit payout items are marked as exported
-        for item in (
-            self.deposit_payout_item_rvm_1,
-            self.deposit_payout_item_rvm_2,
-            self.deposit_payout_item_bag_1,
-        ):
-            item.refresh_from_db()
-            self.assertEqual(item.file_id, instance._file_id)
+        self._assert_items_have_file_id(
+            [
+                self.deposit_payout_item_rvm_1,
+                self.deposit_payout_item_rvm_2,
+                self.deposit_payout_item_bag_1,
+                self.deposit_payout_item_null_product,
+                self.deposit_payout_item_manual,
+            ],
+            instance._file_id,
+        )
+
+        # Assert: "Other" deposit payout items are *not* marked as exported
+        self._assert_items_have_no_file_id(
+            [
+                self.deposit_payout_item_null_source,
+                self.deposit_payout_item_null_barcode,
+            ]
+        )
+
+        # Assert: deposit payout items with a current file ID are *not*
+        # marked as exported (with the new file ID.)
+        self._assert_items_have_file_id(
+            [self.deposit_payout_item_with_file_id],
+            self.deposit_payout_item_with_file_id.file_id,
+        )
+
         # Assert: QR bag status is updated
         self.qr_bag.refresh_from_db()
         self.assertEqual(self.qr_bag.status, "esani_udbetalt")
@@ -592,17 +648,42 @@ class TestCreditNoteExport(_SharedBase):
         """Passing `dry=True` should *not* update the underlying objects"""
         # Arrange and act (consume iterable)
         list(self._get_instance(dry=True))
+
         # Assert: Deposit payout items are *not* marked as exported
-        for item in (
-            self.deposit_payout_item_rvm_1,
-            self.deposit_payout_item_rvm_2,
-            self.deposit_payout_item_bag_1,
-        ):
-            item.refresh_from_db()
-            self.assertEqual(item.file_id, None)
+        self._assert_items_have_no_file_id(
+            [
+                self.deposit_payout_item_rvm_1,
+                self.deposit_payout_item_rvm_2,
+                self.deposit_payout_item_bag_1,
+                self.deposit_payout_item_null_product,
+                self.deposit_payout_item_manual,
+                self.deposit_payout_item_null_source,
+                self.deposit_payout_item_null_barcode,
+            ]
+        )
+
+        # Assert: deposit payout items with a current file ID are *not*
+        # marked as exported, and keep their current file ID.
+        self._assert_items_have_file_id(
+            [self.deposit_payout_item_with_file_id],
+            self.deposit_payout_item_with_file_id.file_id,
+        )
+
         # Assert: QR bag status is *not* updated
         self.qr_bag.refresh_from_db()
         self.assertEqual(self.qr_bag.status, "esani_optalt")
+
+    def _assert_items_have_file_id(self, items, file_id):
+        for item in items:
+            with self.subTest(str(item)):
+                item.refresh_from_db()
+                self.assertEqual(item.file_id, file_id)
+
+    def _assert_items_have_no_file_id(self, items):
+        for item in items:
+            with self.subTest(str(item)):
+                item.refresh_from_db()
+                self.assertIsNone(item.file_id)
 
 
 class TestDebtorExport(_SharedBase):
