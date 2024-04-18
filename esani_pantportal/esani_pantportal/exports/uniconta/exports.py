@@ -40,6 +40,12 @@ logger = logging.getLogger(__name__)
 
 
 class CreditNoteExport:
+    # Sort ordering for output rows, depending on the type of deposit payout item
+    SORT_ORDER_DEFAULT = 0
+    SORT_ORDER_CSV = 1
+    SORT_ORDER_API = 2
+    SORT_ORDER_MANUAL = 3
+
     def __init__(
         self,
         from_date,
@@ -116,17 +122,17 @@ class CreditNoteExport:
             type_ordering=Case(
                 When(
                     deposit_payout__source_type=DepositPayout.SOURCE_TYPE_CSV,
-                    then=Value(1),
+                    then=Value(self.SORT_ORDER_CSV),
                 ),
                 When(
                     deposit_payout__source_type=DepositPayout.SOURCE_TYPE_API,
-                    then=Value(2),
+                    then=Value(self.SORT_ORDER_API),
                 ),
                 When(
                     deposit_payout__source_type=DepositPayout.SOURCE_TYPE_MANUAL,
-                    then=Value(3),
+                    then=Value(self.SORT_ORDER_MANUAL),
                 ),
-                default=Value(0),
+                default=Value(self.SORT_ORDER_DEFAULT),
                 output_field=PositiveIntegerField(),
             ),
             source=Case(
