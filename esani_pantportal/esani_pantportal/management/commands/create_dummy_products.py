@@ -75,8 +75,13 @@ class Command(BaseCommand):
             )
 
             approved = random.choice([True, False])
+            rejected = random.choice([True, False]) if approved else False
+            deleted = random.choice([True, False]) if not approved else False
+
             creation_date = random_date(2020, 2022)
             approval_date = random_date(2022, 2024)
+            rejection_date = random_date(2024, 2026)
+            deletion_date = random_date(2026, 2028)
 
             product = Product.objects.create(
                 product_name=product_name,
@@ -90,18 +95,27 @@ class Command(BaseCommand):
                 shape=random.choice(PRODUCT_SHAPE_CHOICES)[0],
                 import_job=random.choice(jobs + [None]),
             )
+            self._add_history_entry(product, "Oprettet", creation_date, user)
 
-            update_change_reason(product, "Oprettet")
-            creation_record = product.history.get(history_change_reason="Oprettet")
-            creation_record.history_date = creation_date
-            creation_record.history_user = user
-            creation_record.save()
             if approved:
-                product.approved = True
-                product.approval_date = approval_date
+                product.approve()
                 product.save()
-                update_change_reason(product, "Godkendt")
-                approval_record = product.history.get(history_change_reason="Godkendt")
-                approval_record.history_date = approval_date
-                approval_record.history_user = user
-                approval_record.save()
+                self._add_history_entry(product, "Godkendt", approval_date, user)
+
+            if rejected:
+                product.reject()
+                product.rejection = "Begrundelse for afvisning"
+                product.save()
+                self._add_history_entry(product, "Afvist", rejection_date, user)
+
+            if deleted:
+                product.delete()
+                product.save()
+                self._add_history_entry(product, "Slettet", deletion_date, user)
+
+    def _add_history_entry(self, product, change_reason, history_date, history_user):
+        update_change_reason(product, change_reason)
+        entry = product.history.get(history_change_reason=change_reason)
+        entry.history_date = history_date
+        entry.history_user = history_user
+        entry.save()
