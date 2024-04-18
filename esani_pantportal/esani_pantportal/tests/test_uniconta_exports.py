@@ -607,6 +607,18 @@ class TestCreditNoteExport(_SharedBase):
         # Assert
         self.assertEqual(customer, self.kiosk)
 
+    @parametrize("dry", [(True,), (False,)])
+    def test_get_file_id(self, dry):
+        # Arrange
+        instance = self._get_instance(dry=dry)
+        # Act
+        file_id = instance.get_file_id()
+        # Assert
+        if dry:
+            self.assertIsNone(file_id)
+        else:
+            self.assertEqual(file_id, instance._file_id)
+
     def test_dry_false(self):
         """Passing `dry=False` should update the underlying objects"""
         # Arrange and act (consume iterable)
