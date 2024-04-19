@@ -40,6 +40,12 @@ logger = logging.getLogger(__name__)
 
 
 class CreditNoteExport:
+    # Sort ordering for output rows, depending on the type of deposit payout item
+    SORT_ORDER_DEFAULT = 0
+    SORT_ORDER_CSV = 1
+    SORT_ORDER_API = 2
+    SORT_ORDER_MANUAL = 3
+
     def __init__(
         self,
         from_date,
@@ -82,7 +88,7 @@ class CreditNoteExport:
             yield from self._get_lines_for_row(row)
         if not self._dry:
             # Update status of all related QR bags to `esani_udbetalt`
-            has_qr_bag = self._queryset.filter(qr_bag__isnull=False)
+            has_qr_bag = self._qs.filter(qr_bag__isnull=False)
             qr_bags = QRBag.objects.filter(
                 id__in=has_qr_bag.values_list("qr_bag__id", flat=True)
             )
@@ -91,7 +97,7 @@ class CreditNoteExport:
             bulk_update_with_history(qr_bags, QRBag, ["status"], batch_size=500)
 
             # Mark all deposit payout items as exported
-            self._queryset.filter(file_id__isnull=True).update(file_id=self._file_id)
+            self._qs.filter(file_id__isnull=True).update(file_id=self._file_id)
 
     def as_csv(self, stream=sys.stdout, delimiter=";"):
         if self._dry:
@@ -113,13 +119,35 @@ class CreditNoteExport:
     def _get_base_queryset(self, queryset):
         annotations = dict(
             type=F("deposit_payout__source_type"),
+            type_ordering=Case(
+                When(
+                    deposit_payout__source_type=DepositPayout.SOURCE_TYPE_CSV,
+                    then=Value(self.SORT_ORDER_CSV),
+                ),
+                When(
+                    deposit_payout__source_type=DepositPayout.SOURCE_TYPE_API,
+                    then=Value(self.SORT_ORDER_API),
+                ),
+                When(
+                    deposit_payout__source_type=DepositPayout.SOURCE_TYPE_MANUAL,
+                    then=Value(self.SORT_ORDER_MANUAL),
+                ),
+                default=Value(self.SORT_ORDER_DEFAULT),
+                output_field=PositiveIntegerField(),
+            ),
             source=Case(
                 When(company_branch__isnull=False, then=Value("company_branch")),
                 When(kiosk__isnull=False, then=Value("kiosk")),
                 default=Value(""),
             ),
             source_id=Coalesce("company_branch__id", "kiosk__id"),
-            product_refund_value=F("product__refund_value"),
+            product_refund_value=Case(
+                When(
+                    product__isnull=False,
+                    then=F("product__refund_value"),
+                ),
+                default=settings.DEFAULT_REFUND_VALUE,
+            ),
             rvm_refund_value=Subquery(
                 ReverseVendingMachine.objects.filter(
                     serial_number=Cast(OuterRef("rvm_serial"), output_field=CharField())
@@ -160,9 +188,10 @@ class CreditNoteExport:
             .order_by(
                 "source",
                 "source_id",
-                "-type",
+                "type_ordering",
                 "product_refund_value",
                 "rvm_refund_value",
+                "compensation",
             )
         )
 
