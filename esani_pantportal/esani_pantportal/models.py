@@ -2,23 +2,36 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-import datetime
 import hashlib
 import logging
 import random
 import string
 from typing import Union
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-from django.db.models import CharField, CheckConstraint, Q, Value
+from django.db.models import (
+    Case,
+    CharField,
+    CheckConstraint,
+    DateField,
+    OuterRef,
+    Prefetch,
+    Q,
+    Subquery,
+    Value,
+    When,
+)
 from django.db.models.functions import Cast, Concat, LPad
 from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.translation import gettext as _
+from django_fsm import FSMField, transition
 from simple_history.models import HistoricalRecords
+from simple_history.utils import update_change_reason
 
 logger = logging.getLogger(__name__)
 
@@ -423,6 +436,63 @@ class ImportJob(models.Model):
         )
 
 
+class ProductState(models.TextChoices):
+    AWAITING_APPROVAL = "afventer", _("Afventer godkendelse")
+    APPROVED = "godkendt", _("Godkendt")
+    REJECTED = "afvist", _("Afvist")
+    DELETED = "slettet", _("Slettet")
+
+
+class ProductManager(models.Manager):
+    def get_queryset(self) -> models.QuerySet:
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related(
+                Prefetch(
+                    "history_entries",
+                    queryset=Product.history.order_by("history_date"),
+                    to_attr="_history",
+                ),
+            )
+            .annotate(
+                status=self._get_state_display(),
+                # Dates
+                creation_date=self._get_date_of(ProductState.AWAITING_APPROVAL),
+                approval_date=self._get_date_of(ProductState.APPROVED),
+                # Boolean flags for each state
+                awaiting_approval=self._get_case(ProductState.AWAITING_APPROVAL),
+                approved=self._get_case(ProductState.APPROVED),
+                rejected=self._get_case(ProductState.REJECTED),
+                deleted=self._get_case(ProductState.DELETED),
+            )
+            .order_by("product_name", "barcode")
+        )
+
+    def _get_state_display(self):
+        return Case(
+            *[When(state=state, then=Value(state.label)) for state in ProductState]
+        )
+
+    def _get_case(self, state):
+        return Case(
+            When(state=state, then=Value(True)),
+            default=Value(False),
+            output_field=models.BooleanField(),
+        )
+
+    def _get_date_of(self, state):
+        HistoricalProduct = apps.get_model("esani_pantportal", "HistoricalProduct")
+        return Cast(
+            Subquery(
+                HistoricalProduct.objects.filter(id=OuterRef("id"), state=state)
+                .order_by("history_date")
+                .values("history_date")[:1]
+            ),
+            output_field=DateField(),
+        )
+
+
 class Product(models.Model):
     class Meta:
         ordering = ["product_name", "barcode"]
@@ -488,16 +558,26 @@ class Product(models.Model):
                 ),
                 name="capacity_constraints",
             ),
+            models.UniqueConstraint(
+                name="barcode_unique_when_not_deleted",
+                fields=["barcode"],
+                condition=~Q(state=ProductState.DELETED),
+            ),
         ]
 
-    history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
+    objects = ProductManager()
 
-    created_by = models.ForeignKey(
-        "User",
-        related_name="products",
-        on_delete=models.SET_NULL,  # Vi kan slette brugere og beholde deres anmeldelser
-        null=True,
-        verbose_name=_("Oprettet af"),
+    history = HistoricalRecords(
+        history_change_reason_field=models.TextField(null=True),
+        related_name="history_entries",
+    )
+
+    state = FSMField(
+        verbose_name=_("Status"),
+        choices=ProductState.choices,
+        default=ProductState.AWAITING_APPROVAL,
+        protected=True,
+        db_index=True,
     )
 
     product_name = models.CharField(
@@ -508,7 +588,6 @@ class Product(models.Model):
     barcode = models.CharField(
         verbose_name=_("Stregkode"),
         help_text=_("Stregkode for et indmeldt produkt"),
-        unique=True,
         validators=[validate_barcode_length, validate_digit],
     )
     refund_value = models.PositiveIntegerField(
@@ -516,26 +595,7 @@ class Product(models.Model):
         help_text=_("Pantværdi, angivet i øre (100=1DKK, 25=0.25DKK)"),
         default=settings.DEFAULT_REFUND_VALUE,  # 2kr.
     )
-    approved = models.BooleanField(
-        verbose_name=_("Godkendt"),
-        help_text=_("Produkt godkendt til pantsystemet af en ESANI medarbejder"),
-        default=False,
-        choices=((True, "Ja"), (False, "Nej")),
-    )
-    approval_date = models.DateField(
-        verbose_name=_("Godkendt dato"),
-        help_text=_("Dato som dette produkt blev godkendt på"),
-        default=None,
-        null=True,
-        blank=True,
-    )
-    creation_date = models.DateField(
-        verbose_name=_("Oprettelsesdato"),
-        help_text=_("Dato som dette produkt blev oprettet på"),
-        default=None,
-        null=True,
-        blank=True,
-    )
+
     material = models.CharField(
         verbose_name=_("Materiale"),
         help_text=_("Kategori for emballagens materiale."),
@@ -579,18 +639,86 @@ class Product(models.Model):
         related_name="products",
     )
 
+    rejection = models.CharField(
+        verbose_name=_("Besked ved afvist produkt"),
+        help_text=_(
+            "Denne besked vises, hvis produktet er afvist, og alligevel forsøges "
+            "scannet, etc."
+        ),
+        null=True,
+        blank=True,
+    )
+
     def save(self, *args, **kwargs):
-        if self.approved and not self.approval_date:
-            self.approval_date = datetime.date.today()
-        if not self.creation_date:
-            self.creation_date = datetime.date.today()
+        initial = self.pk is None
         super().save(*args, **kwargs)
+        if initial:
+            update_change_reason(self, "Oprettet")
+
+    def _get_first_history_entry(self, state=ProductState.AWAITING_APPROVAL):
+        history_entries = [entry for entry in self._history if entry.state == state]
+        if history_entries:
+            return history_entries[0]
+
+    @property
+    def created_by(self):
+        first = self._get_first_history_entry()
+        if first:
+            return first.history_user
 
     def get_branch(self):
         return self.created_by.branch if self.created_by else None
 
     def get_company(self):
         return self.created_by.company if self.created_by else None
+
+    def get_field_name(self, name):
+        return {
+            "created_by": _("Oprettet af"),
+            "creation_date": _("Oprettelsesdato"),
+            "approved": _("Godkendt"),
+            "approval_date": _("Godkendt dato"),
+        }.get(name, None)
+
+    @transition(
+        field=state,
+        source=[ProductState.AWAITING_APPROVAL, ProductState.REJECTED],
+        target=ProductState.APPROVED,
+    )
+    def approve(self):
+        pass
+
+    @transition(
+        field=state,
+        source=ProductState.APPROVED,
+        target=ProductState.AWAITING_APPROVAL,
+    )
+    def unapprove(self):
+        pass
+
+    @transition(
+        field=state,
+        source=[ProductState.AWAITING_APPROVAL, ProductState.APPROVED],
+        target=ProductState.REJECTED,
+    )
+    def reject(self):
+        pass
+
+    @transition(
+        field=state,
+        source=ProductState.REJECTED,
+        target=ProductState.AWAITING_APPROVAL,
+    )
+    def unreject(self):
+        pass
+
+    @transition(
+        field=state,
+        source=[ProductState.AWAITING_APPROVAL, ProductState.REJECTED],
+        target=ProductState.DELETED,
+    )
+    def delete(self):
+        pass
 
 
 class QRCodeGenerator(models.Model):

@@ -7,10 +7,12 @@ from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
+from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
+from django.utils.translation import gettext
 
 from esani_pantportal.forms import MultipleProductRegisterForm, ProductRegisterForm
 from esani_pantportal.models import (
@@ -18,6 +20,7 @@ from esani_pantportal.models import (
     PRODUCT_SHAPE_CHOICES,
     ImportJob,
     Product,
+    ProductState,
 )
 from esani_pantportal.util import default_dataframe
 
@@ -311,7 +314,7 @@ class MultipleProductRegisterFormIntegrationTests(
     LoginMixin, TestCase, MultipleProductRegisterFormTests
 ):
     def test_view_post(self):
-        self.login()
+        user = self.login()
         df = default_dataframe()
         file = self.make_excel_file_dict(df)
         url = reverse("pant:product_multiple_register")
@@ -322,6 +325,35 @@ class MultipleProductRegisterFormIntegrationTests(
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.context_data["success_count"], len(df))
         self.assertTrue(ImportJob.objects.filter(file_name=file["file"]).exists())
+
+        # Assert products are created with the expected state and `created_by` user
+        # instance.
+        imported_products = Product.objects.filter(import_job__file_name=file["file"])
+        self.assertQuerySetEqual(
+            imported_products.values_list("state", flat=True),
+            [ProductState.AWAITING_APPROVAL] * len(imported_products),
+        )
+        self.assertListEqual(
+            [p.created_by.username for p in imported_products],
+            [user.username] * len(imported_products),
+        )
+
+        # Assert historical entries are created as expected
+        HistoricalProduct = apps.get_model("esani_pantportal", "HistoricalProduct")
+        history_entries = HistoricalProduct.objects.filter(
+            history_relation__in=imported_products
+        )
+        self.assertQuerySetEqual(
+            history_entries.values("state", "history_change_reason", "history_user"),
+            [
+                {
+                    "state": ProductState.AWAITING_APPROVAL,
+                    "history_change_reason": "Oprettet",
+                    "history_user": user.pk,
+                }
+            ]
+            * len(imported_products),
+        )
 
     def test_view_get(self):
         self.login("BranchAdmins")
@@ -381,10 +413,11 @@ class MultipleProductRegisterFormIntegrationTests(
         data = self.defaults
         data["file"] = file["file"]
 
+        # Create a product which duplicates one of the barcodes in the uploaded
+        # Excel file, and which has `state` = `ProductState.AWAITING_APPROVAL`.
         Product.objects.create(
             barcode=df.loc[0, "Stregkode [str]"],
             product_name="foo",
-            approved=False,
             material=PRODUCT_MATERIAL_CHOICES[0][0],
             height=100,
             diameter=50,
@@ -393,11 +426,33 @@ class MultipleProductRegisterFormIntegrationTests(
             shape=PRODUCT_SHAPE_CHOICES[0][0],
         )
 
+        # Create a product which duplicates one of the barcodes in the uploaded
+        # Excel file, and which has `state` = `ProductState.REJECTED`, plus a
+        # `rejection` message.
+        rejection_message = "Dette produkt er afvist"
+        rejected_product = Product.objects.create(
+            barcode=df.loc[1, "Stregkode [str]"],
+            product_name="foo",
+            material=PRODUCT_MATERIAL_CHOICES[0][0],
+            height=100,
+            diameter=50,
+            weight=1,
+            capacity=200,
+            shape=PRODUCT_SHAPE_CHOICES[0][0],
+        )
+        rejected_product.reject()
+        rejected_product.rejection = rejection_message
+        rejected_product.save()
+
         response = self.client.post(url, data=data)
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertEqual(response.context_data["success_count"], len(df) - 1)
-        self.assertEqual(response.context_data["existing_products_count"], 1)
+        self.assertEqual(response.context["success_count"], len(df) - 2)
+        self.assertEqual(response.context["existing_products_count"], 2)
+        self.assertEqual(
+            response.context["failures"],
+            [{"Produkt 1": {gettext("Afvist"): [rejection_message]}}],
+        )
 
 
 class TemplateViewTests(LoginMixin, TestCase):
@@ -438,28 +493,92 @@ class TemplateViewTests(LoginMixin, TestCase):
 
 
 class TestProductRegisterView(LoginMixin, TestCase):
+    post_data = {
+        "product_name": "foo",
+        "barcode": "12341234",
+        "product_type": "Øl",
+        "material": "P",
+        "height": 100,
+        "diameter": 100,
+        "weight": 100,
+        "capacity": 150,
+        "shape": "F",
+        "danish": "U",
+    }
+
     def setUp(self) -> None:
+        super().setUp()
         self.login()
 
     def test_view(self):
         url = reverse("pant:product_register")
-
-        data = {
-            "product_name": "foo",
-            "barcode": "12341234",
-            "product_type": "Øl",
-            "material": "P",
-            "height": 100,
-            "diameter": 100,
-            "weight": 100,
-            "capacity": 150,
-            "shape": "F",
-            "danish": "U",
-        }
-        response = self.client.post(url, data)
-
+        response = self.client.post(url, self.post_data)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertRedirects(response, reverse("pant:product_register_success"))
+
+    def test_duplicate_barcode_disallowed(self):
+        """Registering the same barcode twice should not cause a duplicated product"""
+        # Try to create the same product twice
+        url = reverse("pant:product_register")
+        self.client.post(url, self.post_data)
+        self.client.post(url, self.post_data)
+
+        # Assert that only a single product exists
+        self.assertEqual(
+            Product.objects.filter(barcode=self.post_data["barcode"]).count(),
+            1,
+        )
+
+    def test_duplicate_barcode_disallowed_when_other_is_rejected(self):
+        """Creating a product with an existing barcode should cause an error if the
+        other product is rejected.
+        """
+        # Create the first instance of the product
+        url = reverse("pant:product_register")
+        self.client.post(url, self.post_data)
+
+        # Then, reject it
+        product = Product.objects.get(barcode=self.post_data["barcode"])
+        product.reject()
+        product.save()
+
+        # Now try to create another product sharing the same barcode
+        self.client.post(url, self.post_data)
+
+        # Assert that only a single product exists, and has the expected state (i.e. we
+        # only have the first, rejected, product.
+        self.assertQuerySetEqual(
+            Product.objects.filter(barcode=self.post_data["barcode"]).values_list(
+                "state", flat=True
+            ),
+            [ProductState.REJECTED],
+            ordered=False,
+        )
+
+    def test_duplicate_barcode_allowed_when_other_is_deleted(self):
+        """Creating a product with an existing barcode is allowed if the other product
+        is deleted."""
+        # Create the first instance of the product
+        url = reverse("pant:product_register")
+        self.client.post(url, self.post_data)
+
+        # Then, delete it
+        product = Product.objects.get(barcode=self.post_data["barcode"])
+        product.delete()
+        product.save()
+
+        # Now create another product sharing the same barcode
+        self.client.post(url, self.post_data)
+
+        # Assert that we have two products sharing the same barcode, but their
+        # states differ.
+        self.assertQuerySetEqual(
+            Product.objects.filter(barcode=self.post_data["barcode"]).values_list(
+                "state", flat=True
+            ),
+            [ProductState.AWAITING_APPROVAL, ProductState.DELETED],
+            ordered=False,
+        )
 
 
 class SingleProductRegisterFormTests(LoginMixin, TestCase):

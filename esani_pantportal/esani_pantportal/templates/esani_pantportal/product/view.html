@@ -11,6 +11,7 @@ SPDX-License-Identifier: MPL-2.0
 
 {% block extra_headers %}
 <script src="{% static 'jquery/detail_view.js' %}"></script>
+<script src="{% url 'javascript-catalog' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -26,11 +27,10 @@ SPDX-License-Identifier: MPL-2.0
                     <tbody>
                     {% include "../edit_field.html" with field_name="product_name" field=form.product_name %}
                     {% include "../edit_field.html" with field_name="barcode" field=form.barcode %}
-                    {% if can_approve and object.approved %}
-                        {% include "../edit_field.html" with field_name="approved" field=form.approved %}
-                    {% else %}
-                        {% include "../edit_field.html" with field_name="approved" field=form.approved show_pencil=False %}
-                    {% endif %}
+                    <tr>
+                        <th class="col-6">{% translate "Status" %}</th>
+                        <td class="col-6">{{ object.get_state_display }}</td>
+                    </tr>
                     {% include "../edit_field.html" with field_name="danish" field=form.danish %}
                     {% if can_approve %}
                     <tr>
@@ -62,8 +62,7 @@ SPDX-License-Identifier: MPL-2.0
                             {{ latest_history.history_change_reason }} d. {{ latest_history.history_date }} af {{ latest_history.history_user }}
                         </td>
                     </tr>
-                        {% endif %}
-
+                    {% endif %}
                     </tbody>
                 </table>
             </div>
@@ -82,28 +81,31 @@ SPDX-License-Identifier: MPL-2.0
             </div>
         </div>
         <div class="row">
-            {% if can_edit and user.is_admin %}
-            <div class="col-6">
-                <div class="card">
+            {% if can_edit %}
+            <div class="col">
+                <div class="card h-100">
                     <div class="card-body">
                         <h5 class="cart-title">Rediger</h5>
                         <p class="card-text">
                             Rediger et produkt ved at:
-
                             <ul>
                                 <li>Rette de ønskede felter (ved brug af {% bs_icon "pencil-square" color="blue" %} knapper) </li>
                                 <li>Klik "Gem"</li>
                             </ul>
-
                         </p>
+                    </div>
+                    <div class="card-footer">
                         <button id="update_button" type="submit" class="btn btn-primary disabled">Gem</button>
                     </div>
                 </div>
             </div>
             {% endif %}
-            {% if can_approve and not object.approved and user.is_admin %}
-            <div class="col-6">
-                <div class="card">
+
+            {% if user.is_admin %}
+
+            {% if can_approve %}
+            <div class="col">
+                <div class="card h-100">
                     <div class="card-body">
                         <h5 class="cart-title">Godkend</h5>
                         <p class="card-text">
@@ -113,19 +115,65 @@ SPDX-License-Identifier: MPL-2.0
                             <li>Navn og stregkode på produktet er korrekt</li>
                             <li>At emballagen er pantbelagt</li>
                         </ul>
-                        <button id="approve_button" type="submit" name="{{form.approved.name}}" value="True" class="btn btn-success">Godkend</button>
+                    </div>
+                    <div class="card-footer">
+                        <button id="approve_button" type="submit" name="action" value="approve" class="btn btn-success">Godkend</button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if can_unapprove %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="cart-title">{% translate "Fortryd godkendelse" %}</h5>
+                    </div>
+                    <div class="card-footer">
+                        <button id="unapprove_button" type="submit" name="action" value="unapprove" class="btn btn-secondary">{% translate "Fortryd godkendelse" %}</button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if can_reject %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="cart-title">{% translate "Afvis" %}</h5>
+                        {{ form.rejection_message }} {# Hidden form field #}
+                        {{ form.non_field_errors }}
+                    </div>
+                    <div class="card-footer">
+                        <button id="reject_button" type="submit" name="action" value="reject" class="btn btn-warning">{% translate "Afvis" %}</button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if can_unreject %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="cart-title">{% translate "Fortryd afvisning" %}</h5>
+                    </div>
+                    <div class="card-footer">
+                        <button id="unreject_button" type="submit" name="action" value="unreject" class="btn btn-secondary">{% translate "Fortryd afvisning" %}</button>
                     </div>
                 </div>
             </div>
             {% endif %}
         </div>
+
+        {% endif %}{# user.is_admin #}
     </form>
     {% if can_edit and user.is_admin %}
-        {% translate "Når man fjerner et produkt, fjernes det helt fra databasen." as delete_text %}
-        {% url 'pant:product_delete' object.id as delete_url %}
-        <div class="row"><div class="col-6">
-        {% include "../delete_button.html" with url=delete_url|add_back_url:back_url text=delete_text %}
-        </div></div>
+    <div class="row">
+        <div class="col-4">
+            {% url 'pant:product_delete' object.id as delete_url %}
+            {% include "../delete_button.html" with url=delete_url|add_back_url:back_url %}
+        </div>
+    </div>
     {% endif %}
 </div>
 
@@ -136,6 +184,22 @@ SPDX-License-Identifier: MPL-2.0
 $("#delete_button").on('click', function () {
     return confirm("{% translate 'Er du sikker på at du vil fjerne dette produkt?' %}");
 });
+
+(function () {
+    $(document).ready(function () {
+        // If user is changing product state to REJECTED, we require the user
+        // to provide a rejection message.
+        $("#reject_button").on("click", function (evt) {
+            const rejectionText = prompt(gettext("Angiv venligst en afvisnings-besked for produktet"));
+            if (rejectionText === null) {
+                evt.preventDefault();
+            } else {
+                // Update hidden form field
+                $("#id_rejection_message").val(rejectionText);
+            }
+        });
+    });
+}());
 </script>
 
 {% endblock %}

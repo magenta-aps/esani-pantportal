@@ -1,7 +1,7 @@
 function switch_input_mode(field_name){
     $("#edit_"+field_name+"_div").show();
     $("#show_"+field_name+"_div").hide();
-    $("#approve_button").addClass("disabled");
+    $("#approve_button, #unapprove_button, #reject_button, #unreject_button").addClass("disabled");
     $("#update_button").removeClass("disabled");
 };
 

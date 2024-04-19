@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import datetime
 import os
+from typing import Any
 
 import pandas as pd
 from betterforms.multiform import MultiModelForm
@@ -14,7 +15,9 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import EMPTY_VALUES
+from django.db.models import Count
 from django.forms import formset_factory
+from django.forms.widgets import HiddenInput
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 from phonenumber_field.widgets import PhonePrefixSelect
@@ -38,6 +41,7 @@ from esani_pantportal.models import (
     Kiosk,
     KioskUser,
     Product,
+    ProductState,
     ReverseVendingMachine,
     User,
     validate_barcode_length,
@@ -49,6 +53,8 @@ from esani_pantportal.util import (
     read_csv,
     read_excel,
 )
+
+EMPTY_CHOICE: tuple[Any, str] = (None, "-" * 10)
 
 
 class PantPortalAuthenticationForm(AuthenticationForm):
@@ -115,7 +121,6 @@ class ProductUpdateForm(ProductRegisterForm):
     class Meta:
         model = Product
         fields = (
-            "approved",
             "product_name",
             "barcode",
             "shape",
@@ -126,6 +131,34 @@ class ProductUpdateForm(ProductRegisterForm):
             "weight",
             "capacity",
         )
+
+    rejection_message = forms.CharField(required=False, widget=HiddenInput())
+    action = forms.CharField(required=False, widget=HiddenInput())
+
+    def clean(self):
+        cleaned_data = super().clean()
+        action = self.cleaned_data.get("action")
+        rejection_message = cleaned_data.get("rejection_message")
+        if action == "reject" and rejection_message in (None, ""):
+            raise ValidationError(
+                _("Når et produkt afvises, skal der angives en afvisnings-besked"),
+                code="rejection_message_required_when_rejecting",
+            )
+
+    def clean_barcode(self):
+        val = self.cleaned_data["barcode"]
+        others = (
+            Product.objects.exclude(state=ProductState.DELETED)
+            .exclude(id=self.instance.id)
+            .filter(barcode=val)
+        )
+        if others.exists():
+            raise ValidationError(
+                _("Der findes allerede et produkt med stregkoden %(value)s"),
+                code="barcode_already_in_use",
+                params={"value": val},
+            )
+        return val
 
 
 class UserUpdateForm(forms.ModelForm, BootstrapForm):
@@ -827,15 +860,42 @@ class SortPaginateForm(BootstrapForm):
 class ProductFilterForm(SortPaginateForm):
     product_name = forms.CharField(required=False)
     barcode = forms.CharField(required=False)
+    state = forms.ChoiceField(required=False, choices=[])
+    approved = forms.NullBooleanField(required=False, widget=HiddenInput())
     import_job = forms.ModelChoiceField(
         queryset=ImportJob.objects.all().select_related("imported_by"), required=False
     )
-    approved = forms.NullBooleanField(
-        required=False,
-        widget=forms.Select(
-            choices=((None, "---------"), (True, _("Ja")), (False, _("Nej")))
-        ),
-    )
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+
+        # Count number of products in each state (except DELETED)
+        qs = (
+            Product.objects.exclude(state=ProductState.DELETED)
+            .order_by()
+            .values("state")
+            .annotate(count=Count("id"))
+        )
+
+        # Populate `state` choices
+        self.fields["state"].choices = [EMPTY_CHOICE] + [
+            (val["state"], self._format_state_choice(user, val)) for val in qs
+        ]
+
+    def _format_state_choice(self, user, val):
+        # Only ESANI admins can see product counts for each state
+        if user and user.is_esani_admin:  # type: ignore
+            fmt = _("%(state)s (%(count)s)")
+        else:
+            fmt = _("%(state)s")
+
+        choices_map = dict(ProductState.choices)
+
+        return fmt % {
+            "state": choices_map[val["state"]],
+            "count": val["count"],
+        }
 
 
 class CompanyFilterForm(SortPaginateForm):
@@ -1317,7 +1377,7 @@ class DepositPayoutItemForm(forms.ModelForm, BootstrapForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        choices = [(None, "-------------------------")]
+        choices = [EMPTY_CHOICE]
         for kiosk in Kiosk.objects.all():
             choices.append((f"kiosk-{kiosk.id}", str(kiosk)))
         for company_branch in CompanyBranch.objects.select_related("company").all():

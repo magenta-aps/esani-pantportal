@@ -4,6 +4,7 @@
 from urllib.parse import quote
 
 from django.conf import settings
+from django.core.exceptions import FieldDoesNotExist
 from django.db.models import BooleanField
 from django.template.defaultfilters import register, yesno
 from django.utils.translation import gettext_lazy as _
@@ -26,11 +27,15 @@ def add_back_url(url, back_url):
 
 @register.filter
 def verbose_name(item, field):
-    name = item._meta.get_field(field).verbose_name
-    if name and name[0].isupper():
-        return name
+    try:
+        name = item._meta.get_field(field).verbose_name
+    except FieldDoesNotExist:
+        return item.get_field_name(field)
     else:
-        return name.capitalize()
+        if name and name[0].isupper():
+            return name
+        else:
+            return name.capitalize()
 
 
 @register.filter
@@ -46,8 +51,19 @@ def get_display_name(obj, attr):
     try:
         return getattr(obj, f"get_{attr}_display")()
     except AttributeError:
-        field = obj._meta.get_field(attr)
-        value = getattr(obj, attr)
+        value = getattr(obj, attr, None)
+        field = None
+        try:
+            # Look for field on model instance
+            field = obj._meta.get_field(attr)
+        except FieldDoesNotExist:
+            try:
+                # Look for field in annotations
+                query = obj._meta.default_manager.get_queryset().query
+                annotation = query.annotations[attr]
+                field = annotation.output_field
+            except (AttributeError, KeyError):
+                pass
         if isinstance(field, BooleanField):
             return yesno(value, _("Ja,Nej"))
         return str(value or _("Udefineret"))

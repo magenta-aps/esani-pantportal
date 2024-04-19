@@ -8,110 +8,129 @@ SPDX-License-Identifier: MPL-2.0
 {% load i18n %}
 {% load l10n %}
 
+{% block extra_headers %}
+    <script src="{% url 'javascript-catalog' %}"></script>
+{% endblock %}
+
 {% block content %}
+    <div class="mx-5">
+        <h1>{% translate "Registrer nyt produkt" %}</h1>
+        <form method="POST" class="row g-3">
+            {% csrf_token %}
 
-<div class="mx-5">
-    <h1>{% translate "Registrer nyt produkt" %}</h1>
-    <form method="POST" class="row g-3">
-        {% csrf_token %}
-    <div class="col-6">
-      <label for="{{form.product_name.id_for_label}}">{{form.product_name.label}}</label>
-      {{form.product_name}}
-      <div class="form-text">
-          {{form.product_name.help_text}}
-          {{form.product_name.errors}}
-      </div>
-    </div>
-    <div class="col-6">
-      <label for="{{form.barcode.id_for_label}}">{{form.barcode.label}}</label>
-      {{form.barcode}}
-      <div class="form-text">
-          {{form.barcode.help_text}}
-          {{form.barcode.errors}}
-          <ul class="errorlist" style="display:none" id="existing_barcode_message">
-              <li>{% translate "Produkt med denne stregkode eksisterer allerede." %}</li>
-          </ul>
-      </div>
+            <div class="col-6">
+                <label for="{{ form.product_name.id_for_label }}">{{ form.product_name.label }}</label>
+                {{ form.product_name }}
+                <div class="form-text">
+                    {{ form.product_name.help_text }}
+                    {{ form.product_name.errors }}
+                </div>
+            </div>
+
+            <div class="col-6">
+                <label for="{{ form.barcode.id_for_label }}">{{ form.barcode.label }}</label>
+                {{ form.barcode }}
+                <div class="form-text">
+                    {{ form.barcode.help_text }}
+                    {{ form.barcode.errors }}
+                    <ul class="errorlist" id="existing_barcode_message"></ul>
+                </div>
+            </div>
+
+            <div class="col-6">
+                <label for="{{ form.material.id_for_label }}">{{ form.material.label }}</label>
+                {{ form.material }}
+                <div class="form-text">
+                    {{ form.material.errors }}
+                </div>
+            </div>
+
+            <div class="col-6">
+                <label for="{{ form.shape.id_for_label }}">{{ form.shape.label }}</label>
+                {{ form.shape }}
+                <div class="form-text">
+                    {{ form.shape.errors }}
+                </div>
+            </div>
+
+            <div class="col-3">
+                <label for="{{ form.height.id_for_label }}">{{ form.height.label }}</label>
+                {{ form.height }}
+                <div class="form-text">
+                    {{ form.height.help_text }}:
+                    <br>
+                    {{ "height"|constraints_string:"mm"}}
+                    {{ form.height.errors }}
+                </div>
+            </div>
+
+            <div class="col-3">
+                <label for="{{ form.diameter.id_for_label }}">{{ form.diameter.label }}</label>
+                {{ form.diameter }}
+                <div class="form-text">
+                    {{ form.diameter.help_text }}:
+                    <br>
+                    {{ "diameter"|constraints_string:"mm"}}
+                    {{ form.diameter.errors }}
+                </div>
+            </div>
+
+            <div class="col-3">
+                <label for="{{ form.capacity.id_for_label }}">{{ form.capacity.label }}</label>
+                {{ form.capacity }}
+                <div class="form-text">
+                    {{ form.capacity.help_text }}:
+                    <br>
+                    {{ "capacity"|constraints_string:"ml"}}
+                    {{ form.capacity.errors }}
+                </div>
+            </div>
+
+            <div class="col-3">
+                <label for="{{ form.weight.id_for_label }}">{{ form.weight.label }}</label>
+                {{ form.weight }}
+                <div class="form-text">
+                    {{ form.weight.help_text }}
+                    {{ form.weight.errors }}
+                </div>
+            </div>
+
+            <div class="col-3">
+                <label for="{{ form.danish.id_for_label }}">{{ form.danish.label }}</label>
+                {{ form.danish }}
+                <div class="form-text">
+                    {{ form.danish.errors }}
+                </div>
+            </div>
+
+            <div class="col-12">
+                <input class="btn btn-success float-right my-2" type="submit" value="{% translate 'Opret' %}"/>
+            </div>
+        </form>
     </div>
 
-    <div class="col-6">
-      <label for="{{form.material.id_for_label}}">{{form.material.label}}</label>
-      {{form.material}}
-      <div class="form-text">
-          {{form.material.errors}}
-      </div>
-    </div>
-    <div class="col-6">
-      <label for="{{form.shape.id_for_label}}">{{form.shape.label}}</label>
-      {{form.shape}}
-      <div class="form-text">
-          {{form.shape.errors}}
-      </div>
-    </div>
+    {{ barcodes|json_script:"barcodes" }}
 
-    <div class="col-3">
-      <label for="{{form.height.id_for_label}}">{{form.height.label}}</label>
-      {{form.height}}
-      <div class="form-text">
-          {{form.height.help_text}}:
-          <br>
-          {{"height"|constraints_string:"mm"}}
-          {{form.height.errors}}
-      </div>
-    </div>
-    <div class="col-3">
-      <label for="{{form.diameter.id_for_label}}">{{form.diameter.label}}</label>
-      {{form.diameter}}
-      <div class="form-text">
-          {{form.diameter.help_text}}:
-          <br>
-          {{"diameter"|constraints_string:"mm"}}
-          {{form.diameter.errors}}
-      </div>
-    </div>
-    <div class="col-3">
-      <label for="{{form.capacity.id_for_label}}">{{form.capacity.label}}</label>
-      {{form.capacity}}
-      <div class="form-text">
-          {{form.capacity.help_text}}:
-          <br>
-          {{"capacity"|constraints_string:"ml"}}
-          {{form.capacity.errors}}
-      </div>
-    </div>
-    <div class="col-3">
-      <label for="{{form.weight.id_for_label}}">{{form.weight.label}}</label>
-      {{form.weight}}
-      <div class="form-text">
-          {{form.weight.help_text}}
-          {{form.weight.errors}}
-      </div>
-    </div>
+    <script>
+        const barcodes = JSON.parse($("#barcodes").text());
 
-    <div class="col-3">
-      <label for="{{form.danish.id_for_label}}">{{form.danish.label}}</label>
-      {{form.danish}}
-      <div class="form-text">
-          {{form.danish.errors}}
-      </div>
-    </div>
+        $("#id_barcode").on('input', function () {
+            const baseMessage = gettext("Produkt med denne stregkode eksisterer allerede.");
+            const rejectionMessage = gettext("Produktet er afvist med følgende besked:");
+            const barcode = $("#id_barcode").val();
+            const container = $("#existing_barcode_message");
 
-    <div class="col-12">
-        <input class="btn btn-success float-right my-2" type="submit" value="{% translate 'Opret' %}"/>
-    </div>
-    </form>
-</div>
-{{ barcodes|json_script:"barcodes" }}
+            // Reset error message
+            container.html("");
 
-<script>
-const barcodes = JSON.parse($("#barcodes").text());
-$("#id_barcode").on('input', function () {
-    const barcode = $("#id_barcode").val();
-    if (barcodes.indexOf(barcode) !== -1) {
-        $("#existing_barcode_message").show();
-    } else {
-        $("#existing_barcode_message").hide();
-    }
-});
-</script>
+            if (barcode in barcodes) {
+                if ((barcodes[barcode].state === "afvist") && barcodes[barcode].rejection) {
+                    container.append($("<li>" + rejectionMessage + "</li>"));
+                    container.append($("<li><em>" + barcodes[barcode].rejection + "</em></li>"));
+                } else {
+                    container.append($("<li>" + baseMessage + "</li>"));
+                }
+            }
+        });
+    </script>
 {% endblock %}

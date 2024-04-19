@@ -28,6 +28,7 @@ from esani_pantportal.views import (
     MultipleProductApproveView,
     MultipleProductDeleteView,
     MultipleProductRegisterView,
+    MultipleProductRejectView,
     NewsEmailView,
     PantportalLoginView,
     PantportalLogoutView,
@@ -199,6 +200,11 @@ urlpatterns = [
         "produkt/flere/godkend",
         MultipleProductApproveView.as_view(),
         name="product_multiple_approve",
+    ),
+    path(
+        "produkt/flere/afvis",
+        MultipleProductRejectView.as_view(),
+        name="product_multiple_reject",
     ),
     path(
         "produkt/flere/fjern",
