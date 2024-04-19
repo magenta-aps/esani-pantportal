@@ -81,29 +81,31 @@ SPDX-License-Identifier: MPL-2.0
             </div>
         </div>
         <div class="row">
-            <div class="col-6">
-                {% if can_edit %}
-                <div class="card">
+            {% if can_edit %}
+            <div class="col">
+                <div class="card h-100">
                     <div class="card-body">
                         <h5 class="cart-title">Rediger</h5>
                         <p class="card-text">
                             Rediger et produkt ved at:
-
                             <ul>
                                 <li>Rette de ønskede felter (ved brug af {% bs_icon "pencil-square" color="blue" %} knapper) </li>
                                 <li>Klik "Gem"</li>
                             </ul>
-
                         </p>
+                    </div>
+                    <div class="card-footer">
                         <button id="update_button" type="submit" class="btn btn-primary disabled">Gem</button>
                     </div>
                 </div>
-                {% endif %}
+            </div>
+            {% endif %}
 
-                {% if user.is_admin %}
+            {% if user.is_admin %}
 
-                {% if can_approve %}
-                <div class="card mt-3">
+            {% if can_approve %}
+            <div class="col">
+                <div class="card h-100">
                     <div class="card-body">
                         <h5 class="cart-title">Godkend</h5>
                         <p class="card-text">
@@ -113,50 +115,65 @@ SPDX-License-Identifier: MPL-2.0
                             <li>Navn og stregkode på produktet er korrekt</li>
                             <li>At emballagen er pantbelagt</li>
                         </ul>
+                    </div>
+                    <div class="card-footer">
                         <button id="approve_button" type="submit" name="action" value="approve" class="btn btn-success">Godkend</button>
                     </div>
                 </div>
-                {% endif %}
+            </div>
+            {% endif %}
 
-                {% if can_unapprove %}
-                <div class="card mt-3">
+            {% if can_unapprove %}
+            <div class="col">
+                <div class="card h-100">
                     <div class="card-body">
                         <h5 class="cart-title">{% translate "Fortryd godkendelse" %}</h5>
+                    </div>
+                    <div class="card-footer">
                         <button id="unapprove_button" type="submit" name="action" value="unapprove" class="btn btn-secondary">{% translate "Fortryd godkendelse" %}</button>
                     </div>
                 </div>
-                {% endif %}
+            </div>
+            {% endif %}
 
-                {% if can_reject %}
-                <div class="card mt-3">
+            {% if can_reject %}
+            <div class="col">
+                <div class="card h-100">
                     <div class="card-body">
                         <h5 class="cart-title">{% translate "Afvis" %}</h5>
-                        <button id="reject_button" type="submit" name="action" value="reject" class="btn btn-warning">{% translate "Afvis" %}</button>
                         {{ form.rejection_message }} {# Hidden form field #}
                         {{ form.non_field_errors }}
                     </div>
+                    <div class="card-footer">
+                        <button id="reject_button" type="submit" name="action" value="reject" class="btn btn-warning">{% translate "Afvis" %}</button>
+                    </div>
                 </div>
-                {% endif %}
+            </div>
+            {% endif %}
 
-                {% if can_unreject %}
-                <div class="card mt-3">
+            {% if can_unreject %}
+            <div class="col">
+                <div class="card h-100">
                     <div class="card-body">
                         <h5 class="cart-title">{% translate "Fortryd afvisning" %}</h5>
+                    </div>
+                    <div class="card-footer">
                         <button id="unreject_button" type="submit" name="action" value="unreject" class="btn btn-secondary">{% translate "Fortryd afvisning" %}</button>
                     </div>
                 </div>
-                {% endif %}
-
-                {% endif %}
             </div>
+            {% endif %}
         </div>
 
+        {% endif %}{# user.is_admin #}
     </form>
     {% if can_edit and user.is_admin %}
-        {% url 'pant:product_delete' object.id as delete_url %}
-        <div class="row"><div class="col-6">
-        {% include "../delete_button.html" with url=delete_url|add_back_url:back_url %}
-        </div></div>
+    <div class="row">
+        <div class="col-4">
+            {% url 'pant:product_delete' object.id as delete_url %}
+            {% include "../delete_button.html" with url=delete_url|add_back_url:back_url %}
+        </div>
+    </div>
     {% endif %}
 </div>
 
