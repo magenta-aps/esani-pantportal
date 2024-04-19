@@ -6,26 +6,27 @@ SPDX-License-Identifier: MPL-2.0
 {% load i18n %}
 {% load l10n %}
 
-<form action={{url}} method="post">
+<form action="{{ url }}" method="post">
     {% csrf_token %}
-            <div class="card my-3">
-                <div class="card-body">
-                    <h5 class="cart-title">{% translate "Fjern" %}</h5>
-                    <p class="card-text">
-                        {{ delete_text }}
-                    </p>
-
-                    <button id="delete_button"
-                            type="submit"
-                            name="Delete"
-                            {% if can_delete|default_if_none:True %}
-                            class="btn btn-danger"
-                            {% else %}
-                            class="btn btn-danger disabled"
-                            {% endif %}
-                            >
-                        {% translate "Fjern" %}
-                    </button>
-                </div>
-            </div>
+    <div class="card my-3">
+        <div class="card-body">
+            <h5 class="cart-title">{% translate "Fjern" %}</h5>
+            <p class="card-text">
+                {{ delete_text }}
+            </p>
+        </div>
+        <div class="card-footer">
+            <button id="delete_button"
+                    type="submit"
+                    name="Delete"
+                    {% if can_delete|default_if_none:True %}
+                    class="btn btn-danger"
+                    {% else %}
+                    class="btn btn-danger disabled"
+                    {% endif %}
+            >
+                {% translate "Fjern" %}
+            </button>
+        </div>
+    </div>
 </form>

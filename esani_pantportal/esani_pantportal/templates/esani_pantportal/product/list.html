@@ -8,168 +8,72 @@ SPDX-License-Identifier: MPL-2.0
 {% load i18n %}
 {% load l10n %}
 {% load bootstrap_icons %}
+
+{% block extra_headers %}
+    <script src="{% url 'javascript-catalog' %}"></script>
+    {% if can_edit_multiple %}
+        <script src="{% static 'jquery/product_list_actions.js' %}"></script>
+    {% endif %}
+{% endblock %}
+
 {% block content %}
-<div class="mx-5">
-    <div class="row">
-        <div class="col-6">
-            <h1>{% translate "Produkter" %}</h1>
-        </div>
-    </div>
-    <form method="get">
+    <div class="mx-5">
         <div class="row">
             <div class="col-6">
-                <div class="row">
-                    <div class="col-4">{% translate "Navn" %}</div>
-                    <div class="col-8">{{form.product_name}}</div>
-                </div>
-                <div class="row">
-                    <div class="col-4">{% translate "Stregkode" %}</div>
-                    <div class="col-8">{{form.barcode}}</div>
-                </div>
-                <div class="row">
-                    <div class="col-4">
-                        {% translate "Godkendt" %}
-                        {% if user.is_esani_admin %}
-                        ({% bs_icon "bag-check" size="1em" color="green" %}: <span id="approved_count">{{approved_products}}</span>,
-                        {% bs_icon "bag-x" size="1em" color="red" %}: <span id="pending_count">{{pending_products}}</span>)
-                        {% endif %}
-                    </div>
-                    <div class="col-8">{{form.approved}}</div>
-                </div>
-                {% if user.is_esani_admin %}
-                <div class="row">
-                    <div class="col-4">{% translate "Import job" %}</div>
-                    <div class="col-8">{{form.import_job}}</div>
-                </div>
-            	{% endif %}
-                <div class="row">
-                    <div class="col-12"><button type="submit" class="btn btn-primary float-end">Søg</button></div>
-                </div>
+                <h1>{% translate "Produkter" %}</h1>
             </div>
         </div>
-    </form>
-    {% include "../delete_confirmation.html" with icon_tag="trash" delete_text="Produkt fjernet"  %}
-    <div class="col-12  mt-3">
-        <a class="btn btn-primary" href="{% url 'pant:registered_products_csv_download' 1 %}">{% translate "Download .csv-fil med godkendte produkter" %}
-        </a>
-        <a class="btn btn-primary" href="{% url 'pant:registered_products_csv_download' 0 %}">{% translate "Download .csv-fil med alle produkter" %}
-        </a>
-        {% if can_edit_multiple and user.is_esani_admin %}
-        <a id="approve_button" class="btn btn-primary disabled" href="#">{% translate "Godkend alle markerede produkter" %}</a>
-        <a id="delete_button" class="btn btn-danger disabled" href="#">{% translate "Fjern alle markerede produkter" %}</a>
-        {% endif %}
-        {% include "../list_view_filter_button.html" with columns=filterable_columns %}
+        <form method="get">
+            <div class="row">
+                <div class="col-6">
+                    <div class="row">
+                        <div class="col-4">{% translate "Navn" %}</div>
+                        <div class="col-8">{{ form.product_name }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4">{% translate "Stregkode" %}</div>
+                        <div class="col-8">{{ form.barcode }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4">{% translate "Status" %}</div>
+                        <div class="col-8">{{ form.state }}</div>
+                    </div>
+                    {% if user.is_esani_admin %}
+                        <div class="row">
+                            <div class="col-4">{% translate "Import job" %}</div>
+                            <div class="col-8">{{ form.import_job }}</div>
+                        </div>
+                    {% endif %}
+                    <div class="row">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary float-end">Søg</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        {% include "../delete_confirmation.html" with icon_tag="trash" delete_text="Produkt fjernet" %}
+        {% csrf_token %}
+        <div class="col-12  mt-3">
+            <a class="btn btn-primary"
+               href="{% url 'pant:registered_products_csv_download' 1 %}">{% translate "Download .csv-fil med godkendte produkter" %}
+            </a>
+            <a class="btn btn-primary"
+               href="{% url 'pant:registered_products_csv_download' 0 %}">{% translate "Download .csv-fil med alle produkter" %}
+            </a>
+            {% if can_edit_multiple and user.is_esani_admin %}
+                <a id="approve_button" class="btn btn-primary disabled" href="#" data-post-url="{% url "pant:product_multiple_approve" %}">
+                    {% translate "Godkend alle markerede produkter" %}
+                </a>
+                <a id="reject_button" class="btn btn-warning disabled" href="#" data-post-url="{% url "pant:product_multiple_reject" %}">
+                    {% translate "Afvis alle markerede produkter" %}
+                </a>
+                <a id="delete_button" class="btn btn-danger disabled" href="#" data-post-url="{% url "pant:product_multiple_delete" %}">
+                    {% translate "Slet alle markerede produkter" %}
+                </a>
+            {% endif %}
+            {% include "../list_view_filter_button.html" with columns=filterable_columns %}
+        </div>
+        {% include "../list_view_table.html" %}
     </div>
-    {% include "../list_view_table.html" %}
-</div>
-
-
-{% if can_edit_multiple %}
-<script>
-const approveButton = $("#approve_button");
-const deleteButton = $("#delete_button");
-
-function getRowId(row){
-    rowId = row.id.toString();
-    // Remove spurious "." that causes type error.
-    return rowId.split(".").join("")
-};
-
-function getUnapprovedRows(){
-    const selectedRows = $("#table").bootstrapTable("getSelections");
-    const rowIds = [];
-    for (let row of selectedRows) {
-        if (row.approved==='{{ _("Nej") }}') {
-            rowIds.push(getRowId(row));
-        }
-    };
-    return rowIds
-};
-
-function getRows(){
-    const selectedRows = $("#table").bootstrapTable("getSelections");
-    const rowIds = [];
-    for (let row of selectedRows) {
-        rowIds.push(getRowId(row));
-    }
-    return rowIds
-};
-
-const onUpdateSelected = function () {
-    unapprovedRowIds = getUnapprovedRows();
-    rowIds = getRows();
-    if (unapprovedRowIds.length > 0){
-        approveButton.removeClass("disabled");
-    } else {
-        approveButton.addClass("disabled");
-    }
-    if (rowIds.length > 0){
-        deleteButton.removeClass("disabled");
-    } else {
-        deleteButton.addClass("disabled");
-    }
-
-};
-
-approveButton.on("click", function() {
-    rowIds = getUnapprovedRows();
-    if (rowIds.length > 0){
-        confirmed = confirm('{% translate "Er du sikker på at du vil godkende " %}'
-                            + rowIds.length
-                            + '{% translate " produkter?" %}');
-        if (confirmed){
-            $.ajax({
-                type: 'POST',
-                url: '{% url "pant:product_multiple_approve" %}',
-                data: {csrfmiddlewaretoken : '{{ csrf_token }}',
-                       ids : rowIds },
-                success: function(){
-                    $table.bootstrapTable('refresh');
-                    let approved_count = parseInt($("#approved_count").text());
-                    let pending_count = parseInt($("#pending_count").text());
-                    $("#approved_count").text(approved_count+rowIds.length);
-                    $("#pending_count").text(pending_count-rowIds.length);
-                }
-            });
-        }
-    }
-});
-
-deleteButton.on("click", function() {
-    rowIds = getRows();
-    confirmed = confirm('{% translate "Er du sikker på at du vil fjerne " %}'
-                        + rowIds.length
-                        + '{% translate " produkter?" %}');
-    if (confirmed){
-        $.ajax({
-            type: 'POST',
-            url: '{% url "pant:product_multiple_delete" %}',
-            data: {csrfmiddlewaretoken : '{{ csrf_token }}',
-                   ids : rowIds },
-            success: function(resp){
-                $table.bootstrapTable('refresh');
-                let pending_count = parseInt($("#pending_count").text());
-                $("#pending_count").text(pending_count-resp.deleted_products);
-
-                if (resp.protected_products>0) {
-                    alert(resp.protected_products_message);
-                }
-            },
-            error: function(resp){
-                alert(resp.responseJSON.error);
-                }
-        });
-    }
-});
-
-$("table").on(
-    "uncheck.bs.table uncheck-all.bs.table uncheck-some.bs.table check.bs.table check-some.bs.table check-all.bs.table reset-view.bs.table",
-    function (evt) {
-        onUpdateSelected();
-    },
-);
-
-</script>
-{% endif %}
-
 {% endblock %}

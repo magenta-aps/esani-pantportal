@@ -7,6 +7,7 @@ import os
 import sys
 from functools import cached_property
 from io import BytesIO
+from typing import Any
 from urllib.parse import quote
 
 import pandas as pd
@@ -19,7 +20,7 @@ from django.contrib.auth.views import LogoutView, PasswordChangeView
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.core.management import call_command
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import (
     BooleanField,
     Case,
@@ -42,12 +43,14 @@ from django.http import (
     HttpResponse,
     HttpResponseForbidden,
     HttpResponseNotFound,
+    HttpResponseRedirect,
     JsonResponse,
 )
 from django.shortcuts import redirect
 from django.templatetags.l10n import localize
 from django.urls import reverse
 from django.utils.timezone import now
+from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import (
     CreateView,
@@ -58,10 +61,11 @@ from django.views.generic import (
     UpdateView,
     View,
 )
+from django_fsm import can_proceed
 from django_otp import devices_for_user
 from django_stubs_ext import StrPromise
 from project.settings import DEFAULT_FROM_EMAIL
-from simple_history.utils import bulk_update_with_history, update_change_reason
+from simple_history.utils import bulk_update_with_history
 from two_factor.views import LoginView, SetupView
 
 from esani_pantportal.exports.uniconta.exports import CreditNoteExport, DebtorExport
@@ -115,6 +119,7 @@ from esani_pantportal.models import (
     KioskUser,
     Product,
     ProductListViewPreferences,
+    ProductState,
     QRBag,
     ReverseVendingMachine,
     User,
@@ -208,13 +213,29 @@ class ProductRegisterView(PermissionRequiredMixin, CreateView):
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object._change_reason = "Oprettet"
-        self.object.created_by = self.request.user
-        return super().form_valid(form)
+        try:
+            with transaction.atomic():
+                return super().form_valid(form)
+        except IntegrityError:
+            # Expected error: 'duplicate key value violates unique constraint
+            # "barcode_unique_when_not_deleted"'.
+            messages.add_message(
+                self.request,
+                messages.ERROR,
+                _("Der eksisterer allerede et produkt med denne stregkode"),
+            )
+            return super().form_invalid(form)
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         context["product_constraints"] = settings.PRODUCT_CONSTRAINTS
-        context["barcodes"] = [product.barcode for product in Product.objects.all()]
+        context["barcodes"] = {
+            product.barcode: {
+                "state": product.state,
+                "rejection": product.rejection,
+            }
+            for product in Product.objects.exclude(state=ProductState.DELETED)
+        }
         return context
 
     def get_success_url(self):
@@ -727,23 +748,26 @@ class ProductSearchView(SearchView):
     model = Product
     form_class = ProductFilterForm
     preferences_class = ProductListViewPreferences
-    annotations = {"file_name": F("import_job__file_name")}
+    annotations = {
+        "file_name": F("import_job__file_name"),
+    }
     can_edit_multiple = True
-
     search_fields = ["product_name", "barcode"]
-    search_fields_exact = ["approved", "import_job"]
-
+    search_fields_exact = ["state", "approved", "import_job"]
     fixed_columns = {
         "product_name": _("Produktnavn"),
         "barcode": _("Stregkode"),
-        "approved": _("Godkendt"),
+        "status": _("Status"),
     }
     actions = {_("Vis"): "btn btn-sm btn-primary"}
 
+    def get_form_kwargs(self):
+        form_kwargs = super().get_form_kwargs()
+        form_kwargs["user"] = self.request.user
+        return form_kwargs
+
     def get_action_url(self, item, *args):
-        base_url = reverse("pant:product_view", kwargs={"pk": item.id})
-        back_url = self.request.get_full_path()
-        return add_parameters_to_url(base_url, {"back": quote(back_url)})
+        return reverse("pant:product_view", kwargs={"pk": item.id})
 
     def item_to_json_dict(self, item_obj, context, index):
         json_dict = super().item_to_json_dict(item_obj, context, index)
@@ -753,9 +777,7 @@ class ProductSearchView(SearchView):
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)
 
-        if key == "approved":
-            value = _("Ja") if value else _("Nej")
-        elif key == "material":
+        if key == "material":
             value = material(value)
         elif key == "shape":
             value = shape(value)
@@ -766,16 +788,10 @@ class ProductSearchView(SearchView):
 
         return value or "-"
 
-    def get_context_data(self, *args, **kwargs):
-        context = super().get_context_data(*args, **kwargs)
-        if self.request.user.is_esani_admin:
-            # Statistics on approved products for ESANI admins
-            # Other users don't need to see this because they cannot approve anyway.
-            qs = Product.objects.values("approved").annotate(count=Count("id"))
-            approval_count_dict = {item["approved"]: item["count"] for item in qs}
-            context["approved_products"] = approval_count_dict.get(True, 0)
-            context["pending_products"] = approval_count_dict.get(False, 0)
-        return context
+    def filter_qs(self, qs):
+        qs = super().filter_qs(qs)
+        qs = qs.exclude(state=ProductState.DELETED)
+        return qs
 
 
 class BranchSearchView(PermissionRequiredMixin, SearchView):
@@ -1303,6 +1319,9 @@ class ProductUpdateView(UpdateViewMixin):
     template_name = "esani_pantportal/product/view.html"
     form_class = ProductUpdateForm
 
+    def get_queryset(self):
+        return self.model.objects.get_queryset()
+
     def check_permissions(self):
         if self.request.method == "GET":
             self.required_permissions = ["esani_pantportal.view_product"]
@@ -1312,57 +1331,90 @@ class ProductUpdateView(UpdateViewMixin):
         return super().check_permissions()
 
     def get_latest_relevant_history(self):
-        return self.object.history.filter(
-            Q(history_change_reason="Oprettet")
-            | Q(history_change_reason="Godkendt")
-            | Q(  # NOTE: Gjort Inaktiv not yet implemented
-                history_change_reason="Gjort Inaktiv"
-            )
+        return self.object.history.exclude(
+            Q(history_change_reason="Ændret") | Q(history_change_reason__isnull=True)
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        product = context["object"]
+
         context["back_url"] = get_back_url(self.request, "")
-        if context["object"].approved and not self.request.user.is_esani_admin:
+
+        if product.approved and not self.request.user.is_esani_admin:
             context["can_edit"] = False
+
+        if self.request.user.is_esani_admin:
+            context["can_approve"] = can_proceed(product.approve)
+            context["can_unapprove"] = can_proceed(product.unapprove)
+            context["can_reject"] = can_proceed(product.reject)
+            context["can_unreject"] = can_proceed(product.unreject)
+
         qs = self.get_latest_relevant_history()
         if qs:
             context["latest_history"] = qs.order_by("-history_date")[0]
+
         return context
 
     def form_valid(self, form):
+        # Since we are not calling `super().form_valid(...)`, we manually call
+        # `check_permissions`.
+        # We are not calling `super().form_valid(...)` as that will in turn call
+        # `form.save()`, updating `self.object.state` before we have a chance to
+        # capture its old value.
+        response = self.check_permissions()
+        if response:
+            return response
+
+        old_state_name = form.instance.get_state_display()
+
+        def get_change_reason(new_state: ProductState) -> str:
+            return f"Status ændret fra {old_state_name} til {new_state.label}"
+
+        # Populate `self.object` with values from form, but do not update the
+        # underlying DB object yet.
+        self.object = form.save(commit=False)
+
         if not self.request.user.is_esani_admin:
             approved = self.get_object().approved
             if approved:
                 return self.access_denied
             if not self.same_workplace:
                 return self.access_denied
-            if "approved" in form.changed_data:
+            if "action" in form.changed_data:
                 return self.access_denied
-        return super().form_valid(form)
+            self.object._change_reason = "Ændret"
+        else:
+            # Action is one of "approve", "unapprove", "reject" or "unreject".
+            # If "normal" save, "action" is not present in form data.
+            action = form.cleaned_data.get("action")
+            if action == "approve":
+                self.object.approve()
+                self.object._change_reason = "Godkendt"
+            elif action == "unapprove":
+                self.object.unapprove()
+                self.object._change_reason = get_change_reason(
+                    ProductState.AWAITING_APPROVAL
+                )
+            elif action == "reject":
+                rejection_message = form.cleaned_data.get("rejection_message")
+                self.object.rejection = rejection_message
+                self.object.reject()
+                self.object._change_reason = "Afvist"
+            elif action == "unreject":
+                self.object.unreject()
+                self.object._change_reason = get_change_reason(
+                    ProductState.AWAITING_APPROVAL
+                )
+            else:
+                self.object._change_reason = "Ændret"
+
+        self.object.save()
+
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
-        back_url = get_back_url(self.request, reverse("pant:product_list"))
-        approved = self.get_object().approved
-        latest_history_qs = self.get_latest_relevant_history()
-        recently_approved = bool(
-            latest_history_qs
-            and latest_history_qs.order_by("-history_date")[0].history_change_reason
-            == "Godkendt"
-        )
-        if approved:
-            if recently_approved:
-                update_change_reason(self.get_object(), "Ændret")
-                return self.request.get_full_path()
-            else:
-                update_change_reason(self.get_object(), "Godkendt")
-            return back_url
-        else:
-            if recently_approved:
-                update_change_reason(self.get_object(), "Gjort Inaktiv")
-            else:
-                update_change_reason(self.get_object(), "Ændret")
-            return self.request.get_full_path()
+        return get_back_url(self.request, self.request.get_full_path())
 
 
 class ProductHistoryView(LoginRequiredMixin, DetailView):
@@ -1372,10 +1424,8 @@ class ProductHistoryView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["histories"] = self.object.history.filter(
-            Q(history_change_reason="Oprettet")
-            | Q(history_change_reason="Godkendt")
-            | Q(history_change_reason="Gjort Inaktiv")
+        context["histories"] = self.object.history.exclude(
+            Q(history_change_reason="Ændret") | Q(history_change_reason__isnull=True)
         ).order_by("-history_date")
         return context
 
@@ -1551,28 +1601,36 @@ class MultipleProductRegisterView(PermissionRequiredMixin, FormView):
             return self.access_denied
 
         products = form.df.rename(form.rename_dict, axis=1).to_dict(orient="records")
-        existing_barcodes = Product.objects.values_list("barcode", flat=True).distinct()
+
+        existing_barcodes = {
+            product.barcode: (product.state, product.rejection)
+            for product in Product.objects.exclude(state=ProductState.DELETED)
+        }
+
         job = ImportJob(
             imported_by=self.request.user,
             file_name=form.filename,
             date=now(),
         )
+
         failures = []
         success_count = 0
         existing_products_count = 0
         products_to_save = []
+
         for product_dict in products:
             barcode = product_dict["barcode"]
             product_name = product_dict["product_name"]
             if barcode in existing_barcodes:
                 existing_products_count += 1
+                state, rejection = existing_barcodes[barcode]
+                if state == ProductState.REJECTED:
+                    failures.append({product_name: {gettext("Afvist"): [rejection]}})
                 continue
             try:
-                product_dict["approved"] = False
                 product = Product(**product_dict)
-                product.created_by = self.request.user
                 product.import_job = job
-                product.full_clean()
+                product.full_clean(exclude=["state"])
                 products_to_save.append(product)
                 success_count += 1
             except ValidationError as e:
@@ -1711,7 +1769,8 @@ class CsvProductsView(CsvTemplateView):
         }
 
         shape_map = {"F": "Bottle", "A": "Other", "D": "Other"}
-        approval_map = {True: "Approved", False: "Pending"}
+
+        state_map = dict(ProductState.choices)
 
         if bool(approved):
             qs = Product.objects.filter(approved=True)
@@ -1729,8 +1788,8 @@ class CsvProductsView(CsvTemplateView):
                 )
             )
         else:
-            column_map["approved"] = "Approved by ESANI A/S"
-            qs = Product.objects.all()
+            column_map["state"] = "Status"
+            qs = Product.objects.exclude(state=ProductState.DELETED)
             filename = f"{timestamp}_full_product_list.csv"
             all_products = list(
                 qs.values(
@@ -1742,7 +1801,7 @@ class CsvProductsView(CsvTemplateView):
                     "weight",
                     "capacity",
                     "shape",
-                    "approved",
+                    "state",
                 )
             )
 
@@ -1754,7 +1813,7 @@ class CsvProductsView(CsvTemplateView):
             }
         )
         if not bool(approved):
-            df = df.replace({"approved": approval_map})
+            df = df.replace({"state": state_map})
         df = df.rename(column_map, axis=1)
 
         response = HttpResponse(content_type="text/csv")
@@ -1772,7 +1831,15 @@ class ProductDeleteView(PermissionRequiredMixin, DeleteView):
     def form_valid(self, form):
         if not self.request.user.is_esani_admin and not self.same_workplace:
             return self.access_denied
-        return super().form_valid(form)
+
+        if can_proceed(self.object.delete):
+            self.object.delete()
+            self.object._change_reason = "Slettet"
+            self.object.save()
+        else:
+            return self.access_denied
+
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         back_url = get_back_url(self.request, reverse("pant:product_list"))
@@ -1849,59 +1916,94 @@ class UpdateListViewPreferences(View):
         return HttpResponse("ok")
 
 
-class MultipleProductApproveView(View, PermissionRequiredMixin):
+class _MultipleProductStateUpdate(View, PermissionRequiredMixin):
+    """Base class for views that can update the state of multiple products"""
+
     def post(self, request, *args, **kwargs):
         if not self.request.user.is_esani_admin:
             return self.access_denied
 
         ids = [int(id) for id in self.request.POST.getlist("ids[]")]
         products = Product.objects.filter(id__in=ids)
+        num = 0
+
         for product in products:
-            product.approved = True
+            if self.can_proceed(product):
+                self.update(product)
+                num += 1
 
         bulk_update_with_history(
-            products, Product, ["approved"], default_change_reason="Godkendt"
+            products,
+            Product,
+            self.get_affected_fields(),
+            default_change_reason=self.get_change_reason(),
         )
 
-        return JsonResponse({"status_code": 200})
-
-
-class MultipleProductDeleteView(View, PermissionRequiredMixin):
-    def post(self, request, *args, **kwargs):
-        if not self.request.user.is_esani_admin:
-            return self.access_denied
-
-        ids = [int(id) for id in self.request.POST.getlist("ids[]")]
-        products = Product.objects.filter(id__in=ids)
-
-        if products.filter(approved=True):
-            response = JsonResponse({"error": _("Godkendte produkter må ikke fjernes")})
-            response.status_code = 403
-            return response
-
-        products_to_delete = products.filter(deposit_items__isnull=True)
-        protected_products = products.difference(products_to_delete)
-
-        deleted_products_count = products_to_delete.count()
-        protected_products_count = protected_products.count()
-
-        protected_products_message = _(
-            "Kunne ikke fjerne følgende {amount} produkter: {products}; {reason}"
-        ).format(
-            amount=protected_products_count,
-            products=", ".join([p.product_name for p in protected_products]),
-            reason=_("Produkt er tilknyttet en eller flere udbetalings-objekter"),
-        )
-
-        products_to_delete.delete()
         return JsonResponse(
             {
-                "status_code": 200,
-                "deleted_products": deleted_products_count,
-                "protected_products": protected_products_count,
-                "protected_products_message": protected_products_message,
+                "total": len(ids),
+                "updated": num,
+                "state_choices": self._get_state_choices(),
             }
         )
+
+    def can_proceed(self, product: Product) -> bool:
+        raise NotImplementedError("must be implemented by subclass")  # pragma: nocover
+
+    def update(self, product: Product) -> None:
+        raise NotImplementedError("must be implemented by subclass")  # pragma: nocover
+
+    def get_change_reason(self) -> str:
+        raise NotImplementedError("must be implemented by subclass")  # pragma: nocover
+
+    def get_affected_fields(self) -> list[str]:
+        return ["state"]
+
+    def _get_state_choices(self) -> list[dict[str, Any]]:
+        form = ProductFilterForm(user=self.request.user)
+        field = form.fields["state"]
+        choices = [
+            {"value": value, "label": label}
+            for value, label in field.choices  # type: ignore
+        ]
+        return choices
+
+
+class MultipleProductApproveView(_MultipleProductStateUpdate):
+    def can_proceed(self, product: Product) -> bool:
+        return can_proceed(product.approve)
+
+    def update(self, product: Product) -> None:
+        product.approve()
+
+    def get_change_reason(self) -> str:
+        return "Godkendt"
+
+
+class MultipleProductRejectView(_MultipleProductStateUpdate):
+    def can_proceed(self, product: Product) -> bool:
+        return can_proceed(product.reject)
+
+    def update(self, product: Product) -> None:
+        product.reject()
+        product.rejection = self.request.POST.get("rejection")
+
+    def get_change_reason(self) -> str:
+        return "Afvist"
+
+    def get_affected_fields(self) -> list[str]:
+        return super().get_affected_fields() + ["rejection"]
+
+
+class MultipleProductDeleteView(_MultipleProductStateUpdate):
+    def can_proceed(self, product: Product) -> bool:
+        return can_proceed(product.delete)
+
+    def update(self, product: Product) -> None:
+        product.delete()
+
+    def get_change_reason(self) -> str:
+        return "Slettet"
 
 
 class TwoFactorSetup(SetupView):

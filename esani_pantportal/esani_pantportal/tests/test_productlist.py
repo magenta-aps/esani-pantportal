@@ -8,7 +8,7 @@ from http import HTTPStatus
 from bs4 import BeautifulSoup
 from django import forms
 from django.http import HttpRequest
-from django.test import SimpleTestCase, TestCase
+from django.test import TestCase
 from django.urls import reverse
 from django.utils.timezone import make_aware
 
@@ -20,13 +20,15 @@ from esani_pantportal.models import (
     ImportJob,
     Kiosk,
     Product,
+    ProductState,
 )
 from esani_pantportal.views import ProductSearchView
 
 from .conftest import LoginMixin
+from .helpers import ProductFixtureMixin
 
 
-class ProductListSearchDataTest(SimpleTestCase):
+class ProductListSearchDataTest(TestCase):
     def test_search_data_pagination_int(self):
         view = ProductSearchView()
         view.paginate_by = 20
@@ -68,7 +70,6 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
             product_name="prod1",
             barcode="0010",
             refund_value=3,
-            approved=False,
             material="A",
             height=100,
             diameter=60,
@@ -80,7 +81,6 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
             product_name="prod2",
             barcode="0002",
             refund_value=3,
-            approved=True,
             material="A",
             height=100,
             diameter=60,
@@ -88,6 +88,8 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
         )
+        cls.prod2.approve()
+        cls.prod2.save()
 
     def test_get_queryset_normal(self):
         view = ProductSearchView()
@@ -238,6 +240,8 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
 
 
 class ProductListFormValidTest(LoginMixin, TestCase):
+    maxDiff = None
+
     @classmethod
     def setUpTestData(cls):
         cls.user = EsaniUser.objects.create_user(
@@ -254,7 +258,6 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             product_name="prod1",
             barcode="0010",
             refund_value=3,
-            approved=False,
             material="A",
             height=100,
             diameter=60,
@@ -262,14 +265,13 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
             id=1,
-            created_by=cls.user,
+            # created_by=cls.user,
             import_job=cls.job,
         )
         cls.prod2 = Product.objects.create(
             product_name="prod2",
             barcode="0002",
             refund_value=3,
-            approved=True,
             material="A",
             height=100,
             diameter=60,
@@ -277,8 +279,10 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
             id=2,
-            created_by=cls.user,
+            # created_by=cls.user,
         )
+        cls.prod2.approve()
+        cls.prod2.save()
 
     def test_form_invalid(self):
         class InvalidProductFilterForm(ProductFilterForm):
@@ -307,51 +311,50 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         view.request.user = user
         view.kwargs = {}
         response = view.form_valid(view.form)
+        doc = json.loads(response.content)
         self.assertEquals(response.status_code, 200)
-        self.assertEquals(
-            json.loads(response.content),
-            {
-                "items": [
-                    {
-                        "actions": '<a href="/produkt/1?back=" class="btn btn-sm '
-                        'btn-primary">Vis</a>',
-                        "approved": "Nej",
-                        "approval_date": "-",
-                        "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
-                        "barcode": "0010",
-                        "capacity": 500,
-                        "diameter": 60,
-                        "height": 100,
-                        "id": 1,
-                        "material": "Aluminium",
-                        "product_name": "prod1",
-                        "shape": "Flaske",
-                        "weight": 20,
-                        "danish": "Ukendt",
-                        "file_name": self.job.file_name,
-                    },
-                    {
-                        "actions": '<a href="/produkt/2?back=" class="btn btn-sm '
-                        'btn-primary">Vis</a>',
-                        "approved": "Ja",
-                        "approval_date": datetime.date.today().strftime("%-d. %b %Y"),
-                        "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
-                        "barcode": "0002",
-                        "capacity": 500,
-                        "diameter": 60,
-                        "height": 100,
-                        "id": 2,
-                        "material": "Aluminium",
-                        "product_name": "prod2",
-                        "shape": "Flaske",
-                        "weight": 20,
-                        "danish": "Ukendt",
-                        "file_name": "-",
-                    },
-                ],
-                "total": 2,
-            },
+        self.assertListEqual(
+            doc["items"],
+            [
+                {
+                    "actions": '<a href="/produkt/1" class="btn btn-sm btn-primary">'
+                    "Vis</a>",
+                    "status": ProductState.AWAITING_APPROVAL.label,
+                    "approval_date": "-",
+                    "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
+                    "barcode": "0010",
+                    "capacity": 500,
+                    "diameter": 60,
+                    "height": 100,
+                    "id": 1,
+                    "material": "Aluminium",
+                    "product_name": "prod1",
+                    "shape": "Flaske",
+                    "weight": 20,
+                    "danish": "Ukendt",
+                    "file_name": self.job.file_name,
+                },
+                {
+                    "actions": '<a href="/produkt/2" class="btn btn-sm btn-primary">'
+                    "Vis</a>",
+                    "status": ProductState.APPROVED.label,
+                    "approval_date": datetime.date.today().strftime("%-d. %b %Y"),
+                    "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
+                    "barcode": "0002",
+                    "capacity": 500,
+                    "diameter": 60,
+                    "height": 100,
+                    "id": 2,
+                    "material": "Aluminium",
+                    "product_name": "prod2",
+                    "shape": "Flaske",
+                    "weight": 20,
+                    "danish": "Ukendt",
+                    "file_name": "-",
+                },
+            ],
         )
+        self.assertEqual(doc["total"], 2)
 
         view = ProductSearchView()
         view.paginate_by = 20
@@ -367,33 +370,32 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         view.request.user = user
         view.kwargs = {}
         response = view.form_valid(view.form)
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(
-            json.loads(response.content),
-            {
-                "items": [
-                    {
-                        "actions": '<a href="/produkt/1?back=" class="btn btn-sm '
-                        'btn-primary">Vis</a>',
-                        "approved": "Nej",
-                        "approval_date": "-",
-                        "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
-                        "barcode": "0010",
-                        "capacity": 500,
-                        "diameter": 60,
-                        "height": 100,
-                        "id": 1,
-                        "material": "Aluminium",
-                        "product_name": "prod1",
-                        "shape": "Flaske",
-                        "weight": 20,
-                        "danish": "Ukendt",
-                        "file_name": self.job.file_name,
-                    }
-                ],
-                "total": 1,
-            },
+        doc = json.loads(response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertListEqual(
+            doc["items"],
+            [
+                {
+                    "actions": '<a href="/produkt/1" class="btn btn-sm btn-primary">'
+                    "Vis</a>",
+                    "status": ProductState.AWAITING_APPROVAL.label,
+                    "approval_date": "-",
+                    "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
+                    "barcode": "0010",
+                    "capacity": 500,
+                    "diameter": 60,
+                    "height": 100,
+                    "id": 1,
+                    "material": "Aluminium",
+                    "product_name": "prod1",
+                    "shape": "Flaske",
+                    "weight": 20,
+                    "danish": "Ukendt",
+                    "file_name": self.job.file_name,
+                }
+            ],
         )
+        self.assertEqual(doc["total"], 1)
 
 
 class ProductListGuiTest(LoginMixin, TestCase):
@@ -417,7 +419,6 @@ class ProductListGuiTest(LoginMixin, TestCase):
             product_name="prod1",
             barcode="0010",
             refund_value=3,
-            approved=False,
             material="A",
             height=100,
             diameter=60,
@@ -430,7 +431,6 @@ class ProductListGuiTest(LoginMixin, TestCase):
             product_name="prod2",
             barcode="0002",
             refund_value=3,
-            approved=True,
             material="A",
             height=100,
             diameter=60,
@@ -438,11 +438,13 @@ class ProductListGuiTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
         )
+        cls.prod2.approve()
+        cls.prod2.save()
 
         cls.prod1_expected_response = {
             "Produktnavn": cls.prod1.product_name,
             "Stregkode": cls.prod1.barcode,
-            "Godkendt": "Nej",
+            "Status": ProductState.AWAITING_APPROVAL.label,
             "Godkendt dato": "-",
             "Oprettelsesdato": datetime.date.today().strftime("%-d. %b %Y"),
             "Volumen": str(cls.prod1.capacity),
@@ -459,7 +461,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
         cls.prod2_expected_response = {
             "Produktnavn": cls.prod2.product_name,
             "Stregkode": cls.prod2.barcode,
-            "Godkendt": "Ja",
+            "Status": ProductState.APPROVED.label,
             "Godkendt dato": datetime.date.today().strftime("%-d. %b %Y"),
             "Oprettelsesdato": datetime.date.today().strftime("%-d. %b %Y"),
             "Volumen": str(cls.prod2.capacity),
@@ -507,7 +509,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
             {
                 "Produktnavn": item["product_name"],
                 "Stregkode": item["barcode"],
-                "Godkendt": item["approved"],
+                "Status": item["status"],
                 "Volumen": str(item["capacity"]),
                 "Materiale": item["material"],
                 "Højde": str(item["height"]),
@@ -613,7 +615,6 @@ class ProductListBulkApprovalTest(LoginMixin, TestCase):
             product_name="prod1",
             barcode="0010",
             refund_value=3,
-            approved=False,
             material="A",
             height=100,
             diameter=60,
@@ -625,7 +626,6 @@ class ProductListBulkApprovalTest(LoginMixin, TestCase):
             product_name="prod2",
             barcode="0002",
             refund_value=3,
-            approved=False,
             material="A",
             height=100,
             diameter=60,
@@ -638,12 +638,9 @@ class ProductListBulkApprovalTest(LoginMixin, TestCase):
         self.user = self.login("EsaniAdmins")
         data = {"ids[]": [self.prod1.id, self.prod2.id]}
         response = self.client.post(reverse("pant:product_multiple_approve"), data)
-
         self.assertEqual(response.status_code, HTTPStatus.OK)
-
-        self.prod1.refresh_from_db()
-        self.prod2.refresh_from_db()
-
+        self.prod1 = Product.objects.get(id=self.prod1.id)
+        self.prod2 = Product.objects.get(id=self.prod2.id)
         self.assertTrue(self.prod1.approved)
         self.assertTrue(self.prod2.approved)
 
@@ -676,7 +673,6 @@ class ProductListBulkDeleteTest(LoginMixin, TestCase):
             product_name="prod1",
             barcode="0010",
             refund_value=3,
-            approved=False,
             material="A",
             height=100,
             diameter=60,
@@ -690,7 +686,6 @@ class ProductListBulkDeleteTest(LoginMixin, TestCase):
             product_name="prod2",
             barcode="0002",
             refund_value=3,
-            approved=True,
             material="A",
             height=100,
             diameter=60,
@@ -698,13 +693,14 @@ class ProductListBulkDeleteTest(LoginMixin, TestCase):
             capacity=500,
             shape="F",
         )
+        cls.prod2.approve()
+        cls.prod2.save()
 
         # Product linked to DepositPayoutItem - cannot be deleted
         cls.prod3 = Product.objects.create(
             product_name="prod3",
             barcode="0003",
             refund_value=3,
-            approved=False,
             material="A",
             height=100,
             diameter=60,
@@ -729,10 +725,18 @@ class ProductListBulkDeleteTest(LoginMixin, TestCase):
     def test_bulk_delete(self):
         data = {"ids[]": [self.prod1.id]}
 
-        self.assertTrue(Product.objects.filter(id=self.prod1.id).exists())
+        self.assertQuerySetEqual(
+            Product.objects.filter(id=self.prod1.id).values("state"),
+            [{"state": ProductState.AWAITING_APPROVAL}],
+        )
+
         response = self.client.post(self.delete_multiple_url, data)
+
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertFalse(Product.objects.filter(id=self.prod1.id).exists())
+        self.assertQuerySetEqual(
+            Product.objects.filter(id=self.prod1.id).values("state"),
+            [{"state": ProductState.DELETED}],
+        )
 
     def test_bulk_delete_as_company_user(self):
         self.login("BranchAdmins")
@@ -743,15 +747,79 @@ class ProductListBulkDeleteTest(LoginMixin, TestCase):
     def test_bulk_delete_approved_products(self):
         data = {"ids[]": [self.prod1.id, self.prod2.id]}
         response = self.client.post(self.delete_multiple_url, data)
-        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_bulk_delete_payout_item_products(self):
-        data = {"ids[]": [self.prod1.id, self.prod3.id]}
+        # self.assertTrue(Product.objects.filter(id=self.prod1.id).exists())
+        # self.assertTrue(Product.objects.filter(id=self.prod3.id).exists())
+        self.assertQuerySetEqual(
+            Product.objects.filter(id__in=(self.prod1.id, self.prod3.id)).values(
+                "id", "state"
+            ),
+            [
+                {"id": self.prod1.id, "state": ProductState.AWAITING_APPROVAL},
+                {"id": self.prod3.id, "state": ProductState.AWAITING_APPROVAL},
+            ],
+        )
 
-        self.assertTrue(Product.objects.filter(id=self.prod1.id).exists())
-        self.assertTrue(Product.objects.filter(id=self.prod3.id).exists())
+        data = {"ids[]": [self.prod1.id, self.prod3.id]}
         response = self.client.post(self.delete_multiple_url, data)
+
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertFalse(Product.objects.filter(id=self.prod1.id).exists())
-        self.assertTrue(Product.objects.filter(id=self.prod3.id).exists())
-        self.assertEqual(response.json()["protected_products"], 1)
+        self.assertQuerySetEqual(
+            Product.objects.filter(id__in=(self.prod1.id, self.prod3.id)).values(
+                "id", "state"
+            ),
+            [
+                {"id": self.prod1.id, "state": ProductState.DELETED},
+                {"id": self.prod3.id, "state": ProductState.DELETED},
+            ],
+        )
+
+
+class ProductListBulkRejectionTest(LoginMixin, ProductFixtureMixin):
+    def _post_rejection(self, product: Product, **data):
+        post_data = {"ids[]": [product.id]}
+        post_data.update(**data)
+        return self.client.post(
+            reverse("pant:product_multiple_reject"),
+            data=post_data,
+        )
+
+    def _assert_state(self, product: Product, state: ProductState):
+        product = Product.objects.get(id=product.id)
+        self.assertEqual(product.state, state)
+
+    def test_allowed_states(self):
+        self.login()
+
+        # Test 1: a product awaiting approval can be rejected
+        response = self._post_rejection(self.prod1)
+        self._assert_state(self.prod1, ProductState.REJECTED)
+        self.assertEqual(response.json()["updated"], 1)
+
+        # Test 2: an approved product can be rejected
+        response = self._post_rejection(self.prod2)
+        self._assert_state(self.prod2, ProductState.REJECTED)
+        self.assertEqual(response.json()["updated"], 1)
+
+        # Test 3: a rejected product *cannot* be rejected
+        response = self._post_rejection(self.prod3)
+        self._assert_state(self.prod3, ProductState.REJECTED)
+        self.assertEqual(response.json()["updated"], 0)
+
+        # Test 4: a deleted product *cannot* be rejected
+        response = self._post_rejection(self.prod4)
+        self._assert_state(self.prod4, ProductState.DELETED)
+        self.assertEqual(response.json()["updated"], 0)
+
+    def test_rejection_message(self):
+        self.login()
+        rejection = "Produktet kan ikke pantes"
+        self._post_rejection(self.prod1, rejection=rejection)
+        self.assertQuerySetEqual(
+            Product.objects.filter(id=self.prod1.id).values_list(
+                "rejection", flat=True
+            ),
+            [rejection],
+        )

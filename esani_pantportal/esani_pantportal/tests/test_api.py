@@ -24,7 +24,6 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             product_name="prod1",
             barcode="00101122",
             refund_value=3,
-            approved=True,
             material="A",
             height=100,
             diameter=60,
@@ -33,11 +32,13 @@ class ProductViewGuiTest(LoginMixin, TestCase):
             shape="F",
             danish="J",
         )
+        cls.prod1.approve()
+        cls.prod1.save()
+
         cls.prod2 = Product.objects.create(
             product_name="prod2",
             barcode="00020002",
             refund_value=3,
-            approved=False,
             material="A",
             height=100,
             diameter=60,

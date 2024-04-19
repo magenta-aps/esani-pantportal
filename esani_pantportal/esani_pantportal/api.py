@@ -75,7 +75,7 @@ class ApprovedProductsAPI:  # type: ignore [call-arg]
         sort: str | None = None,
         order: str | None = None,
     ):
-        qs = filters.filter(Product.objects.filter(approved=True))
+        qs = filters.filter(Product.objects.filter(approved=True))  # type: ignore
         qs.order_by("product_name", "barcode")
 
         return list(qs)

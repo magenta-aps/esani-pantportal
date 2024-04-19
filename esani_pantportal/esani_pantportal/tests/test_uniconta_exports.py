@@ -94,7 +94,6 @@ class TestCreditNoteExport(_SharedBase):
             product_name="product",
             barcode="0010",
             refund_value=250,
-            approved=True,
             material="A",
             height=100,
             diameter=60,

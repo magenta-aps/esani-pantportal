@@ -52,7 +52,6 @@ class ExportProductsToCSVTests(TestCase):
             product_name="prod1",
             barcode="0010",
             refund_value=3,
-            approved=True,
             material="A",
             height=100,
             diameter=60,
@@ -60,11 +59,27 @@ class ExportProductsToCSVTests(TestCase):
             capacity=500,
             shape="F",
         )
+        cls.prod1.approve()
+        cls.prod1.save()
+
         cls.prod2 = Product.objects.create(
             product_name="prod2",
             barcode="0002",
             refund_value=3,
-            approved=True,
+            material="A",
+            height=100,
+            diameter=60,
+            weight=20,
+            capacity=500,
+            shape="F",
+        )
+        cls.prod2.approve()
+        cls.prod2.save()
+
+        cls.prod3 = Product.objects.create(
+            product_name="prod3",
+            barcode="0003",
+            refund_value=3,
             material="A",
             height=100,
             diameter=60,
@@ -73,11 +88,10 @@ class ExportProductsToCSVTests(TestCase):
             shape="F",
         )
 
-        cls.prod3 = Product.objects.create(
-            product_name="prod3",
-            barcode="0003",
+        cls.prod4 = Product.objects.create(
+            product_name="prod4",
+            barcode="0004",
             refund_value=3,
-            approved=False,
             material="A",
             height=100,
             diameter=60,
