@@ -36,7 +36,9 @@ SPDX-License-Identifier: MPL-2.0
                     <tr>
                         <th>{{object|verbose_name:"created_by"}}</th>
                         <td>
-                            {{object.created_by.username}} (<a href="mailto:{{object.created_by.email}}">{{object.created_by.email}}</a>)
+                            {% if object.created_by %}
+                                {{ object.created_by.username }} (<a href="mailto:{{ object.created_by.email }}">{{ object.created_by.email }}</a>)
+                            {% endif %}
                             {% if object.import_job %}
                                 ("{{object.import_job.file_name}}")
                             {% endif %}
@@ -61,6 +63,12 @@ SPDX-License-Identifier: MPL-2.0
                         <td>
                             {{ latest_history.history_change_reason }} d. {{ latest_history.history_date }} af {{ latest_history.history_user }}
                         </td>
+                    </tr>
+                    {% endif %}
+                    {% if object.rejected %}
+                    <tr>
+                        <th>{% translate "Afvist (begrundelse)" %}</th>
+                        <td>{{ object.rejection_message }}</td>
                     </tr>
                     {% endif %}
                     </tbody>

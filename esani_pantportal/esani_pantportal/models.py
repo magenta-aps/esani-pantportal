@@ -18,6 +18,7 @@ from django.db.models import (
     CharField,
     CheckConstraint,
     DateField,
+    F,
     OuterRef,
     Prefetch,
     Q,
@@ -465,6 +466,13 @@ class ProductManager(models.Manager):
                 approved=self._get_case(ProductState.APPROVED),
                 rejected=self._get_case(ProductState.REJECTED),
                 deleted=self._get_case(ProductState.DELETED),
+                # Messages
+                rejection_message=Case(
+                    When(
+                        state=ProductState.REJECTED,
+                        then=F("rejection"),
+                    ),
+                ),
             )
             .order_by("product_name", "barcode")
         )
