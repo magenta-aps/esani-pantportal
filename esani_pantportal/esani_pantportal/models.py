@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+import datetime
 import hashlib
 import logging
 import random
@@ -446,6 +447,11 @@ class ProductState(models.TextChoices):
 
 class ProductManager(models.Manager):
     def get_queryset(self) -> models.QuerySet:
+        # Default creation date for "old" products.
+        default_creation_date = datetime.datetime.strptime(
+            settings.PRODUCT_DEFAULT_CREATION_DATE_STR,
+            settings.PRODUCT_DEFAULT_CREATION_DATE_FORMAT,
+        )
         return (
             super()
             .get_queryset()
@@ -459,7 +465,8 @@ class ProductManager(models.Manager):
             .annotate(
                 status=self._get_state_display(),
                 # Dates
-                creation_date=self._get_date_of(ProductState.AWAITING_APPROVAL),
+                creation_date=self._get_date_of(ProductState.AWAITING_APPROVAL)
+                or default_creation_date,
                 approval_date=self._get_date_of(ProductState.APPROVED),
                 # Boolean flags for each state
                 awaiting_approval=self._get_case(ProductState.AWAITING_APPROVAL),
