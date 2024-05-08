@@ -465,8 +465,7 @@ class ProductManager(models.Manager):
             .annotate(
                 status=self._get_state_display(),
                 # Dates
-                creation_date=self._get_date_of(ProductState.AWAITING_APPROVAL)
-                or default_creation_date,
+                _creation_date=self._get_date_of(ProductState.AWAITING_APPROVAL),
                 approval_date=self._get_date_of(ProductState.APPROVED),
                 # Boolean flags for each state
                 awaiting_approval=self._get_case(ProductState.AWAITING_APPROVAL),
@@ -480,6 +479,15 @@ class ProductManager(models.Manager):
                         then=F("rejection"),
                     ),
                 ),
+            )
+            .annotate(
+                creation_date=Case(
+                    When(
+                        _creation_date__isnull=True,
+                        then=Value(default_creation_date),
+                    ),
+                    default=F("_creation_date"),
+                )
             )
             .order_by("product_name", "barcode")
         )
