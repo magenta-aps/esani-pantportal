@@ -344,6 +344,10 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             "Afvist",
             response.content.decode(),
         )
+        self.assertIn(
+            "Begrundelse for afvisning",
+            response.content.decode(),
+        )
 
         # "Unreject" product, e.g. undo the previous "reject" action.
         # This will set the product state to AWAITING_APPROVAL.
