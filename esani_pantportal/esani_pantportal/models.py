@@ -451,7 +451,7 @@ class ProductManager(models.Manager):
         default_creation_date = datetime.datetime.strptime(
             settings.PRODUCT_DEFAULT_CREATION_DATE_STR,
             settings.PRODUCT_DEFAULT_CREATION_DATE_FORMAT,
-        )
+        ).date()
         return (
             super()
             .get_queryset()
