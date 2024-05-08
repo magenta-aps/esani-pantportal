@@ -286,6 +286,12 @@ PRODUCT_CONSTRAINTS: dict[str, dict[str, tuple]] = {
     },
 }
 
+# Default creation date. Only relevant because we didn't introduce instance
+# history from the beginning. Set both to the empty string for a default value.
+PRODUCT_DEFAULT_CREATION_DATE_STR = "2024-01-01"
+PRODUCT_DEFAULT_CREATION_DATE_FORMAT = "%Y-%m-%d"
+
+
 DATE_FORMAT = "j. N Y"
 
 if DEBUG:
