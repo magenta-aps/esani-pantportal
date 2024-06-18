@@ -12,7 +12,7 @@ six==1.16.0
 beautifulsoup4==4.12.2
 humanize==4.7.0
 pandas==2.2.2
-openpyxl==3.0.10
+openpyxl==3.1.4
 xlsxwriter==3.1.2
 django-bootstrap-icons==0.8.6
 django-betterforms==2.0.0
