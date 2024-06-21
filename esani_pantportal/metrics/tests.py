@@ -11,12 +11,15 @@ from prometheus_client import generate_latest
 class MetricsAPITest(TestCase):
     def test_get_all(self):
         resp = self.client.get("/api/metrics")
-
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.content, generate_latest())
 
     def test_health_storage(self):
         resp = self.client.get("/api/metrics/health/storage")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.content, b"OK")
 
+    def test_health_database(self):
+        resp = self.client.get("/api/metrics/health/database")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.content, b"OK")
