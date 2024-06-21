@@ -14,3 +14,9 @@ class MetricsAPITest(TestCase):
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.content, generate_latest())
+
+    def test_health_storage(self):
+        resp = self.client.get("/api/metrics/health/storage")
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.content, b"OK")
