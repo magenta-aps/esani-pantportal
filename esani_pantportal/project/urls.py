@@ -24,6 +24,7 @@ from django.contrib.auth import views as auth_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path
 from django.views.i18n import JavaScriptCatalog
+from metrics.urls import urlpatterns as metrics_urls
 from project.admin import pantadmin
 from project.api import api
 from two_factor.urls import urlpatterns as tf_urls
@@ -66,6 +67,7 @@ urlpatterns = [
     ),
     path("captcha/", include("captcha.urls")),
     path("", include(tf_urls)),
+    path("metrics/", include(metrics_urls)),
 ]
 
 if settings.DEBUG:
