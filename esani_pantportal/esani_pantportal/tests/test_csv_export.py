@@ -6,12 +6,14 @@ import io
 import os
 from http import HTTPStatus
 from io import StringIO
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import pandas as pd
+from django.conf import settings
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
+from metrics.job import JOB_EXEC_TIME_REGISTRY
 
 from esani_pantportal.models import (
     BRANCH_USER,
@@ -105,7 +107,8 @@ class ExportProductsToCSVTests(TestCase):
             if file.endswith(".csv"):
                 os.remove(file)
 
-    def test_csv_export(self):
+    @patch("metrics.job.push_to_gateway")
+    def test_csv_export(self, mock_push_to_gateway: MagicMock):
         filename = self.call_command(".")
         self.assertIn(filename, os.listdir("."))
 
@@ -113,12 +116,19 @@ class ExportProductsToCSVTests(TestCase):
         self.assertEqual(len(df), 2)  # There are two approved products
         self.assertEqual(list(df.loc[:, "Barcode"]), ["0010", "0002"])
 
+        mock_push_to_gateway.assert_called_with(
+            settings.PROMETHEUS_PUSHGATEWAY_HOST,
+            job="export_approved_products_to_csv",
+            registry=JOB_EXEC_TIME_REGISTRY,
+        )
+
+    @patch("metrics.job.push_to_gateway")
     @patch(
         "esani_pantportal.management.commands."
         "export_approved_products_to_csv.datetime",
         datetime_mock,
     )
-    def test_csv_export_cleanup(self):
+    def test_csv_export_cleanup(self, mock_push_to_gateway: MagicMock):
         # Export three csv files
         filenames = []
         for i in range(3):
@@ -129,6 +139,17 @@ class ExportProductsToCSVTests(TestCase):
         self.assertNotIn(filenames[0], os.listdir("."))
         self.assertIn(filenames[1], os.listdir("."))
         self.assertIn(filenames[2], os.listdir("."))
+
+        mock_push_to_gateway.assert_has_calls(
+            [
+                call(
+                    settings.PROMETHEUS_PUSHGATEWAY_HOST,
+                    job="export_approved_products_to_csv",
+                    registry=JOB_EXEC_TIME_REGISTRY,
+                )
+                for i in range(3)
+            ]
+        )
 
 
 class CSVExportViewTest(LoginMixin, TestCase):
