@@ -387,3 +387,9 @@ if os.path.isfile(log_filename) and ENVIRONMENT != "development":
         "level": "INFO",
     }
     LOGGING["loggers"]["django"]["handlers"].append("file")
+
+# Metrics
+
+PROMETHEUS_PUSHGATEWAY_HOST = os.environ.get(
+    "PROMETHEUS_PUSHGATEWAY", "pushgateway:9091"
+)
