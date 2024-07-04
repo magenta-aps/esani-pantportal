@@ -6,6 +6,7 @@ import os
 
 import pandas as pd
 from django.core.management.base import BaseCommand
+from metrics.job import push_groenland_job_metric
 
 from esani_pantportal.models import Product
 
@@ -102,4 +103,5 @@ class Command(BaseCommand):
         self.export_all_approved_products(path, filename)
         self.cleanup(path, max_number_of_files)
 
+        push_groenland_job_metric("export_approved_products_to_csv")
         return filename
