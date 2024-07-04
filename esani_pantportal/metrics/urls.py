@@ -3,14 +3,9 @@
 # SPDX-License-Identifier: MPL-2.0
 
 from django.urls import path
-from metrics.views import (
-    health_check_database,
-    health_check_storage,
-    prometheus_metrics,
-)
+from metrics.views import health_check_database, health_check_storage
 
 urlpatterns = [
-    path("", prometheus_metrics, name="health_check_storage"),
     path("health/storage", health_check_storage, name="health_check_storage"),
     path("health/database", health_check_database, name="health_check_database"),
 ]

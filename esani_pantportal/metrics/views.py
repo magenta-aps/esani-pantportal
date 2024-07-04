@@ -8,13 +8,8 @@ import tempfile
 from django.conf import settings
 from django.db import connection
 from django.http import HttpResponse
-from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 log = logging.getLogger(__name__)
-
-
-def prometheus_metrics(self):
-    return HttpResponse(generate_latest(), content_type=CONTENT_TYPE_LATEST)
 
 
 def health_check_storage(request):
