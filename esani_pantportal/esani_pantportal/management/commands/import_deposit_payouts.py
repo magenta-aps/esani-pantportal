@@ -12,6 +12,7 @@ import paramiko
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from metrics.job import push_groenland_job_metric
 
 from esani_pantportal.models import (
     DepositPayout,
@@ -66,6 +67,7 @@ class Command(BaseCommand):
                 tomra_file = self._read_csv(input_stream)
                 self._import_data(new_file, tomra_file)
 
+        push_groenland_job_metric("import_deposit_payouts")
         self.stdout.write("All done!")
 
     def _read_csv(self, input_stream):
