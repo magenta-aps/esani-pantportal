@@ -5,15 +5,10 @@
 from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
-from prometheus_client import generate_latest
+from metrics.job import push_groenland_job_metric
 
 
 class MetricsTest(TestCase):
-    def test_prometheus_metrics(self):
-        resp = self.client.get("/metrics/")
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.content, generate_latest())
-
     def test_health_check_storage(self):
         resp = self.client.get("/metrics/health/storage")
         self.assertEqual(resp.status_code, 200)
@@ -39,3 +34,10 @@ class MetricsTest(TestCase):
         resp = self.client.get("/metrics/health/database")
         self.assertEqual(resp.status_code, 500)
         self.assertEqual(resp.content, b"ERROR")
+
+    def test_push_groenland_job_metric_exception(self):
+        with patch("metrics.job.push_to_gateway") as mock_push_to_gateway:
+            mock_push_to_gateway.side_effect = Exception("Push to gateway failed")
+
+            with self.assertRaises(Exception):
+                push_groenland_job_metric("job_name")
