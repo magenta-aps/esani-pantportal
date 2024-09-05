@@ -30,7 +30,6 @@ workflow:
     - <<: *if-default-branch-refs
     - <<: *if-merge-request
 
-
 include:
   - project: "labs/salt-automation"
     file:
@@ -75,6 +74,7 @@ include:
 
 
 variables:
+  KANIKO_VERSION: v1.15.0-debug
   RELEASE_REGISTRY: docker.io
   RELEASE_REGISTRY_IMAGE: index.docker.io/magentaaps/esani-pantportal
 
@@ -131,38 +131,18 @@ Lint REUSE compliance:
 # Build stage
 #############
 
+# Build EANI-pantportal image
 Build ESANI-Pantportal image:
-  stage: build
-  needs: ["Lint Python", "Lint Dockerfiles", "Lint REUSE compliance"]
-  dependencies: []
-  image:
-    name: gcr.io/kaniko-project/executor:v1.15.0-debug
-    entrypoint: [""]
-  script:
-    # Login to GitLab registry
-    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
-    - /kaniko/executor
-      --cache
-      --context=$CI_PROJECT_DIR
-      --dockerfile=$CI_PROJECT_DIR/docker/Dockerfile
-      --destination=${IMAGE_SHA}
-      --build-arg=COMMIT_TAG=${CI_COMMIT_TAG}
-
+  extends: .build-docker
+  variables:
+    DOCKERFILE: $CI_PROJECT_DIR/docker/Dockerfile
+    BUILD_DOCKER_EXTRA_FLAGS: --build-arg=COMMIT_TAG=${CI_COMMIT_TAG}
 
 Build ER image:
-  stage: build
-  dependencies: []
-  image:
-    name: gcr.io/kaniko-project/executor:v1.15.0-debug
-    entrypoint: [""]
-  script:
-    # Login to GitLab registry
-    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
-    - /kaniko/executor
-      --cache
-      --context=$CI_PROJECT_DIR
-      --dockerfile=$CI_PROJECT_DIR/docker/Dockerfile_er
-      --destination=${ER_IMAGE_SHA}
+  extends: .build-docker
+  variables:
+    DOCKERFILE: $CI_PROJECT_DIR/docker/Dockerfile_er
+    CI_IMAGE: $ER_IMAGE_SHA
 
 # Test stage
 #############
