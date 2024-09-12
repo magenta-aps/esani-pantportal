@@ -2031,7 +2031,11 @@ class GenerateQRView(FormView):
         with BytesIO() as b:
             sheet_name = f"{bag_name} x {number_of_codes}"
 
-            writer = pd.ExcelWriter(b, engine="xlsxwriter")
+            writer = pd.ExcelWriter(
+                b,
+                engine="xlsxwriter",
+                engine_kwargs={"options": {"strings_to_urls": False}},
+            )
             df.to_excel(writer, sheet_name=sheet_name, index=False)
 
             # Set column-widths
