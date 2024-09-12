@@ -25,7 +25,8 @@ def push_groenland_job_metric(job_name: str):
         print(
             (
                 "Unable to push metrics to "
-                f"prometheus-pushgateway: {settings.PROMETHEUS_PUSHGATEWAY_HOST}"
+                f"prometheus-pushgateway: {settings.PROMETHEUS_PUSHGATEWAY_HOST}",
+                str(e),
             )
         )
-        raise e
+        # raise e
