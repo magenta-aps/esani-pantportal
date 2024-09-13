@@ -12,7 +12,6 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import Q
 from django.db.models.functions import Substr
-from metrics.job import push_groenland_job_metric
 from simple_history.utils import bulk_update_with_history
 
 from esani_pantportal.clients.tomra.api import ConsumerSessionCollection, TomraAPI
@@ -74,8 +73,6 @@ class Command(BaseCommand):
             self.stdout.write("Done.")
         else:
             self.stdout.write("Not importing anything.")
-
-        push_groenland_job_metric("import_deposit_payouts_qrbag")
 
     def _filter_consumer_sessions(
         self, consumer_sessions: ConsumerSessionCollection

@@ -4,12 +4,11 @@
 import uuid
 from datetime import date, datetime, timedelta
 from io import StringIO
-from unittest.mock import MagicMock, Mock, call, patch
+from unittest.mock import Mock, patch
 
 from django.conf import settings
 from django.core.management import call_command
 from django.test import TestCase
-from metrics.job import JOB_EXEC_TIME_REGISTRY
 from unittest_parametrize import ParametrizedTestCase, parametrize
 
 from esani_pantportal.clients.tomra.api import ConsumerSessionCollection, TomraAPI
@@ -91,8 +90,7 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
 
         cls.consumer_identity_ext_id = f"80003{cls.kiosk.id:05}"
 
-    @patch("metrics.job.push_to_gateway")
-    def test_handle_processes_to_and_from_args(self, mock_push_to_gateway: MagicMock):
+    def test_handle_processes_to_and_from_args(self):
         # Arrange
         mock_api = self._get_mock_api()
         with patch(self._mock_api_path, return_value=mock_api):
@@ -111,14 +109,7 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
                 datetime(2020, 1, 31),
             )
 
-        mock_push_to_gateway.assert_called_with(
-            settings.PROMETHEUS_PUSHGATEWAY_HOST,
-            job="import_deposit_payouts_qrbag",
-            registry=JOB_EXEC_TIME_REGISTRY,
-        )
-
-    @patch("metrics.job.push_to_gateway")
-    def test_import_creates_expected_objects(self, mock_push_to_gateway: MagicMock):
+    def test_import_creates_expected_objects(self):
         # Arrange
         data = [
             # First datum uses a consumer identity matching our QR bag, and contains
@@ -221,18 +212,6 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
             # Assert: check the `QRBag` object was updated as expected
             self.qr_bag.refresh_from_db()
             self.assertEqual(self.qr_bag.status, "esani_optalt")
-
-        # Assert metrics was pushed TWICE - since the command is runned twice
-        mock_push_to_gateway.assert_has_calls(
-            [
-                call(
-                    settings.PROMETHEUS_PUSHGATEWAY_HOST,
-                    job="import_deposit_payouts_qrbag",
-                    registry=JOB_EXEC_TIME_REGISTRY,
-                )
-                for i in range(2)
-            ]
-        )
 
     def _get_mock_api(self, data=None):
         mock_api = Mock(spec=TomraAPI)
