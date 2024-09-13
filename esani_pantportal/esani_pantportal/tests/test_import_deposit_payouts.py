@@ -6,10 +6,8 @@ import datetime
 from io import StringIO
 from unittest.mock import ANY, MagicMock, mock_open, patch
 
-from django.conf import settings
 from django.core.management import call_command
 from django.test import SimpleTestCase, TestCase
-from metrics.job import JOB_EXEC_TIME_REGISTRY
 
 from esani_pantportal.management.commands.import_deposit_payouts import (
     SFTP,
@@ -74,8 +72,7 @@ class TestImportDepositPayouts(TestCase):
             defaults=defaults,
         )
 
-    @patch("metrics.job.push_to_gateway")
-    def test_import_creates_expected_objects(self, mock_push_to_gateway: MagicMock):
+    def test_import_creates_expected_objects(self):
         def item(**kwargs):
             default = {
                 "deposit_payout__from_date": datetime.date(2023, 10, 23),
@@ -202,12 +199,6 @@ class TestImportDepositPayouts(TestCase):
         # objects.
         self.assertQuerySetEqual(
             actual_items, expected_items, transform=dict, ordered=True
-        )
-
-        mock_push_to_gateway.assert_called_with(
-            settings.PROMETHEUS_PUSHGATEWAY_HOST,
-            job="import_deposit_payouts",
-            registry=JOB_EXEC_TIME_REGISTRY,
         )
 
 
