@@ -136,7 +136,6 @@ Build ESANI-Pantportal image:
   extends: .build-docker
   variables:
     DOCKERFILE: $CI_PROJECT_DIR/docker/Dockerfile
-    BUILD_DOCKER_EXTRA_FLAGS: --build-arg=COMMIT_TAG=${CI_COMMIT_TAG}
 
 Build ER image:
   extends: .build-docker
