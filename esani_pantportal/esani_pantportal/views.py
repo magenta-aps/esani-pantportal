@@ -22,6 +22,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.core.management import call_command
 from django.db import IntegrityError, transaction
 from django.db.models import (
+    Aggregate,
     BooleanField,
     Case,
     Count,
@@ -34,6 +35,7 @@ from django.db.models import (
     PositiveIntegerField,
     Q,
     Subquery,
+    Sum,
     Value,
     When,
 )
@@ -873,6 +875,15 @@ class ReverseVendingMachineSearchView(BranchSearchView):
         return value or "-"
 
 
+def _get_qr_bag_filtered_annotation(aggregate: Aggregate, valid: bool) -> Aggregate:
+    condition = Q(
+        deposit_items__product__isnull=False,
+        deposit_items__barcode__isnull=False,
+    )
+    aggregate.filter = condition if valid else ~condition
+    return aggregate
+
+
 class QRBagSearchView(BranchSearchView):
     template_name = "esani_pantportal/qrbag/list.html"
     actions = {_("Historik"): "btn btn-sm btn-secondary"}
@@ -880,7 +891,8 @@ class QRBagSearchView(BranchSearchView):
     form_class = QRBagFilterForm
     required_permissions = ["esani_pantportal.view_qrbag"]
 
-    search_fields = ["qr", "status"]
+    search_fields = ["qr"]
+    search_fields_exact = ["status"]
 
     fixed_columns = {
         "qr": _("QR kode"),
@@ -888,6 +900,29 @@ class QRBagSearchView(BranchSearchView):
         "company_branch_or_kiosk": _("Butik"),
         "status": _("Status"),
         "updated": _("Opdateret"),
+        # Annotations
+        "num_valid_deposited": _("Optalt, godkendt"),
+        "num_invalid_deposited": _("Optalt, afvist"),
+        "value_of_valid_deposited": _("Samlet pantværdi (kr.)"),
+    }
+
+    annotations = {
+        "num_valid_deposited": _get_qr_bag_filtered_annotation(
+            Sum("deposit_items__count"),
+            True,
+        ),
+        "num_invalid_deposited": _get_qr_bag_filtered_annotation(
+            Sum("deposit_items__count"),
+            False,
+        ),
+        "value_of_valid_deposited": _get_qr_bag_filtered_annotation(
+            Sum(
+                F("deposit_items__count")
+                * F("deposit_items__product__refund_value")
+                / Value(100),
+            ),
+            True,
+        ),
     }
 
     def get_action_url(self, item, *args):
@@ -897,15 +932,23 @@ class QRBagSearchView(BranchSearchView):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        return qs.select_related("company_branch", "kiosk", "owner")
+        qs = qs.select_related("company_branch", "kiosk", "owner")
+        return qs
 
-    def get_context_data(self, *args, **kwargs):
-        context = super().get_context_data(*args, **kwargs)
-        context["status_dict"] = {
-            row["status"]: row["count"]
-            for row in self.get_queryset().values("status").annotate(count=Count("id"))
-        }
-        return context
+    def sort_qs(self, qs):
+        data = self.search_data
+        sort = data.get("sort", None)
+        if sort in self.annotations:
+            desc = data.get("order", None) == "desc"
+            qs = qs.order_by(
+                F(sort).asc(
+                    descending=desc,
+                    **({"nulls_last": True} if desc else {"nulls_first": True}),
+                )
+            )
+            return qs
+        else:
+            return super().sort_qs(qs)
 
     def item_to_json_dict(self, item_obj, context, index):
         json_dict = super().item_to_json_dict(item_obj, context, index)
@@ -922,6 +965,9 @@ class QRBagSearchView(BranchSearchView):
 
         if key == "updated":
             value = value.strftime("%-d. %b %Y")
+        elif key in ("num_valid_deposited", "num_invalid_deposited"):
+            if item["status"] in ("esani_optalt", "esani_udbetalt"):
+                return value or 0
 
         return value or "-"
 
@@ -1436,8 +1482,22 @@ class QRBagHistoryView(LoginRequiredMixin, DetailView):
     context_object_name = "historical_qrbag"
 
     def get_context_data(self, **kwargs):
+        deposit_payout_items = (
+            self.object.deposit_items.select_related("product")
+            .annotate(value=F("count") * F("product__refund_value") / Value(100))
+            .order_by(
+                F("product__product_name").asc(nulls_last=True),
+                F("product__barcode"),
+            )
+        )
+
         context = super().get_context_data(**kwargs)
         context["histories"] = self.object.history.all().order_by("-history_date")
+        context["deposit_payout_items"] = deposit_payout_items
+        context["total_count"] = deposit_payout_items.aggregate(val=Sum("count"))["val"]
+        context["total_value"] = deposit_payout_items.aggregate(
+            val=Sum(F("count") * F("product__refund_value")) / Value(100)
+        )["val"]
         context["back_url"] = get_back_url(self.request, reverse("pant:qrbag_list"))
         return context
 
