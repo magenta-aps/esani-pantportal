@@ -935,6 +935,11 @@ class QRBagSearchView(BranchSearchView):
         qs = qs.select_related("company_branch", "kiosk", "owner")
         return qs
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
     def sort_qs(self, qs):
         data = self.search_data
         sort = data.get("sort", None)

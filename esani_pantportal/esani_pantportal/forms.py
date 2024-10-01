@@ -26,6 +26,7 @@ from two_factor.forms import AuthenticationTokenForm
 
 from esani_pantportal.form_mixins import BootstrapForm, MaxSizeFileField
 from esani_pantportal.models import (
+    COMPANY_USER,
     DANISH_PANT_CHOICES,
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
@@ -925,6 +926,7 @@ class QRBagFilterForm(SortPaginateForm):
     kiosk__name = forms.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
+        self._user: User = kwargs.pop("user")
         super().__init__(*args, **kwargs)
         self.fields["status"].choices = self.get_status_choices()
 
@@ -933,9 +935,10 @@ class QRBagFilterForm(SortPaginateForm):
         return self.cleaned_data["company_branch__name"]
 
     def get_status_choices(self) -> list[tuple[str, str]]:
-        choices = (
-            QRBag.objects.values("status").annotate(num=Count("pk")).order_by("status")
-        )
+        qs = QRBag.objects.all()
+        if self._user.user_type == COMPANY_USER:
+            qs = qs.filter(company_branch__company=self._user.company)
+        choices = qs.values("status").annotate(num=Count("pk")).order_by("status")
         return [("", "-")] + [
             (c["status"], f"{c['status']} ({c['num']})") for c in choices
         ]

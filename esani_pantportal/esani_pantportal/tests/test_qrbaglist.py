@@ -203,16 +203,16 @@ class QRBagListViewTest(BaseQRBagTest):
     def test_counts_as_esani_admin(self):
         self.client.login(username="esani_admin", password="12345")
         response = self.client.get(reverse("pant:qrbag_list"))
-        count = response.context["status_dict"]
-        self.assertEqual(count["Oprettet"], 3)
-        self.assertEqual(count["Under transport"], 1)
+        choices = dict(response.context["form"].fields["status"].choices)
+        self.assertEqual(choices["Oprettet"], "Oprettet (3)")
+        self.assertEqual(choices["Under transport"], "Under transport (1)")
 
     def test_counts_as_company_admin(self):
         self.client.login(username="company_admin", password="12345")
         response = self.client.get(reverse("pant:qrbag_list"))
-        count = response.context["status_dict"]
-        self.assertEqual(count["Oprettet"], 2)
-        self.assertEqual(count["Under transport"], 1)
+        choices = dict(response.context["form"].fields["status"].choices)
+        self.assertEqual(choices["Oprettet"], "Oprettet (2)")
+        self.assertEqual(choices["Under transport"], "Under transport (1)")
 
 
 class QRBagHistoryViewTest(BaseQRBagTest):
