@@ -1303,6 +1303,7 @@ class QRBag(models.Model):
     )
     status = models.CharField(
         max_length=20,
+        db_index=True,
     )
     updated = models.DateTimeField(
         auto_now=True,

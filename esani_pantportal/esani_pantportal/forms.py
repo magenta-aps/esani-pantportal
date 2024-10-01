@@ -42,6 +42,7 @@ from esani_pantportal.models import (
     KioskUser,
     Product,
     ProductState,
+    QRBag,
     ReverseVendingMachine,
     User,
     validate_barcode_length,
@@ -916,13 +917,28 @@ class CompanyFilterForm(SortPaginateForm):
 
 class QRBagFilterForm(SortPaginateForm):
     qr = forms.CharField(required=False)
-    status = forms.CharField(required=False)
+    status = forms.ChoiceField(
+        choices=[],  # populated in __init__
+        required=False,
+    )
     company_branch__name = forms.CharField(required=False)
     kiosk__name = forms.CharField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["status"].choices = self.get_status_choices()
 
     def clean_kiosk__name(self):
         # We use the branch__name search-field for both kiosk and branch filtering.
         return self.cleaned_data["company_branch__name"]
+
+    def get_status_choices(self) -> list[tuple[str, str]]:
+        choices = (
+            QRBag.objects.values("status").annotate(num=Count("pk")).order_by("status")
+        )
+        return [("", "-")] + [
+            (c["status"], f"{c['status']} ({c['num']})") for c in choices
+        ]
 
 
 class ReverseVendingMachineFilterForm(SortPaginateForm):
