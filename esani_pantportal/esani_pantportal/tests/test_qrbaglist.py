@@ -6,8 +6,9 @@ from http import HTTPStatus
 from bs4 import BeautifulSoup
 from django.contrib.auth.models import Group
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
+from unittest_parametrize import ParametrizedTestCase, parametrize
 
 from esani_pantportal.models import (
     BranchUser,
@@ -18,6 +19,7 @@ from esani_pantportal.models import (
     Kiosk,
     QRBag,
 )
+from esani_pantportal.views import QRBagSearchView
 
 
 class BaseQRBagTest(TestCase):
@@ -156,7 +158,7 @@ class BaseQRBagTest(TestCase):
         return output
 
 
-class QRBagListViewTest(BaseQRBagTest):
+class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
     def get_html_items(self, html):
         soup = BeautifulSoup(html, "html.parser")
         table = soup.find(attrs={"id": "table"})
@@ -213,6 +215,45 @@ class QRBagListViewTest(BaseQRBagTest):
         choices = dict(response.context["form"].fields["status"].choices)
         self.assertEqual(choices["Oprettet"], "Oprettet (2)")
         self.assertEqual(choices["Under transport"], "Under transport (1)")
+
+    @parametrize(
+        "statuses,expected_result",
+        [
+            # Test 1: only one status is selected
+            (
+                ["Under transport"],  # statuses
+                [("qr1", "Under transport")],  # expected_results
+            ),
+            # Test 2: multiple statuses are selected
+            (
+                ["Oprettet", "Under transport"],  # statuses
+                [  # expected_results
+                    ("qr1", "Under transport"),
+                    ("qr2", "Oprettet"),
+                    ("qr3", "Oprettet"),
+                    ("qr4", "Oprettet"),
+                ],
+            ),
+        ],
+    )
+    def test_filter_on_multiple_statuses(self, statuses, expected_result):
+        # Arrange
+        view = self._get_view_instance(status=statuses)
+        # Act
+        filtered_qs = view.filter_qs(QRBag.objects.all())
+        # Assert
+        self.assertQuerySetEqual(
+            filtered_qs,
+            expected_result,
+            ordered=False,
+            transform=lambda obj: (obj.qr, obj.status),
+        )
+
+    def _get_view_instance(self, **kwargs) -> QRBagSearchView:
+        view = QRBagSearchView()
+        view.request = RequestFactory().get("")
+        view.search_data = kwargs
+        return view
 
 
 class QRBagHistoryViewTest(BaseQRBagTest):

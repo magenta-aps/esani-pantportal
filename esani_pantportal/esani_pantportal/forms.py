@@ -918,8 +918,9 @@ class CompanyFilterForm(SortPaginateForm):
 
 class QRBagFilterForm(SortPaginateForm):
     qr = forms.CharField(required=False)
-    status = forms.ChoiceField(
+    status = forms.MultipleChoiceField(
         choices=[],  # populated in __init__
+        widget=forms.SelectMultiple(attrs={"style": "min-height: 12em"}),
         required=False,
     )
     company_branch__name = forms.CharField(required=False)

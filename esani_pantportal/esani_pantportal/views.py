@@ -940,6 +940,14 @@ class QRBagSearchView(BranchSearchView):
         kwargs["user"] = self.request.user
         return kwargs
 
+    def filter_qs(self, qs):
+        # Support multiple-choice filtering on `status`
+        status = self.search_data.pop("status", None)
+        if status not in (None, "", [""], []):  # skip empty values
+            qs = qs.filter(status__in=status)
+        # Process the other search criteria (except `status`)
+        return super().filter_qs(qs)
+
     def sort_qs(self, qs):
         data = self.search_data
         sort = data.get("sort", None)
