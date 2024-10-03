@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-version: "3.8"
 services:
   pantportal:
     user: "1000:1000" # Override in docker-compose.override.yml if local user is different
