@@ -6,6 +6,7 @@ from http import HTTPStatus
 from bs4 import BeautifulSoup
 from django.contrib.auth.models import Group
 from django.core.management import call_command
+from django.db.models import F, OrderBy
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from unittest_parametrize import ParametrizedTestCase, parametrize
@@ -248,6 +249,33 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
             ordered=False,
             transform=lambda obj: (obj.qr, obj.status),
         )
+
+    @parametrize(
+        "sort,order,expected_order_by",
+        [
+            (
+                "num_valid_deposited",
+                None,
+                (
+                    OrderBy(
+                        F("num_valid_deposited"), descending=False, nulls_first=True
+                    ),
+                ),
+            ),
+            (
+                "num_valid_deposited",
+                "desc",
+                (OrderBy(F("num_valid_deposited"), descending=True, nulls_last=True),),
+            ),
+        ],
+    )
+    def test_sort_on_annotation_field(self, sort, order, expected_order_by):
+        # Arrange
+        view = self._get_view_instance(sort=sort, order=order)
+        # Act
+        sorted_qs = view.sort_qs(QRBag.objects.all())
+        # Assert
+        self.assertEqual(sorted_qs.query.order_by, expected_order_by)
 
     def _get_view_instance(self, **kwargs) -> QRBagSearchView:
         view = QRBagSearchView()
