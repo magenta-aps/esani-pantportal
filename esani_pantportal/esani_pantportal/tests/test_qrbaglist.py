@@ -353,6 +353,24 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         # Assert
         self.assertEqual(sorted_qs.query.order_by, expected_order_by)
 
+    @parametrize(
+        "annotation,status,expected_result",
+        [
+            ("num_valid_deposited", "esani_optalt", 0),
+            ("num_valid_deposited", "esani_udbetalt", 0),
+            ("num_valid_deposited", "other", "-"),
+            ("num_invalid_deposited", "esani_optalt", 0),
+            ("num_invalid_deposited", "esani_udbetalt", 0),
+            ("num_invalid_deposited", "other", "-"),
+        ],
+    )
+    def test_map_value_displays_annotation_null_value_as_zero(
+        self, annotation, status, expected_result
+    ):
+        view = self._get_view_instance()
+        result = view.map_value({"status": status, annotation: None}, annotation, None)
+        self.assertEqual(result, expected_result)
+
     def _get_view_instance(self, **kwargs) -> QRBagSearchView:
         view = QRBagSearchView()
         view.request = RequestFactory().get("")
