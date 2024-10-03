@@ -12,14 +12,14 @@ SPDX-License-Identifier: MPL-2.0
             {% if unit == "øre" %}{{ object|get_display_name:field_name|floatformat }}{% else %}{{ object|get_display_name:field_name }}{% endif %} {{unit}}
             
             {% if can_edit %}
-            <a style="display:inline-block" class="icon-link" id="edit_{{field_name}}_button">
+            <a class="icon-link d-inline-block" id="edit_{{field_name}}_button">
                 {% if show_pencil|default_if_none:True and user.is_admin %}
                 {% bs_icon "pencil-square" %}
                 {% endif %}
             </a>
             {% endif %}
         </div>
-        <div id="edit_{{field_name}}_div" style="display:none" class="row mx-0">
+        <div id="edit_{{field_name}}_div d-none" class="row mx-0">
             {{ field }}
         </div>
         {{ field.errors }}
