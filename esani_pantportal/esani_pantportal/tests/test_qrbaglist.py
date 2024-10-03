@@ -1,12 +1,13 @@
 # SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
+from datetime import date
 from http import HTTPStatus
 
 from bs4 import BeautifulSoup
 from django.contrib.auth.models import Group
 from django.core.management import call_command
-from django.db.models import F, OrderBy
+from django.db.models import F, OrderBy, Sum
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from unittest_parametrize import ParametrizedTestCase, parametrize
@@ -16,11 +17,14 @@ from esani_pantportal.models import (
     Company,
     CompanyBranch,
     CompanyUser,
+    DepositPayout,
+    DepositPayoutItem,
     EsaniUser,
     Kiosk,
+    Product,
     QRBag,
 )
-from esani_pantportal.views import QRBagSearchView
+from esani_pantportal.views import QRBagSearchView, _get_qr_bag_filtered_annotation
 
 
 class BaseQRBagTest(TestCase):
@@ -149,6 +153,14 @@ class BaseQRBagTest(TestCase):
         qrbag4._history_user = cls.esani_admin
         qrbag4.save()
 
+        # QR bag 3 has two deposit payout items (both valid)
+        cls._add_deposit_payout_item(qrbag3, count=1, valid=True)
+        cls._add_deposit_payout_item(qrbag3, count=2, valid=True)
+
+        # QR bag 4 has two deposit payout items (one valid and one invalid)
+        cls._add_deposit_payout_item(qrbag4, count=1, valid=True)
+        cls._add_deposit_payout_item(qrbag4, count=2, valid=False)
+
     @staticmethod
     def extract_data_from_table(table):
         headers = [cell.text for cell in table.thead.tr.find_all("th")]
@@ -157,6 +169,40 @@ class BaseQRBagTest(TestCase):
             rowdata = [cell.text.strip() for cell in row.find_all("td")]
             output.append({k: v for k, v in dict(zip(headers, rowdata)).items() if k})
         return output
+
+    @classmethod
+    def _add_deposit_payout_item(cls, bag: QRBag, count: int = 1, valid: bool = True):
+        deposit_payout, _ = DepositPayout.objects.get_or_create(
+            source_identifier="QRBagTest",
+            defaults={
+                "source_type": DepositPayout.SOURCE_TYPE_API,
+                "from_date": "2024-01-01",
+                "to_date": "2024-02-01",
+                "item_count": 1,
+            },
+        )
+        barcode = "barcode"
+        product, _ = Product.objects.get_or_create(
+            barcode=barcode,
+            defaults={
+                "product_name": "QRBagTest",
+                "refund_value": 200,
+                "material": "P",
+                "height": 200,
+                "diameter": 100,
+                "weight": 50,
+                "capacity": 200,
+                "shape": "F",
+            },
+        )
+        DepositPayoutItem.objects.create(
+            deposit_payout=deposit_payout,
+            date=date(2024, 1, 1),
+            qr_bag=bag,
+            count=count,
+            product=product if valid else None,
+            barcode=barcode if valid else None,
+        )
 
 
 class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
@@ -216,6 +262,36 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         choices = dict(response.context["form"].fields["status"].choices)
         self.assertEqual(choices["Oprettet"], "Oprettet (2)")
         self.assertEqual(choices["Under transport"], "Under transport (1)")
+
+    def test_annotation_columns(self):
+        self.client.login(username="esani_admin", password="12345")
+        response = self.client.get(reverse("pant:qrbag_list"))
+        self.assertQuerySetEqual(
+            response.context["items"],
+            [
+                # QR bag 1 has no items
+                ("qr1", "-", "-", "-"),
+                # QR bag 2 has no items
+                ("qr2", "-", "-", "-"),
+                # QR bag 3 has 2 valid items with count=1 and count=2 (total of 3)
+                ("qr3", 3, "-", 6),
+                # QR bag 4 has 1 valid item (with count=1) and one invalid item (with
+                # count=2)
+                ("qr4", 1, 2, 2),
+            ],
+            transform=lambda obj: (
+                obj["qr"],
+                obj["num_valid_deposited"],
+                obj["num_invalid_deposited"],
+                obj["value_of_valid_deposited"],
+            ),
+        )
+
+    def test_get_qr_bag_filtered_annotation(self):
+        for valid in (True, False):
+            with self.subTest(valid=valid):
+                annotation = _get_qr_bag_filtered_annotation(Sum("foo"), valid=valid)
+                self.assertEqual(annotation.filter.negated, not valid)
 
     @parametrize(
         "statuses,expected_result",
