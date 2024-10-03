@@ -24,7 +24,11 @@ from esani_pantportal.models import (
     Product,
     QRBag,
 )
-from esani_pantportal.views import QRBagSearchView, _get_qr_bag_filtered_annotation
+from esani_pantportal.views import (
+    QRBagHistoryView,
+    QRBagSearchView,
+    _get_qr_bag_filtered_annotation,
+)
 
 
 class BaseQRBagTest(TestCase):
@@ -398,3 +402,30 @@ class QRBagHistoryViewTest(BaseQRBagTest):
         history_dict = {h["Status"]: h["Ændringsansvarlig"] for h in histories}
         self.assertEqual(history_dict["Oprettet"], "branch_admin")
         self.assertEqual(history_dict["Under transport"], "esani_admin")
+
+    def test_context_includes_deposit_payout_items(self):
+        # Arrange: get history page for QR bag 4
+        view = self._get_view_instance("qr4")
+        # Act
+        context = view.get_context_data()
+        # Assert: check "count" and "value" column values
+        self.assertQuerySetEqual(
+            context["deposit_payout_items"],
+            [
+                (1, 2),  # item 1 (valid): count=1, value=1 * 2 = 2
+                (2, None),  # item 2 (invalid): count=2, value=NULL
+            ],
+            ordered=False,
+            transform=lambda obj: (obj.count, obj.value),
+        )
+        # Assert: check "total_count" is sum of counts for items 1 and 2
+        self.assertEqual(context["total_count"], 1 + 2)
+        # Assert: check "total_value"
+        self.assertEqual(context["total_value"], (1 * 2) + (2 * 0))
+
+    def _get_view_instance(self, qr: str) -> QRBagHistoryView:
+        request = RequestFactory().get("")
+        view = QRBagHistoryView()
+        view.setup(request, pk=QRBag.objects.get(qr=qr).pk)
+        view.get(request)
+        return view
