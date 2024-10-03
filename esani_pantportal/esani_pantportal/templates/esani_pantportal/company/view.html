@@ -72,7 +72,7 @@ SPDX-License-Identifier: MPL-2.0
                     <tr>
                         <th>
                             {{ user.username }}
-                            <a style="display:inline-block" href="{% url 'pant:user_view' user.id %}" class="icon-link">{% bs_icon "box-arrow-up-right" %}</a>
+                            <a href="{% url 'pant:user_view' user.id %}" class="icon-link d-inline-block">{% bs_icon "box-arrow-up-right" %}</a>
                         </th>
                         <td>{{ user.first_name }} {{ user.last_name }}</td>
                     </tr>
@@ -129,7 +129,7 @@ SPDX-License-Identifier: MPL-2.0
                         <tr>
                             <th>
                                 {{ branch.name }}
-                                <a style="display:inline-block" href="{% url 'pant:company_branch_update' branch.id %}" class="icon-link">{% bs_icon "box-arrow-up-right" %}</a>
+                                <a href="{% url 'pant:company_branch_update' branch.id %}" class="icon-link d-inline-block">{% bs_icon "box-arrow-up-right" %}</a>
                             </th>
                             <td>{{ branch.address }}, {{ branch.city }}</td>
                         </tr>

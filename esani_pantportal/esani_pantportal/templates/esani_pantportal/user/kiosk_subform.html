@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 
 SPDX-License-Identifier: MPL-2.0
 -->
-<div class="input-group my-0" id="branch_form" style="display:none">
+<div id="branch_form" class="input-group my-0 d-none">
     {% include "./form_field.html" with field=form.name colsize=3 link_id="show_branch_dropdown" %}
     {% include "./form_field.html" with field=form.prefix colsize=1 %}
     {% include "./form_field.html" with field=form.phone colsize=2 %}

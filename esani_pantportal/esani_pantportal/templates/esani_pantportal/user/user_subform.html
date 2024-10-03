@@ -20,6 +20,6 @@ SPDX-License-Identifier: MPL-2.0
     {% if flags.show_admin_flag %}
         {% include "./form_field.html" with field=form.admin help_text=True %}
     {% else %}
-        <div style="display:none"> {{form.admin}} </div>
+        <div class="d-none"> {{form.admin}} </div>
     {% endif %}
 </div>
