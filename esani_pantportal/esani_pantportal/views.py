@@ -896,7 +896,6 @@ class QRBagSearchView(BranchSearchView):
 
     fixed_columns = {
         "qr": _("QR kode"),
-        "owner": _("Ejer"),
         "company_branch_or_kiosk": _("Butik"),
         "status": _("Status"),
         "updated": _("Opdateret"),
@@ -932,7 +931,7 @@ class QRBagSearchView(BranchSearchView):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        qs = qs.select_related("company_branch", "kiosk", "owner")
+        qs = qs.select_related("company_branch", "kiosk")
         return qs
 
     def get_form_kwargs(self):
@@ -962,16 +961,6 @@ class QRBagSearchView(BranchSearchView):
             return qs
         else:
             return super().sort_qs(qs)
-
-    def item_to_json_dict(self, item_obj, context, index):
-        json_dict = super().item_to_json_dict(item_obj, context, index)
-        if item_obj.owner:
-            owner = item_obj.owner.first_name + " " + item_obj.owner.last_name
-            json_dict["owner"] = owner
-        else:
-            json_dict["owner"] = "-"
-
-        return json_dict
 
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)

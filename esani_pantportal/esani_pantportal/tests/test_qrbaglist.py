@@ -228,11 +228,6 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         bags = self.get_bags()
         self.assertEqual(len(bags), 4)  # ESani admin can see all bags
 
-        self.assertEqual(bags["qr1"]["Ejer"], "Branch Admin")
-        self.assertEqual(bags["qr2"]["Ejer"], "Branch Admin")
-        self.assertEqual(bags["qr3"]["Ejer"], "-")
-        self.assertEqual(bags["qr4"]["Ejer"], "-")
-
         self.assertEqual(bags["qr1"]["Butik"], "branch1")
         self.assertEqual(bags["qr2"]["Butik"], "branch1")
         self.assertEqual(bags["qr3"]["Butik"], "kiosk")
