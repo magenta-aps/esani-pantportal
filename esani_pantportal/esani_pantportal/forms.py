@@ -921,11 +921,7 @@ class QRBagFilterForm(SortPaginateForm):
     qr = forms.CharField(required=False)
     status = forms.MultipleChoiceField(
         choices=[],  # populated in __init__
-        widget=forms.SelectMultiple(
-            # Make widget height match the number of available
-            # QR bag statuses (plus one "empty" choice.)
-            attrs={"size": QRStatus.objects.count() + 1, "style": "height: 100%"}
-        ),
+        widget=forms.SelectMultiple(attrs={"style": "height: 100%"}),
         required=False,
     )
     company_branch__name = forms.CharField(required=False)
@@ -935,6 +931,11 @@ class QRBagFilterForm(SortPaginateForm):
         self._user: User = kwargs.pop("user")
         super().__init__(*args, **kwargs)
         self.fields["status"].choices = self.get_status_choices()
+        # Make widget height match the number of available
+        # QR bag statuses (plus one "empty" choice.)
+        self.fields["status"].widget.attrs.update(
+            {"size": QRStatus.objects.count() + 1}
+        )
 
     def clean_kiosk__name(self):
         # We use the branch__name search-field for both kiosk and branch filtering.
