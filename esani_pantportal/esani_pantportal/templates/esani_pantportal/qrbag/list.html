@@ -12,54 +12,30 @@ SPDX-License-Identifier: MPL-2.0
 <div class="mx-5">
     <div class="row">
         <div class="col-6">
-            <h1>{% translate "QR-poser" %}</h1>
+            <h1>{% translate "Pantposer" %}</h1>
         </div>
     </div>
-
     <form method="get">
         <div class="row">
-            <div class="col-2">{% translate "QR kode" %}</div>
-            <div class="col-4">{{form.qr}}</div>
+            <div class="col-1">{% translate "QR kode" %}</div>
+            <div class="col-3">{{ form.qr }}</div>
         </div>
         <div class="row">
-            <div class="col-2">{% translate "Status" %}
-                <button class="btn btn-link btn-sm"
-                        type="button" 
-                        data-bs-toggle="collapse"
-                        data-bs-target="#statusSummary"
-                        aria-expanded="false"
-                        aria-controls="collapseExample">
-                    {% bs_icon "info-circle" size="1.8em" %}
-                </button>
-            </div>
-            <div class="col-4 mx-0">{{form.status}}
-            </div>
+            <div class="col-1">{% translate "Status" %}</div>
+            <div class="col-3 mx-0">{{ form.status }}</div>
         </div>
         {% if user.get_user_type_display == "Virksomhedsbruger" or user.is_esani_admin %}
         <div class="row">
-            <div class="col-2">{% translate "Butik" %}</div>
-            <div class="col-4">{{form.company_branch__name}}</div>
+            <div class="col-1">{% translate "Butik" %}</div>
+            <div class="col-3">{{ form.company_branch__name }}</div>
         </div>
         {% endif %}
         <div class="row">
-            <div class="col-6 clearfix"><button type="submit" class="btn btn-primary float-end">Søg</button></div>
-        </div>
-    </form>
-    <div class="row">
-        <div class="col-6">
-            <div class="collapse" id="statusSummary">
-                <div class="card card-body">
-                    <div class="clearfix">
-                        <table class="table w-auto">
-                        {% for status, count in status_dict.items %}
-                        <tr><th>{{status}}:</th><td>{{count}}</td><tr>
-                        {% endfor %}
-                        </table>
-                    </div>
-                </div>
+            <div class="col-4 clearfix">
+                <button type="submit" class="btn btn-primary float-end">Søg</button>
             </div>
         </div>
-    </div>
+    </form>
     {% include "../list_view_table.html" %}
 </div>
 {% endblock %}

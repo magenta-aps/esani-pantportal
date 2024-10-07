@@ -4,7 +4,7 @@
 
 from typing import Literal
 
-from django.db.models import Case, ExpressionWrapper, F, Q
+from django.db.models import Aggregate, Case, ExpressionWrapper, F, Q
 from django.db.models.functions import Coalesce, Concat
 
 from esani_pantportal.models import (
@@ -14,7 +14,7 @@ from esani_pantportal.models import (
 )
 
 # Django annotation classes. Add more as needed
-ANNOTATION = Case | F | Q | Concat | Coalesce | ExpressionWrapper
+ANNOTATION = Case | F | Q | Concat | Coalesce | ExpressionWrapper | Aggregate
 
 BOOTSTRAP_BUTTON = Literal[
     "btn btn-sm btn-primary",

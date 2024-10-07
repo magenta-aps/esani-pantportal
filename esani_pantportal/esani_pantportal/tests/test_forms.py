@@ -4,8 +4,14 @@
 from django.core.exceptions import ValidationError
 from unittest_parametrize import ParametrizedTestCase, parametrize
 
-from esani_pantportal.forms import EMPTY_CHOICE, ProductFilterForm, ProductUpdateForm
-from esani_pantportal.models import ProductState
+from esani_pantportal.forms import (
+    EMPTY_CHOICE,
+    ProductFilterForm,
+    ProductUpdateForm,
+    QRBagFilterForm,
+)
+from esani_pantportal.models import ProductState, User
+from esani_pantportal.tests.test_qrbaglist import BaseQRBagTest
 
 from .conftest import LoginMixin
 from .helpers import ProductFixtureMixin
@@ -49,3 +55,30 @@ class TestProductUpdateForm(ProductFixtureMixin):
         instance.is_valid()  # Trigger validation
         with self.assertRaises(ValidationError):
             instance.clean()
+
+
+class TestQRBagFilterForm(ParametrizedTestCase, BaseQRBagTest):
+    @parametrize(
+        "username,expected_choices",
+        [
+            (
+                "esani_admin",
+                [
+                    ("Oprettet", "Oprettet (3)"),
+                    ("Under transport", "Under transport (1)"),
+                ],
+            ),
+            (
+                "company_admin",
+                [
+                    ("Oprettet", "Oprettet (2)"),
+                    ("Under transport", "Under transport (1)"),
+                ],
+            ),
+        ],
+    )
+    def test_populates_status_choices(self, username, expected_choices):
+        user = User.objects.get(username=username)
+        form = QRBagFilterForm(user=user)
+        expected_choices = [("", "-")] + expected_choices
+        self.assertSetEqual(set(form.fields["status"].choices), set(expected_choices))
