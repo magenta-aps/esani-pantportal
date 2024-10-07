@@ -876,6 +876,13 @@ class ReverseVendingMachineSearchView(BranchSearchView):
 
 
 def _get_qr_bag_filtered_annotation(aggregate: Aggregate, valid: bool) -> Aggregate:
+    """Create an aggregate suitable for use by the `QRBagSearchView` `annotations`
+    attribute.
+    Depending on whether `valid` is True or False, the aggregate returned will either
+    process only "valid" items, or only "invalid" items.
+    "Valid" items are deposit payout items that have both a `product` FK and whose
+    `barcode` is not NULL.
+    """
     condition = Q(
         deposit_items__product__isnull=False,
         deposit_items__barcode__isnull=False,
