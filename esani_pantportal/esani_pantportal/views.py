@@ -123,6 +123,7 @@ from esani_pantportal.models import (
     ProductListViewPreferences,
     ProductState,
     QRBag,
+    QRStatus,
     ReverseVendingMachine,
     User,
     UserListViewPreferences,
@@ -974,11 +975,19 @@ class QRBagSearchView(BranchSearchView):
 
         if key == "updated":
             value = value.strftime("%-d. %b %Y")
+        elif key == "status":
+            return self._qr_status_names[value]
         elif key in ("num_valid_deposited", "num_invalid_deposited"):
             if item["status"] in ("esani_optalt", "esani_udbetalt"):
                 return value or 0
 
         return value or "-"
+
+    @cached_property
+    def _qr_status_names(self) -> dict[str, str]:
+        return {
+            code: name for code, name in QRStatus.objects.values_list("code", "name_da")
+        }
 
 
 class UserSearchView(PermissionRequiredMixin, SearchView):

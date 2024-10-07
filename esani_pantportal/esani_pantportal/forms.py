@@ -942,12 +942,16 @@ class QRBagFilterForm(SortPaginateForm):
         return self.cleaned_data["company_branch__name"]
 
     def get_status_choices(self) -> list[tuple[str, str]]:
+        # Map status codes to friendly names
+        names: dict[str, str] = {
+            code: name for code, name in QRStatus.objects.values_list("code", "name_da")
+        }
         qs = QRBag.objects.all()
         if self._user.user_type == COMPANY_USER:
             qs = qs.filter(company_branch__company=self._user.company)
         choices = qs.values("status").annotate(num=Count("pk")).order_by("status")
         return [("", "-")] + [
-            (c["status"], f"{c['status']} ({c['num']})") for c in choices
+            (c["status"], f"{names[c['status']]} ({c['num']})") for c in choices
         ]
 
 

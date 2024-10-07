@@ -23,6 +23,7 @@ from esani_pantportal.models import (
     Kiosk,
     Product,
     QRBag,
+    QRStatus,
 )
 from esani_pantportal.views import (
     QRBagHistoryView,
@@ -123,6 +124,10 @@ class BaseQRBagTest(TestCase):
         cls.esani_admin.groups.add(Group.objects.get(name="EsaniAdmins"))
         cls.branch_admin.groups.add(Group.objects.get(name="BranchAdmins"))
         cls.company_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
+
+        # Create `QRStatus` objects matching the status codes used in the tests
+        for code in ("Oprettet", "Under transport"):
+            QRStatus.objects.get_or_create(code=code, name_da=code, name_kl=code)
 
         # Two bags are created by a branch-admin
         qrbag1 = QRBag(
