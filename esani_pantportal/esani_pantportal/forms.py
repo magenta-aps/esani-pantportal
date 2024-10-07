@@ -26,6 +26,7 @@ from two_factor.forms import AuthenticationTokenForm
 
 from esani_pantportal.form_mixins import BootstrapForm, MaxSizeFileField
 from esani_pantportal.models import (
+    COMPANY_USER,
     DANISH_PANT_CHOICES,
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
@@ -42,6 +43,8 @@ from esani_pantportal.models import (
     KioskUser,
     Product,
     ProductState,
+    QRBag,
+    QRStatus,
     ReverseVendingMachine,
     User,
     validate_barcode_length,
@@ -916,13 +919,40 @@ class CompanyFilterForm(SortPaginateForm):
 
 class QRBagFilterForm(SortPaginateForm):
     qr = forms.CharField(required=False)
-    status = forms.CharField(required=False)
+    status = forms.MultipleChoiceField(
+        choices=[],  # populated in __init__
+        widget=forms.SelectMultiple(attrs={"style": "height: 100%"}),
+        required=False,
+    )
     company_branch__name = forms.CharField(required=False)
     kiosk__name = forms.CharField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        self._user: User = kwargs.pop("user")
+        super().__init__(*args, **kwargs)
+        self.fields["status"].choices = self.get_status_choices()
+        # Make widget height match the number of available
+        # QR bag statuses (plus one "empty" choice.)
+        self.fields["status"].widget.attrs.update(
+            {"size": QRStatus.objects.count() + 1}
+        )
 
     def clean_kiosk__name(self):
         # We use the branch__name search-field for both kiosk and branch filtering.
         return self.cleaned_data["company_branch__name"]
+
+    def get_status_choices(self) -> list[tuple[str, str]]:
+        # Map status codes to friendly names
+        names: dict[str, str] = {
+            code: name for code, name in QRStatus.objects.values_list("code", "name_da")
+        }
+        qs = QRBag.objects.all()
+        if self._user.user_type == COMPANY_USER:
+            qs = qs.filter(company_branch__company=self._user.company)
+        choices = qs.values("status").annotate(num=Count("pk")).order_by("status")
+        return [("", "-")] + [
+            (c["status"], f"{names[c['status']]} ({c['num']})") for c in choices
+        ]
 
 
 class ReverseVendingMachineFilterForm(SortPaginateForm):
