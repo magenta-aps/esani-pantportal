@@ -44,6 +44,7 @@ from esani_pantportal.models import (
     Product,
     ProductState,
     QRBag,
+    QRStatus,
     ReverseVendingMachine,
     User,
     validate_barcode_length,
@@ -920,7 +921,11 @@ class QRBagFilterForm(SortPaginateForm):
     qr = forms.CharField(required=False)
     status = forms.MultipleChoiceField(
         choices=[],  # populated in __init__
-        widget=forms.SelectMultiple(attrs={"style": "min-height: 12em"}),
+        widget=forms.SelectMultiple(
+            # Make widget height match the number of available
+            # QR bag statuses (plus one "empty" choice.)
+            attrs={"size": QRStatus.objects.count() + 1, "style": "height: 100%"}
+        ),
         required=False,
     )
     company_branch__name = forms.CharField(required=False)
