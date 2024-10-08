@@ -406,7 +406,7 @@ class RegisterKioskUserAdminView(PermissionRequiredMixin, RegisterKioskUserView)
 
 
 class SearchView(LoginRequiredMixin, FormView):
-    paginate_by = 20
+    paginate_by = 100
     annotations: dict[str, ANNOTATION] = {}
     search_fields_exact: list[str] = []
     search_fields: list[str] = []
@@ -1167,7 +1167,6 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
     model = DepositPayoutItem
     form_class = DepositPayoutItemFilterForm
     required_permissions = ["esani_pantportal.view_depositpayout"]
-    paginate_by = 20
     can_edit_multiple = True
 
     search_fields_exact = ["company_branch", "kiosk"]

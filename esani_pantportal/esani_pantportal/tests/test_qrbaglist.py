@@ -289,6 +289,7 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
                 obj["num_invalid_deposited"],
                 obj["value_of_valid_deposited"],
             ),
+            ordered=False,
         )
 
     def test_get_qr_bag_filtered_annotation(self):
