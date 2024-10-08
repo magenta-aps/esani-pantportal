@@ -9,7 +9,7 @@ SPDX-License-Identifier: MPL-2.0
 {% load l10n %}
 
 {% block extra_headers %}
-    <script src="{% url 'javascript-catalog' %}"></script>
+    <script src="{% url 'javascript-catalog' %}" nonce="{{ request.csp_nonce }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -111,7 +111,7 @@ SPDX-License-Identifier: MPL-2.0
 
     {{ barcodes|json_script:"barcodes" }}
 
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         const barcodes = JSON.parse($("#barcodes").text());
 
         $("#id_barcode").on('input', function () {

@@ -9,8 +9,8 @@ SPDX-License-Identifier: MPL-2.0
 {% load l10n %}
 
 {% block extra_headers %}
-<script src="{% static 'jquery/pantportal.js' %}"></script>
-<script src="{% static 'jquery/wizard.js' %}"></script>
+<script src="{% static 'jquery/pantportal.js' %}" nonce="{{ request.csp_nonce }}"></script>
+<script src="{% static 'jquery/wizard.js' %}" nonce="{{ request.csp_nonce }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -89,7 +89,7 @@ SPDX-License-Identifier: MPL-2.0
 
 {{ branch_dict|json_script:"branch_dict" }}
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 function hide_branch_dropdown_options(){
     $("#id_user-branch").children("option").not(":first").hide();
 }
