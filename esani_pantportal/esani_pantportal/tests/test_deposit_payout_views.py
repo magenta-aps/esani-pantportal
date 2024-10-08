@@ -99,9 +99,9 @@ class TestDepositPayoutSearchView(_BaseTestCase):
         # All three items are included when `already_exported` is True
         self._assert_list_contents(
             response,
-            [self.company_branch, self.kiosk, self.kiosk],
+            [self.kiosk, self.company_branch, self.kiosk],
             3,
-            already_exported=[_("Ja"), _("Nej"), _("Nej")],
+            already_exported=[_("Nej"), _("Ja"), _("Nej")],
         )
 
     def test_sorting(self):
