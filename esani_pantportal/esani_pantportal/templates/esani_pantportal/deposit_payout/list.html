@@ -15,7 +15,7 @@ SPDX-License-Identifier: MPL-2.0
     /* Prevent text highlighting in table when selecting multiple rows (using Shift key) */
     #table { user-select: none }
 </style>
-<script src="{% url 'javascript-catalog' %}"></script>
+<script src="{% url 'javascript-catalog' %}" nonce="{{ request.csp_nonce }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -84,7 +84,7 @@ SPDX-License-Identifier: MPL-2.0
     </form>
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 (function () {
     $(document).ready(function () {
         const table = $("#table");

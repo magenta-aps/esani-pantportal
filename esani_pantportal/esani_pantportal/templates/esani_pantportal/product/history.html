@@ -10,7 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 {% load bootstrap_icons %}
 
 {% block extra_headers %}
-<script src="{% static 'jquery/detail_view.js' %}"></script>
+<script src="{% static 'jquery/detail_view.js' %}" nonce="{{ request.csp_nonce }}"></script>
 {% endblock %}
 
 {% block content %}

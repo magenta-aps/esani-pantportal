@@ -9,7 +9,7 @@ SPDX-License-Identifier: MPL-2.0
 {% load l10n %}
 
 {% block extra_headers %}
-<script type="text/javascript" src="{% static 'jquery/formset.js' %}"></script>
+<script type="text/javascript" src="{% static 'jquery/formset.js' %}" nonce="{{ request.csp_nonce }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -67,5 +67,5 @@ SPDX-License-Identifier: MPL-2.0
         </form>
     </div>
 </div>
-<script src="{% static 'jquery/form.js' %}"></script>
+<script src="{% static 'jquery/form.js' %}" nonce="{{ request.csp_nonce }}"></script>
 {% endblock %}

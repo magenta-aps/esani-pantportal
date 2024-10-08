@@ -16,7 +16,7 @@ SPDX-License-Identifier: MPL-2.0
     </div>
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 var delete_success = getUrlParameter("delete_success");
 if (delete_success=="1"){
     $("#delete_confirmation").show()
