@@ -248,7 +248,7 @@ SPDX-License-Identifier: MPL-2.0
 
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
     // Toggle CSV or Excel input fields based on supplied file format
     function toggle_csv_excel_inputs() {
         const filename = $(this).val().toLowerCase();

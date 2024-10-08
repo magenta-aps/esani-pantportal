@@ -84,7 +84,7 @@ SPDX-License-Identifier: MPL-2.0
     </form>
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 (function () {
     $(document).ready(function () {
         const table = $("#table");

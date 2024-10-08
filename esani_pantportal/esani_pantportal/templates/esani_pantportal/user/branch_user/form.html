@@ -89,7 +89,7 @@ SPDX-License-Identifier: MPL-2.0
 
 {{ branch_dict|json_script:"branch_dict" }}
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 function hide_branch_dropdown_options(){
     $("#id_user-branch").children("option").not(":first").hide();
 }

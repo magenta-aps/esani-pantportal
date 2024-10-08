@@ -74,7 +74,7 @@ SPDX-License-Identifier: MPL-2.0
     </div>
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 function reset_branch_dropdown() {
     $("#id_user-branch option[value='']").prop("selected", "selected");
 }

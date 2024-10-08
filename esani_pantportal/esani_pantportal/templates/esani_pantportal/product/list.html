@@ -10,9 +10,9 @@ SPDX-License-Identifier: MPL-2.0
 {% load bootstrap_icons %}
 
 {% block extra_headers %}
-    <script src="{% url 'javascript-catalog' %}"></script>
+    <script src="{% url 'javascript-catalog' %}" nonce="{{ request.csp_nonce }}"></script>
     {% if can_edit_multiple %}
-        <script src="{% static 'jquery/product_list_actions.js' %}"></script>
+        <script src="{% static 'jquery/product_list_actions.js' %}" nonce="{{ request.csp_nonce }}"></script>
     {% endif %}
 {% endblock %}
 

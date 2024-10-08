@@ -28,7 +28,7 @@ SPDX-License-Identifier: MPL-2.0
     </ul>
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 var $table = $('#table');
 
 function hideItem(item_name){

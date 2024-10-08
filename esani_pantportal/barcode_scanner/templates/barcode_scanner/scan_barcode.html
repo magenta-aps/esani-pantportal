@@ -191,7 +191,7 @@ https://github.com/mebjas/html5-qrcode
 https://scanapp.org/html5-qrcode-docs/docs/intro
 https://blog.minhazav.dev/research/html5-qrcode
 -->
-<script>
+<script nonce="{{ request.csp_nonce }}">
 const lookup = function() {
     const barcode = $("#barcode").val();
     process_barcode(barcode);
