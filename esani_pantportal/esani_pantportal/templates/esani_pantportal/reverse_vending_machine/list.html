@@ -31,7 +31,7 @@ SPDX-License-Identifier: MPL-2.0
     </form>
     {% include "../list_view_table.html" %}
     <a href="{% url 'pant:rvm_register' %}" class="btn btn-sm btn-primary">+</a>
-<script>
+<script nonce="{{ request.csp_nonce }}">
 $(document).on("click", "[id^=delete_]", function(){
     confirmed = confirm("{% translate 'Er du sikker på at du vil fjerne denne pantmetode?' %}");
     if (confirmed){
