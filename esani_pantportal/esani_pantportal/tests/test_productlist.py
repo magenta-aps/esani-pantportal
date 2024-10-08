@@ -489,7 +489,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
     def get_html_items(html):
         soup = BeautifulSoup(html, "html.parser")
         table = soup.find("table")
-        headers = [cell.text for cell in table.thead.tr.find_all("th")]
+        headers = [cell.text.strip() for cell in table.thead.tr.find_all("th")]
         output = []
         for row in table.tbody.find_all("tr"):
             rowdata = [cell.text.strip() for cell in row.find_all("td")]
@@ -536,9 +536,11 @@ class ProductListGuiTest(LoginMixin, TestCase):
 
     def test_render_paginated(self):
         expected = [self.prod2_expected_response]
+
         response = self.client.get(reverse("pant:product_list") + "?offset=1")
         data = self.get_html_items(response.content)
         self.assertEquals(data, expected)
+
         response = self.client.get(reverse("pant:product_list") + "?json=1&offset=1")
         data = self.get_json_items(response.content)
         self.assertEquals(data, expected)
