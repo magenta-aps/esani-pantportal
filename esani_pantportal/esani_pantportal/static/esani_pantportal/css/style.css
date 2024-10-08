@@ -58,3 +58,7 @@ input[class*="form-check-input"] { border: 2px solid var(--bs-gray) }
 .csp-width-40rem {
     width: 40rem;
 }
+
+.csp-width-1percent {
+    width: 1%;
+}

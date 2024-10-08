@@ -9,69 +9,77 @@ SPDX-License-Identifier: MPL-2.0
 
 {% block extra_headers %}
 <link rel="stylesheet" href="{% static 'bootstrap-table/bootstrap-table.min.css' %}">
-<link rel="stylesheet" href="{% static 'bootstrap-table/extensions/sticky-header/bootstrap-table-sticky-header.min.css' %}">
+<link rel="stylesheet"
+    href="{% static 'bootstrap-table/extensions/sticky-header/bootstrap-table-sticky-header.min.css' %}">
 {% endblock %}
 
 {% block extra_footers %}
 <script src="{% static 'bootstrap-table/bootstrap-table.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
-<script src="{% static 'bootstrap-table/extensions/sticky-header/bootstrap-table-sticky-header.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
-<script src="{% static 'bootstrap-table/extensions/defer-url/bootstrap-table-defer-url.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
+<script src="{% static 'bootstrap-table/extensions/sticky-header/bootstrap-table-sticky-header.min.js' %}"
+    nonce="{{ request.csp_nonce }}"></script>
+<script src="{% static 'bootstrap-table/extensions/defer-url/bootstrap-table-defer-url.min.js' %}"
+    nonce="{{ request.csp_nonce }}"></script>
 {% endblock %}
 
-<table id="table" class="table table-bordered table-striped mt-1"
-       data-toggle="table"
-       data-sticky-header="true"
-       data-classes="table"
-       data-data-field="items"
-       data-sortable="true"
-       data-pagination="true"
-       data-page-number="{{search_data.page_number|unlocalize}}"
-       data-page-size="{{search_data.limit|unlocalize}}"
-       data-page-list="[100, 500, 1000, All]"
-       data-side-pagination="server"
-       data-pagination-loop="false"
-       data-defer-url="{{ data_defer_url }}"
-       data-query-params="queryParams"
-       data-row-style="rowStyle"
-       data-total-rows="{{total|unlocalize}}"
-       data-silent-sort="true" {# vil vi vise en loading-boks? #}
-       data-remember-order="true"
-       data-click-to-select="true"
-       data-escape="false"
-       data-id-field="id"
-       data-select-item-name="id"
->
+<table
+    id="table"
+    class="table table-bordered table-striped mt-1"
+    data-toggle="table"
+    data-sticky-header="true"
+    data-data-field="items"
+    data-sortable="true"
+    data-silent-sort="true" {# vil vi vise en loading-boks? #}
+    data-pagination="true"
+    data-page-number="{{search_data.page_number|unlocalize}}"
+    data-page-size="{{search_data.limit|unlocalize}}"
+    data-page-list="[20, 50, 100, All]"
+    data-side-pagination="server"
+    data-pagination-loop="false"
+    data-defer-url="{{ data_defer_url }}"
+    data-query-params="queryParams"
+    data-total-rows="{{total|unlocalize}}"
+    data-row-style="rowStyle"
+    data-escape="false"
+    data-id-field="id">
     <thead>
-    <tr>
-        {% if can_edit_multiple %}
-        <th data-width="1" data-width-unit="%" data-checkbox="true" data-field="state"></th>
-        {% endif %}
-        <th data-field="id" data-visible="false">ID</th>
-        {% for name, verbose_name, show in columns %}
-            <th data-width="10" data-width-unit="%" data-sortable="true" data-field={{name}} data-visible={{show|truefalse}}>{{verbose_name}}</th>
-        {% endfor %}
-        {% if actions %}
-        <th data-width="1" data-width-unit="%" data-field="actions">{% translate "Handlinger" %}</th>
-        {% endif %}
-    </tr>
+        <tr>
+            {% if can_edit_multiple %}
+            <th data-field="state" class="csp-width-1percent">
+                <input type="checkbox" id="select_all" />
+            </th>
+            {% endif %}
+            <th data-field="id" data-visible="false">ID</th>
+
+            {% for name, verbose_name, show in columns %}
+            <th data-sortable="true" data-field={{name}} data-visible={{show|truefalse}}>{{verbose_name}}</th>
+            {% endfor %}
+
+            {% if actions %}
+            <th class="col-2" data-field="actions">{% translate "Handlinger" %}</th>
+            {% endif %}
+        </tr>
     </thead>
     <tbody>
-    {% for item in items %}
-    <tr>
-        {% if can_edit_multiple %}
-        <td></td> {# Bootstrap Table puts a checkbox here #}
-        {% endif %}
-        <td>{{item|get:"id"|unlocalize}}</td>
-        {% for name, verbose_name, show in columns %}
+        {% for item in items %}
+        <tr>
+            {% if can_edit_multiple %}
+            <td>
+                <div class="p-1">
+                    <input type="checkbox" id="select_{{item.id}}" name="id" value="{{item.id}}" />
+                </div>
+            </td> {# Bootstrap Table puts a checkbox here #}
+            {% endif %}
+            <td>{{item|get:"id"|unlocalize}}</td>
+            {% for name, verbose_name, show in columns %}
             <td>{{item|get:name|safe}}</td>
+            {% endfor %}
+            {% if actions %}
+            <td>
+                {{item|get:"actions"|safe}}
+            </td>
+            {% endif %}
+        </tr>
         {% endfor %}
-        {% if actions %}
-        <td>
-            {{item|get:"actions"|safe}}
-        </td>
-        {% endif %}
-    </tr>
-    {% endfor %}
     </tbody>
 </table>
 {{search_data|json_script:"search_data"}}
@@ -81,36 +89,36 @@ Allow selecting multiple items when holding shift
 https://github.com/wenzhixin/bootstrap-table/issues/6855
 -->
 <script nonce="{{ request.csp_nonce }}">
-  var $table = $('#table')
-  let shiftKeyDown = false;
-        let firstCheckIndex = null;
-        let checkingMultiple = false;
+    var $table = $('#table')
+    let shiftKeyDown = false;
+    let firstCheckIndex = null;
+    let checkingMultiple = false;
 
-        $(document).keydown(function (e) {
-            if (e.key === "Shift") shiftKeyDown = true;
-        }).keyup(function (e) {
-            if (e.key === "Shift") shiftKeyDown = false;
-        });
+    $(document).keydown(function (e) {
+        if (e.key === "Shift") shiftKeyDown = true;
+    }).keyup(function (e) {
+        if (e.key === "Shift") shiftKeyDown = false;
+    });
 
-        $table.on('check.bs.table', async (e, row, $element) => {
+    $table.on('check.bs.table', async (e, row, $element) => {
 
-            if (checkingMultiple) return;
+        if (checkingMultiple) return;
 
-            const index = parseInt($element.attr('data-index'));
+        const index = parseInt($element.attr('data-index'));
 
-            if (shiftKeyDown && firstCheckIndex !== null) {
-                checkingMultiple = true;
+        if (shiftKeyDown && firstCheckIndex !== null) {
+            checkingMultiple = true;
 
-                let startIndex = Math.min(firstCheckIndex, index);
-                let endIndex = Math.max(firstCheckIndex, index);
+            let startIndex = Math.min(firstCheckIndex, index);
+            let endIndex = Math.max(firstCheckIndex, index);
 
-                for (let i = startIndex; i <= endIndex; i++) {
-                    $table.bootstrapTable('check', i);
-                }
-
-                checkingMultiple = false;
-            } else {
-                firstCheckIndex = index;
+            for (let i = startIndex; i <= endIndex; i++) {
+                $table.bootstrapTable('check', i);
             }
-        });
+
+            checkingMultiple = false;
+        } else {
+            firstCheckIndex = index;
+        }
+    });
 </script>
