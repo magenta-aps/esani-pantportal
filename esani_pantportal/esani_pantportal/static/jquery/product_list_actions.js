@@ -9,30 +9,29 @@
         const rejectButton = $("#reject_button");
         const deleteButton = $("#delete_button");
 
-        const getRowId = function (row) {
-            const rowId = row.id.toString();
-            // Remove spurious "." that causes type error.
-            return rowId.split(".").join("")
-        }
-
-        const getRows = function () {
-            const selectedRows = $("#table").bootstrapTable("getSelections");
+        const getSelectedRowIds = function () {
             const rowIds = [];
-            for (let row of selectedRows) {
-                rowIds.push(getRowId(row));
-            }
+            $('#table tbody tr input[type="checkbox"]:checked').each(function (index, value) {
+                rowIds.push(this.value);
+            })
+
             return rowIds
         }
 
         const getUnapprovedRows = function () {
-            const selectedRows = $("#table").bootstrapTable("getSelections");
             const rowIds = [];
-            for (let row of selectedRows) {
-                if ((row.status === gettext("Afventer godkendelse")) || (row.status === gettext("Afvist"))) {
-                    rowIds.push(getRowId(row));
+            $('#table tbody tr input[type="checkbox"]:checked').each(function (index, value) {
+                const $checkbox = $(this)
+                const $tr = $checkbox.parents("tr").first()
+                const $status = $tr.find(`td.column-status`)
+                const status_text = $status.text().toLowerCase()
+
+                if (status_text === "afventer godkendelse" || status_text === "afvist") {
+                    rowIds.push(this.value);
                 }
-            }
-            return rowIds;
+            })
+
+            return rowIds
         }
 
         const updateProducts = function (url, ids, extra) {
@@ -42,7 +41,7 @@
             };
 
             if (extra) {
-                data = {...data, ...extra};
+                data = { ...data, ...extra };
             }
 
             $.ajax({
@@ -89,7 +88,7 @@
                 // `javascript-catalog` view, which returns a JS file.
                 const text = interpolate(
                     message,  // result of `ngettext` call
-                    {"num": rowIds.length},  // interpolation context
+                    { "num": rowIds.length },  // interpolation context
                     true,  // use named interpolation
                 );
 
@@ -102,7 +101,7 @@
 
         const onUpdateSelected = function () {
             const unapprovedRowIds = getUnapprovedRows();
-            const rowIds = getRows();
+            const rowIds = getSelectedRowIds();
 
             if (unapprovedRowIds.length > 0) {
                 approveButton.removeClass("disabled");
@@ -136,7 +135,7 @@
         });
 
         rejectButton.on("click", function () {
-            const rowIds = getRows();
+            const rowIds = getSelectedRowIds();
 
             const promptText = interpolate(
                 ngettext(
@@ -144,7 +143,7 @@
                     "Angiv venligst en afvisnings-besked for %(num)s valgte produkter",
                     rowIds.length,
                 ),
-                {"num": rowIds.length},  // interpolation context
+                { "num": rowIds.length },  // interpolation context
                 true,  // use named interpolation
             );
 
@@ -154,13 +153,13 @@
                 updateProducts(
                     $(this).data("post-url"),
                     rowIds,
-                    {"rejection": rejectionText},
+                    { "rejection": rejectionText },
                 );
             }
         });
 
         deleteButton.on("click", function () {
-            const rowIds = getRows();
+            const rowIds = getSelectedRowIds();
 
             confirmAndUpdateSelected(
                 $(this).data("post-url"),
@@ -175,11 +174,10 @@
             );
         });
 
-        $("table").on(
-            "uncheck.bs.table uncheck-all.bs.table uncheck-some.bs.table check.bs.table check-some.bs.table check-all.bs.table reset-view.bs.table",
-            function (evt) {
-                onUpdateSelected();
-            },
-        );
+        // IMPORTANT: 'row-select-event' is a custom event
+        // dispatched/triggered by "list_view_table"
+        $("#table").on("row-select-event", function (event) {
+            onUpdateSelected();
+        })
     });
 }());
