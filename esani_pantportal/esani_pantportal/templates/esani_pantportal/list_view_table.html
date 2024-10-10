@@ -44,14 +44,14 @@ SPDX-License-Identifier: MPL-2.0
     <thead>
         <tr>
             {% if can_edit_multiple %}
-            <th data-field="state" class="csp-width-1percent">
-                <input type="checkbox" id="select_all" />
-            </th>
+            <th class="csp-width-1percent" data-field="select"><input type="checkbox" id="select_all" /></th>
             {% endif %}
+
             <th data-field="id" data-visible="false">ID</th>
 
             {% for name, verbose_name, show in columns %}
-            <th data-sortable="true" data-field={{name}} data-visible={{show|truefalse}}>{{verbose_name}}</th>
+            <th data-sortable="true" data-field={{name}} data-visible={{show|truefalse}} class="column-{{name}}">
+                {{verbose_name}}</th>
             {% endfor %}
 
             {% if actions %}
@@ -65,14 +65,17 @@ SPDX-License-Identifier: MPL-2.0
             {% if can_edit_multiple %}
             <td>
                 <div class="p-1">
-                    <input type="checkbox" id="select_{{item.id}}" name="id" value="{{item.id}}" />
+                    <input type="checkbox" id="select_{{item.id}}" value="{{item.id}}" />
                 </div>
-            </td> {# Bootstrap Table puts a checkbox here #}
+            </td>
             {% endif %}
+
             <td>{{item|get:"id"|unlocalize}}</td>
+
             {% for name, verbose_name, show in columns %}
             <td>{{item|get:name|safe}}</td>
             {% endfor %}
+
             {% if actions %}
             <td>
                 {{item|get:"actions"|safe}}
@@ -84,41 +87,91 @@ SPDX-License-Identifier: MPL-2.0
 </table>
 {{search_data|json_script:"search_data"}}
 
-<!--
-Allow selecting multiple items when holding shift
-https://github.com/wenzhixin/bootstrap-table/issues/6855
--->
+
+{# JavaScript for selecting rows - because we can't use bootstrap-tables native #}
+{# checkbox, since its incompatible with CSP #}
+
+{% if can_edit_multiple %}
 <script nonce="{{ request.csp_nonce }}">
-    var $table = $('#table')
-    let shiftKeyDown = false;
-    let firstCheckIndex = null;
-    let checkingMultiple = false;
-
-    $(document).keydown(function (e) {
-        if (e.key === "Shift") shiftKeyDown = true;
-    }).keyup(function (e) {
-        if (e.key === "Shift") shiftKeyDown = false;
-    });
-
-    $table.on('check.bs.table', async (e, row, $element) => {
-
-        if (checkingMultiple) return;
-
-        const index = parseInt($element.attr('data-index'));
-
-        if (shiftKeyDown && firstCheckIndex !== null) {
-            checkingMultiple = true;
-
-            let startIndex = Math.min(firstCheckIndex, index);
-            let endIndex = Math.max(firstCheckIndex, index);
-
-            for (let i = startIndex; i <= endIndex; i++) {
-                $table.bootstrapTable('check', i);
-            }
-
-            checkingMultiple = false;
-        } else {
-            firstCheckIndex = index;
+    // Mark if shift is pressed
+    let shiftPressed = false;
+    $(document).on("keydown", function (event) {
+        if (event.originalEvent.key === "Shift") {
+            shiftPressed = true;
         }
     });
+
+    $(document).on("keyup", function (event) {
+        if (event.originalEvent.key === "Shift") {
+            shiftPressed = false;
+        }
+    });
+
+    // Configure the table
+    const activeClass = "table-active";
+    const tblCheckboxSelector = "input[type=checkbox]"
+
+    let latestClicked;
+    let latestRange;
+
+    var $table = $('#table')
+    $table.on("click-row.bs.table", function (event, data, row) {
+        if (shiftPressed && latestClicked) {
+            const index1 = row.index();
+            const index2 = latestClicked.index();
+            const firstActive = latestClicked.hasClass(activeClass);
+            const range = row.siblings().slice(Math.min(index1, index2), Math.max(index1, index2)).add(row);
+
+            if (latestRange) {
+                // If a range have already been set when making a new range, the first range needs to be "flipped"
+                if (firstActive) {
+                    latestRange.removeClass(activeClass);
+                    latestRange.find(tblCheckboxSelector).prop("checked", false);
+                } else {
+                    latestRange.addClass(activeClass);
+                    latestRange.find(tblCheckboxSelector).prop("checked", true);
+                }
+            }
+
+            // Set the new range's 'active', based on the starting point's activity.
+            if (firstActive) {
+                range.addClass(activeClass);
+                range.find(tblCheckboxSelector).prop("checked", true);
+            } else {
+                range.removeClass(activeClass);
+                range.find(tblCheckboxSelector).prop("checked", false);
+            }
+
+            latestRange = range;
+        } else {
+            const checkbox = row.find(tblCheckboxSelector);
+            const activate = !row.hasClass(activeClass);
+
+            row.toggleClass(activeClass, activate);
+            checkbox.prop("checked", activate);
+
+            // Set "latest", which is used for selecting while shift is pressed
+            latestClicked = row;
+            latestRange = null;
+        }
+
+        // Trigger a custom even we subscribe to in "product_list_actions.js"
+        // FYI, we use a custom event instead since we can't use bootstrap-tables
+        // checkbox events, ex "uncheck.bs.table"
+        $table.trigger("row-select-event")
+    });
+
+    $table.on("change", "#select_all", function () {
+        $selectAllCheckbox = $(this)
+        const checked = $selectAllCheckbox.is(":checked");
+
+        $table.find(tblCheckboxSelector).prop("checked", checked);
+        $table.find("tbody tr").toggleClass(activeClass, checked);
+        $table.trigger("row-select-event")
+    })
+
+    $table.on("load-success.bs.table", function (event) {
+        $table.find("#select_all").prop("checked", false);
+    })
 </script>
+{% endif %}
