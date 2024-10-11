@@ -11,7 +11,7 @@ SPDX-License-Identifier: MPL-2.0
 
 {# Docs for bootstrap-table: https://bootstrap-table.com/docs/ #}
 {% block extra_headers %}
-<style>
+<style nonce="{{ request.csp_nonce }}">
     /* Prevent text highlighting in table when selecting multiple rows (using Shift key) */
     #table { user-select: none }
 </style>
