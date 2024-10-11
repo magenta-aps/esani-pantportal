@@ -17,7 +17,7 @@ SPDX-License-Identifier: MPL-2.0
     <script src="{% static 'bootstrap/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
     <script src="https://unpkg.com/html5-qrcode" nonce="{{ request.csp_nonce }}"></script>
     <title>ESANI Pant</title>
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         h1 {text-align: center;}
         div {text-align: center;}
     </style>
