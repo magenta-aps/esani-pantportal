@@ -333,6 +333,10 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                     "weight": 20,
                     "danish": "Ukendt",
                     "file_name": self.job.file_name,
+                    "select": (
+                        '<div class="p-1"><input type="checkbox" id="select_1" '
+                        'value="1" /></div>'
+                    ),
                 },
                 {
                     "actions": '<a href="/produkt/2" class="btn btn-sm btn-primary">'
@@ -351,6 +355,10 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                     "weight": 20,
                     "danish": "Ukendt",
                     "file_name": "-",
+                    "select": (
+                        '<div class="p-1"><input type="checkbox" id="select_2" '
+                        'value="2" /></div>'
+                    ),
                 },
             ],
         )
@@ -392,6 +400,10 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                     "weight": 20,
                     "danish": "Ukendt",
                     "file_name": self.job.file_name,
+                    "select": (
+                        '<div class="p-1"><input type="checkbox" id="select_1" '
+                        'value="1" /></div>'
+                    ),
                 }
             ],
         )
