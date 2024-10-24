@@ -53,6 +53,13 @@ class TestImportDepositPayouts(TestCase):
             serial_number=cls.rvm_2_serial_number,
         )
 
+        # Add `ReverseVendingMachine` object with a 15-digit RVM serial number.
+        # This serial number is used in `example_15_digit_rvm_serial.csv`.
+        cls._rvm_15_digits, _ = ReverseVendingMachine.objects.update_or_create(
+            kiosk=kiosk,
+            serial_number="123456789012345",
+        )
+
         # Add `Product` objects matching the barcodes in `example_with_valid_ids.csv`
         defaults = {
             "height": 250,
@@ -105,6 +112,18 @@ class TestImportDepositPayouts(TestCase):
         actual_items = DepositPayoutItem.objects.all().values(*fields).order_by(*fields)
         # Assert: define list of expected `DepositPayoutItem` objects
         expected_items = [
+            # Line(s) from `example_15_digit_rvm_serial.csv` are related to the `Kiosk`
+            # and `Product` objects, and use a (new) 15-digit RVM serial.
+            item(
+                deposit_payout__source_identifier="example_15_digit_rvm_serial.csv",
+                company_branch__company__cvr=None,
+                kiosk__cvr=self.kiosk_cvr,
+                product__barcode=self.product_barcode_1,
+                location_id=2,
+                rvm_serial=int(self._rvm_15_digits.serial_number),
+                barcode=self.product_barcode_1,
+                count=20,
+            ),
             # Lines from `example_original.csv` are not related to `CompanyBranch`,
             # `Kiosk` or `Product` objects, as their IDs (`rvm_serial` and `barcode`)
             # do not match any `CompanyBranch`, `Kiosk` or `Product` objects in the
