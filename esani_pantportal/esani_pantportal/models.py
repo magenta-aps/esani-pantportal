@@ -1228,7 +1228,7 @@ class DepositPayoutItem(models.Model):
     location_id = models.PositiveIntegerField(null=True, blank=True)
     """Holds the raw value of the location ID in the CSV file line"""
 
-    rvm_serial = models.PositiveIntegerField(null=True, blank=True)
+    rvm_serial = models.PositiveBigIntegerField(null=True, blank=True)
     """Serial number of RVM (= 'Reverse vending machine', aka. 'flaskeautomat')"""
 
     date = models.DateField(db_index=True)
