@@ -94,8 +94,9 @@ class CompanyListTest(BaseCompanyTest):
     def get_html_items(html):
         soup = BeautifulSoup(html, "html.parser")
         table = soup.find("table")
-        headers = [cell.text for cell in table.thead.tr.find_all("th")]
+        headers = [cell.text.strip() for cell in table.thead.tr.find_all("th")]
         output = []
+
         for row in table.tbody.find_all("tr"):
             rowdata = [cell.text.strip() for cell in row.find_all("td")]
             output.append({k: v for k, v in dict(zip(headers, rowdata)).items() if k})
