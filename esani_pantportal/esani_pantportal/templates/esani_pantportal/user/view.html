@@ -10,8 +10,8 @@ SPDX-License-Identifier: MPL-2.0
 {% load bootstrap_icons %}
 
 {% block extra_headers %}
-<script src="{% static 'jquery/detail_view.js' %}"></script>
-<script src="{% static 'jquery/pantportal.js' %}"></script>
+<script src="{% static 'jquery/detail_view.js' %}" nonce="{{ request.csp_nonce }}"></script>
+<script src="{% static 'jquery/pantportal.js' %}" nonce="{{ request.csp_nonce }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -76,7 +76,7 @@ SPDX-License-Identifier: MPL-2.0
                     </tr>
                     </tbody>
                 </table>
-            <div class="card my-3" id="two_factor_confirmation" style="display:none">
+            <div id="two_factor_confirmation" class="card my-3 d-none">
                 <div class="card-body text-center">
                     {% bs_icon "shield-check" size="2em" %}
                     <div>
@@ -84,7 +84,7 @@ SPDX-License-Identifier: MPL-2.0
                     </div>
                 </div>
             </div>
-            <div class="card my-3" id="disable_two_factor_confirmation" style="display:none">
+            <div id="disable_two_factor_confirmation" class="card my-3 d-none">
                 <div class="card-body text-center">
                     {% bs_icon "shield-exclamation" size="2em" %}
                     <div>
@@ -183,7 +183,7 @@ SPDX-License-Identifier: MPL-2.0
 {{ form_fields_to_show|json_script:"form_fields_to_show" }}
 {{ form_fields|json_script:"form_fields" }}
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 $("#delete_button").on('click', function () {
     return confirm("{% translate 'Er du sikker på at du vil fjerne denne bruger?' %}");
 });

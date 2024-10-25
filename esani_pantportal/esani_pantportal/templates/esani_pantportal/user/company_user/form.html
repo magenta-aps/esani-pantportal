@@ -8,8 +8,8 @@ SPDX-License-Identifier: MPL-2.0
 {% load i18n %}
 {% load l10n %}
 {% block extra_headers %}
-<script src="{% static 'jquery/pantportal.js' %}"></script>
-<script src="{% static 'jquery/wizard.js' %}"></script>
+<script src="{% static 'jquery/pantportal.js' %}" nonce="{{ request.csp_nonce }}"></script>
+<script src="{% static 'jquery/wizard.js' %}" nonce="{{ request.csp_nonce }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -74,7 +74,7 @@ SPDX-License-Identifier: MPL-2.0
     </div>
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 function reset_company_dropdown() {
     $("#id_user-company option[value='']").prop("selected", "selected");
 }

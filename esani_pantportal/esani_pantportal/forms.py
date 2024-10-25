@@ -921,7 +921,7 @@ class QRBagFilterForm(SortPaginateForm):
     qr = forms.CharField(required=False)
     status = forms.MultipleChoiceField(
         choices=[],  # populated in __init__
-        widget=forms.SelectMultiple(attrs={"style": "height: 100%"}),
+        widget=forms.SelectMultiple(attrs={"class": "h-100"}),
         required=False,
     )
     company_branch__name = forms.CharField(required=False)

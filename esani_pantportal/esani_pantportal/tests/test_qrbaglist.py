@@ -172,7 +172,7 @@ class BaseQRBagTest(TestCase):
 
     @staticmethod
     def extract_data_from_table(table):
-        headers = [cell.text for cell in table.thead.tr.find_all("th")]
+        headers = [cell.text.strip() for cell in table.thead.tr.find_all("th")]
         output = []
         for row in table.tbody.find_all("tr"):
             rowdata = [cell.text.strip() for cell in row.find_all("td")]

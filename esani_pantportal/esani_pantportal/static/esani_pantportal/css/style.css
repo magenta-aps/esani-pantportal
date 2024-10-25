@@ -52,3 +52,13 @@ input[class*="form-control"] { border: 1px solid var(--bs-gray) }
 select[class*="form-select"] { border: 1px solid var(--bs-gray) }
 textarea[class*="form-control"] { border: 1px solid var(--bs-gray) }
 input[class*="form-check-input"] { border: 2px solid var(--bs-gray) }
+
+
+/* Classes create for CSP compliance */
+.csp-width-40rem {
+    width: 40rem;
+}
+
+.csp-width-1percent {
+    width: 1%;
+}

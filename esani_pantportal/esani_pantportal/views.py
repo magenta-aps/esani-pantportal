@@ -598,6 +598,13 @@ class SearchView(LoginRequiredMixin, FormView):
                     for action, button_class in self.actions.items()
                 ]
             )
+
+        if self.can_edit_multiple and hasattr(item_obj, "id"):
+            json_dict["select"] = (
+                f'<div class="p-1"><input type="checkbox" id="select_{item_obj.id}" '
+                f'value="{item_obj.id}" /></div>'
+            )
+
         return json_dict
 
     def map_value(self, item, key, context):

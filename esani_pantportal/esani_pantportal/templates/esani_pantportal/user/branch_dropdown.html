@@ -5,14 +5,14 @@ SPDX-License-Identifier: MPL-2.0
 -->
 {% load i18n %}
 {% load l10n %}
-<div class="col-12"  id="branch_dropdown" style="display:none">
+<div id="branch_dropdown" class="col-12 d-none">
   {% if mainform.allow_changing_branch %}
       <label for="{{subform.branch.id_for_label}}">
           {{subform.branch.label}} <a id="show_branch_form" href="#">{% translate "Butik er ikke i listen" %}</a>
       </label>
       {{subform.branch}}
   {% else %}
-      <div style="display:none" >{{subform.branch}} </div>
+      <div class="d-none">{{subform.branch}} </div>
       <input type="text" disabled class="mr-2 form-control" value="{{mainform.branch_str}}">
   {% endif %}
   <div class="form-text">

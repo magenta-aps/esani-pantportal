@@ -40,6 +40,8 @@ if TESTING:
 
 ALLOWED_HOSTS = json.loads(os.environ.get("ALLOWED_HOSTS", "[]"))
 
+HOST_DOMAIN = os.environ.get("HOST_DOMAIN", "https://pant.gl")
+
 if os.environ.get("CSRF_ORIGINS", False):
     CSRF_TRUSTED_ORIGINS = json.loads(os.environ.get("CSRF_ORIGINS", "[]"))
 
@@ -71,6 +73,7 @@ INSTALLED_APPS = [
     "two_factor",
     # "anymail",
     "metrics",
+    "csp_helpers",
 ]
 
 MIDDLEWARE = [
@@ -88,6 +91,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django_otp.middleware.OTPMiddleware",
     "django_cprofile_middleware.middleware.ProfilerMiddleware",  # Active when DEBUG=True
+    "csp.middleware.CSPMiddleware",
 ]
 
 ROOT_URLCONF = "project.urls"
@@ -393,3 +397,16 @@ if os.path.isfile(log_filename) and ENVIRONMENT != "development":
 PROMETHEUS_PUSHGATEWAY_HOST = os.environ.get(
     "PROMETHEUS_PUSHGATEWAY", "pushgateway:9091"
 )
+
+# CSP
+
+CSP_DEFAULT_SRC = (
+    "'self'",
+    "localhost:8000" if DEBUG else HOST_DOMAIN,
+)
+CSP_SCRIPT_SRC_ATTR = (
+    "'self'",
+    "localhost:8000" if DEBUG else HOST_DOMAIN,
+)
+CSP_STYLE_SRC_ATTR = ("'self'",)
+CSP_IMG_SRC = ("'self'", "data:")
