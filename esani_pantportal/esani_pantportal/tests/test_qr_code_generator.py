@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+import io
 import os
 
 import pandas as pd
@@ -23,12 +24,12 @@ class QRCodeGeneratorTests(LoginMixin, TestCase):
         for bag_type in settings.QR_GENERATOR_SERIES.keys():
             data = {"number_of_codes": 2, "bag_type": bag_type}
             response = self.client.post(url, data=data)
-            df = pd.read_excel(response.content)
+            df = pd.read_excel(io.BytesIO(response.content))
             self.assertEqual(len(df), 2)
 
             # Generate more qrs; the ID should increment with respect to the last batch
             response = self.client.post(url, data=data)
-            df = pd.read_excel(response.content)
+            df = pd.read_excel(io.BytesIO(response.content))
             self.assertGreater(df.Id.astype(float).max(), 1)
 
             qr_generator = QRCodeGenerator.objects.get(
