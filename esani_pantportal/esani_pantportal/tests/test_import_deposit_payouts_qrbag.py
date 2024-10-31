@@ -45,7 +45,7 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
     product_barcode_2 = "2233"
     product_count_2 = 20
     location_customer_id = 1000
-    rvm_serial_number = 2000
+    rvm_serial_number = "2000"
     consumer_session_id = uuid.uuid4()
 
     _mock_api_path = (
