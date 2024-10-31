@@ -332,7 +332,7 @@ class DebtorExport:
 
         qs1 = Company.objects.values(*self._common).annotate(
             _cvr=F("cvr"),
-            _location_id=Value(None, output_field=PositiveIntegerField()),
+            _location_id=Value(None, output_field=CharField()),
             _id=external_customer_id("1"),
         )
         qs2 = CompanyBranch.objects.values(*self._common).annotate(

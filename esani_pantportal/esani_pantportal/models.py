@@ -262,12 +262,13 @@ class Branch(AbstractCompany):
     class Meta:
         abstract = True
 
-    location_id = models.PositiveIntegerField(
+    location_id = models.CharField(
         verbose_name=_("LokationsID"),
         help_text=_("Butikkens lokation ID (valgfri)"),
         null=True,
         blank=True,
-        default=None,
+        default="",
+        max_length=128,
     )
 
     customer_id = models.PositiveIntegerField(
