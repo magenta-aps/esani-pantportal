@@ -13,6 +13,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.db import models, transaction
 from django.db.models import (
     Case,
@@ -1229,8 +1230,16 @@ class DepositPayoutItem(models.Model):
     location_id = models.PositiveIntegerField(null=True, blank=True)
     """Holds the raw value of the location ID in the CSV file line"""
 
-    rvm_serial = models.PositiveBigIntegerField(null=True, blank=True)
+    rvm_serial = models.CharField(
+        null=True,
+        blank=True,
+        max_length=128,
+        validators=[RegexValidator(r"\d{1,128}")],
+    )
     """Serial number of RVM (= 'Reverse vending machine', aka. 'flaskeautomat')"""
+    # We store the RVM serial number as text, as it can be larger than the 19 digits
+    # allowed by `PositiveBigIntegerField`/`bigint` which is otherwise the largest
+    # integer type available in Django/Postgres.
 
     date = models.DateField(db_index=True)
     """Date for when items have been processed by the RVM.
