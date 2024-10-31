@@ -53,11 +53,11 @@ class TestImportDepositPayouts(TestCase):
             serial_number=cls.rvm_2_serial_number,
         )
 
-        # Add `ReverseVendingMachine` object with a 15-digit RVM serial number.
-        # This serial number is used in `example_15_digit_rvm_serial.csv`.
-        cls._rvm_15_digits, _ = ReverseVendingMachine.objects.update_or_create(
+        # Add `ReverseVendingMachine` object with a 25-digit RVM serial number.
+        # This serial number is used in `example_25_digit_rvm_serial.csv`.
+        cls._rvm_25_digits, _ = ReverseVendingMachine.objects.update_or_create(
             kiosk=kiosk,
-            serial_number="123456789012345",
+            serial_number="1234567890123456789012345",
         )
 
         # Add `Product` objects matching the barcodes in `example_with_valid_ids.csv`
@@ -112,15 +112,15 @@ class TestImportDepositPayouts(TestCase):
         actual_items = DepositPayoutItem.objects.all().values(*fields).order_by(*fields)
         # Assert: define list of expected `DepositPayoutItem` objects
         expected_items = [
-            # Line(s) from `example_15_digit_rvm_serial.csv` are related to the `Kiosk`
+            # Line(s) from `example_25_digit_rvm_serial.csv` are related to the `Kiosk`
             # and `Product` objects, and use a (new) 15-digit RVM serial.
             item(
-                deposit_payout__source_identifier="example_15_digit_rvm_serial.csv",
+                deposit_payout__source_identifier="example_25_digit_rvm_serial.csv",
                 company_branch__company__cvr=None,
                 kiosk__cvr=self.kiosk_cvr,
                 product__barcode=self.product_barcode_1,
                 location_id=2,
-                rvm_serial=int(self._rvm_15_digits.serial_number),
+                rvm_serial=self._rvm_25_digits.serial_number,
                 barcode=self.product_barcode_1,
                 count=20,
             ),
@@ -135,7 +135,7 @@ class TestImportDepositPayouts(TestCase):
                 kiosk__cvr=None,
                 product__barcode=None,
                 location_id=126161,
-                rvm_serial=936860206,
+                rvm_serial="936860206",
                 barcode="5000112630251",
                 count=20,
             ),
@@ -145,7 +145,7 @@ class TestImportDepositPayouts(TestCase):
                 kiosk__cvr=None,
                 product__barcode=None,
                 location_id=126161,
-                rvm_serial=936860206,
+                rvm_serial="936860206",
                 barcode="5000112630251",
                 count=500,
             ),
@@ -155,7 +155,7 @@ class TestImportDepositPayouts(TestCase):
                 kiosk__cvr=None,
                 product__barcode=None,
                 location_id=126161,
-                rvm_serial=936860207,
+                rvm_serial="936860207",
                 barcode="3179732368911",
                 count=2,
             ),
@@ -165,7 +165,7 @@ class TestImportDepositPayouts(TestCase):
                 kiosk__cvr=None,
                 product__barcode=None,
                 location_id=126161,
-                rvm_serial=936860207,
+                rvm_serial="936860207",
                 barcode="3179732368911",
                 count=200,
             ),
@@ -178,7 +178,7 @@ class TestImportDepositPayouts(TestCase):
                 kiosk__cvr=self.kiosk_cvr,
                 product__barcode=self.product_barcode_2,
                 location_id=2,
-                rvm_serial=int(self.rvm_2_serial_number),
+                rvm_serial=self.rvm_2_serial_number,
                 barcode=self.product_barcode_2,
                 count=2,
             ),
@@ -188,7 +188,7 @@ class TestImportDepositPayouts(TestCase):
                 kiosk__cvr=self.kiosk_cvr,
                 product__barcode=self.product_barcode_2,
                 location_id=2,
-                rvm_serial=int(self.rvm_2_serial_number),
+                rvm_serial=self.rvm_2_serial_number,
                 barcode=self.product_barcode_2,
                 count=200,
             ),
@@ -199,7 +199,7 @@ class TestImportDepositPayouts(TestCase):
                 kiosk__cvr=self.kiosk_cvr,
                 product__barcode=self.product_barcode_1,
                 location_id=2,
-                rvm_serial=int(self.rvm_1_serial_number),
+                rvm_serial=self.rvm_1_serial_number,
                 barcode=self.product_barcode_1,
                 count=20,
             ),
@@ -209,7 +209,7 @@ class TestImportDepositPayouts(TestCase):
                 kiosk__cvr=self.kiosk_cvr,
                 product__barcode=self.product_barcode_1,
                 location_id=2,
-                rvm_serial=int(self.rvm_1_serial_number),
+                rvm_serial=self.rvm_1_serial_number,
                 barcode=self.product_barcode_1,
                 count=500,
             ),
