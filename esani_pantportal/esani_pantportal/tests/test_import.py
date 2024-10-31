@@ -477,7 +477,7 @@ class TemplateViewTests(LoginMixin, TestCase):
         url = reverse("pant:excel_template_download")
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        df = pd.read_excel(response.content, dtype={"Stregkode [str]": str})
+        df = pd.read_excel(io.BytesIO(response.content), dtype={"Stregkode [str]": str})
 
         self.assertEqualDf(df, default_dataframe())
 

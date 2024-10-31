@@ -25,10 +25,10 @@ from esani_pantportal.models import (
 
 CUSTOMER_1_NAME = "branch name"
 CUSTOMER_1_CVR = 1111
-CUSTOMER_1_LOCATION_ID = 2222
+CUSTOMER_1_LOCATION_ID = "2222"
 CUSTOMER_2_NAME = "kiosk name"
 CUSTOMER_2_CVR = 3333
-CUSTOMER_2_LOCATION_ID = 4444
+CUSTOMER_2_LOCATION_ID = "4444"
 
 
 class _SharedBase(ParametrizedTestCase, TestCase):
@@ -725,7 +725,7 @@ class TestDebtorExport(_SharedBase):
             return (
                 row["name"],
                 int(row["cvr"]) if row["cvr"] else None,
-                int(row["location_id"]) if row["location_id"] else None,
+                str(row["location_id"]) if row["location_id"] else None,
                 row["id"],
             )
 

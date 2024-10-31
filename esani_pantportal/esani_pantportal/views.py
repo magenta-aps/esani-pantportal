@@ -1806,7 +1806,6 @@ class CsvCompaniesView(CsvTemplateView):
             "registration_number",
             "account_number",
             "cvr",
-            "location_id",
             "customer_id",
         ]:
             if col in df.columns:
