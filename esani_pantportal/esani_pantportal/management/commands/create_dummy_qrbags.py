@@ -71,16 +71,16 @@ class Command(BaseCommand):
 
                 statusses = random.choice(
                     [
-                        ["Oprettet"],
-                        ["Oprettet", "Under transport"],
-                        ["Oprettet", "Under transport", "Afsluttet"],
+                        ["butik_oprettet"],
+                        ["butik_oprettet", "esani_optalt"],
+                        ["butik_oprettet", "esani_optalt", "esani_udbetalt"],
                     ]
                 )
 
                 date_dict = {
-                    "Oprettet": random_date(2020, 2021),
-                    "Under transport": random_date(2021, 2022),
-                    "Afsluttet": random_date(2022, 2023),
+                    "butik_oprettet": random_date(2020, 2021),
+                    "esani_optalt": random_date(2021, 2022),
+                    "esani_udbetalt": random_date(2022, 2023),
                 }
 
                 for status in statusses:
