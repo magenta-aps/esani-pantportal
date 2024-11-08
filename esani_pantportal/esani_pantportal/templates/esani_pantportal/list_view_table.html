@@ -65,7 +65,7 @@ SPDX-License-Identifier: MPL-2.0
             {% if can_edit_multiple %}
             <td>
                 <div class="p-1">
-                    <input type="checkbox" id="select_{{item.id}}" value="{{item.id}}" />
+                    <input type="checkbox" id="select_{{item.id|unlocalize}}" value="{{item.id|unlocalize}}" />
                 </div>
             </td>
             {% endif %}
