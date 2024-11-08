@@ -62,3 +62,10 @@ input[class*="form-check-input"] { border: 2px solid var(--bs-gray) }
 .csp-width-1percent {
     width: 1%;
 }
+
+.csp-d-none {
+    /* The same as bootstraps .d-none class, but without
+    the usage of '!important', so we don't override 'display: block'
+    when toggleing visibility on hidden elements. */
+    display: none;
+}
