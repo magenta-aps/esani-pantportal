@@ -1202,14 +1202,23 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
         self.form = self.get_form_class()(self.request.GET)
         form_is_valid = self.form.is_valid()
 
-        # If POST contains "selection=all", process all objects in queryset.
-        # If POST contains one more item IDs in "id", process only the objects given by
-        # those IDs.
+        # If POST contains "selection=all-wet" or "selection=all-dry", process all
+        # objects in queryset.
+        # If POST contains "selection=selected-wet" or "selected-dry", use the specific
+        # ID list in "ids" to filter the queryset.
         if request.POST.get("selection", "") in ("all-wet", "all-dry"):
             qs = self.get_queryset()
         else:
-            ids = [int(id.replace(".", "")) for id in request.POST.getlist("id")]
-            qs = self.get_queryset().filter(id__in=ids)
+            ids = request.POST.get("ids")
+            if ids is not None:
+                ids = [int(id) for id in ids.split(",")]
+                qs = self.get_queryset().filter(id__in=ids)
+            else:
+                qs = DepositPayoutItem.objects.none()
+                logger.info(
+                    "When passing `selection=selected-wet` or `selection=selected-dry`,"
+                    "you must also pass a list of IDs in `ids`."
+                )
 
         date_min = qs.aggregate(Min("date"))["date__min"]
         date_max = qs.aggregate(Max("date"))["date__max"]
