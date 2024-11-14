@@ -86,6 +86,20 @@ SPDX-License-Identifier: MPL-2.0
 
 <script nonce="{{ request.csp_nonce }}">
 (function () {
+    const getSelectedRows = function (table) {
+        let ids = [];
+        const checkboxes = table.find("td input[type=checkbox]:checked");
+
+        checkboxes.each(function (idx, elem) {
+            ids.push($(elem).val());
+        });
+
+        return ids;
+    }
+    const getNumSelectedRows = function (table) {
+        return getSelectedRows(table).length;
+    }
+
     $(document).ready(function () {
         const table = $("#table");
         const form = $("form[method=post]");
@@ -103,34 +117,30 @@ SPDX-License-Identifier: MPL-2.0
         // rows back to zero.)
         // Update count of selected rows on button whenever rows are selected (or unselected.)
         table.on(
-            "uncheck.bs.table uncheck-all.bs.table uncheck-some.bs.table check.bs.table check-some.bs.table check-all.bs.table page-change.bs.table",
-            function (evt) {
-                const selectedRows = $("#table").bootstrapTable("getSelections");
-                const numSelectedRows = selectedRows.length;
+            "row-select-event",
+            function (evt, params) {
+                const totalRows = table.data("total-rows");
+                const numSelectedRows = getNumSelectedRows(table);
                 const state = numSelectedRows === 0 ? "disabled" : null;
+
+                // Make "select all" buttons visible depending on event parameters.
+                // If more rows are available, but not on screen, then allow user to select everything matching the
+                // current filters.
+                if (params !== undefined) {
+                    if ((params["all"] === true) && (totalRows >= numSelectedRows)) {
+                        selectAll.removeClass("d-none");
+                    }
+                    if (params["all"] === false) {
+                        selectAll.addClass("d-none");
+                    }
+                }
+
                 // Toggle disabled state of "Hent valgte" and "Hent alle"
                 selectChosen.attr("disabled", state);
                 selectAll.attr("disabled", state);
+
                 // Update count on "Hent valgte"
                 $("span", selectChosen).text(numSelectedRows);
-            },
-        );
-
-        // Prompt user when checking 'all' rows. If more rows are available, but not on screen, then allow user to
-        // select everything matching the current filters.
-        table.on("check-all.bs.table", function (evt, rows) {
-            const totalRows = $("#table").bootstrapTable("getOptions")["totalRows"];
-            const selectedRows = rows.length;
-            if (totalRows >= selectedRows) {
-                selectAll.removeClass("d-none");
-            }
-        });
-
-        // Hide button which can submit 'all' rows whenever only a subset of rows are selected
-        table.on(
-            "uncheck.bs.table uncheck-all.bs.table uncheck-some.bs.table check.bs.table check-some.bs.table page-change.bs.table",
-            function (evt) {
-                selectAll.addClass("d-none");
             },
         );
 
@@ -160,6 +170,9 @@ SPDX-License-Identifier: MPL-2.0
         const downloadFile = function (selection) {
             let data = form.serializeArray();
             data.push({"name": "selection", "value": selection});
+            if (selection.match(/^selected\-/)) {
+                data.push({"name": "ids", "value": getSelectedRows(table)});
+            }
 
             // Source: https://stackoverflow.com/a/23797348
             $.ajax({
