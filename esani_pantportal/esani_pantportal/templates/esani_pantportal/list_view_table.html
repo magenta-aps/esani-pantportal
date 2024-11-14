@@ -162,12 +162,12 @@ SPDX-License-Identifier: MPL-2.0
     });
 
     $table.on("change", "#select_all", function () {
-        $selectAllCheckbox = $(this)
+        const $selectAllCheckbox = $(this);
         const checked = $selectAllCheckbox.is(":checked");
 
         $table.find(tblCheckboxSelector).prop("checked", checked);
         $table.find("tbody tr").toggleClass(activeClass, checked);
-        $table.trigger("row-select-event")
+        $table.trigger("row-select-event", {"all": true});
     })
 
     $table.on("load-success.bs.table", function (event) {
