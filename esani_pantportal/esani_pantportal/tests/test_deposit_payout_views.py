@@ -137,12 +137,14 @@ class TestDepositPayoutSearchView(_BaseTestCase):
         response = self.client.post(
             reverse("pant:deposit_payout_list"),
             data={
-                "id": [
-                    self.deposit_payout_item_1.pk,
-                    self.deposit_payout_item_2.pk,
-                    42,
-                    "1.234",
-                ]
+                "ids": ",".join(
+                    str(id)
+                    for id in [
+                        self.deposit_payout_item_1.pk,
+                        self.deposit_payout_item_2.pk,
+                        42,
+                    ]
+                )
             },
         )
         # Assert that we receive the expected CSV response
@@ -217,7 +219,7 @@ class TestDepositPayoutSearchView(_BaseTestCase):
         self._login()
 
         # Test 1: POST invalid item IDs, resulting in an empty queryset
-        response = self.client.post(self._get_url(), data={"id": "-1"})
+        response = self.client.post(self._get_url(), data={"ids": "-1"})
         self._assert_response_is_redirect_with_message(response, expected_message)
 
         # Test 2: POST invalid filter data, resulting in an invalid form
@@ -321,11 +323,7 @@ class TestManuallyUploadedData(_BaseTestCase):
         # Post the ID of the manually uploaded deposit payout item
         response = self.client.post(
             reverse("pant:deposit_payout_list"),
-            data={
-                "id": [
-                    self.deposit_payout_item_3.pk,
-                ]
-            },
+            data={"ids": "".join(str(id) for id in [self.deposit_payout_item_3.pk])},
         )
         # Assert that we receive the expected CSV response
         self.assertEqual(response["Content-Type"], "text/csv")
