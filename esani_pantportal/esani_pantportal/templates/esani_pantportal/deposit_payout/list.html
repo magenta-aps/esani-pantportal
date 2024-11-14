@@ -126,10 +126,11 @@ SPDX-License-Identifier: MPL-2.0
                 // Make "select all" buttons visible depending on event parameters.
                 // If more rows are available, but not on screen, then allow user to select everything matching the
                 // current filters.
-                if ((params !== undefined) && (params["all"] === true)) {
-                    if (totalRows >= numSelectedRows) {
+                if (params !== undefined) {
+                    if ((params["all"] === true) && (totalRows >= numSelectedRows)) {
                         selectAll.removeClass("d-none");
-                    } else {
+                    }
+                    if (params["all"] === false) {
                         selectAll.addClass("d-none");
                     }
                 }
