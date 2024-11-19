@@ -75,22 +75,30 @@ SPDX-License-Identifier: MPL-2.0
 </div>
 
 <script nonce="{{ request.csp_nonce }}">
+function hide($el) {
+    $el.addClass("d-none");
+}
+
+function show($el) {
+    $el.removeClass("d-none");
+}
+
 function reset_branch_dropdown() {
     $("#id_user-branch option[value='']").prop("selected", "selected");
 }
 function hide_branch_dropdown(){
-   $("#branch_dropdown").hide();
+   hide($("#branch_dropdown"));
    reset_branch_dropdown();
 }
 function show_branch_dropdown(){
-    $("#branch_dropdown").show();
+    show($("#branch_dropdown"));
 }
 function show_branch_form() {
-    $("#branch_form").show();
+    show($("#branch_form"));
     updateQueryString("show_branch","1");
 }
 function hide_branch_form() {
-    $("#branch_form").hide();
+    hide($("#branch_form"));
     updateQueryString("show_branch","0");
 }
 
@@ -104,8 +112,9 @@ $("#show_branch_form").click(function() {
 });
 
 show_branch_dropdown();
-var show_branch = getUrlParameter("show_branch");
-if (show_branch == "1"){
+
+const show_branch = getUrlParameter("show_branch");
+if (show_branch === "1"){
     show_branch_form();
     hide_branch_dropdown();
 }
