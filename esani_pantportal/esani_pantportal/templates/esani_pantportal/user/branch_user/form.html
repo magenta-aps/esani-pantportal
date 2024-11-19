@@ -90,8 +90,16 @@ SPDX-License-Identifier: MPL-2.0
 {{ branch_dict|json_script:"branch_dict" }}
 
 <script nonce="{{ request.csp_nonce }}">
+function hide($el) {
+    $el.addClass("d-none");
+}
+
+function show($el) {
+    $el.removeClass("d-none");
+}
+
 function hide_branch_dropdown_options(){
-    $("#id_user-branch").children("option").not(":first").hide();
+    hide($("#id_user-branch").children("option").not(":first"));
 }
 
 function reset_company_dropdown() {
@@ -105,58 +113,58 @@ function reset_branch_dropdown() {
 }
 
 function hide_company_dropdown(){
-   $("#company_dropdown").hide();
+   hide($("#company_dropdown"));
    reset_company_dropdown();
 }
 
 function hide_branch_dropdown(){
-    $("#branch_dropdown").hide();
+    hide($("#branch_dropdown"));
     reset_branch_dropdown();
 }
 
 function show_company_dropdown(){
-    $("#company_dropdown").show();
+    show($("#company_dropdown"));
 }
 
 function show_branch_dropdown(){
-    $("#branch_header").show();
-    $("#branch_dropdown").show();
+    show($("#branch_header"));
+    show($("#branch_dropdown"));
 }
 
 function show_company_form() {
-    $("#company_form").show();
+    show($("#company_form"));
     updateQueryString("show_company","1");
     show_branch_form();
     hide_branch_dropdown();
-    $("#show_branch_dropdown").hide()
+    hide($("#show_branch_dropdown"));
 }
 
 function show_branch_form() {
-    $("#branch_header").show();
-    $("#branch_form").show();
+    show($("#branch_header"));
+    show($("#branch_form"));
     updateQueryString("show_branch","1");
 
     // If there are no branches to choose from, hide the option to show the dropdown
-    company_id = $("#id_branch-company").val();
+    const company_id = $("#id_branch-company").val();
     const branches = get_branch_ids(company_id);
 
     if (branches.length === 0) {
-        $("#show_branch_dropdown").hide();
+        hide($("#show_branch_dropdown"));
     } else {
-        $("#show_branch_dropdown").show();
+        show($("#show_branch_dropdown"));
     }
 }
 
 function hide_company_form() {
-    $("#company_form").hide();
-    $("#branch_header").hide();
+    hide($("#company_form"));
+    hide($("#branch_header"));
     updateQueryString("show_company","0");
     hide_branch_form();
     hide_branch_dropdown();
 }
 
 function hide_branch_form() {
-    $("#branch_form").hide();
+    hide($("#branch_form"));
     updateQueryString("show_branch","0");
 }
 
@@ -177,9 +185,9 @@ $("#show_company_form").click(function() {
     hide_company_dropdown();
 });
 
-var show_company = getUrlParameter("show_company");
-var show_branch = getUrlParameter("show_branch");
-company_id = $("#id_branch-company").val();
+const show_company = getUrlParameter("show_company");
+const show_branch = getUrlParameter("show_branch");
+let company_id = $("#id_branch-company").val();
 
 if (company_id>0){
     show_branch_dropdown();
@@ -209,15 +217,14 @@ function get_branch_ids(company_id) {
 function update_branch_dropdown(){
   company_id = $("#id_branch-company").val();
   const branches_to_show_in_dropdown = get_branch_ids(company_id);
-
-  selected_branch_id = $("#id_user-branch").val();
+  const selected_branch_id = $("#id_user-branch").val();
 
   reset_branch_dropdown();
   hide_branch_dropdown_options();
 
   $.each(branches_to_show_in_dropdown, function( index, value ) {
-      $("#id_user-branch").children("option[value^=" + value + "]").show();
-      if (value == selected_branch_id){
+      show($("#id_user-branch").children("option[value^=" + value + "]"));
+      if (value === selected_branch_id){
           $("#id_user-branch").val(selected_branch_id);
       }
   });
