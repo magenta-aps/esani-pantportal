@@ -192,6 +192,22 @@ https://scanapp.org/html5-qrcode-docs/docs/intro
 https://blog.minhazav.dev/research/html5-qrcode
 -->
 <script nonce="{{ request.csp_nonce }}">
+function hide($el) {
+    $el.addClass("d-none");
+}
+
+function show($el) {
+    $el.removeClass("d-none");
+}
+
+function toggle($el, state) {
+    if (state) {
+        show($el);
+    } else {
+        hide($el);
+    }
+}
+
 const lookup = function() {
     const barcode = $("#barcode").val();
     process_barcode(barcode);
@@ -200,34 +216,34 @@ const lookup = function() {
 var total_pant = 0;
 
 function showDetails() {
-    $("#resultsTable").show();
-    $("#show_details_button_div").hide();
-    $("#hide_details_button_div").show();
+    show($("#resultsTable"));
+    hide($("#show_details_button_div"));
+    show($("#hide_details_button_div"));
 }
 
 function hideDetails() {
-    $("#resultsTable").hide();
-    $("#show_details_button_div").show();
-    $("#hide_details_button_div").hide();
+    hide($("#resultsTable"));
+    show($("#show_details_button_div"));
+    hide($("#hide_details_button_div"));
 }
 
 function showResult() {
     html5QrcodeScanner.clear();
-    $("#scanner").hide();
-    $("#back_button_div").show();
-    $("#results_div").hide();
-    }
+    hide($("#scanner"));
+    show($("#back_button_div"));
+    hide($("#results_div"));
+}
 
 function showScanner() {
-    $("#scanner").show();
+    show($("#scanner"));
     html5QrcodeScanner.render(onScanSuccess);
-    $("#back_button_div").hide();
-    $("#failure").hide();
-    $("#success").hide();
-    $("#results_div").hide();
+    hide($("#back_button_div"));
+    hide($("#failure"));
+    hide($("#success"));
+    hide($("#results_div"));
     $("#barcode").val("");
-    $("#show_total_button_div").hide();
-    }
+    hide($("#show_total_button_div"));
+}
 
 function reset() {
     showScanner();
@@ -236,22 +252,21 @@ function reset() {
 }
 
 function showTotal() {
-    $("#failure").hide();
-    $("#success").hide();
-    $("#results_div").show();
-    $("#show_total_button_div").hide();
-    $("#back_button_div").hide();
-    $("#hide_details_button_div").hide();
+    hide($("#failure"));
+    hide($("#success"));
+    show($("#results_div"));
+    hide($("#show_total_button_div"));
+    hide($("#back_button_div"));
+    hide($("#hide_details_button_div"));
 }
-
 
 function process_barcode(barcode) {
     showResult();
     const barcodes = JSON.parse($("#barcodes").text());
 
     const found = (barcode in barcodes);
-    $("#success").toggle(found);
-    $("#failure").toggle(!found);
+    toggle($("#success"), found);
+    toggle($("#failure"), !found);
 
     let pant = 0;
     let product_name = "-";
@@ -278,9 +293,9 @@ function process_barcode(barcode) {
     $("#total_pant_header").text(total_pant + " kr.");
 
     if (number_of_rows > 1) {
-        $("#show_total_button_div").show();
+        show($("#show_total_button_div"));
     } else {
-        $("#show_total_button_div").hide();
+        hide($("#show_total_button_div"));
     }
 }
 
