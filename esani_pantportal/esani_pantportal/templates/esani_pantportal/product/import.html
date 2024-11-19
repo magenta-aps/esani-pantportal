@@ -253,13 +253,13 @@ SPDX-License-Identifier: MPL-2.0
     function toggle_csv_excel_inputs() {
         const filename = $(this).val().toLowerCase();
         if (filename.endsWith(".xls") || filename.endsWith(".xlsx")) {
-            $("#sep_row").hide();
-            $("#sheet_name_row").show();
+            $("#sep_row").addClass("d-none");
+            $("#sheet_name_row").removeClass("d-none");
         }
 
         if (filename.endsWith(".csv") || filename.endsWith(".txt")) {
-            $("#sep_row").show();
-            $("#sheet_name_row").hide();
+            $("#sep_row").removeClass("d-none");
+            $("#sheet_name_row").addClass("d-none");
         }
     }
 
