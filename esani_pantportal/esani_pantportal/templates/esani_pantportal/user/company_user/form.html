@@ -75,22 +75,30 @@ SPDX-License-Identifier: MPL-2.0
 </div>
 
 <script nonce="{{ request.csp_nonce }}">
+function hide($el) {
+    $el.addClass("d-none");
+}
+
+function show($el) {
+    $el.removeClass("d-none");
+}
+
 function reset_company_dropdown() {
     $("#id_user-company option[value='']").prop("selected", "selected");
 }
 function hide_company_dropdown(){
-   $("#company_dropdown").hide();
+   hide($("#company_dropdown"));
    reset_company_dropdown();
 }
 function show_company_dropdown(){
-    $("#company_dropdown").show();
+    show($("#company_dropdown"));
 }
 function show_company_form() {
-    $("#company_form").show();
+    show($("#company_form"));
     updateQueryString("show_company","1");
 }
 function hide_company_form() {
-    $("#company_form").hide();
+    hide($("#company_form"));
     updateQueryString("show_company","0");
 }
 
@@ -103,8 +111,8 @@ $("#show_company_form").click(function() {
     hide_company_dropdown();
 });
 
-var show_company = getUrlParameter("show_company");
-if (show_company == "1"){
+const show_company = getUrlParameter("show_company");
+if (show_company === "1"){
     show_company_form();
     hide_company_dropdown();
 }
