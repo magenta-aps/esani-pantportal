@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: MPL-2.0
 
 services:
-  pantportal:
+
+  pantportal-web:
     user: "1000:1000" # Override in docker-compose.override.yml if local user is different
-    container_name: esani_pantportal
+    container_name: pantportal-web
     image: esani-pantportal:latest
     build:
       context: .
@@ -20,18 +21,17 @@ services:
       - ./data/er:/app/esani_pantportal/static/doc:ro
       - ./data/startup_flags:/tmp
       - ./data/log/pantportal.log:/var/log/pantportal.log:rw
-
     depends_on:
       - pantportal-db
     environment:
       - MAKE_MIGRATIONS=true
       - MIGRATE=true
       - TEST=false
-      - SKIP_IDP_METADATA=true
     ports:
-      - "8000:8000"
+      - "8100:8000"
     networks:
-      - postgres
+      - default
+      - database
       - sftp
     command: gunicorn -b 0.0.0.0:8000 project.wsgi:application --reload -w 1 --access-logfile - --error-logfile - --capture-output # reload on code changes
 
@@ -43,7 +43,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
-      - postgres
+      - database
 
   pantportal-cron:
     user: "1000:1000"  # Override in docker-compose.override.yml if your local user is different
@@ -61,7 +61,7 @@ services:
       - ./data/log/cron.log:/var/log/pantportal.log:rw
       - ./data/log/:/var/log:rw
     networks:
-      - postgres
+      - database
       - sftp
     entrypoint: [ ]
     command: [ "supercronic", "/crontab" ]
@@ -73,20 +73,19 @@ services:
         - ./data/deposit_payouts:/home/sftp_tomra/deposit_payouts
         - ./dev-environment/users.conf:/etc/sftp/users.conf
     ports:
-        - "2222:22"
+        - "8101:22"
     networks:
       - sftp
 
-  mailhog:
-    container_name: mailhog
+  pantportal-mailhog:
+    container_name: pantportal-mailhog
     image: mailhog/mailhog
     logging:
       driver: 'none' # Disable saving logs
     ports:
-      - "8025:8025" # Web UI
-      - "1025:1025" # SMTP port
+      - "8102:8025" # Web UI
     networks:
-      - postgres
+      - default
 
   pantportal-er:
     user: "1000:1000"  # Override in docker-compose.override.yml if your local user is different
@@ -103,13 +102,12 @@ services:
       - ./data/er:/doc
       - ./data/startup_flags:/tmp
     networks:
-      - postgres
+      - database
 
 volumes:
   postgres-data:
 
 networks:
-  postgres:
-    name: postgres
+  default:
+  database:
   sftp:
-    name: sftp
