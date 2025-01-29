@@ -40,8 +40,10 @@ if [ "$DUMMYDATA" = true ]; then
   python3 manage.py create_dummy_qrbags
   python3 manage.py create_dummy_deposit_payout_items
 fi
+echo 'Creating QR status'
 python3 manage.py create_qr_status
 
+echo 'Creating cache table'
 python manage.py createcachetable
 if [ "$TEST" = true ]; then
   echo 'running tests'
@@ -49,10 +51,13 @@ if [ "$TEST" = true ]; then
 fi
 
 # Signal that the database is now ready
+
+echo 'Database is ready'
 echo true > /tmp/DATABASE_READY
 
 # Wait for documentation to finish generating before collecting static files
 while [[ $DOCUMENTATION_READY != true ]] ; do
+  echo "waiting for doc"
   DOCUMENTATION_READY=`cat /tmp/DOCUMENTATION_READY`
   sleep 1
 done
