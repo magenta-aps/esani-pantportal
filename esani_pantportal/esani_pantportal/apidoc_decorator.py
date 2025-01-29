@@ -1,12 +1,9 @@
 # SPDX-FileCopyrightText: 2025 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
-from functools import partial
+import re
 
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
-from django.urls import reverse
-from ninja.main import NinjaAPI
 
 
 def swagger_csp(view_func=None):
@@ -15,26 +12,19 @@ def swagger_csp(view_func=None):
 
     if (
         view_func.func.__module__ == "ninja.openapi.views"
-        and view_func.func.__name__ == "openapi_view"
+        and view_func.func.__name__ in ("openapi_view", "openapi_view_cdn")
     ):
         # If the called function is the one that renders the swagger html
-        def openapi_view_csp(request: HttpRequest, api: "NinjaAPI") -> HttpResponse:
-            # Return a copy of the template that
-            # has CSP attributes in the correct places
-            view_tpl = "../templates/ninja/swagger_cdn_csp.html"
-            context = {
-                "api": api,
-                "openapi_json_url": reverse(f"{api.urls_namespace}:openapi-json"),
-            }
-            return render(request, view_tpl, context)
+        def apply_nonce(request: HttpRequest) -> HttpResponse:
+            # Update the response content to include nonces
+            response = view_func(request)
+            nonce = request.csp_nonce  # type: ignore
+            content = response.content.decode("utf-8")
+            content = re.sub("<script", f'<script nonce="{nonce}"', content)
+            content = re.sub("<link", f'<link nonce="{nonce}"', content)
+            response.content = content.encode("utf-8")
+            return response
 
-        # Insert the replacement with a closure containing
-        # the original function arguments
-        return partial(
-            openapi_view_csp,
-            *view_func.args,
-            **view_func.keywords,
-        )
-
+        return apply_nonce
     else:
         return view_func

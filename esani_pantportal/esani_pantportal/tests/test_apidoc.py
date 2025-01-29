@@ -11,8 +11,9 @@ class ApiDocTest(TestCase):
 
     def test_nonce(self):
         response = self.client.get("/api/docs")
+        print(response.headers["Content-Security-Policy"])
         nonce = re.search(
-            r"'(nonce-[\w+=]+)'",
+            r"'nonce-([\w+=/]+)'",
             response.headers["Content-Security-Policy"],
         ).group(1)
         self.assertIsNotNone(nonce)
