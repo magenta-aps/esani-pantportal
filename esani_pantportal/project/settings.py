@@ -403,10 +403,15 @@ PROMETHEUS_PUSHGATEWAY_HOST = os.environ.get(
 CSP_DEFAULT_SRC = (
     "'self'",
     "localhost:8000" if DEBUG else HOST_DOMAIN,
+    "cdn.jsdelivr.net",
 )
 CSP_SCRIPT_SRC_ATTR = (
     "'self'",
     "localhost:8000" if DEBUG else HOST_DOMAIN,
 )
 CSP_STYLE_SRC_ATTR = ("'self'",)
-CSP_IMG_SRC = ("'self'", "data:")
+CSP_IMG_SRC = (
+    "'self'",
+    "data:",
+    "django-ninja.rest-framework.com",
+)
