@@ -11,7 +11,10 @@ class ApiDocTest(TestCase):
 
     def test_nonce(self):
         response = self.client.get("/api/docs")
-        nonce = re.search(r"'(nonce-[\w+=]+)'", response.headers["Content-Security-Policy"]).group(1)
+        nonce = re.search(
+            r"'(nonce-[\w+=]+)'",
+            response.headers["Content-Security-Policy"],
+        ).group(1)
         self.assertIsNotNone(nonce)
         dom = BeautifulSoup(response.content, "html.parser")
         for script_tag in dom.find_all("script"):

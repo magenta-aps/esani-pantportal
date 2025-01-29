@@ -19,7 +19,8 @@ def swagger_csp(view_func=None):
     ):
         # If the called function is the one that renders the swagger html
         def openapi_view_csp(request: HttpRequest, api: "NinjaAPI") -> HttpResponse:
-            # Return a copy of the template that has CSP attributes in the correct places
+            # Return a copy of the template that
+            # has CSP attributes in the correct places
             view_tpl = "../templates/ninja/swagger_cdn_csp.html"
             context = {
                 "api": api,
@@ -27,7 +28,8 @@ def swagger_csp(view_func=None):
             }
             return render(request, view_tpl, context)
 
-        # Insert the replacement with a closure containing the original function arguments
+        # Insert the replacement with a closure containing
+        # the original function arguments
         return partial(
             openapi_view_csp,
             *view_func.args,
