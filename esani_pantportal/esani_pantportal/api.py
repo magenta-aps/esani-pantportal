@@ -114,6 +114,8 @@ class QRBagOut(ModelSchema):
             return obj.kiosk.name
         elif obj.company_branch:
             return obj.company_branch.name
+        else:
+            return ""
 
 
 class QRBagHistoryOut(QRBagOut):

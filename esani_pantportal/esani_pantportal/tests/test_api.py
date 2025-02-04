@@ -353,6 +353,19 @@ class QRBagTest(LoginMixin, TestCase):
         self.assertEqual(h3["status"], "afsluttet")
         self.assertEqual(h3["owner"], self.user.username)
 
+    def test_qr_bag_response_allows_empty_company(self):
+        # Arrange
+        owner = self.login()
+        # Arrange: create QRBag where `company_branch` and `kiosk` are both None
+        qrbag, _ = QRBag.objects.get_or_create(qr="1234", owner=owner)
+        # Act
+        response = self.client.get(f"/api/qrbag/{qrbag.qr}", headers=self.headers)
+        # Assert
+        self.assertEqual(response.status_code, 200)
+        # Assert: the response is valid JSON, and the `company` key is an empty string
+        doc = response.json()
+        self.assertEqual(doc["company"], "")
+
 
 class QRStatusTest(TestCase):
     @classmethod
