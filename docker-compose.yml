@@ -104,6 +104,21 @@ services:
     networks:
       - database
 
+  pantportal-doc:
+    user: "1000:1000"
+    container_name: pantportal-doc
+    image: halverneus/static-file-server
+    depends_on:
+      - pantportal-er
+    environment:
+      - DEBUG=true
+    volumes:
+      - ./data/er:/web
+    ports:
+      - "8103:8080"
+    networks:
+      - default
+
 volumes:
   postgres-data:
 
