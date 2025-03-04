@@ -21,9 +21,4 @@ if [[ "${GENERATE_DB_DOCUMENTATION,,}" = true ]]; then
 
   java -jar /usr/local/share/schemaspy.jar -dp /usr/local/share/postgresql.jar -t pgsql -db $POSTGRES_DB -host $POSTGRES_HOST -u $POSTGRES_USER -p $POSTGRES_PASSWORD -o /doc
 
-  # Signal that the documentation is now ready
-  echo true > /tmp/DOCUMENTATION_READY
-
-  exec "$@"
-
 fi

@@ -55,13 +55,6 @@ fi
 echo 'Database is ready'
 echo true > /tmp/DATABASE_READY
 
-# Wait for documentation to finish generating before collecting static files
-while [[ $DOCUMENTATION_READY != true ]] ; do
-  echo "waiting for doc"
-  DOCUMENTATION_READY=`cat /tmp/DOCUMENTATION_READY`
-  sleep 1
-done
-
 echo "collecting static files"
 python3 manage.py collectstatic --no-input --clear
 
