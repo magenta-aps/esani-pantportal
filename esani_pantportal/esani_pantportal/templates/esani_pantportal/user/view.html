@@ -74,6 +74,32 @@ SPDX-License-Identifier: MPL-2.0
                             {% endif %}
                         </td>
                     </tr>
+                    {# Only ESANI admins can edit `fasttrack_enabled`, and only for ESANI users #}
+                    {% if object.user_type == 1 and user.user_type == 1 %}
+                    <tr>
+                        <th class="col-6">{% translate "Fasttrack" %}</th>
+                        <td class="col-6">
+                            {% with field=form.fasttrack_enabled %}
+                            {% with field_name=form.fasttrack_enabled.name %}
+                            <div id="show_{{ field_name}}_div">
+                                {{ object|has_fasttrack_enabled|yesno:_("Ja,Nej") }}
+                                {% if can_edit %}
+                                <a class="icon-link d-inline-block" id="edit_{{ field_name }}_button">
+                                    {% if show_pencil|default_if_none:True and user.is_admin %}
+                                    {% bs_icon "pencil-square" %}
+                                    {% endif %}
+                                </a>
+                                {% endif %}
+                            </div>
+                            <div id="edit_{{ field_name }}_div" class="row mx-0 csp-d-none">
+                                {{ field }}
+                            </div>
+                            {{ field.errors }}
+                            {% endwith %}
+                            {% endwith %}
+                        </td>
+                    </tr>
+                    {% endif %}
                     </tbody>
                 </table>
             <div id="two_factor_confirmation" class="card my-3 d-none">
