@@ -969,6 +969,14 @@ class EsaniUser(User):
         verbose_name_plural = _("Esani brugere")
         abstract = False
 
+    fasttrack_enabled = models.BooleanField(
+        default=False,
+        verbose_name=_("Fasttrack"),
+        help_text=_(
+            "Vælges, hvis denne bruger har adgang til fasttrack i Utertitsisa-app'en"
+        ),
+    )
+
     def save(self, *args, **kwargs):
         self.user_type = ESANI_USER
         self.approved = True
