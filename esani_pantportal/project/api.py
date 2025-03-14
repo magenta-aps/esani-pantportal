@@ -13,7 +13,6 @@ from project.util import ORJSONRenderer
 
 from esani_pantportal.api import ApprovedProductsAPI, QRBagAPI, QRStatusAPI
 from esani_pantportal.apidoc_decorator import swagger_csp
-from esani_pantportal.models import EsaniUser
 
 logger = logging.getLogger(__name__)
 
@@ -30,13 +29,7 @@ class CustomTokenObtainPairInputSchema(TokenObtainPairInputSchema):
     @classmethod
     def get_token(cls, user: AbstractUser) -> dict:
         token = super().get_token(user)
-        try:
-            esani_user = EsaniUser.objects.get(username=user.username)
-        except EsaniUser.DoesNotExist:
-            logger.info("no EsaniUser for username=%r", user.username)
-            token["fasttrack_enabled"] = False
-        else:
-            token["fasttrack_enabled"] = esani_user.fasttrack_enabled
+        token["fasttrack_enabled"] = user.fasttrack_enabled
         return token
 
 

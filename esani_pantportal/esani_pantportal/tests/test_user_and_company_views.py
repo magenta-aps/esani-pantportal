@@ -24,10 +24,7 @@ from esani_pantportal.models import (
     ReverseVendingMachine,
     User,
 )
-from esani_pantportal.templatetags.pant_tags import (
-    has_fasttrack_enabled,
-    has_two_factor,
-)
+from esani_pantportal.templatetags.pant_tags import has_two_factor
 
 from .conftest import LoginMixin
 
@@ -391,7 +388,7 @@ class EsaniAdminUserUpdateViewTest(BaseUserTest):
         self.client.login(username="esani_admin", password="12345")
 
         # Initial value is False
-        self.assertFalse(has_fasttrack_enabled(self.esani_admin))
+        self.assertFalse(self.esani_admin.fasttrack_enabled)
 
         # Change value using form POST
         response = self.client.get(self.esani_admin_url)
@@ -401,7 +398,7 @@ class EsaniAdminUserUpdateViewTest(BaseUserTest):
 
         # Assert value is persisted
         self.esani_admin.refresh_from_db()
-        self.assertFalse(has_two_factor(self.esani_admin))
+        self.assertTrue(self.esani_admin.fasttrack_enabled)
 
 
 class CompanyAdminUserUpdateViewTest(BaseUserTest):

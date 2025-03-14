@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import datetime
-import logging
 import os
 from typing import Any
 
@@ -57,8 +56,6 @@ from esani_pantportal.util import (
     read_csv,
     read_excel,
 )
-
-logger = logging.getLogger(__name__)
 
 EMPTY_CHOICE: tuple[Any, str] = (None, "-" * 10)
 
@@ -189,13 +186,7 @@ class UserUpdateForm(forms.ModelForm, BootstrapForm):
     )
 
     def save(self, commit=True):
-        try:
-            esani_user = EsaniUser.objects.get(pk=self.instance.pk)
-        except EsaniUser.DoesNotExist:
-            logger.info("no EsaniUser for pk=%r", self.instance.pk)
-        else:
-            esani_user.fasttrack_enabled = self.cleaned_data["fasttrack_enabled"]
-            esani_user.save(update_fields=["fasttrack_enabled"])
+        self.instance.fasttrack_enabled = self.cleaned_data["fasttrack_enabled"]
         return super().save(commit=commit)
 
 

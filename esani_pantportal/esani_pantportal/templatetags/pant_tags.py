@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
-import logging
 from urllib.parse import quote
 
 from django.conf import settings
@@ -17,11 +16,8 @@ from esani_pantportal.models import (
     PRODUCT_MATERIAL_CHOICES,
     PRODUCT_SHAPE_CHOICES,
     USER_TYPE_CHOICES,
-    EsaniUser,
 )
 from esani_pantportal.util import add_parameters_to_url
-
-logger = logging.getLogger(__name__)
 
 
 @register.filter
@@ -139,14 +135,3 @@ def has_two_factor(user):
 @register.filter
 def get(dictionary, key):
     return dictionary[key]
-
-
-@register.filter
-def has_fasttrack_enabled(user) -> bool:
-    try:
-        esani_user = EsaniUser.objects.get(pk=user.pk)
-    except EsaniUser.DoesNotExist:
-        logger.info("no EsaniUser for pk=%r", user.pk)
-        return False
-    else:
-        return esani_user.fasttrack_enabled
