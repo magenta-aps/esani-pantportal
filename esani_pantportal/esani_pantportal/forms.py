@@ -179,6 +179,16 @@ class UserUpdateForm(forms.ModelForm, BootstrapForm):
 
     disable_two_factor = forms.BooleanField(initial=False, required=False)
 
+    fasttrack_enabled = forms.ChoiceField(
+        initial=False,
+        required=False,
+        choices=((True, _("Ja")), (False, _("Nej"))),
+    )
+
+    def save(self, commit=True):
+        self.instance.fasttrack_enabled = self.cleaned_data["fasttrack_enabled"]
+        return super().save(commit=commit)
+
 
 class ReverseVendingMachineRegisterForm(forms.ModelForm, BootstrapForm):
     def __init__(self, *args, kiosks=None, branches=None, esani_admin=True, **kwargs):
