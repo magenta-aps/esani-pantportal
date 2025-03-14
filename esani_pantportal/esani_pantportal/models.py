@@ -921,6 +921,14 @@ class User(
         help_text=_("Brugerens emailadresse"),
     )
 
+    fasttrack_enabled = models.BooleanField(
+        default=False,
+        verbose_name=_("Fasttrack"),
+        help_text=_(
+            "Vælges, hvis denne bruger har adgang til fasttrack i Utertitsisa-app'en"
+        ),
+    )
+
     @cached_property
     def user_profile(self):
         if self.user_type == BRANCH_USER:

@@ -74,6 +74,10 @@ SPDX-License-Identifier: MPL-2.0
                             {% endif %}
                         </td>
                     </tr>
+                    {# Only ESANI admins can edit `fasttrack_enabled` #}
+                    {% if user.user_type == 1 %}
+                        {% include "../edit_field.html" with field_name="fasttrack_enabled" field=form.fasttrack_enabled %}
+                    {% endif %}
                     </tbody>
                 </table>
             <div id="two_factor_confirmation" class="card my-3 d-none">

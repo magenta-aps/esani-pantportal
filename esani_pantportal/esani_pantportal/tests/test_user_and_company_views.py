@@ -384,6 +384,22 @@ class EsaniAdminUserUpdateViewTest(BaseUserTest):
         self.esani_admin.refresh_from_db()
         self.assertFalse(has_two_factor(self.esani_admin))
 
+    def test_change_fasttrack_enabled(self):
+        self.client.login(username="esani_admin", password="12345")
+
+        # Initial value is False
+        self.assertFalse(self.esani_admin.fasttrack_enabled)
+
+        # Change value using form POST
+        response = self.client.get(self.esani_admin_url)
+        form_data = self.make_form_data(response.context_data["form"])
+        form_data["fasttrack_enabled"] = "True"
+        self.client.post(self.esani_admin_url, form_data)
+
+        # Assert value is persisted
+        self.esani_admin.refresh_from_db()
+        self.assertTrue(self.esani_admin.fasttrack_enabled)
+
 
 class CompanyAdminUserUpdateViewTest(BaseUserTest):
     def setUp(self):
