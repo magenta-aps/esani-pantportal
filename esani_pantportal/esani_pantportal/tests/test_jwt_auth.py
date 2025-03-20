@@ -14,7 +14,7 @@ class TestCustomJWTController(LoginMixin, TestCase):
         super().setUp()
         self.api_client = TestClient(CustomJWTController)
 
-    def test_esani_user_can_obtain_pair(self):
+    def test_token_includes_fasttrack_enabled(self):
         # Arrange: use the `login` method to ensure that an ESANI user exists beforehand
         esani_user = self.login("EsaniAdmins")
         # Arrange
@@ -24,7 +24,7 @@ class TestCustomJWTController(LoginMixin, TestCase):
                     esani_user.fasttrack_enabled = True
                     esani_user.save(update_fields=["fasttrack_enabled"])
                 # Act: obtain pair
-                response = self.api_client.post(
+                pair_response = self.api_client.post(
                     "/pair",
                     json={
                         "username": esani_user.username,
@@ -32,7 +32,18 @@ class TestCustomJWTController(LoginMixin, TestCase):
                     },
                     content_type="application/json",
                 )
-                # Assert
+                # Assert: custom field is present and has expected value
                 self.assertEqual(
-                    response.json()["fasttrack_enabled"], expected_fasttrack_value
+                    pair_response.json()["fasttrack_enabled"], expected_fasttrack_value
+                )
+                # Act: refresh token
+                refresh_response = self.api_client.post(
+                    "/refresh",
+                    json={"refresh": pair_response.json()["refresh"]},
+                    content_type="application/json",
+                )
+                # Assert: custom field is present and has expected value
+                self.assertEqual(
+                    refresh_response.json()["fasttrack_enabled"],
+                    expected_fasttrack_value,
                 )
