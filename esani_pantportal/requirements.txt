@@ -1,5 +1,5 @@
-django==4.2.11
-gunicorn==22.0.0
+django==4.2.20
+gunicorn==23.0.0
 psycopg2==2.9.3
 coverage==7.3.0
 django-extensions==3.2.3
@@ -7,7 +7,7 @@ pydotplus==2.0.2
 django-ninja==0.22.2
 django-ninja-extra==0.19.1
 django-ninja-jwt==5.2.5
-orjson==3.9.1
+orjson==3.9.15
 six==1.16.0
 beautifulsoup4==4.12.2
 humanize==4.7.0
@@ -17,14 +17,14 @@ xlsxwriter==3.1.2
 django-bootstrap-icons==0.8.6
 django-betterforms==2.0.0
 whitenoise==6.0.0
-paramiko==3.3.1
+paramiko==3.4.0
 django-simple-history==3.4.0
 django-debug-toolbar==3.6.0
 django-phonenumber-field[phonenumberslite]==7.2.0
 babel==2.10.3
 django-simple-captcha==0.6.0
 tblib==3.0.0
-requests==2.31.0
+requests==2.32.0
 pydantic==1.10.13
 datamodel-code-generator==0.25.2
 devtools==0.12.2
