@@ -39,7 +39,12 @@ include:
       - "/gitlab-ci-templates/common/docker-release-meta.v1.yml"
       - "/gitlab-ci-templates/common/config-updater-meta.v1.yml"
       - "/gitlab-ci-templates/common/conventional-commits-meta.v1.yml"
-      - "/gitlab-ci-templates/common/conventional-commits-changelog-meta.v1.yml"
+      # - "/gitlab-ci-templates/common/conventional-commits-changelog-meta.v1.yml"
+
+  - project: labs/salt-automation
+    ref: 64515_fix_changelogs
+    file:
+      - gitlab-ci-templates/common/conventional-commits-changelog-meta.v1.yml
 
 .releaserc:
   before_script:
@@ -246,7 +251,6 @@ Release Generate changelog:
 
 Docs Export changelog:
   extends:
-    - .rules:semver-all
     - .docs:export-changelog
   variables:
     CHANGELOG_EXTRA_FLAGS: "--merge-prerelease"
