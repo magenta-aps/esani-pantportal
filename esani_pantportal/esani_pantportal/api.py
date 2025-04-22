@@ -60,7 +60,7 @@ class ApprovedProductsFilterSchema(FilterSchema):
     tags=["Produkter"],
     permissions=[permissions.IsAuthenticatedOrReadOnly],
 )
-class ApprovedProductsAPI:  # type: ignore [call-arg]
+class ApprovedProductsAPI:  # type: ignore[call-arg]
     @route.get(
         "",
         response=NinjaPaginationResponseSchema[ApprovedProductsOut],
@@ -133,7 +133,7 @@ class QRBagHistoryOut(QRBagOut):
         DjangoPermission("esani_pantportal", "qrbag"),
     ],
 )
-class QRBagAPI:  # type: ignore [call-arg]
+class QRBagAPI:  # type: ignore[call-arg]
     @route.get(
         "/{qr}",
         auth=JWTAuth(),
@@ -174,8 +174,8 @@ class QRBagAPI:  # type: ignore [call-arg]
                 owner=user,
                 company_branch=company_branch,
                 kiosk=kiosk,
-                active=payload.active,
-                status=payload.status,
+                active=payload.active,  # type: ignore[attr-defined]
+                status=payload.status,  # type: ignore[attr-defined]
             )
             return 201, obj
         except IntegrityError:
@@ -234,7 +234,7 @@ class QRStatusOut(ModelSchema):
         permissions.AllowAny,
     ],
 )
-class QRStatusAPI:  # type: ignore [call-arg]
+class QRStatusAPI:  # type: ignore[call-arg]
     @route.get("/", response=list[QRStatusOut])
     def list(self):
         return QRStatus.objects.all()
