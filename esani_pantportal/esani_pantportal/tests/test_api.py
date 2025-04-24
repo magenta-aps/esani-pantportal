@@ -107,7 +107,7 @@ class QRBagTest(LoginMixin, TestCase):
             content_type="application/json",
             headers=self.headers,
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         data = response.json()
         self.assertEqual(data["qr"], "00000000005001d199")
         self.assertEqual(data["active"], True)
@@ -140,7 +140,7 @@ class QRBagTest(LoginMixin, TestCase):
             content_type="application/json",
             headers=self.headers,
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
 
     @patch("esani_pantportal.models.QRCodeGenerator.qr_code_exists", lambda qr: False)
     def test_qr_doesnt_exist(self):
@@ -163,7 +163,7 @@ class QRBagTest(LoginMixin, TestCase):
             content_type="application/json",
             headers=self.headers,
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         data = response.json()
         item = QRBag.objects.get(qr=code)
         self.assertEqual(data["qr"], code)
