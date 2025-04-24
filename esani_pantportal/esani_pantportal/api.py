@@ -177,7 +177,7 @@ class QRBagAPI:  # type: ignore[call-arg]
                 active=payload.active,  # type: ignore[attr-defined]
                 status=payload.status,  # type: ignore[attr-defined]
             )
-            return 201, obj
+            return 201, obj  # signal that object was created
         except IntegrityError:
             return 400, QRBagError(error=f"qr {qr} already exists")
 
@@ -187,9 +187,9 @@ class QRBagAPI:  # type: ignore[call-arg]
         url_name="qrbag_update",
         summary="Opdatér QR-pose",
         response={
+            200: QRBagOut,  # Meaning: an existing QR bag was updated
             201: QRBagOut,  # Meaning: a new QR bag was created
             400: QRBagError,
-            409: QRBagOut,  # Meaning: an existing QR bag was updated
         },
     )
     def update(self, qr: str, payload: QRBagIn):
@@ -203,7 +203,7 @@ class QRBagAPI:  # type: ignore[call-arg]
         user = self.context.request.user  # type: ignore
         item.owner = user
         item.save()
-        return 409, item
+        return 200, item  # signal that object was updated
 
     @route.get(
         "/{qr}/history",

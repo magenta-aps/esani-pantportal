@@ -181,7 +181,7 @@ class QRBagTest(LoginMixin, TestCase):
             content_type="application/json",
             headers=self.headers,
         )
-        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.status_code, 200)
         data = response.json()
         item.refresh_from_db()
         self.assertEqual(data["qr"], code)
@@ -204,7 +204,7 @@ class QRBagTest(LoginMixin, TestCase):
             content_type="application/json",
             headers=self.headers,
         )
-        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.status_code, 200)
         data = response.json()
         item.refresh_from_db()
         self.assertEqual(data["qr"], code)
