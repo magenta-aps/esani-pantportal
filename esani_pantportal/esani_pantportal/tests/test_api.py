@@ -229,6 +229,47 @@ class QRBagTest(LoginMixin, TestCase):
         self.assertEqual(item.status, "afsluttet")
         self.assertEqual(item.owner, self.user.user_ptr)
 
+    @patch("esani_pantportal.models.QRCodeGenerator.qr_code_exists", mock_qr_exists)
+    def test_update_indicates_change(self):
+        code = "00000000005001d200"
+
+        # Create initial object
+        response = self.client.patch(
+            f"/api/qrbag/{code}",
+            data=json.dumps({"status": "oprettet"}),
+            content_type="application/json",
+            headers=self.headers,
+        )
+        self.assertEqual(response.status_code, 201)
+
+        # Update object (no actual change)
+        response = self.client.patch(
+            f"/api/qrbag/{code}",
+            data=json.dumps({"status": "oprettet"}),
+            content_type="application/json",
+            headers=self.headers,
+        )
+        self.assertEqual(response.status_code, 204)
+
+        # Update object (actual change, ordinary attributes)
+        response = self.client.patch(
+            f"/api/qrbag/{code}",
+            data=json.dumps({"status": "ændret"}),
+            content_type="application/json",
+            headers=self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # Update object (actual change, owner attribute)
+        self.login("CompanyUsers")
+        response = self.client.patch(
+            f"/api/qrbag/{code}",
+            data=json.dumps({"status": "ændret"}),
+            content_type="application/json",
+            headers=self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+
     def test_history(self):
         code = "00000000005001d201"
 
