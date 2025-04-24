@@ -1,13 +1,12 @@
 # SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
-import json
 from datetime import datetime
 
 from django.db import IntegrityError
-from django.http import Http404, HttpRequest, HttpResponseBadRequest
+from django.http import Http404, HttpRequest
 from django.shortcuts import get_object_or_404
-from ninja import FilterSchema, ModelSchema, Query
+from ninja import FilterSchema, ModelSchema, Query, Schema
 from ninja_extra import ControllerBase, api_controller, permissions, route
 from ninja_extra.pagination import paginate
 from ninja_extra.schemas import NinjaPaginationResponseSchema
@@ -61,7 +60,7 @@ class ApprovedProductsFilterSchema(FilterSchema):
     tags=["Produkter"],
     permissions=[permissions.IsAuthenticatedOrReadOnly],
 )
-class ApprovedProductsAPI:  # type: ignore [call-arg]
+class ApprovedProductsAPI:  # type: ignore[call-arg]
     @route.get(
         "",
         response=NinjaPaginationResponseSchema[ApprovedProductsOut],
@@ -89,6 +88,10 @@ class QRBagIn(ModelSchema):
             "status",
         ]
         model_fields_optional = ["active", "status"]
+
+
+class QRBagError(Schema):
+    error: str
 
 
 class QRBagOut(ModelSchema):
@@ -130,7 +133,7 @@ class QRBagHistoryOut(QRBagOut):
         DjangoPermission("esani_pantportal", "qrbag"),
     ],
 )
-class QRBagAPI:  # type: ignore [call-arg]
+class QRBagAPI:  # type: ignore[call-arg]
     @route.get(
         "/{qr}",
         auth=JWTAuth(),
@@ -149,7 +152,10 @@ class QRBagAPI:  # type: ignore [call-arg]
         auth=JWTAuth(),
         url_name="qrbag_create",
         summary="Opret QR-pose",
-        response=QRBagOut,
+        response={
+            201: QRBagOut,  # Meaning: a new QR bag was created
+            400: QRBagError,
+        },
     )
     def create(self, qr: str, payload: QRBagIn):
         try:
@@ -161,41 +167,43 @@ class QRBagAPI:  # type: ignore [call-arg]
             found = QRCodeGenerator.qr_code_exists(qr)
 
             if not found:
-                return HttpResponseBadRequest(
-                    json.dumps({"error": f"invalid QR code {qr}"})
-                )
+                return 400, QRBagError(error=f"invalid QR code {qr}")
 
-            return QRBag.objects.create(
-                **payload.dict(),
+            obj = QRBag.objects.create(
                 qr=qr,
                 owner=user,
                 company_branch=company_branch,
                 kiosk=kiosk,
+                active=payload.active,  # type: ignore[attr-defined]
+                status=payload.status,  # type: ignore[attr-defined]
             )
+            return 201, obj  # signal that object was created
         except IntegrityError:
-            return HttpResponseBadRequest(
-                json.dumps({"error": f"qr {qr} already exists"})
-            )
+            return 400, QRBagError(error=f"qr {qr} already exists")
 
     @route.patch(
         "/{qr}",
         auth=JWTAuth(),
         url_name="qrbag_update",
         summary="Opdatér QR-pose",
-        response=QRBagOut,
+        response={
+            200: QRBagOut,  # Meaning: an existing QR bag was updated
+            201: QRBagOut,  # Meaning: a new QR bag was created
+            400: QRBagError,
+        },
     )
     def update(self, qr: str, payload: QRBagIn):
         try:
             item = QRBag.objects.get(qr=qr)
         except QRBag.DoesNotExist:
-            return self.create(qr, payload)
+            return self.create(qr, payload)  # returns 201 or 400
         data = payload.dict(exclude_unset=True)
         for attr, value in data.items():
             setattr(item, attr, value)
         user = self.context.request.user  # type: ignore
         item.owner = user
         item.save()
-        return item
+        return 200, item  # signal that object was updated
 
     @route.get(
         "/{qr}/history",
@@ -226,7 +234,7 @@ class QRStatusOut(ModelSchema):
         permissions.AllowAny,
     ],
 )
-class QRStatusAPI:  # type: ignore [call-arg]
+class QRStatusAPI:  # type: ignore[call-arg]
     @route.get("/", response=list[QRStatusOut])
     def list(self):
         return QRStatus.objects.all()
