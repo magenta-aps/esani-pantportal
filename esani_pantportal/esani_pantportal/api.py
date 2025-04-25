@@ -189,21 +189,40 @@ class QRBagAPI:  # type: ignore[call-arg]
         response={
             200: QRBagOut,  # Meaning: an existing QR bag was updated
             201: QRBagOut,  # Meaning: a new QR bag was created
+            204: QRBagOut,  # Meaning: an existing QR bag was not updated (no changes)
             400: QRBagError,
         },
     )
     def update(self, qr: str, payload: QRBagIn):
+        # Create QR bag if it does not exist
         try:
             item = QRBag.objects.get(qr=qr)
         except QRBag.DoesNotExist:
             return self.create(qr, payload)  # returns 201 or 400
+
+        # Otherwise, update existing QR bag.
+        # Track if QR bag is actually updated.
+        changed: bool = False
+
+        # Update "ordinary" QRBag attributes
         data = payload.dict(exclude_unset=True)
-        for attr, value in data.items():
-            setattr(item, attr, value)
+        for attr, new_value in data.items():
+            old_value = getattr(item, attr, None)
+            if new_value != old_value:
+                changed = True
+            setattr(item, attr, new_value)
+
+        # Update QRBag "owner" attribute
         user = self.context.request.user  # type: ignore
+        if user != item.owner:
+            changed = True
         item.owner = user
-        item.save()
-        return 200, item  # signal that object was updated
+
+        if changed:
+            item.save()  # adds history item
+            return 200, item
+        else:
+            return 204, item
 
     @route.get(
         "/{qr}/history",
