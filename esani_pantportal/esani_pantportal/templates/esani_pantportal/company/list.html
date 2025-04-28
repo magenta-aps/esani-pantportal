@@ -42,6 +42,9 @@ SPDX-License-Identifier: MPL-2.0
     </form>
     {% include "../delete_confirmation.html" with icon_tag="building-x" delete_text="Virksomhed fjernet" %}
     <div class="col-12  mt-3">
+        <a class="btn btn-primary download-excel" href="#">
+            {% translate "Download Excel-fil" %}
+        </a>
         <a class="btn btn-primary" href="{% url 'pant:all_companies_csv_download' %}">
             {% translate "Download .csv-fil med alle virksomheder" %}
         </a>
