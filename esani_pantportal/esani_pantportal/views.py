@@ -1472,6 +1472,9 @@ class ERPCreditNoteExportSearchView(PermissionRequiredMixin, SearchView):
             json_dict[field] = localize(json_dict[field])
         return json_dict
 
+    def get_view_name(self) -> str:
+        return gettext("Udbetalinger")  # pragma: no cover
+
 
 class ProductUpdateView(UpdateViewMixin):
     model = Product
