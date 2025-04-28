@@ -5,10 +5,11 @@ import datetime
 import logging
 import os
 import sys
-from functools import cached_property
+from functools import cache, cached_property
 from io import BytesIO
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import pandas as pd
 from django.conf import settings
@@ -34,6 +35,7 @@ from django.db.models import (
     OuterRef,
     PositiveIntegerField,
     Q,
+    QuerySet,
     Subquery,
     Sum,
     Value,
@@ -69,6 +71,8 @@ from django_stubs_ext import StrPromise
 from project.settings import DEFAULT_FROM_EMAIL
 from simple_history.utils import bulk_update_with_history
 from two_factor.views import LoginView, SetupView
+from xlsxwriter import Workbook
+from xlsxwriter.worksheet import Worksheet
 
 from esani_pantportal.exports.uniconta.exports import CreditNoteExport, DebtorExport
 from esani_pantportal.forms import (
@@ -418,6 +422,8 @@ class SearchView(LoginRequiredMixin, FormView):
     def get(self, request, *args, **kwargs):
         self.form = self.get_form()
         if self.form.is_valid():
+            if self.request.GET.get("format", None) == "excel":
+                return self.get_queryset_as_excel_file_download(self.get_queryset())
             return self.form_valid(self.form)
         else:
             return self.form_invalid(self.form)
@@ -463,6 +469,7 @@ class SearchView(LoginRequiredMixin, FormView):
 
         return {k: getattr(v, "pk", v) for k, v in search_data.items()}
 
+    @cache
     def annotate_field(self, string):
         annotation_dicts = [
             getattr(self, d) for d in dir(self) if d.endswith("annotations")
@@ -536,7 +543,7 @@ class SearchView(LoginRequiredMixin, FormView):
 
     @cached_property
     def regular_columns(self):
-        return [[key, value, True] for key, value in self.fixed_columns.items()]
+        return [[key, value, True] for key, value in self.get_fixed_columns().items()]
 
     @cached_property
     def filterable_columns(self):
@@ -559,6 +566,9 @@ class SearchView(LoginRequiredMixin, FormView):
     @cached_property
     def columns(self):
         return self.regular_columns + self.filterable_columns
+
+    def get_fixed_columns(self):
+        return self.fixed_columns
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -609,6 +619,55 @@ class SearchView(LoginRequiredMixin, FormView):
 
     def map_value(self, item, key, context):
         return item[key]
+
+    def get_view_name(self) -> str:
+        # This is expected to be overridden by views implementing `SearchView`
+        return gettext("Unavngivet")  # pragma: no cover
+
+    def get_queryset_as_excel_file_download(self, queryset: QuerySet) -> HttpResponse:
+        view_name: str = self.get_view_name()
+        buf: BytesIO = BytesIO()
+        workbook: Workbook = Workbook(
+            buf,
+            {
+                "strings_to_urls": False,
+                "default_date_format": "dd/mm/yy",
+                "remove_timezone": True,
+                "in_memory": True,
+                "constant_memory": True,
+            },
+        )
+        worksheet: Worksheet = workbook.add_worksheet(view_name)
+
+        # Add handler for writing `UUID` values to Excel sheet
+        def write_uuid(worksheet, row, col, uuid, cell_format=None):
+            return worksheet.write_string(row, col, str(uuid), cell_format)
+
+        worksheet.add_write_handler(UUID, write_uuid)
+
+        # Write header (column names)
+        for col, (field, name, enabled) in enumerate(self.columns):
+            worksheet.write(0, col, str(name))
+
+        # Write data (one row for each row in queryset)
+        for row, obj in enumerate(queryset, start=1):
+            data = {
+                key: val
+                for key, val in self.model_to_dict(obj).items()
+                if key not in ("id", "pk")
+            }
+            for col, (key, val) in enumerate(data.items()):
+                worksheet.write(row, col, val)
+
+        worksheet.autofit()
+        workbook.close()
+
+        content_type = (
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response = HttpResponse(buf.getvalue(), content_type=content_type)
+        response["Content-Disposition"] = f"attachment; filename={view_name}.xlsx"
+        return response
 
 
 class CompanySearchView(PermissionRequiredMixin, SearchView):
@@ -705,34 +764,48 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
         else:
             return super().check_permissions()
 
-    def get_queryset(self):
+    def get_queryset_field_list(self) -> list[str]:
         fields = super().get_fields()
 
         # Remove annotated fields
         for field in fields.copy():
             if self.annotate_field(field) != field:
                 fields.remove(field)
+
         fields.remove("object_class_name_verbose")
 
-        qs = [
-            Kiosk.objects.only(*fields).annotate(
-                **self.kiosk_annotations,
-                **self.annotations,
-            ),
-            Company.objects.only(*fields).annotate(
-                **self.company_annotations,
-                **self.annotations,
-            ),
-            CompanyBranch.objects.only(*fields).annotate(
-                **self.company_branch_annotations,
-                **self.annotations,
-            ),
-        ]
+        return fields
 
-        for i in range(len(qs)):
-            qs[i] = self.filter_qs(qs[i])
+    def get_kiosk_queryset(self):
+        return Kiosk.objects.only(*self.get_queryset_field_list()).annotate(
+            **self.kiosk_annotations,
+            **self.annotations,
+        )
 
-        return self.sort_qs(qs[0].union(qs[1], qs[2], all=True).order_by("name"))
+    def get_company_queryset(self):
+        return Company.objects.only(*self.get_queryset_field_list()).annotate(
+            **self.company_annotations,
+            **self.annotations,
+        )
+
+    def get_company_branch_queryset(self):
+        return CompanyBranch.objects.only(*self.get_queryset_field_list()).annotate(
+            **self.company_branch_annotations,
+            **self.annotations,
+        )
+
+    def get_union_queryset(self):
+        qs0 = self.get_kiosk_queryset()
+        qs1 = self.get_company_queryset()
+        qs2 = self.get_company_branch_queryset()
+        return qs0.union(qs1, qs2, all=True)
+
+    def get_queryset(self):
+        qs0 = self.filter_qs(self.get_kiosk_queryset())
+        qs1 = self.filter_qs(self.get_company_queryset())
+        qs2 = self.filter_qs(self.get_company_branch_queryset())
+        union = qs0.union(qs1, qs2, all=True)
+        return self.sort_qs(union.order_by("name"))
 
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)
@@ -751,6 +824,9 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
             value = str(value)
 
         return value or "-"
+
+    def get_view_name(self) -> str:
+        return gettext("Virksomheder")  # pragma: no cover
 
 
 class ProductSearchView(SearchView):
@@ -803,6 +879,9 @@ class ProductSearchView(SearchView):
         qs = qs.exclude(state=ProductState.DELETED)
         return qs
 
+    def get_view_name(self) -> str:
+        return gettext("Produkter")  # pragma: no cover
+
 
 class BranchSearchView(PermissionRequiredMixin, SearchView):
     """
@@ -810,21 +889,13 @@ class BranchSearchView(PermissionRequiredMixin, SearchView):
     treats them as one.
     """
 
-    def get_fields(self, model=None):
-        fields = super().get_fields(model=model)
-        fields = fields + ["_name"]
-        return fields
-
-    def item_to_json_dict(self, *args, **kwargs):
-        json_dict = super().item_to_json_dict(*args, **kwargs)
-        json_dict["company_branch_or_kiosk"] = json_dict["_name"]
-        return json_dict
-
     def get_queryset(self):
         qs = super().get_queryset()
         qs = qs.select_related("company_branch", "kiosk")
         qs = qs.annotate(
-            _name=Coalesce(F("company_branch__name"), F("kiosk__name")),
+            company_branch_or_kiosk=Coalesce(
+                F("company_branch__name"), F("kiosk__name")
+            ),
         )
         data = self.search_data
 
@@ -866,21 +937,24 @@ class ReverseVendingMachineSearchView(BranchSearchView):
         id = item.id
         return f'<a id="delete_{id}" value="{id}" class="{button_class}">{label}</a>'
 
-    def get_context_data(self, *args, **kwargs):
-        self.fixed_columns = {
+    def get_fixed_columns(self):
+        fixed_columns = {
             "serial_number": _("Serienummer"),
             "company_branch_or_kiosk": _("Butik"),
+            # "city": _("By"),  # TODO: reintroduce in other MR regarding city display
         }
         if self.request.user.is_esani_admin:
-            self.fixed_columns["compensation"] = _("Håndteringsgodtgørelse")
-
-        return super().get_context_data(*args, **kwargs)
+            fixed_columns["compensation"] = _("Håndteringsgodtgørelse")
+        return fixed_columns
 
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)
         if key == "compensation" and value and value != "-":
             value = float_to_string(value) + " øre"
         return value or "-"
+
+    def get_view_name(self) -> str:
+        return gettext("Pantmaskiner")  # pragma: no cover
 
 
 def _get_qr_bag_filtered_annotation(aggregate: Aggregate, valid: bool) -> Aggregate:
@@ -980,7 +1054,7 @@ class QRBagSearchView(BranchSearchView):
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)
 
-        if key == "updated":
+        if isinstance(value, (datetime.date, datetime.datetime)):
             value = value.strftime("%-d. %b %Y")
         elif key == "status":
             return self._qr_status_names[value]
@@ -989,6 +1063,9 @@ class QRBagSearchView(BranchSearchView):
                 return value or 0
 
         return value or "-"
+
+    def get_view_name(self) -> str:
+        return gettext("Pantposer")  # pragma: no cover
 
     @cached_property
     def _qr_status_names(self) -> dict[str, str]:
@@ -1070,6 +1147,9 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
         if user_ids:
             qs = qs.filter(pk__in=user_ids)
         return qs
+
+    def get_view_name(self) -> str:
+        return gettext("Brugere")  # pragma: no cover
 
 
 class BaseCompanyUpdateView(IsAdminMixin, UpdateViewMixin):
