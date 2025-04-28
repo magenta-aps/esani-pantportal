@@ -794,11 +794,12 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
             **self.annotations,
         )
 
-    def get_union_queryset(self):
-        qs0 = self.get_kiosk_queryset()
-        qs1 = self.get_company_queryset()
-        qs2 = self.get_company_branch_queryset()
-        return qs0.union(qs1, qs2, all=True)
+    # TODO: reintroduce this method in relevant MR
+    # def get_union_queryset(self):
+    #     qs0 = self.get_kiosk_queryset()
+    #     qs1 = self.get_company_queryset()
+    #     qs2 = self.get_company_branch_queryset()
+    #     return qs0.union(qs1, qs2, all=True)
 
     def get_queryset(self):
         qs0 = self.filter_qs(self.get_kiosk_queryset())
