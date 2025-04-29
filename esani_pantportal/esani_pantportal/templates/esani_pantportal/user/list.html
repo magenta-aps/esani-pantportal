@@ -45,6 +45,9 @@ SPDX-License-Identifier: MPL-2.0
     {% include "../delete_confirmation.html" with icon_tag="person-x" delete_text="Bruger fjernet"  %}
     <div class="col-12  mt-3">
         {% if user.is_esani_admin %}
+        <a class="btn btn-primary download-excel" href="#">
+            {% translate "Download Excel-fil" %}
+        </a>
         <a class="btn btn-primary" href="{% url 'pant:all_users_csv_download' %}">
             {% translate "Download .csv-fil med alle brugere" %}
         </a>
