@@ -29,6 +29,11 @@ SPDX-License-Identifier: MPL-2.0
             <div class="col-6 clearfix"><button type="submit" class="btn btn-primary float-end">Søg</button></div>
         </div>
     </form>
+    <div class="col-12  mt-3">
+        <a class="btn btn-primary download-excel" href="#">
+            {% translate "Download Excel-fil" %}
+        </a>
+    </div>
     {% include "../list_view_table.html" %}
     <a href="{% url 'pant:rvm_register' %}" class="btn btn-sm btn-primary">+</a>
 <script nonce="{{ request.csp_nonce }}">

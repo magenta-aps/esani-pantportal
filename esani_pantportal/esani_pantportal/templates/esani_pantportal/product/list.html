@@ -55,6 +55,9 @@ SPDX-License-Identifier: MPL-2.0
         {% include "../delete_confirmation.html" with icon_tag="trash" delete_text="Produkt fjernet" %}
         {% csrf_token %}
         <div class="col-12  mt-3">
+            <a class="btn btn-primary download-excel" href="#">
+                {% translate "Download Excel-fil" %}
+            </a>
             <a class="btn btn-primary"
                href="{% url 'pant:registered_products_csv_download' 1 %}">{% translate "Download .csv-fil med godkendte produkter" %}
             </a>

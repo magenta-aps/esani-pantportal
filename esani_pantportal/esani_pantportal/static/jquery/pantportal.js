@@ -38,3 +38,16 @@ function queryParams(params){  // Kaldes af bootstrap-table fordi vi peger på d
     }
     return params;
 }
+
+$(document).ready(
+    function () {
+        // Clicking a `download-excel` link adds `?format=excel` to the current page URL
+        $("a.download-excel").click(
+            function () {
+                let searchParams = new URLSearchParams(window.location.search);
+                searchParams.set("format", "excel");
+                window.location.search = searchParams.toString();
+            }
+        )
+    }
+);
