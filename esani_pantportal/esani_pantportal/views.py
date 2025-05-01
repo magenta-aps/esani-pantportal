@@ -104,6 +104,7 @@ from esani_pantportal.forms import (
     UserFilterForm,
     UserUpdateForm,
 )
+from esani_pantportal.models import HistoricalQRBag  # type: ignore[attr-defined]
 from esani_pantportal.models import (
     ADMIN_GROUPS,
     BRANCH_USER,
@@ -121,7 +122,6 @@ from esani_pantportal.models import (
     ERPCreditNoteExport,
     ERPProductMapping,
     EsaniUser,
-    HistoricalQRBag,
     ImportJob,
     Kiosk,
     KioskUser,
