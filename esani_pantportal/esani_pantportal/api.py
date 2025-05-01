@@ -15,7 +15,6 @@ from ninja_jwt.authentication import JWTAuth
 from esani_pantportal.models import HistoricalQRBag  # type: ignore[attr-defined]
 from esani_pantportal.models import (
     CompanyBranch,
-    HistoricalQRBag,
     Kiosk,
     Product,
     QRBag,
