@@ -18,6 +18,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
 from django.contrib.auth.views import LogoutView, PasswordChangeView
+from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.core.management import call_command
@@ -567,6 +568,14 @@ class SearchView(LoginRequiredMixin, FormView):
     def columns(self):
         return self.regular_columns + self.filterable_columns
 
+    @cached_property
+    def cities(self) -> list[str]:
+        # Provide city names for the subclasses which need it.
+        # Requires a `city` annotation in the subclass `annotations` property.
+        model = self.model  # type: ignore[attr-defined]
+        qs = model.objects.annotate(city=self.annotations["city"]).order_by()
+        return qs.aggregate(cities=ArrayAgg("city", distinct=True)).get("cities", [])
+
     def get_fixed_columns(self):
         return self.fixed_columns
 
@@ -694,6 +703,7 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
         "qr_compensation_annotation": F("qr_compensation"),
         "company_annotation": Value("-"),
         "cvr_annotation": F("cvr"),
+        "city_annotation": F("city"),
     }
 
     company_annotations = {
@@ -715,6 +725,7 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
         "qr_compensation_annotation": Value(None, output_field=FloatField()),
         "company_annotation": Value("-"),
         "cvr_annotation": F("cvr"),
+        "city_annotation": F("city"),
     }
 
     company_branch_annotations = {
@@ -730,16 +741,26 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
         "qr_compensation_annotation": F("qr_compensation"),
         "company_annotation": F("company__name"),
         "cvr_annotation": Value(None, output_field=PositiveIntegerField()),
+        "city_annotation": F("city"),
     }
 
-    search_fields = ["name", "address", "postal_code", "city"]
-    search_fields_exact = ["object_class_name"]
+    search_fields = ["name", "address", "postal_code"]
+    search_fields_exact = ["object_class_name", "city"]
 
     fixed_columns = {
         "external_customer_id": _("Kundenummer"),
         "name": _("Navn"),
         "object_class_name_verbose": _("Type"),
     }
+
+    def get_form_kwargs(self):
+        form_kwargs = super().get_form_kwargs()
+        form_kwargs["cities"] = self.cities
+        return form_kwargs
+
+    @cached_property
+    def cities(self) -> list[str]:
+        return self.get_union_queryset().values_list("city", flat=True)
 
     def get_action_url(self, item, *args):
         if item.object_class_name == "Company":
@@ -794,12 +815,11 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
             **self.annotations,
         )
 
-    # TODO: reintroduce this method in relevant MR
-    # def get_union_queryset(self):
-    #     qs0 = self.get_kiosk_queryset()
-    #     qs1 = self.get_company_queryset()
-    #     qs2 = self.get_company_branch_queryset()
-    #     return qs0.union(qs1, qs2, all=True)
+    def get_union_queryset(self):
+        qs0 = self.get_kiosk_queryset()
+        qs1 = self.get_company_queryset()
+        qs2 = self.get_company_branch_queryset()
+        return qs0.union(qs1, qs2, all=True)
 
     def get_queryset(self):
         qs0 = self.filter_qs(self.get_kiosk_queryset())
@@ -903,6 +923,7 @@ class BranchSearchView(PermissionRequiredMixin, SearchView):
         branch_qs = self.model.objects.none()
         for field in ["company_branch__name", "kiosk__name"]:
             if data.get(field, None) not in (None, ""):
+                # TODO: use exact search on whole phrase instead
                 branch_qs = branch_qs | self.model.objects.all().filter(
                     **{
                         field + "__icontains": part
@@ -931,8 +952,17 @@ class ReverseVendingMachineSearchView(BranchSearchView):
     form_class = ReverseVendingMachineFilterForm
     required_permissions = ["esani_pantportal.view_reversevendingmachine"]
 
+    annotations = {
+        "city": Coalesce("company_branch__city", "kiosk__city"),
+    }
     search_fields = ["serial_number"]
+    search_fields_exact = ["city"]
     actions = {_("Fjern"): "btn btn-sm btn-danger"}
+
+    def get_form_kwargs(self):
+        form_kwargs = super().get_form_kwargs()
+        form_kwargs["cities"] = self.cities
+        return form_kwargs
 
     def get_action_html(self, item, label, button_class):
         id = item.id
@@ -942,7 +972,7 @@ class ReverseVendingMachineSearchView(BranchSearchView):
         fixed_columns = {
             "serial_number": _("Serienummer"),
             "company_branch_or_kiosk": _("Butik"),
-            # "city": _("By"),  # TODO: reintroduce in other MR regarding city display
+            "city": _("By"),
         }
         if self.request.user.is_esani_admin:
             fixed_columns["compensation"] = _("Håndteringsgodtgørelse")
@@ -982,11 +1012,12 @@ class QRBagSearchView(BranchSearchView):
     required_permissions = ["esani_pantportal.view_qrbag"]
 
     search_fields = ["qr"]
-    search_fields_exact = ["status"]
+    search_fields_exact = ["status", "city"]
 
     fixed_columns = {
         "qr": _("QR kode"),
         "company_branch_or_kiosk": _("Butik"),
+        "city": _("By"),
         "status": _("Status"),
         "updated": _("Opdateret"),
         # Annotations
@@ -996,6 +1027,7 @@ class QRBagSearchView(BranchSearchView):
     }
 
     annotations = {
+        "city": Coalesce("company_branch__city", "kiosk__city"),
         "num_valid_deposited": _get_qr_bag_filtered_annotation(
             Sum("deposit_items__count"),
             True,
@@ -1025,9 +1057,10 @@ class QRBagSearchView(BranchSearchView):
         return qs
 
     def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["user"] = self.request.user
-        return kwargs
+        form_kwargs = super().get_form_kwargs()
+        form_kwargs["user"] = self.request.user
+        form_kwargs["cities"] = self.cities
+        return form_kwargs
 
     def filter_qs(self, qs):
         # Support multiple-choice filtering on `status`
@@ -1084,7 +1117,7 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
     required_permissions = ["esani_pantportal.view_user"]
 
     search_fields = ["username", "user_type", "branch", "company"]
-    search_fields_exact = ["approved"]
+    search_fields_exact = ["approved", "city"]
     annotations = {
         "is_admin_annotation": Q(groups__name__in=ADMIN_GROUPS),
         "branch_annotation": Case(
@@ -1110,13 +1143,24 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
             default=Value("-"),
         ),
         "full_name": Concat("first_name", Value(" "), "last_name"),
+        "city": Coalesce(
+            "branchuser__branch__city",
+            "kioskuser__branch__city",
+            "companyuser__company__city",
+        ),
     }
 
     fixed_columns = {
         "username": _("Brugernavn"),
         "full_name": _("Navn"),
         "user_type": _("Brugertype"),
+        "city": _("By"),
     }
+
+    def get_form_kwargs(self):
+        form_kwargs = super().get_form_kwargs()
+        form_kwargs["cities"] = self.cities
+        return form_kwargs
 
     def get_action_url(self, item, *args):
         return reverse("pant:user_view", kwargs={"pk": item.id})
