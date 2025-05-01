@@ -870,6 +870,24 @@ class SortPaginateForm(BootstrapForm):
     limit = forms.IntegerField(required=False)
 
 
+class CityChoiceMixin:
+    def __init__(self, *args, **kwargs):
+        cities = kwargs.pop("cities")
+        super().__init__(*args, **kwargs)
+        city_names = sorted(  # sort alphabetically
+            set(  # remove duplicated city names
+                [
+                    city.title()  # normalize casing of city names
+                    for city in cities
+                    if city is not None
+                ]
+            )
+        )
+        self.fields["city"].choices = [("", "-")] + [
+            (name, name) for name in city_names
+        ]
+
+
 class ProductFilterForm(SortPaginateForm):
     product_name = forms.CharField(required=False)
     barcode = forms.CharField(required=False)
@@ -911,11 +929,11 @@ class ProductFilterForm(SortPaginateForm):
         }
 
 
-class CompanyFilterForm(SortPaginateForm):
+class CompanyFilterForm(CityChoiceMixin, SortPaginateForm):
     name = forms.CharField(required=False)
     address = forms.CharField(required=False)
     postal_code = forms.CharField(required=False)
-    city = forms.CharField(required=False)
+    city = forms.ChoiceField(required=False)
     object_class_name = forms.ChoiceField(
         choices=[
             (None, "-"),
@@ -927,7 +945,7 @@ class CompanyFilterForm(SortPaginateForm):
     )
 
 
-class QRBagFilterForm(SortPaginateForm):
+class QRBagFilterForm(CityChoiceMixin, SortPaginateForm):
     qr = forms.CharField(required=False)
     status = forms.MultipleChoiceField(
         choices=[],  # populated in __init__
@@ -936,6 +954,7 @@ class QRBagFilterForm(SortPaginateForm):
     )
     company_branch__name = forms.CharField(required=False)
     kiosk__name = forms.CharField(required=False)
+    city = forms.ChoiceField(required=False)
 
     def __init__(self, *args, **kwargs):
         self._user: User = kwargs.pop("user")
@@ -965,17 +984,18 @@ class QRBagFilterForm(SortPaginateForm):
         ]
 
 
-class ReverseVendingMachineFilterForm(SortPaginateForm):
+class ReverseVendingMachineFilterForm(CityChoiceMixin, SortPaginateForm):
     serial_number = forms.CharField(required=False)
     company_branch__name = forms.CharField(required=False)
     kiosk__name = forms.CharField(required=False)
+    city = forms.ChoiceField(required=False)
 
     def clean_kiosk__name(self):
         # We use the branch__name search-field for both kiosk and branch filtering.
         return self.cleaned_data["company_branch__name"]
 
 
-class UserFilterForm(SortPaginateForm):
+class UserFilterForm(CityChoiceMixin, SortPaginateForm):
     username = forms.CharField(required=False)
     user_type = forms.ChoiceField(
         choices=[(None, "-")] + list(USER_TYPE_CHOICES), required=False
@@ -986,6 +1006,7 @@ class UserFilterForm(SortPaginateForm):
     )
     branch = forms.CharField(required=False)
     company = forms.CharField(required=False)
+    city = forms.ChoiceField(required=False)
 
 
 class HTML5DateWidget(forms.widgets.Input):
