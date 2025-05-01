@@ -121,6 +121,7 @@ from esani_pantportal.models import (
     ERPCreditNoteExport,
     ERPProductMapping,
     EsaniUser,
+    HistoricalQRBag,
     ImportJob,
     Kiosk,
     KioskUser,
@@ -1004,6 +1005,13 @@ def _get_qr_bag_filtered_annotation(aggregate: Aggregate, valid: bool) -> Aggreg
     return aggregate
 
 
+def _get_history_entry(status=None, ordering="history_date"):
+    history = HistoricalQRBag.objects.filter(id=OuterRef("id"))
+    if status is not None:
+        history = history.filter(status=status)
+    return Subquery(history.order_by(ordering).values("history_date")[:1])
+
+
 class QRBagSearchView(BranchSearchView):
     template_name = "esani_pantportal/qrbag/list.html"
     actions = {_("Historik"): "btn btn-sm btn-secondary"}
@@ -1020,7 +1028,9 @@ class QRBagSearchView(BranchSearchView):
         "city": _("By"),
         "status": _("Status"),
         "updated": _("Opdateret"),
-        # Annotations
+        "created": _("Oprettet"),
+        "optalt": _("Optalt"),
+        "udbetalt": _("Udbetalt"),
         "num_valid_deposited": _("Optalt, godkendt"),
         "num_invalid_deposited": _("Optalt, afvist"),
         "value_of_valid_deposited": _("Samlet pantværdi (kr.)"),
@@ -1044,6 +1054,10 @@ class QRBagSearchView(BranchSearchView):
             ),
             True,
         ),
+        "updated": _get_history_entry(ordering="-history_date"),
+        "created": _get_history_entry(ordering="history_date"),
+        "optalt": _get_history_entry(status="esani_optalt"),
+        "udbetalt": _get_history_entry(status="esani_udbetalt"),
     }
 
     def get_action_url(self, item, *args):
@@ -1089,8 +1103,7 @@ class QRBagSearchView(BranchSearchView):
         value = super().map_value(item, key, context)
 
         if isinstance(value, (datetime.date, datetime.datetime)):
-            # TODO: remove `pragma: no cover` in subsequent MR
-            value = value.strftime("%-d. %b %Y")  # pragma: no cover
+            value = value.strftime("%-d. %b %Y")
         elif key == "status":
             return self._qr_status_names[value]
         elif key in ("num_valid_deposited", "num_invalid_deposited"):
