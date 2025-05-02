@@ -12,6 +12,7 @@ from ninja_extra.pagination import paginate
 from ninja_extra.schemas import NinjaPaginationResponseSchema
 from ninja_jwt.authentication import JWTAuth
 
+from esani_pantportal.models import HistoricalQRBag  # type: ignore[attr-defined]
 from esani_pantportal.models import (
     CompanyBranch,
     Kiosk,
@@ -95,17 +96,17 @@ class QRBagError(Schema):
 
 
 class QRBagOut(ModelSchema):
-    owner: str
-    company: str
-
     class Config:
         model = QRBag
         model_fields = [
             "qr",
             "active",
             "status",
-            "updated",
         ]
+
+    owner: str
+    company: str
+    updated: datetime | None
 
     @staticmethod
     def resolve_owner(obj: QRBag):
@@ -120,9 +121,18 @@ class QRBagOut(ModelSchema):
         else:
             return ""
 
+    @staticmethod
+    def resolve_updated(obj: QRBag):
+        history = obj.history.order_by("-history_date")
+        return history[0].history_date if history.exists() else None
+
 
 class QRBagHistoryOut(QRBagOut):
     history_date: datetime
+
+    @staticmethod
+    def resolve_updated(obj: HistoricalQRBag):
+        return obj.history_date
 
 
 @api_controller(

@@ -85,7 +85,6 @@ class Command(BaseCommand):
 
                 for status in statusses:
                     kwargs["status"] = status
-                    kwargs["updated"] = date_dict[status]
 
                     with override_autonow():
                         qrbag, _ = QRBag.objects.update_or_create(
@@ -95,6 +94,6 @@ class Command(BaseCommand):
 
                         record = qrbag.history.first()
 
-                        record.history_date = kwargs["updated"]
+                        record.history_date = date_dict[status]
                         record.history_user = user
                         record.save()

@@ -1089,7 +1089,8 @@ class QRBagSearchView(BranchSearchView):
         value = super().map_value(item, key, context)
 
         if isinstance(value, (datetime.date, datetime.datetime)):
-            value = value.strftime("%-d. %b %Y")
+            # TODO: remove `pragma: no cover` in subsequent MR
+            value = value.strftime("%-d. %b %Y")  # pragma: no cover
         elif key == "status":
             return self._qr_status_names[value]
         elif key in ("num_valid_deposited", "num_invalid_deposited"):

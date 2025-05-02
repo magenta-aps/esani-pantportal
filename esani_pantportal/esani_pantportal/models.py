@@ -1294,6 +1294,17 @@ class DepositPayoutItem(models.Model):
 
 
 class QRBag(models.Model):
+    class Meta:
+        constraints = [
+            CheckConstraint(
+                check=Q(company_branch__isnull=True) | Q(kiosk__isnull=True),
+                name="has_only_company_branch_or_kiosk",
+            )
+        ]
+        ordering = ["qr"]
+
+    history = HistoricalRecords()
+
     qr = models.CharField(
         unique=True,
         max_length=200,  # TODO: Hvor lange er vores QR-koder?
@@ -1323,19 +1334,6 @@ class QRBag(models.Model):
         max_length=20,
         db_index=True,
     )
-    updated = models.DateTimeField(
-        auto_now=True,
-    )
-    history = HistoricalRecords()
-
-    class Meta:
-        constraints = [
-            CheckConstraint(
-                check=Q(company_branch__isnull=True) | Q(kiosk__isnull=True),
-                name="has_only_company_branch_or_kiosk",
-            )
-        ]
-        ordering = ["-updated"]
 
 
 class QRStatus(models.Model):
