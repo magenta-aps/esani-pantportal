@@ -101,6 +101,7 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
         self.assertIn(self.prod2, qs)
 
     def test_get_queryset_filter_name(self):
+        # Exact match (case-insensitive)
         view = ProductSearchView()
         view.form = ProductFilterForm()
         view.form.cleaned_data = {"offset": 0, "limit": 10, "product_name": "PROD1"}
@@ -108,6 +109,7 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
         self.assertIn(self.prod1, qs)
         self.assertNotIn(self.prod2, qs)
 
+        # Exact match (case-insensitive)
         view = ProductSearchView()
         view.form = ProductFilterForm()
         view.form.cleaned_data = {"offset": 0, "limit": 10, "product_name": "PROD2"}
@@ -115,28 +117,8 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
         self.assertNotIn(self.prod1, qs)
         self.assertIn(self.prod2, qs)
 
-        view = ProductSearchView()
-        view.form = ProductFilterForm()
-        view.form.cleaned_data = {"offset": 0, "limit": 10, "product_name": "1"}
-        qs = view.get_queryset()
-        self.assertIn(self.prod1, qs)
-        self.assertNotIn(self.prod2, qs)
-
-        view = ProductSearchView()
-        view.form = ProductFilterForm()
-        view.form.cleaned_data = {"offset": 0, "limit": 10, "product_name": "d2"}
-        qs = view.get_queryset()
-        self.assertNotIn(self.prod1, qs)
-        self.assertIn(self.prod2, qs)
-
-        view = ProductSearchView()
-        view.form = ProductFilterForm()
-        view.form.cleaned_data = {"offset": 0, "limit": 10, "product_name": "foobar"}
-        qs = view.get_queryset()
-        self.assertNotIn(self.prod1, qs)
-        self.assertNotIn(self.prod2, qs)
-
     def test_get_queryset_filter_barcode(self):
+        # Exact match on `self.prod1.barcode`
         view = ProductSearchView()
         view.paginate_by = 20
         view.form = ProductFilterForm()
@@ -145,33 +127,13 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
         self.assertIn(self.prod1, qs)
         self.assertNotIn(self.prod2, qs)
 
+        # Exact match on `self.prod2.barcode`
         view = ProductSearchView()
         view.form = ProductFilterForm()
         view.form.cleaned_data = {"offset": 0, "limit": 10, "barcode": "0002"}
         qs = view.get_queryset()
         self.assertNotIn(self.prod1, qs)
         self.assertIn(self.prod2, qs)
-
-        view = ProductSearchView()
-        view.form = ProductFilterForm()
-        view.form.cleaned_data = {"offset": 0, "limit": 10, "barcode": "1"}
-        qs = view.get_queryset()
-        self.assertIn(self.prod1, qs)
-        self.assertNotIn(self.prod2, qs)
-
-        view = ProductSearchView()
-        view.form = ProductFilterForm()
-        view.form.cleaned_data = {"offset": 0, "limit": 10, "barcode": "02"}
-        qs = view.get_queryset()
-        self.assertNotIn(self.prod1, qs)
-        self.assertIn(self.prod2, qs)
-
-        view = ProductSearchView()
-        view.form = ProductFilterForm()
-        view.form.cleaned_data = {"offset": 0, "limit": 10, "barcode": "3"}
-        qs = view.get_queryset()
-        self.assertNotIn(self.prod1, qs)
-        self.assertNotIn(self.prod2, qs)
 
     def test_get_queryset_filter_approved(self):
         view = ProductSearchView()
@@ -371,7 +333,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             "offset": 0,
             "limit": 10,
             "json": "1",
-            "product_name": "1",
+            "product_name": "prod1",  # exact match
         }
         view.request = HttpRequest()
         view.request.method = "GET"
@@ -559,21 +521,23 @@ class ProductListGuiTest(LoginMixin, TestCase):
 
     def test_filter_name(self):
         expected = [self.prod1_expected_response]
-        response = self.client.get(reverse("pant:product_list") + "?product_name=p+1")
+        response = self.client.get(reverse("pant:product_list") + "?product_name=PROD1")
         data = self.get_html_items(response.content)
         self.assertEquals(data, expected)
         response = self.client.get(
-            reverse("pant:product_list") + "?json=1&product_name=p+1"
+            reverse("pant:product_list") + "?json=1&product_name=PROD1"
         )
         data = self.get_json_items(response.content)
         self.assertEquals(data, expected)
 
     def test_filter_barcode(self):
         expected = [self.prod2_expected_response]
-        response = self.client.get(reverse("pant:product_list") + "?barcode=2")
+        response = self.client.get(reverse("pant:product_list") + "?barcode=0002")
         data = self.get_html_items(response.content)
         self.assertEquals(data, expected)
-        response = self.client.get(reverse("pant:product_list") + "?json=1&barcode=2")
+        response = self.client.get(
+            reverse("pant:product_list") + "?json=1&barcode=0002"
+        )
         data = self.get_json_items(response.content)
         self.assertEquals(data, expected)
 
