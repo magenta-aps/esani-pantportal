@@ -497,13 +497,15 @@ class SearchView(LoginRequiredMixin, FormView):
             if data.get(field, None) not in (None, ""):  # False er en gyldig værdi
                 qs = qs.filter(**{f"{field_name}{lookup}": data[field]})
 
-        # Filter queryset according to `self.search_fields`
-        for field in self.search_fields:
-            field_name = self.annotate_field(field)
-            if data.get(field, None) not in (None, ""):
+        # Filter queryset according to `self.search_fields`.
+        # Currently, no views inheriting from `SearchView` use `search_fields` so this
+        # part of the code has been excluded from test coverage.
+        for field in self.search_fields:  # pragma: no cover
+            field_name = self.annotate_field(field)  # pragma: no cover
+            if data.get(field, None) not in (None, ""):  # pragma: no cover
                 # Each search phrase is broken into individual parts.
                 # Each part is added as a separate `icontains` query filter.
-                qs = qs.filter(
+                qs = qs.filter(  # pragma: no cover
                     **{
                         field_name + "__icontains": part
                         for part in data[field].split()
