@@ -27,6 +27,7 @@ from django.db.models import (
     Aggregate,
     BooleanField,
     Case,
+    CharField,
     Count,
     ExpressionWrapper,
     F,
@@ -484,20 +485,34 @@ class SearchView(LoginRequiredMixin, FormView):
 
     def filter_qs(self, qs):
         data = self.search_data
-        for field in self.search_fields_exact:  # præcist match
-            if data.get(field, None) not in (None, ""):  # False er en gyldig værdi
-                qs = qs.filter(**{field: data[field]})
 
-        # indehold alle ord, case insensitive
-        for field in self.search_fields:
-            if data.get(field, None) not in (None, ""):
-                qs = qs.filter(
+        # Filter queryset according to `self.search_fields_exact`
+        lookup_map = {
+            f.name: "__iexact" if isinstance(f, CharField) else ""
+            for f in qs.model._meta.fields
+        }
+        for field in self.search_fields_exact:
+            field_name = self.annotate_field(field)
+            lookup = lookup_map.get(field_name, "")
+            if data.get(field, None) not in (None, ""):  # False er en gyldig værdi
+                qs = qs.filter(**{f"{field_name}{lookup}": data[field]})
+
+        # Filter queryset according to `self.search_fields`.
+        # Currently, no views inheriting from `SearchView` use `search_fields` so this
+        # part of the code has been excluded from test coverage.
+        for field in self.search_fields:  # pragma: no cover
+            field_name = self.annotate_field(field)  # pragma: no cover
+            if data.get(field, None) not in (None, ""):  # pragma: no cover
+                # Each search phrase is broken into individual parts.
+                # Each part is added as a separate `icontains` query filter.
+                qs = qs.filter(  # pragma: no cover
                     **{
-                        self.annotate_field(field) + "__icontains": part
+                        field_name + "__icontains": part
                         for part in data[field].split()
                         if part
                     }
                 )
+
         return qs
 
     def sort_qs(self, qs):
@@ -745,8 +760,14 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
         "city_annotation": F("city"),
     }
 
-    search_fields = ["name", "address", "postal_code"]
-    search_fields_exact = ["object_class_name", "city"]
+    search_fields = []
+    search_fields_exact = [
+        "name",
+        "address",
+        "postal_code",
+        "city",
+        "object_class_name",
+    ]
 
     fixed_columns = {
         "external_customer_id": _("Kundenummer"),
@@ -860,8 +881,16 @@ class ProductSearchView(SearchView):
         "file_name": F("import_job__file_name"),
     }
     can_edit_multiple = True
-    search_fields = ["product_name", "barcode"]
-    search_fields_exact = ["state", "approved", "import_job"]
+
+    search_fields = []
+    search_fields_exact = [
+        "product_name",
+        "barcode",
+        "state",
+        "approved",
+        "import_job",
+    ]
+
     fixed_columns = {
         "product_name": _("Produktnavn"),
         "barcode": _("Stregkode"),
@@ -912,31 +941,31 @@ class BranchSearchView(PermissionRequiredMixin, SearchView):
     """
 
     def get_queryset(self):
+        # Handle filtering on "normal" fields specified via `search_fields` and
+        # `search_fields_exact` attributes.
         qs = super().get_queryset()
+
+        # Add data for `company_branch_or_kiosk` display column
         qs = qs.select_related("company_branch", "kiosk")
         qs = qs.annotate(
             company_branch_or_kiosk=Coalesce(
                 F("company_branch__name"), F("kiosk__name")
             ),
         )
+
+        # Handle additional filtering on company branch and/or kiosk
         data = self.search_data
-
-        branch_qs = self.model.objects.none()
-        for field in ["company_branch__name", "kiosk__name"]:
+        fields = ["company_branch__name", "kiosk__name"]
+        q: Q = Q()  # empty initial query filter
+        for field in fields:
+            # "Or" each filter onto the previous filter, if value is present
             if data.get(field, None) not in (None, ""):
-                # TODO: use exact search on whole phrase instead
-                branch_qs = branch_qs | self.model.objects.all().filter(
-                    **{
-                        field + "__icontains": part
-                        for part in data[field].split()
-                        if part
-                    }
-                )
+                q |= Q(**{f"{field}__iexact": data[field]})
+        if q:
+            qs = qs.filter(q)
 
-        if branch_qs:
-            qs = qs & branch_qs
-
-        # Only allow branch/company/kiosk users to see Objects in their own company
+        # Handle filtering due to user type (not search input.)
+        # Only allow branch/company/kiosk users to see Objects in their own company.
         user = self.request.user
         if user.user_type == KIOSK_USER:
             qs = qs.filter(kiosk__pk=user.branch.pk)
@@ -944,6 +973,7 @@ class BranchSearchView(PermissionRequiredMixin, SearchView):
             qs = qs.filter(company_branch__pk=user.branch.pk)
         elif user.user_type == COMPANY_USER:
             qs = qs.filter(company_branch__company__pk=user.company.pk)
+
         return qs
 
 
@@ -956,8 +986,10 @@ class ReverseVendingMachineSearchView(BranchSearchView):
     annotations = {
         "city": Coalesce("company_branch__city", "kiosk__city"),
     }
-    search_fields = ["serial_number"]
-    search_fields_exact = ["city"]
+
+    search_fields = []
+    search_fields_exact = ["serial_number", "city"]
+
     actions = {_("Fjern"): "btn btn-sm btn-danger"}
 
     def get_form_kwargs(self):
@@ -1019,8 +1051,8 @@ class QRBagSearchView(BranchSearchView):
     form_class = QRBagFilterForm
     required_permissions = ["esani_pantportal.view_qrbag"]
 
-    search_fields = ["qr"]
-    search_fields_exact = ["status", "city"]
+    search_fields = []
+    search_fields_exact = ["qr", "status", "city"]
 
     fixed_columns = {
         "qr": _("QR kode"),
@@ -1130,8 +1162,16 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
     preferences_class = UserListViewPreferences
     required_permissions = ["esani_pantportal.view_user"]
 
-    search_fields = ["username", "user_type", "branch", "company"]
-    search_fields_exact = ["approved", "city"]
+    search_fields = []
+    search_fields_exact = [
+        "username",
+        "user_type",
+        "branch",
+        "company",
+        "approved",
+        "city",
+    ]
+
     annotations = {
         "is_admin_annotation": Q(groups__name__in=ADMIN_GROUPS),
         "branch_annotation": Case(
@@ -1315,8 +1355,8 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
     required_permissions = ["esani_pantportal.view_depositpayout"]
     can_edit_multiple = True
 
-    search_fields_exact = ["company_branch", "kiosk"]
     search_fields = []
+    search_fields_exact = ["company_branch", "kiosk"]
 
     fixed_columns = {
         "source": _("Kæde, butik (eller RVM-serienummer)"),

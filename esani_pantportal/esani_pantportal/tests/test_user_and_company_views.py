@@ -291,16 +291,20 @@ class UserListTest(BaseUserTest):
         self.assertEqual(len(ids), 1)
 
     def test_branch_filter(self):
+        # Exact match on `branch_annotation` value
         self.client.login(username="esani_admin", password="12345")
-        response = self.client.get(reverse("pant:user_list") + "?branch=facebook")
+        response = self.client.get(
+            reverse("pant:user_list") + "?branch=facebook_branch"
+        )
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
         branch_names = [i["branch"] for i in response.context_data["items"]]
         self.assertGreater(len(branch_names), 0)
         for branch_name in branch_names:
-            self.assertIn("facebook", branch_name)
+            self.assertIn("facebook_branch", branch_name)
 
     def test_company_filter(self):
+        # Exact match on `company_annotation` value
         self.client.login(username="esani_admin", password="12345")
         response = self.client.get(reverse("pant:user_list") + "?company=google")
         self.assertEqual(response.status_code, HTTPStatus.OK)
