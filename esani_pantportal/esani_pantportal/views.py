@@ -1037,11 +1037,11 @@ def _get_qr_bag_filtered_annotation(aggregate: Aggregate, valid: bool) -> Aggreg
     return aggregate
 
 
-def _get_history_entry(status=None, ordering="history_date"):
+def _get_history_entry(status=None, ordering="history_date", field="history_date"):
     history = HistoricalQRBag.objects.filter(id=OuterRef("id"))
     if status is not None:
         history = history.filter(status=status)
-    return Subquery(history.order_by(ordering).values("history_date")[:1])
+    return Subquery(history.order_by(ordering).values(field)[:1])
 
 
 class QRBagSearchView(BranchSearchView):
@@ -1058,11 +1058,17 @@ class QRBagSearchView(BranchSearchView):
         "qr": _("QR kode"),
         "company_branch_or_kiosk": _("Butik"),
         "city": _("By"),
-        "status": _("Status"),
-        "updated": _("Opdateret"),
-        "created": _("Oprettet"),
+        # Latest date and username for each listed status
+        "butik_oprettet": _("Oprettet af forhandler"),
+        "butik_oprettet_by": _("Bruger"),
+        "backbone_modtaget": _("Modtaget af backbone"),
+        "backbone_modtaget_by": _("Bruger"),
+        "pantsystem_modtaget": _("Modtaget af pantsystemet"),
+        "pantsystem_modtaget_by": _("Bruger"),
+        # Latest date for each listed status
         "optalt": _("Optalt"),
         "udbetalt": _("Udbetalt"),
+        # Aggregated number and value of deposited items in bag
         "num_valid_deposited": _("Optalt, godkendt"),
         "num_invalid_deposited": _("Optalt, afvist"),
         "value_of_valid_deposited": _("Samlet pantværdi (kr.)"),
@@ -1070,6 +1076,23 @@ class QRBagSearchView(BranchSearchView):
 
     annotations = {
         "city": Coalesce("company_branch__city", "kiosk__city"),
+        # Latest date and username for each listed status
+        "butik_oprettet": _get_history_entry(status="butik_oprettet"),
+        "butik_oprettet_by": _get_history_entry(
+            status="butik_oprettet", field="history_user__username"
+        ),
+        "backbone_modtaget": _get_history_entry(status="backbone_modtaget"),
+        "backbone_modtaget_by": _get_history_entry(
+            status="backbone_modtaget", field="history_user__username"
+        ),
+        "pantsystem_modtaget": _get_history_entry(status="pantsystem_modtaget"),
+        "pantsystem_modtaget_by": _get_history_entry(
+            status="pantsystem_modtaget", field="history_user__username"
+        ),
+        # Latest date for each listed status
+        "optalt": _get_history_entry(status="esani_optalt"),
+        "udbetalt": _get_history_entry(status="esani_udbetalt"),
+        # Aggregated number and value of deposited items in bag
         "num_valid_deposited": _get_qr_bag_filtered_annotation(
             Sum("deposit_items__count"),
             True,
@@ -1086,10 +1109,6 @@ class QRBagSearchView(BranchSearchView):
             ),
             True,
         ),
-        "updated": _get_history_entry(ordering="-history_date"),
-        "created": _get_history_entry(ordering="history_date"),
-        "optalt": _get_history_entry(status="esani_optalt"),
-        "udbetalt": _get_history_entry(status="esani_udbetalt"),
     }
 
     def get_action_url(self, item, *args):
@@ -1130,6 +1149,11 @@ class QRBagSearchView(BranchSearchView):
             return qs
         else:
             return super().sort_qs(qs)
+
+    def model_to_dict(self, item_obj):
+        result = super().model_to_dict(item_obj)
+        result.setdefault("status", item_obj.status)
+        return result
 
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)

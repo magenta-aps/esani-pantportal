@@ -69,3 +69,8 @@ input[class*="form-check-input"] { border: 2px solid var(--bs-gray) }
     when toggleing visibility on hidden elements. */
     display: none;
 }
+
+/**/
+thead th .th-inner {
+    white-space: normal !important;
+}

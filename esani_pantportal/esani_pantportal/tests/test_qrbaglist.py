@@ -126,13 +126,13 @@ class BaseQRBagTest(TestCase):
         cls.company_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
 
         # Create `QRStatus` objects matching the status codes used in the tests
-        for code in ("Oprettet", "Under transport"):
+        for code in ("butik_oprettet", "under_transport"):
             QRStatus.objects.get_or_create(code=code, name_da=code, name_kl=code)
 
         # Two bags are created by a branch-admin
         qrbag1 = QRBag(
             qr="qr1",
-            status="Oprettet",
+            status="butik_oprettet",
             company_branch=cls.branch1,
             owner=cls.branch_admin,
         )
@@ -140,7 +140,7 @@ class BaseQRBagTest(TestCase):
         qrbag1.save()
         qrbag2 = QRBag(
             qr="qr2",
-            status="Oprettet",
+            status="butik_oprettet",
             company_branch=cls.branch1,
             owner=cls.branch_admin,
         )
@@ -148,17 +148,17 @@ class BaseQRBagTest(TestCase):
         qrbag2.save()
 
         # One of them is edited by an ESANI-admin
-        qrbag1.status = "Under transport"
+        qrbag1.status = "under_transport"
         qrbag1._history_user = cls.esani_admin
         qrbag1.save()
 
         # This QR bag belongs to a kiosk (and branch-admins should therefore not see it)
-        qrbag3 = QRBag(qr="qr3", status="Oprettet", kiosk=cls.kiosk)
+        qrbag3 = QRBag(qr="qr3", status="butik_oprettet", kiosk=cls.kiosk)
         qrbag3._history_user = cls.esani_admin
         qrbag3.save()
 
         # This QR bag belongs to another branch in the same company
-        qrbag4 = QRBag(qr="qr4", status="Oprettet", company_branch=cls.branch2)
+        qrbag4 = QRBag(qr="qr4", status="butik_oprettet", company_branch=cls.branch2)
         qrbag4._history_user = cls.esani_admin
         qrbag4.save()
 
@@ -238,11 +238,6 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         self.assertEqual(bags["qr3"]["Butik"], "kiosk")
         self.assertEqual(bags["qr4"]["Butik"], "branch2")
 
-        self.assertEqual(bags["qr1"]["Status"], "Under transport")
-        self.assertEqual(bags["qr2"]["Status"], "Oprettet")
-        self.assertEqual(bags["qr3"]["Status"], "Oprettet")
-        self.assertEqual(bags["qr4"]["Status"], "Oprettet")
-
     def test_company_admin_view(self):
         self.client.login(username="company_admin", password="12345")
         bags = self.get_bags()
@@ -257,15 +252,15 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         self.client.login(username="esani_admin", password="12345")
         response = self.client.get(reverse("pant:qrbag_list"))
         choices = dict(response.context["form"].fields["status"].choices)
-        self.assertEqual(choices["Oprettet"], "Oprettet (3)")
-        self.assertEqual(choices["Under transport"], "Under transport (1)")
+        self.assertEqual(choices["butik_oprettet"], "butik_oprettet (3)")
+        self.assertEqual(choices["under_transport"], "under_transport (1)")
 
     def test_counts_as_company_admin(self):
         self.client.login(username="company_admin", password="12345")
         response = self.client.get(reverse("pant:qrbag_list"))
         choices = dict(response.context["form"].fields["status"].choices)
-        self.assertEqual(choices["Oprettet"], "Oprettet (2)")
-        self.assertEqual(choices["Under transport"], "Under transport (1)")
+        self.assertEqual(choices["butik_oprettet"], "butik_oprettet (2)")
+        self.assertEqual(choices["under_transport"], "under_transport (1)")
 
     def test_annotation_columns(self):
         self.client.login(username="esani_admin", password="12345")
@@ -303,17 +298,17 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         [
             # Test 1: only one status is selected
             (
-                ["Under transport"],  # statuses
-                [("qr1", "Under transport")],  # expected_results
+                ["under_transport"],  # statuses
+                [("qr1", "under_transport")],  # expected_results
             ),
             # Test 2: multiple statuses are selected
             (
-                ["Oprettet", "Under transport"],  # statuses
+                ["butik_oprettet", "under_transport"],  # statuses
                 [  # expected_results
-                    ("qr1", "Under transport"),
-                    ("qr2", "Oprettet"),
-                    ("qr3", "Oprettet"),
-                    ("qr4", "Oprettet"),
+                    ("qr1", "under_transport"),
+                    ("qr2", "butik_oprettet"),
+                    ("qr3", "butik_oprettet"),
+                    ("qr4", "butik_oprettet"),
                 ],
             ),
         ],
@@ -401,8 +396,8 @@ class QRBagHistoryViewTest(BaseQRBagTest):
         self.assertEqual(len(histories), 2)
 
         history_dict = {h["Status"]: h["Ændringsansvarlig"] for h in histories}
-        self.assertEqual(history_dict["Oprettet"], "branch_admin")
-        self.assertEqual(history_dict["Under transport"], "esani_admin")
+        self.assertEqual(history_dict["butik_oprettet"], "branch_admin")
+        self.assertEqual(history_dict["under_transport"], "esani_admin")
 
     def test_context_includes_deposit_payout_items(self):
         # Arrange: get history page for QR bag 4
