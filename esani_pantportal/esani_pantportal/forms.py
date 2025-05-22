@@ -32,6 +32,7 @@ from esani_pantportal.models import (
     PRODUCT_SHAPE_CHOICES,
     USER_TYPE_CHOICES,
     BranchUser,
+    City,
     Company,
     CompanyBranch,
     CompanyUser,
@@ -872,19 +873,9 @@ class SortPaginateForm(BootstrapForm):
 
 class CityChoiceMixin:
     def __init__(self, *args, **kwargs):
-        cities = kwargs.pop("cities")
         super().__init__(*args, **kwargs)
-        city_names = sorted(  # sort alphabetically
-            set(  # remove duplicated city names
-                [
-                    city.title()  # normalize casing of city names
-                    for city in cities
-                    if city is not None
-                ]
-            )
-        )
         self.fields["city"].choices = [("", "-")] + [
-            (name, name) for name in city_names
+            (city.name, city.name) for city in City.objects.order_by("name")
         ]
 
 

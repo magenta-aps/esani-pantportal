@@ -6,7 +6,7 @@ import random
 
 from django.core.management.base import BaseCommand
 
-from esani_pantportal.models import Company
+from esani_pantportal.models import City, Company
 
 company_names = [
     "Greenland Brewhouse",
@@ -19,12 +19,14 @@ class Command(BaseCommand):
         if Company.objects.all().count() != 0:
             return
 
+        city = City.objects.get_or_create(name="Nuuk")
+
         for company_name in company_names:
             Company.objects.create(
                 name=company_name,
                 cvr=company_names.index(company_name),
                 address="Væskevej " + str(company_names.index(company_name)),
-                city="Nuuk",
+                city=city,
                 postal_code="1234",
                 phone="(+299) 3635" + str(random.randint(10, 99)),
                 country="Grønland",
