@@ -1058,8 +1058,6 @@ class QRBagSearchView(BranchSearchView):
         "qr": _("QR kode"),
         "company_branch_or_kiosk": _("Butik"),
         "city": _("By"),
-        # Current status
-        "status": _("Status"),
         # Latest date and username for each listed status
         "butik_oprettet": _("Oprettet af forhandler"),
         "butik_oprettet_by": _("Bruger"),
@@ -1151,6 +1149,11 @@ class QRBagSearchView(BranchSearchView):
             return qs
         else:
             return super().sort_qs(qs)
+
+    def model_to_dict(self, item_obj):
+        result = super().model_to_dict(item_obj)
+        result.setdefault("status", item_obj.status)
+        return result
 
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)

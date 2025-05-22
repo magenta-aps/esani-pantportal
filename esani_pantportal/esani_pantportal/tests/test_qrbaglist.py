@@ -238,11 +238,6 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         self.assertEqual(bags["qr3"]["Butik"], "kiosk")
         self.assertEqual(bags["qr4"]["Butik"], "branch2")
 
-        self.assertEqual(bags["qr1"]["Status"], "under_transport")
-        self.assertEqual(bags["qr2"]["Status"], "butik_oprettet")
-        self.assertEqual(bags["qr3"]["Status"], "butik_oprettet")
-        self.assertEqual(bags["qr4"]["Status"], "butik_oprettet")
-
     def test_company_admin_view(self):
         self.client.login(username="company_admin", password="12345")
         bags = self.get_bags()
