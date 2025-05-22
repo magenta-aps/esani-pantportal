@@ -8,23 +8,27 @@ from django.test import TestCase
 
 from esani_pantportal.forms import DepositPayoutItemFilterForm, DepositPayoutItemForm
 from esani_pantportal.models import Company, CompanyBranch, Kiosk
+from esani_pantportal.tests.conftest import LoginMixin
 
 
-class BaseDepositPayoutFormTest(TestCase):
+class BaseDepositPayoutFormTest(LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
         cls.company = Company.objects.create(
             name="company name",
             cvr=1111,
+            city=cls._test_city,
         )
         cls.company_branch = CompanyBranch.objects.create(
             company=cls.company,
             name="company branch name",
+            city=cls._test_city,
         )
         cls.kiosk = Kiosk.objects.create(
             name="kiosk name",
             cvr=2222,
+            city=cls._test_city,
         )
 
 

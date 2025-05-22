@@ -22,6 +22,7 @@ from esani_pantportal.models import (
     QRBag,
     ReverseVendingMachine,
 )
+from esani_pantportal.tests.conftest import LoginMixin
 
 CUSTOMER_1_NAME = "branch name"
 CUSTOMER_1_CVR = 1111
@@ -31,22 +32,25 @@ CUSTOMER_2_CVR = 3333
 CUSTOMER_2_LOCATION_ID = "4444"
 
 
-class _SharedBase(ParametrizedTestCase, TestCase):
+class _SharedBase(ParametrizedTestCase, LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
         cls.company = Company.objects.create(
             name="company name",
+            city=cls._test_city,
             cvr=CUSTOMER_1_CVR,
         )
         cls.company_branch = CompanyBranch.objects.create(
             company=cls.company,
             name=CUSTOMER_1_NAME,
+            city=cls._test_city,
             location_id=CUSTOMER_1_LOCATION_ID,
             qr_compensation=30,
         )
         cls.kiosk = Kiosk.objects.create(
             name=CUSTOMER_2_NAME,
+            city=cls._test_city,
             cvr=CUSTOMER_2_CVR,
             location_id=CUSTOMER_2_LOCATION_ID,
         )

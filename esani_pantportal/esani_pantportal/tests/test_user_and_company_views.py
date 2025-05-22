@@ -33,7 +33,7 @@ TEST_DATA_MUNICIPALITY_SERMERSOOQ = MUNICIPALITY_CHOICES[len(MUNICIPALITY_CHOICE
 ]
 
 
-class TestPrevalidateCreateView(TestCase):
+class TestPrevalidateCreateView(LoginMixin, TestCase):
     def test_form_prevalidation_invalid_data(self):
         """Verify that POSTing a 'prevalidate' payload to a view inheriting from `
         _PrevalidateCreateView` returns a JSON response listing the form validation
@@ -75,7 +75,7 @@ class TestPrevalidateCreateView(TestCase):
             data={
                 "prevalidate": "company",
                 "company-address": "Adresse",
-                "company-city": "By",
+                "company-city": self._test_city.pk,
                 "company-company_type": "A",
                 "company-country": "GL",
                 "company-cvr": "123",
@@ -94,12 +94,13 @@ class TestPrevalidateCreateView(TestCase):
 class BaseUserTest(LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls) -> None:
+        super().setUpTestData()
         cls.facebook = Company.objects.create(
             name="facebook",
             cvr=12312345,
             address="foo",
             postal_code="123",
-            city="test city",
+            city=cls._test_city,
             country="USA",
             phone="+4544457845",
             municipality=TEST_DATA_MUNICIPALITY_SERMERSOOQ,
@@ -114,7 +115,7 @@ class BaseUserTest(LoginMixin, TestCase):
             cvr=12312346,
             address="foo",
             postal_code="123",
-            city="test city",
+            city=cls._test_city,
             country="USA",
             phone="+4544457845",
             municipality=TEST_DATA_MUNICIPALITY_SERMERSOOQ,
@@ -129,7 +130,7 @@ class BaseUserTest(LoginMixin, TestCase):
             name="facebook_branch",
             address="food",
             postal_code="12311",
-            city="test town",
+            city=cls._test_town,
             phone="+4542457845",
             location_id=2,
             municipality=TEST_DATA_MUNICIPALITY_SERMERSOOQ,
@@ -144,7 +145,7 @@ class BaseUserTest(LoginMixin, TestCase):
             name="kiosk",
             address="food",
             postal_code="12311",
-            city="test town",
+            city=cls._test_town,
             phone="+4542457845",
             location_id=2,
             cvr=11221122,

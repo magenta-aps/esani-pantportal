@@ -6,6 +6,7 @@ from django.core.management import call_command
 
 from esani_pantportal.models import (
     BranchUser,
+    City,
     Company,
     CompanyBranch,
     CompanyUser,
@@ -16,6 +17,12 @@ from esani_pantportal.models import (
 
 
 class LoginMixin:
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls._test_city, _ = City.objects.get_or_create(name="test city")
+        cls._test_town, _ = City.objects.get_or_create(name="test town")
+
     def login(self, group="EsaniAdmins"):
         username = f"testuser_{group}"
 
@@ -30,7 +37,7 @@ class LoginMixin:
                 cvr=92312345,
                 address="foo",
                 postal_code="123",
-                city="test city",
+                city=self._test_city,
                 phone="+4544457845",
             )
             branch = CompanyBranch.objects.create(
@@ -38,7 +45,7 @@ class LoginMixin:
                 name="test branch",
                 address="foodora",
                 postal_code="12311",
-                city="test town",
+                city=self._test_town,
                 phone="+4542457845",
                 location_id=3,
             )
@@ -51,7 +58,7 @@ class LoginMixin:
                 name="test kiosk",
                 address="foodora kiosk",
                 postal_code="12311",
-                city="test town",
+                city=self._test_town,
                 phone="+4542457846",
                 location_id=4,
             )
@@ -63,7 +70,7 @@ class LoginMixin:
                 cvr=19232345,
                 address="foo",
                 postal_code="123",
-                city="test city",
+                city=self._test_city,
                 phone="+4544457845",
             )
             kwargs = {"company": company}

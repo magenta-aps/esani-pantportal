@@ -31,6 +31,7 @@ from esani_pantportal.models import (
     validate_barcode_length,
     validate_digit,
 )
+from esani_pantportal.tests.conftest import LoginMixin
 
 
 class _AbstractModelTestCase(TestCase):
@@ -132,7 +133,7 @@ class QRCodeIntervalTest(TestCase):
         self.assertIn("foo", str(qr_interval))
 
 
-class TestAbstractCompany(ParametrizedTestCase, _AbstractModelTestCase):
+class TestAbstractCompany(ParametrizedTestCase, LoginMixin, _AbstractModelTestCase):
     # This test creates a model deriving from `AbstractCompany` in order to be able to
     # test its properties, methods, etc.
 
@@ -142,11 +143,21 @@ class TestAbstractCompany(ParametrizedTestCase, _AbstractModelTestCase):
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
-        cls.company = Company.objects.create(name="Virksomhed", cvr=1)
-        cls.company_branch = CompanyBranch.objects.create(
-            name="Butik", company=cls.company
+        cls.company = Company.objects.create(
+            name="Virksomhed",
+            city=cls._test_city,
+            cvr=1,
         )
-        cls.kiosk = Kiosk.objects.create(name="Butik", cvr=1)
+        cls.company_branch = CompanyBranch.objects.create(
+            name="Butik",
+            city=cls._test_city,
+            company=cls.company,
+        )
+        cls.kiosk = Kiosk.objects.create(
+            name="Butik",
+            city=cls._test_city,
+            cvr=1,
+        )
 
     @classmethod
     def get_derived_model(cls):
@@ -216,10 +227,15 @@ class TestBranch(_AbstractModelTestCase):
         self.assertIsNone(instance.customer_invoice_account_id)
 
 
-class KioskTest(TestCase):
+class KioskTest(LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.kiosk = Kiosk.objects.create(name="my kiosk", cvr=11221122)
+        super().setUpTestData()
+        cls.kiosk = Kiosk.objects.create(
+            name="my kiosk",
+            city=cls._test_city,
+            cvr=11221122,
+        )
 
     def test_str(self):
         self.assertEqual(str(self.kiosk), "my kiosk - cvr: 11221122")
@@ -234,10 +250,13 @@ class KioskTest(TestCase):
         self.assertEqual(self.kiosk.external_customer_id, f"3-{self.kiosk.id:05}")
 
 
-class CompanyTest(TestCase):
+class CompanyTest(LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.company = Company.objects.create(name="my company", cvr=11221122)
+        super().setUpTestData()
+        cls.company = Company.objects.create(
+            name="my company", city=cls._test_city, cvr=11221122
+        )
 
     def test_get_branch(self):
         self.assertEqual(self.company.get_branch(), None)
@@ -249,16 +268,30 @@ class CompanyTest(TestCase):
         self.assertEqual(self.company.external_customer_id, f"1-{self.company.id:05}")
 
 
-class CompanyBranchTest(TestCase):
+class CompanyBranchTest(LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.company = Company.objects.create(name="my company", cvr=11221122)
-        cls.branch = CompanyBranch.objects.create(name="my branch", company=cls.company)
+        super().setUpTestData()
+        cls.company = Company.objects.create(
+            name="my company",
+            city=cls._test_city,
+            cvr=11221122,
+        )
+        cls.branch = CompanyBranch.objects.create(
+            name="my branch",
+            city=cls._test_city,
+            company=cls.company,
+        )
         cls.company2 = Company.objects.create(
-            name="other company", cvr=123, invoice_company_branch=False
+            name="other company",
+            city=cls._test_city,
+            cvr=123,
+            invoice_company_branch=False,
         )
         cls.branch2 = CompanyBranch.objects.create(
-            name="other branch", company=cls.company2
+            name="other branch",
+            city=cls._test_city,
+            company=cls.company2,
         )
 
     def test_get_branch(self):
@@ -316,15 +349,16 @@ class DepositPayoutItemTest(TestCase):
         self.assertNotEqual(str(self.deposit_payout_item), "Hello world!")
 
 
-class UserTest(TestCase):
+class UserTest(LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls) -> None:
+        super().setUpTestData()
         cls.facebook = Company.objects.create(
             name="facebook",
             cvr=12312345,
             address="foo",
             postal_code="123",
-            city="test city",
+            city=cls._test_city,
             phone="+4544457845",
         )
 
@@ -333,7 +367,7 @@ class UserTest(TestCase):
             name="facebook_branch",
             address="food",
             postal_code="12311",
-            city="test town",
+            city=cls._test_town,
             phone="+4542457845",
             location_id=2,
         )
@@ -342,7 +376,7 @@ class UserTest(TestCase):
             name="kiosk",
             address="food",
             postal_code="12311",
-            city="test town",
+            city=cls._test_town,
             phone="+4542457845",
             location_id=2,
             cvr=11221122,
