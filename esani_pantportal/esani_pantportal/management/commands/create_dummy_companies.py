@@ -19,7 +19,7 @@ class Command(BaseCommand):
         if Company.objects.all().count() != 0:
             return
 
-        city = City.objects.get_or_create(name="Nuuk")
+        city, _ = City.objects.get_or_create(name="Nuuk")
 
         for company_name in company_names:
             Company.objects.create(

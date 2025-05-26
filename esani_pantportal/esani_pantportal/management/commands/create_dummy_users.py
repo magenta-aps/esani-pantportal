@@ -10,6 +10,7 @@ from django.core.management.base import BaseCommand
 from esani_pantportal.models import (
     MUNICIPALITY_CHOICES,
     BranchUser,
+    City,
     Company,
     CompanyBranch,
     CompanyUser,
@@ -35,13 +36,15 @@ class Command(BaseCommand):
         branch_user_group = Group.objects.get(name="BranchUsers")
         esani_user_group = Group.objects.get(name="EsaniAdmins")
 
+        city, _ = City.objects.get_or_create(name="Nuuk")
+
         brugseni, created = Company.objects.update_or_create(
             cvr=15787406,
             defaults={
                 "name": "Brugseni",
                 "address": "Aqqusinersuaq 4, 2 th. P.O.Box 1092 ",
                 "postal_code": "1092",
-                "city": "Nuuk",
+                "city": city,
                 "municipality": DUMMY_MUNICIPALITY,
                 "country": "Grønland",
                 "phone": "(+299) 363500",
@@ -55,7 +58,7 @@ class Command(BaseCommand):
                 "name": "Brugseni Natalie",
                 "address": "57RR+M9M, Iiminaq",
                 "postal_code": "3905",
-                "city": "Nuuk",
+                "city": city,
                 "municipality": DUMMY_MUNICIPALITY,
                 "phone": "(+299) 363501",
                 "location_id": "00432",
@@ -71,7 +74,7 @@ class Command(BaseCommand):
             defaults={
                 "address": "Brugsen, Aqqusinersuaq 2",
                 "postal_code": "3900",
-                "city": "Nuuk",
+                "city": city,
                 "municipality": DUMMY_MUNICIPALITY,
                 "phone": "(+299) 321122",
                 "location_id": "004321",
@@ -190,7 +193,7 @@ class Command(BaseCommand):
                 "name": "Kamik",
                 "address": "57C8+9F6, Nuuk",
                 "postal_code": "3900",
-                "city": "Nuuk",
+                "city": city,
                 "phone": "(+299) 321122",
                 "location_id": "2",
                 "customer_id": "22",
