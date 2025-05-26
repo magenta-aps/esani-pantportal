@@ -18,7 +18,6 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
 from django.contrib.auth.views import LogoutView, PasswordChangeView
-from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.core.management import call_command
@@ -114,6 +113,7 @@ from esani_pantportal.models import (
     KIOSK_USER,
     AbstractCompany,
     BranchUser,
+    City,
     Company,
     CompanyBranch,
     CompanyListViewPreferences,
@@ -584,14 +584,6 @@ class SearchView(LoginRequiredMixin, FormView):
     def columns(self):
         return self.regular_columns + self.filterable_columns
 
-    @cached_property
-    def cities(self) -> list[str]:
-        # Provide city names for the subclasses which need it.
-        # Requires a `city` annotation in the subclass `annotations` property.
-        model = self.model  # type: ignore[attr-defined]
-        qs = model.objects.annotate(city=self.annotations["city"]).order_by()
-        return qs.aggregate(cities=ArrayAgg("city", distinct=True)).get("cities", [])
-
     def get_fixed_columns(self):
         return self.fixed_columns
 
@@ -719,7 +711,7 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
         "qr_compensation_annotation": F("qr_compensation"),
         "company_annotation": Value("-"),
         "cvr_annotation": F("cvr"),
-        "city_annotation": F("city"),
+        "city_annotation": F("city__name"),
     }
 
     company_annotations = {
@@ -741,7 +733,7 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
         "qr_compensation_annotation": Value(None, output_field=FloatField()),
         "company_annotation": Value("-"),
         "cvr_annotation": F("cvr"),
-        "city_annotation": F("city"),
+        "city_annotation": F("city__name"),
     }
 
     company_branch_annotations = {
@@ -757,7 +749,7 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
         "qr_compensation_annotation": F("qr_compensation"),
         "company_annotation": F("company__name"),
         "cvr_annotation": Value(None, output_field=PositiveIntegerField()),
-        "city_annotation": F("city"),
+        "city_annotation": F("city__name"),
     }
 
     search_fields = []
@@ -774,15 +766,6 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
         "name": _("Navn"),
         "object_class_name_verbose": _("Type"),
     }
-
-    def get_form_kwargs(self):
-        form_kwargs = super().get_form_kwargs()
-        form_kwargs["cities"] = self.cities
-        return form_kwargs
-
-    @cached_property
-    def cities(self) -> list[str]:
-        return self.get_union_queryset().values_list("city", flat=True)
 
     def get_action_url(self, item, *args):
         if item.object_class_name == "Company":
@@ -836,12 +819,6 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
             **self.company_branch_annotations,
             **self.annotations,
         )
-
-    def get_union_queryset(self):
-        qs0 = self.get_kiosk_queryset()
-        qs1 = self.get_company_queryset()
-        qs2 = self.get_company_branch_queryset()
-        return qs0.union(qs1, qs2, all=True)
 
     def get_queryset(self):
         qs0 = self.filter_qs(self.get_kiosk_queryset())
@@ -984,18 +961,13 @@ class ReverseVendingMachineSearchView(BranchSearchView):
     required_permissions = ["esani_pantportal.view_reversevendingmachine"]
 
     annotations = {
-        "city": Coalesce("company_branch__city", "kiosk__city"),
+        "city": Coalesce("company_branch__city__name", "kiosk__city__name"),
     }
 
     search_fields = []
     search_fields_exact = ["serial_number", "city"]
 
     actions = {_("Fjern"): "btn btn-sm btn-danger"}
-
-    def get_form_kwargs(self):
-        form_kwargs = super().get_form_kwargs()
-        form_kwargs["cities"] = self.cities
-        return form_kwargs
 
     def get_action_html(self, item, label, button_class):
         id = item.id
@@ -1075,7 +1047,7 @@ class QRBagSearchView(BranchSearchView):
     }
 
     annotations = {
-        "city": Coalesce("company_branch__city", "kiosk__city"),
+        "city": Coalesce("company_branch__city__name", "kiosk__city__name"),
         # Latest date and username for each listed status
         "butik_oprettet": _get_history_entry(status="butik_oprettet"),
         "butik_oprettet_by": _get_history_entry(
@@ -1124,7 +1096,6 @@ class QRBagSearchView(BranchSearchView):
     def get_form_kwargs(self):
         form_kwargs = super().get_form_kwargs()
         form_kwargs["user"] = self.request.user
-        form_kwargs["cities"] = self.cities
         return form_kwargs
 
     def filter_qs(self, qs):
@@ -1222,9 +1193,9 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
         ),
         "full_name": Concat("first_name", Value(" "), "last_name"),
         "city": Coalesce(
-            "branchuser__branch__city",
-            "kioskuser__branch__city",
-            "companyuser__company__city",
+            "branchuser__branch__city__name",
+            "kioskuser__branch__city__name",
+            "companyuser__company__city__name",
         ),
     }
 
@@ -1234,11 +1205,6 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
         "user_type": _("Brugertype"),
         "city": _("By"),
     }
-
-    def get_form_kwargs(self):
-        form_kwargs = super().get_form_kwargs()
-        form_kwargs["cities"] = self.cities
-        return form_kwargs
 
     def get_action_url(self, item, *args):
         return reverse("pant:user_view", kwargs={"pk": item.id})
@@ -1497,9 +1463,9 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
         )
 
         if company_branch:
-            json_dict["source"] = str(company_branch) + ", " + company_branch.city
+            json_dict["source"] = str(company_branch) + ", " + company_branch.city.name
         elif kiosk:
-            json_dict["source"] = str(kiosk) + ", " + kiosk.city
+            json_dict["source"] = str(kiosk) + ", " + kiosk.city.name
         else:
             json_dict["source"] = self.span(item_obj.rvm_serial, source_error)
 
@@ -2378,7 +2344,10 @@ class CsvUsersView(CsvTemplateView):
             user = users_map[user_id]
             company = user.branch or user.company
             if company:
-                return getattr(company, field)
+                val = getattr(company, field)
+                if isinstance(val, City):
+                    return val.name
+                return val
             elif user.user_type == ESANI_USER and field == "name":
                 return "ESANI"
 

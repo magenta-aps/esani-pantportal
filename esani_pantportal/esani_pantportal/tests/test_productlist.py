@@ -589,6 +589,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
 class ProductListBulkApprovalTest(LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
+        super().setUpTestData()
         cls.prod1 = Product.objects.create(
             product_name="prod1",
             barcode="0010",
@@ -632,11 +633,14 @@ class ProductListBulkApprovalTest(LoginMixin, TestCase):
 
 class ProductListBulkDeleteTest(LoginMixin, TestCase):
     def setUp(self):
+        super().setUp()
         self.user = self.login("EsaniAdmins")
 
     @classmethod
     def setUpTestData(cls):
-        kiosk = Kiosk.objects.create(cvr="123")
+        super().setUpTestData()
+
+        kiosk = Kiosk.objects.create(cvr="123", city=cls._test_city)
 
         deposit_payout = DepositPayout.objects.create(
             source_type=DepositPayout.SOURCE_TYPE_CSV,

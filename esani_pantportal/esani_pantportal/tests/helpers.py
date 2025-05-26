@@ -35,6 +35,7 @@ class ViewTestMixin(LoginMixin):
 
     @classmethod
     def setUpTestData(cls) -> None:
+        super().setUpTestData()
         cls.esani_admin = EsaniUser.objects.create_user(
             username="esani_admin",
             password="12345",
@@ -60,7 +61,7 @@ class ViewTestMixin(LoginMixin):
         shared = {
             "address": "foo",
             "postal_code": "123",
-            "city": "test city",
+            "city": cls._test_city,
             "phone": "+4500000000",
         }
 

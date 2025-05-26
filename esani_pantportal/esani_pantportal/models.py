@@ -117,6 +117,20 @@ height_constraints = settings.PRODUCT_CONSTRAINTS["height"]
 capacity_constraints = settings.PRODUCT_CONSTRAINTS["capacity"]
 
 
+class City(models.Model):
+    class Meta:
+        ordering = ("name",)
+
+    name = models.CharField(
+        verbose_name=_("Bynavn"),
+        unique=True,
+        max_length=50,
+    )
+
+    def __str__(self):
+        return self.name
+
+
 class AbstractCompany(models.Model):
     class Meta:
         abstract = True
@@ -145,10 +159,11 @@ class AbstractCompany(models.Model):
         choices=MUNICIPALITY_CHOICES,
     )
 
-    city = models.CharField(
+    city = models.ForeignKey(
+        City,
         verbose_name=_("By"),
         help_text=_("Butikken eller firmaets registrerede bynavn"),
-        max_length=255,
+        on_delete=models.CASCADE,
     )
 
     phone = models.CharField(

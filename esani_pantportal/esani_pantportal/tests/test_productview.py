@@ -35,12 +35,13 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
 
     @classmethod
     def setUpTestData(cls):
+        super().setUpTestData()
         cls.company = Company.objects.create(
             name="existing company",
             cvr=12312345,
             address="foo",
             postal_code="123",
-            city="test city",
+            city=cls._test_city,
             phone="+4544457845",
         )
         cls.branch = CompanyBranch.objects.create(
@@ -48,7 +49,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             name="existing branch",
             address="food",
             postal_code="12311",
-            city="test town",
+            city=cls._test_city,
             phone="+4542457845",
             location_id=2,
         )
@@ -57,7 +58,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             name="existing branch2",
             address="food",
             postal_code="12311",
-            city="test town",
+            city=cls._test_town,
             phone="+4542457845",
             location_id=2,
         )

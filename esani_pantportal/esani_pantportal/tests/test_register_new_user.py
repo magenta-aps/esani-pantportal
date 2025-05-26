@@ -24,21 +24,23 @@ from esani_pantportal.models import (
     Kiosk,
     KioskUser,
 )
+from esani_pantportal.tests.conftest import LoginMixin
 
 TEST_DATA_MUNICIPALITY_SERMERSOOQ = MUNICIPALITY_CHOICES[len(MUNICIPALITY_CHOICES) - 3][
     0
 ]
 
 
-class RegisterNewUserFormTest(TestCase):
+class RegisterNewUserFormTest(LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
+        super().setUpTestData()
         cls.existing_company = Company.objects.create(
             name="existing company",
             cvr=12312345,
             address="foo",
             postal_code="123",
-            city="test city",
+            city=cls._test_city,
             phone="+4544457845",
         )
 
@@ -47,7 +49,7 @@ class RegisterNewUserFormTest(TestCase):
             name="existing branch",
             address="food",
             postal_code="12311",
-            city="test town",
+            city=cls._test_town,
             phone="+4542457845",
             location_id=2,
         )
@@ -57,7 +59,7 @@ class RegisterNewUserFormTest(TestCase):
             name="existing branch2",
             address="foodora",
             postal_code="12311",
-            city="test town",
+            city=cls._test_town,
             phone="+4542457845",
             location_id=3,
         )
@@ -66,7 +68,7 @@ class RegisterNewUserFormTest(TestCase):
             name="existing kiosk",
             address="koo",
             postal_code="12311",
-            city="test town",
+            city=cls._test_town,
             phone="+4542457845",
             location_id=2,
             cvr=11221122,
@@ -131,7 +133,7 @@ class RegisterNewUserFormTest(TestCase):
             "branch-name": "The Unicorn fields",
             "branch-address": "Old Road 12",
             "branch-postal_code": "1245",
-            "branch-city": "Dundee",
+            "branch-city": cls._test_city.pk,
             "branch-phone": "125552368",
             "branch-prefix": "GL",
             "branch-location_id": 2,
@@ -148,7 +150,7 @@ class RegisterNewUserFormTest(TestCase):
             "branch-name": "The Unicorn fields",
             "branch-address": "Old Road 12",
             "branch-postal_code": "1245",
-            "branch-city": "Dundee",
+            "branch-city": cls._test_city.pk,
             "branch-phone": "125552368",
             "branch-prefix": "GL",
             "branch-location_id": 2,
@@ -167,7 +169,7 @@ class RegisterNewUserFormTest(TestCase):
             "company-name": "Dundee HQ",
             "company-address": "New Road 12",
             "company-postal_code": "2211",
-            "company-city": "Fife",
+            "company-city": cls._test_town.pk,
             "company-phone": "44457845",
             "company-prefix": "DK",
             "company-cvr": 1017196401,
@@ -406,15 +408,16 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         self.assertEqual(response.status_code, 302)
 
 
-class RegisterNewEsaniAdminTest(TestCase):
+class RegisterNewEsaniAdminTest(LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
+        super().setUpTestData()
         cls.company = Company.objects.create(
             name="existing company",
             cvr=12312345,
             address="foo",
             postal_code="123",
-            city="test city",
+            city=cls._test_city,
             phone="+4544457845",
         )
 
@@ -423,7 +426,7 @@ class RegisterNewEsaniAdminTest(TestCase):
             name="existing branch",
             address="food",
             postal_code="12311",
-            city="test town",
+            city=cls._test_town,
             phone="+4542457845",
             location_id=2,
         )

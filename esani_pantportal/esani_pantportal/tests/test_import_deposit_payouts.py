@@ -22,9 +22,10 @@ from esani_pantportal.models import (
     Product,
     ReverseVendingMachine,
 )
+from esani_pantportal.tests.conftest import LoginMixin
 
 
-class TestImportDepositPayouts(TestCase):
+class TestImportDepositPayouts(LoginMixin, TestCase):
     maxDiff = None
 
     kiosk_cvr = 1234
@@ -40,7 +41,7 @@ class TestImportDepositPayouts(TestCase):
         super().setUpTestData()
 
         # Add `Kiosk` object
-        kiosk = Kiosk.objects.create(cvr=cls.kiosk_cvr)
+        kiosk = Kiosk.objects.create(cvr=cls.kiosk_cvr, city=cls._test_city)
 
         # Add `ReverseVendingMachine` objects matching the RVM serial numbers in
         # `example_with_valid_ids.csv`.

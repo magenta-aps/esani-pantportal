@@ -6,10 +6,14 @@ from django.utils.translation import gettext_lazy as _
 from simple_history.admin import SimpleHistoryAdmin
 
 from esani_pantportal.models import (
+    City,
+    Company,
+    CompanyBranch,
     DepositPayout,
     DepositPayoutItem,
     ERPCreditNoteExport,
     ERPProductMapping,
+    Kiosk,
     Product,
 )
 
@@ -129,7 +133,46 @@ class ProductAdmin(SimpleHistoryAdmin):
     approval_date.admin_order_field = "approval_date"  # type: ignore
 
 
+class CompanyInlineAdmin(admin.TabularInline):
+    model = Company
+    fields = [
+        "name",
+        "city",
+    ]
+    extra = 0
+
+
+class CompanyBranchInlineAdmin(admin.TabularInline):
+    model = CompanyBranch
+    fields = [
+        "name",
+        "city",
+    ]
+    extra = 0
+
+
+class KioskInlineAdmin(admin.TabularInline):
+    model = Kiosk
+    fields = [
+        "name",
+        "city",
+    ]
+    extra = 0
+
+
+class CityAdmin(admin.ModelAdmin):
+    inlines = [
+        CompanyInlineAdmin,
+        CompanyBranchInlineAdmin,
+        KioskInlineAdmin,
+    ]
+
+
 admin.site.register(DepositPayout, DepositPayoutAdmin)
 admin.site.register(ERPCreditNoteExport, ERPCreditNoteExportAdmin)
 admin.site.register(ERPProductMapping, ERPProductMappingAdmin)
 admin.site.register(Product, ProductAdmin)
+admin.site.register(City, CityAdmin)
+admin.site.register(Company)
+admin.site.register(CompanyBranch)
+admin.site.register(Kiosk)
