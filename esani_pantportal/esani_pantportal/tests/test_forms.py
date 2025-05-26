@@ -79,6 +79,6 @@ class TestQRBagFilterForm(ParametrizedTestCase, BaseQRBagTest):
     )
     def test_populates_status_choices(self, username, expected_choices):
         user = User.objects.get(username=username)
-        form = QRBagFilterForm(user=user, cities=[])
+        form = QRBagFilterForm(user=user)
         expected_choices = [("", "-")] + expected_choices
         self.assertSetEqual(set(form.fields["status"].choices), set(expected_choices))

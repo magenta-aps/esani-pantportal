@@ -17,14 +17,16 @@ from esani_pantportal.models import (
     Kiosk,
     KioskUser,
 )
+from esani_pantportal.tests.conftest import LoginMixin
 
 
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
-class EmailTest(TestCase):
+class EmailTest(LoginMixin, TestCase):
     newsletters = True
 
     @classmethod
     def setUpTestData(cls) -> None:
+        super().setUpTestData()
         cls.emails = [
             "test1@example.com",
             "test2@example.com",
@@ -38,7 +40,7 @@ class EmailTest(TestCase):
             cvr=12312345,
             address="foo",
             postal_code="123",
-            city="test city",
+            city=cls._test_city,
             phone="+4544457845",
         )
 
@@ -47,7 +49,7 @@ class EmailTest(TestCase):
             cvr=12312346,
             address="foo",
             postal_code="123",
-            city="test city",
+            city=cls._test_city,
             phone="+4544457845",
         )
 
@@ -56,7 +58,7 @@ class EmailTest(TestCase):
             name="facebook_branch",
             address="food",
             postal_code="12311",
-            city="test town",
+            city=cls._test_town,
             phone="+4542457845",
             location_id=2,
         )
@@ -65,7 +67,7 @@ class EmailTest(TestCase):
             name="kiosk",
             address="food",
             postal_code="12311",
-            city="test town",
+            city=cls._test_town,
             phone="+4542457845",
             location_id=2,
             cvr=11221122,

@@ -14,18 +14,20 @@ from esani_pantportal.models import (
     Kiosk,
     KioskUser,
 )
+from esani_pantportal.tests.conftest import LoginMixin
 from esani_pantportal.view_mixins import PermissionRequiredMixin
 
 
-class PermissionTest(TestCase):
+class PermissionTest(LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
+        super().setUpTestData()
         cls.facebook = Company.objects.create(
             name="facebook",
             cvr=12312345,
             address="foo",
             postal_code="123",
-            city="test city",
+            city=cls._test_city,
             phone="+4544457845",
         )
 
@@ -34,7 +36,7 @@ class PermissionTest(TestCase):
             name="facebook_branch",
             address="food",
             postal_code="12311",
-            city="test town",
+            city=cls._test_town,
             phone="+4542457845",
             location_id=2,
         )
@@ -43,7 +45,7 @@ class PermissionTest(TestCase):
             name="kiosk",
             address="food",
             postal_code="12311",
-            city="test town",
+            city=cls._test_town,
             phone="+4542457845",
             location_id=2,
             cvr=11221122,

@@ -26,12 +26,13 @@ from .conftest import LoginMixin
 class BaseReverseVendingMachineTest(LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls) -> None:
+        super().setUpTestData()
         cls.brugseni = Company.objects.create(
             name="brugseni",
             cvr=12312346,
             address="foo",
             postal_code="123",
-            city="test city",
+            city=cls._test_city,
             phone="+4544457845",
         )
         cls.brugseni_nuuk = CompanyBranch.objects.create(
@@ -39,7 +40,7 @@ class BaseReverseVendingMachineTest(LoginMixin, TestCase):
             name="brugseni Nuuk",
             address="food",
             postal_code="12311",
-            city="Nuuk",
+            city=cls._test_city,
             phone="+4542457845",
             location_id=2,
         )
@@ -48,7 +49,7 @@ class BaseReverseVendingMachineTest(LoginMixin, TestCase):
             name="brugseni Sisimiut",
             address="food",
             postal_code="12311",
-            city="Sisimiut",
+            city=cls._test_town,
             phone="+4542457845",
             location_id=3,
         )
@@ -56,7 +57,7 @@ class BaseReverseVendingMachineTest(LoginMixin, TestCase):
             name="Nuuk kiosk",
             address="food",
             postal_code="12311",
-            city="Nuuk",
+            city=cls._test_city,
             phone="+4542457845",
             location_id=2,
             cvr=11221122,

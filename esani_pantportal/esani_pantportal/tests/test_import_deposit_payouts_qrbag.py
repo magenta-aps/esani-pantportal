@@ -31,11 +31,12 @@ from esani_pantportal.models import (
     Product,
     QRBag,
 )
+from esani_pantportal.tests.conftest import LoginMixin
 
 EXAMPLE_QR_ID = "0" * settings.QR_ID_LENGTH
 
 
-class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
+class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
     maxDiff = None
 
     kiosk_cvr = 1234
@@ -58,12 +59,19 @@ class TestImportDepositPayoutsQRBag(ParametrizedTestCase, TestCase):
         super().setUpTestData()
 
         # Add `Kiosk` object
-        cls.kiosk, _ = Kiosk.objects.update_or_create(cvr=cls.kiosk_cvr)
+        cls.kiosk, _ = Kiosk.objects.update_or_create(
+            cvr=cls.kiosk_cvr,
+            defaults={"city": cls._test_city},
+        )
 
         # Add `Company` and `CompanyBranch` objects
-        cls.company, _ = Company.objects.update_or_create(cvr=2345)
+        cls.company, _ = Company.objects.update_or_create(
+            cvr=2345,
+            defaults={"city": cls._test_city},
+        )
         cls.company_branch, _ = CompanyBranch.objects.update_or_create(
             company=cls.company,
+            defaults={"city": cls._test_city},
         )
 
         # Add `QRBag` object

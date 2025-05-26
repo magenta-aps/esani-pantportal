@@ -25,6 +25,7 @@ from esani_pantportal.models import (
     QRBag,
     QRStatus,
 )
+from esani_pantportal.tests.conftest import LoginMixin
 from esani_pantportal.views import (
     QRBagHistoryView,
     QRBagSearchView,
@@ -32,14 +33,15 @@ from esani_pantportal.views import (
 )
 
 
-class BaseQRBagTest(TestCase):
+class BaseQRBagTest(LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls) -> None:
+        super().setUpTestData()
         cls.kiosk = Kiosk.objects.create(
             name="kiosk",
             address="food",
             postal_code="12311",
-            city="test town",
+            city=cls._test_town,
             phone="+4542457845",
             location_id=2,
             cvr=11221122,
@@ -56,7 +58,7 @@ class BaseQRBagTest(TestCase):
             cvr=12312345,
             address="foo",
             postal_code="123",
-            city="test city",
+            city=cls._test_city,
             country="USA",
             phone="+4544457845",
             company_type="E",
@@ -70,7 +72,7 @@ class BaseQRBagTest(TestCase):
             name="branch1",
             address="food",
             postal_code="12311",
-            city="test town",
+            city=cls._test_town,
             phone="+4542457845",
             location_id=2,
             municipality="foo",
@@ -86,7 +88,7 @@ class BaseQRBagTest(TestCase):
             name="branch2",
             address="food",
             postal_code="12311",
-            city="test town",
+            city=cls._test_town,
             phone="+4542457845",
             location_id=2,
             municipality="foo",

@@ -20,6 +20,7 @@ from esani_pantportal.models import (
     KIOSK_USER,
     AbstractCompany,
     BranchUser,
+    City,
     Company,
     CompanyBranch,
     CompanyUser,
@@ -134,11 +135,12 @@ class ExportProductsToCSVTests(TestCase):
 class CSVExportViewTest(LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
+        super().setUpTestData()
         cls.test_company = Company.objects.create(
             name="test-company",
             cvr=10000000,
             address="Væskevej 1337",
-            city="Nuuk",
+            city=cls._test_city,
             postal_code="1234",
             phone="(+299) 363542",
             country="Grønland",
@@ -155,7 +157,7 @@ class CSVExportViewTest(LoginMixin, TestCase):
             company=cls.test_company,
             name="test-branch",
             address="Væskevej 1337",
-            city="Nuuk",
+            city=cls._test_city,
             postal_code="1234",
             phone="(+299) 363542",
             location_id=1,
@@ -172,7 +174,7 @@ class CSVExportViewTest(LoginMixin, TestCase):
             name="test-kiosk",
             address="Væskevej 1337",
             municipality="Aarhus",
-            city="Nuuk",
+            city=cls._test_city,
             postal_code="1234",
             phone="(+299) 363542",
             location_id=1,
@@ -218,6 +220,8 @@ class CSVExportUsersViewTest(CSVExportViewTest):
         for field in self.company_fields:
             field_csv_value = df.loc[user_id, f"company_{field}"]
             field_obj_value = getattr(company, field)
+            if isinstance(field_obj_value, City):
+                field_obj_value = field_obj_value.name
             self.assert_contents_equal(field_csv_value, field_obj_value)
 
     def assert_user_fields(self, df, user):
