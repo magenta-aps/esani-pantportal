@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection
 from django.db.utils import IntegrityError, ProgrammingError
-from django.test import SimpleTestCase, TestCase
+from django.test import SimpleTestCase, TestCase, override_settings
 from unittest_parametrize import ParametrizedTestCase, parametrize
 
 from esani_pantportal.models import (
@@ -73,6 +73,7 @@ class ValidationTest(SimpleTestCase):
         )
 
 
+@override_settings(QR_URL_PREFIX="http://pant.gl?QR=")
 class QRCodeGeneratorTest(TestCase):
     @classmethod
     def setUpTestData(cls):

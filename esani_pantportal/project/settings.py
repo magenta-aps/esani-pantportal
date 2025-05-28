@@ -229,7 +229,7 @@ DEFAULT_CSV_HEADER_DICT = {
     "danish": "Dansk pant [str]",
 }
 
-QR_URL_PREFIX = "http://pant.gl?QR="
+QR_URL_PREFIX = os.environ.get("QR_URL_PREFIX", "http://pant.gl?QR=")
 QR_ID_LENGTH = 9  # Length of QR ID part, default 9 (one BILLION different codes)
 QR_HASH_LENGTH = 8  # Length of QR control code, default 8
 
