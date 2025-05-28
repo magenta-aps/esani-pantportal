@@ -251,16 +251,16 @@ class QRBagTest(LoginMixin, TestCase):
         )
         self.assertEqual(response.status_code, 204)
 
-        # Update object (actual change, ordinary attributes)
+        # Update object attributes
         response = self.client.patch(
             f"/api/qrbag/{code}",
             data=json.dumps({"status": "ændret"}),
             content_type="application/json",
             headers=self.headers,
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)  # object changed
 
-        # Update object (actual change, owner attribute)
+        # Try to update object owner
         self.login("CompanyUsers")
         response = self.client.patch(
             f"/api/qrbag/{code}",
@@ -268,7 +268,57 @@ class QRBagTest(LoginMixin, TestCase):
             content_type="application/json",
             headers=self.headers,
         )
+        self.assertEqual(response.status_code, 204)  # object did not change
+
+    @patch("esani_pantportal.models.QRCodeGenerator.qr_code_exists", mock_qr_exists)
+    def test_subsequent_updates_cannot_overwrite_owner(self):
+        code = "00000000005001d199"
+
+        # Create initial object using a kiosk user
+        kiosk_user = self.login("KioskUsers")
+        response = self.client.post(
+            f"/api/qrbag/{code}",
+            data=json.dumps({"active": True, "status": "oprettet"}),
+            content_type="application/json",
+            headers=self.headers,
+        )
+        data = response.json()
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(data["owner"], kiosk_user.username)
+
+        # Update object using a different user
+        self.login("CompanyUsers")
+        response = self.client.patch(
+            f"/api/qrbag/{code}",
+            data=json.dumps({"status": "ændret"}),
+            content_type="application/json",
+            headers=self.headers,
+        )
+        data = response.json()
+        # Assert: the object status is changed, but the owner is left unchanged
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(data["owner"], kiosk_user.username)
+
+    @patch("esani_pantportal.models.QRCodeGenerator.qr_code_exists", mock_qr_exists)
+    def test_subsequent_updates_can_overwrite_empty_owner(self):
+        code = "00000000005001d199"
+
+        # Create QR bag *without* `owner` (not sure if this can happen in practice?)
+        kiosk_user = self.login("KioskUsers")
+        QRBag.objects.create(qr=code, kiosk=kiosk_user.branch)
+
+        # Update object using a different user
+        company_user = self.login("CompanyUsers")
+        response = self.client.patch(
+            f"/api/qrbag/{code}",
+            data=json.dumps({"status": "ændret"}),
+            content_type="application/json",
+            headers=self.headers,
+        )
+        data = response.json()
+        # Assert: the object status and the owner is changed
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data["owner"], company_user.username)
 
     def test_history(self):
         code = "00000000005001d201"

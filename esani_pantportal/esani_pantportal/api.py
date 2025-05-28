@@ -222,11 +222,11 @@ class QRBagAPI:  # type: ignore[call-arg]
                 changed = True
             setattr(item, attr, new_value)
 
-        # Update QRBag "owner" attribute
+        # Update QRBag "owner" attribute (only if not yet set)
         user = self.context.request.user  # type: ignore
-        if user != item.owner:
+        if item.owner is None:
+            item.owner = user
             changed = True
-        item.owner = user
 
         if changed:
             item.save()  # adds history item
