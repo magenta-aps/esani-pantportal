@@ -25,20 +25,20 @@ class Command(BaseCommand):
                 "name_kl": "Modtaget af pantsystemet",
             },
         )
-        QRStatus.objects.update_or_create(
-            code="backbone_modtaget",
-            defaults={
-                "name_da": "Modtaget af Backbone",
-                "name_kl": "Modtaget af Backbone",
-            },
-        )
-        QRStatus.objects.update_or_create(
-            code="esani_modtaget",
-            defaults={
-                "name_da": "Modtaget af ESANI",
-                "name_kl": "Modtaget af ESANI",
-            },
-        )
+        # QRStatus.objects.update_or_create(
+        #     code="backbone_modtaget",
+        #     defaults={
+        #         "name_da": "Modtaget af Backbone",
+        #         "name_kl": "Modtaget af Backbone",
+        #     },
+        # )
+        # QRStatus.objects.update_or_create(
+        #     code="esani_modtaget",
+        #     defaults={
+        #         "name_da": "Modtaget af ESANI",
+        #         "name_kl": "Modtaget af ESANI",
+        #     },
+        # )
         QRStatus.objects.update_or_create(
             code="esani_optalt",
             defaults={
@@ -51,5 +51,12 @@ class Command(BaseCommand):
             defaults={
                 "name_da": "Udbetalt af ESANI",
                 "name_kl": "Udbetalt af ESANI",
+            },
+        )
+        QRStatus.objects.update_or_create(
+            code="optaelling_modtaget",
+            defaults={
+                "name_da": "Modtaget til optælling",
+                "name_kl": "Modtaget til optælling",
             },
         )

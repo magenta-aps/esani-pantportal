@@ -1033,8 +1033,8 @@ class QRBagSearchView(BranchSearchView):
         # Latest date and username for each listed status
         "butik_oprettet": _("Oprettet af forhandler"),
         "butik_oprettet_by": _("Bruger"),
-        "backbone_modtaget": _("Modtaget af backbone"),
-        "backbone_modtaget_by": _("Bruger"),
+        # "backbone_modtaget": _("Modtaget af backbone"),
+        # "backbone_modtaget_by": _("Bruger"),
         "pantsystem_modtaget": _("Modtaget af pantsystemet"),
         "pantsystem_modtaget_by": _("Bruger"),
         # Latest date for each listed status
@@ -1053,10 +1053,10 @@ class QRBagSearchView(BranchSearchView):
         "butik_oprettet_by": _get_history_entry(
             status="butik_oprettet", field="history_user__username"
         ),
-        "backbone_modtaget": _get_history_entry(status="backbone_modtaget"),
-        "backbone_modtaget_by": _get_history_entry(
-            status="backbone_modtaget", field="history_user__username"
-        ),
+        # "backbone_modtaget": _get_history_entry(status="backbone_modtaget"),
+        # "backbone_modtaget_by": _get_history_entry(
+        #     status="backbone_modtaget", field="history_user__username"
+        # ),
         "pantsystem_modtaget": _get_history_entry(status="pantsystem_modtaget"),
         "pantsystem_modtaget_by": _get_history_entry(
             status="pantsystem_modtaget", field="history_user__username"
