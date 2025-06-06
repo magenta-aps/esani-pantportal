@@ -90,6 +90,13 @@ class QRBagIn(ModelSchema):
         ]
         model_fields_optional = ["active", "status"]
 
+    def get_valid_status(self):
+        if self.status in ("backbone_modtaget", "esani_modtaget"):
+            print("converting legacy status %r to 'pantsystem_modtaget" % self.status)
+            return "pantsystem_modtaget"
+        else:
+            return self.status
+
 
 class QRBagError(Schema):
     error: str
@@ -185,7 +192,7 @@ class QRBagAPI:  # type: ignore[call-arg]
                 company_branch=company_branch,
                 kiosk=kiosk,
                 active=payload.active,  # type: ignore[attr-defined]
-                status=payload.status,  # type: ignore[attr-defined]
+                status=payload.get_valid_status(),
             )
             return 201, obj  # signal that object was created
         except IntegrityError:
@@ -217,6 +224,8 @@ class QRBagAPI:  # type: ignore[call-arg]
         # Update "ordinary" QRBag attributes
         data = payload.dict(exclude_unset=True)
         for attr, new_value in data.items():
+            if attr == "status" and "status" in data:
+                new_value = payload.get_valid_status()
             old_value = getattr(item, attr, None)
             if new_value != old_value:
                 changed = True

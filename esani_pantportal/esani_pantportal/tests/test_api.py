@@ -155,6 +155,38 @@ class QRBagTest(LoginMixin, TestCase):
         self.assertEqual(response.status_code, 400)
 
     @patch("esani_pantportal.models.QRCodeGenerator.qr_code_exists", mock_qr_exists)
+    def test_create_using_legacy_status(self):
+        code = "00000000005001d199"
+        # Act: create bag with legacy status `backbone_modtaget`
+        response = self.client.post(
+            f"/api/qrbag/{code}",
+            data=json.dumps({"status": "backbone_modtaget"}),
+            content_type="application/json",
+            headers=self.headers,
+        )
+        self.assertEqual(response.status_code, 201)  # = object was created
+        data = response.json()
+        # Assert: legacy status `backbone_modtaget` is changed to `pantsystem_modtaget`
+        self.assertEqual(data["status"], "pantsystem_modtaget")
+
+    @patch("esani_pantportal.models.QRCodeGenerator.qr_code_exists", mock_qr_exists)
+    def test_update_using_legacy_status(self):
+        # Arrange: create bag with status ``
+        code = "00000000005001d199"
+        QRBag.objects.update_or_create(qr=code, status="butik_oprettet")
+        # Act: update bag with legacy status `esani_modtaget`
+        response = self.client.patch(
+            f"/api/qrbag/{code}",
+            data=json.dumps({"status": "esani_modtaget"}),
+            content_type="application/json",
+            headers=self.headers,
+        )
+        self.assertEqual(response.status_code, 200)  # = object was updated
+        data = response.json()
+        # Assert: legacy status `esani_modtaget` is changed to `pantsystem_modtaget`
+        self.assertEqual(data["status"], "pantsystem_modtaget")
+
+    @patch("esani_pantportal.models.QRCodeGenerator.qr_code_exists", mock_qr_exists)
     def test_update(self):
         code = "00000000005001d200"
         response = self.client.patch(
@@ -422,14 +454,14 @@ class QRStatusTest(TestCase):
             name_kl="Modtaget af pantsystemet",
         )
         QRStatus.objects.create(
-            code="backbone_modtaget",
-            name_da="Modtaget af Backbone",
-            name_kl="Modtaget af Backbone",
-        )
-        QRStatus.objects.create(
             code="esani_modtaget",
             name_da="Modtaget af ESANI",
             name_kl="Modtaget af ESANI",
+        )
+        QRStatus.objects.create(
+            code="optaelling_modtaget",
+            name_da="Modtaget til optælling",
+            name_kl="Modtaget til optælling",
         )
 
     def test_list(self):
@@ -448,14 +480,14 @@ class QRStatusTest(TestCase):
                     "name_kl": "Modtaget af pantsystemet",
                 },
                 {
-                    "code": "backbone_modtaget",
-                    "name_da": "Modtaget af Backbone",
-                    "name_kl": "Modtaget af Backbone",
-                },
-                {
                     "code": "esani_modtaget",
                     "name_da": "Modtaget af ESANI",
                     "name_kl": "Modtaget af ESANI",
+                },
+                {
+                    "code": "optaelling_modtaget",
+                    "name_da": "Modtaget til optælling",
+                    "name_kl": "Modtaget til optælling",
                 },
             ],
         )
