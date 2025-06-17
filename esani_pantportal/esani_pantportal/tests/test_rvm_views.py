@@ -157,15 +157,17 @@ class ReverseVendingMachineListTest(BaseReverseVendingMachineTest):
     def test_esani_admin_filtered_view(self):
         self.client.login(username="esani_admin", password="12345")
 
-        # Exact match on "Nuuk kiosk"
-        url = reverse("pant:rvm_list") + "?company_branch__name=Nuuk+kiosk"
+        # Test that we get an `icontains` match - searching for `uuk kio` should
+        # retrieve `Nuuk kiosk`.
+        url = reverse("pant:rvm_list") + "?company_branch__name=uuk+kio"
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         ids = [i["id"] for i in response.context_data["items"]]
         self.assertListEqual([self.kiosk_rvm.id], ids)
 
-        # Exact match on "brugseni Nuuk"
-        url = reverse("pant:rvm_list") + "?company_branch__name=brugseni+Nuuk"
+        # Test that we get an `icontains` match - searching for `ugseni nuu` should
+        # retrieve `brugseni Nuuk`.
+        url = reverse("pant:rvm_list") + "?company_branch__name=ugseni+nuu"
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         ids = [i["id"] for i in response.context_data["items"]]

@@ -752,10 +752,11 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
         "city_annotation": F("city__name"),
     }
 
-    search_fields = []
-    search_fields_exact = [
+    search_fields = [
         "name",
         "address",
+    ]
+    search_fields_exact = [
         "postal_code",
         "city",
         "object_class_name",
@@ -859,9 +860,10 @@ class ProductSearchView(SearchView):
     }
     can_edit_multiple = True
 
-    search_fields = []
-    search_fields_exact = [
+    search_fields = [
         "product_name",
+    ]
+    search_fields_exact = [
         "barcode",
         "state",
         "approved",
@@ -937,7 +939,7 @@ class BranchSearchView(PermissionRequiredMixin, SearchView):
         for field in fields:
             # "Or" each filter onto the previous filter, if value is present
             if data.get(field, None) not in (None, ""):
-                q |= Q(**{f"{field}__iexact": data[field]})
+                q |= Q(**{f"{field}__icontains": data[field]})
         if q:
             qs = qs.filter(q)
 
@@ -1157,12 +1159,13 @@ class UserSearchView(PermissionRequiredMixin, SearchView):
     preferences_class = UserListViewPreferences
     required_permissions = ["esani_pantportal.view_user"]
 
-    search_fields = []
-    search_fields_exact = [
+    search_fields = [
         "username",
-        "user_type",
         "branch",
         "company",
+    ]
+    search_fields_exact = [
+        "user_type",
         "approved",
         "city",
     ]

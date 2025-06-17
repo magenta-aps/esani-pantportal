@@ -292,11 +292,10 @@ class UserListTest(BaseUserTest):
         self.assertEqual(len(ids), 1)
 
     def test_branch_filter(self):
-        # Exact match on `branch_annotation` value
+        # Test that we get an `icontains` match on `branch_annotation` value
         self.client.login(username="esani_admin", password="12345")
-        response = self.client.get(
-            reverse("pant:user_list") + "?branch=facebook_branch"
-        )
+        # Search on substring `book` in branch name `facebook_branch`
+        response = self.client.get(reverse("pant:user_list") + "?branch=book")
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
         branch_names = [i["branch"] for i in response.context_data["items"]]
@@ -305,9 +304,10 @@ class UserListTest(BaseUserTest):
             self.assertIn("facebook_branch", branch_name)
 
     def test_company_filter(self):
-        # Exact match on `company_annotation` value
+        # Test that we get an `icontains` match on `company_annotation` value
         self.client.login(username="esani_admin", password="12345")
-        response = self.client.get(reverse("pant:user_list") + "?company=google")
+        # Search on substring `oogl` in company name `google`
+        response = self.client.get(reverse("pant:user_list") + "?company=oogl")
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
         company_names = [i["company"] for i in response.context_data["items"]]
