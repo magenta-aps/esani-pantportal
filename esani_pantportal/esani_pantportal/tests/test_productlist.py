@@ -101,18 +101,20 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
         self.assertIn(self.prod2, qs)
 
     def test_get_queryset_filter_name(self):
-        # Exact match (case-insensitive)
+        # Test that we get an `icontains` match (case-insensitive.)
+        # `OD1` should retrieve `self.prod1` whose name is `prod1`.
         view = ProductSearchView()
         view.form = ProductFilterForm()
-        view.form.cleaned_data = {"offset": 0, "limit": 10, "product_name": "PROD1"}
+        view.form.cleaned_data = {"offset": 0, "limit": 10, "product_name": "OD1"}
         qs = view.get_queryset()
         self.assertIn(self.prod1, qs)
         self.assertNotIn(self.prod2, qs)
 
-        # Exact match (case-insensitive)
+        # Test that we get an `icontains` match (case-insensitive.)
+        # `OD2` should retrieve `self.prod2` whose name is `prod2`.
         view = ProductSearchView()
         view.form = ProductFilterForm()
-        view.form.cleaned_data = {"offset": 0, "limit": 10, "product_name": "PROD2"}
+        view.form.cleaned_data = {"offset": 0, "limit": 10, "product_name": "OD2"}
         qs = view.get_queryset()
         self.assertNotIn(self.prod1, qs)
         self.assertIn(self.prod2, qs)
