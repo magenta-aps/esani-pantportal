@@ -363,15 +363,16 @@ class CompanyListExportTest(BaseCompanyTest):
             response["Content-Disposition"],
             r"attachment; filename=debitor_(.*?)\.csv",
         )
+        rows = [
+            row
+            for row in DictReader(
+                StringIO(response.content.decode("utf-8")), delimiter=";"
+            )
+        ]
         # Assert that all companies, company branches and kiosks defined in this test
         # are exported in the CSV.
         self.assertSetEqual(
-            {
-                row["name"]
-                for row in DictReader(
-                    StringIO(response.content.decode("utf-8")), delimiter=";"
-                )
-            },
+            {row["name"] for row in rows},
             {
                 obj.name
                 for obj in (
@@ -381,4 +382,9 @@ class CompanyListExportTest(BaseCompanyTest):
                     self.kiosk,
                 )
             },
+        )
+        self.assertQuerySetEqual(
+            rows,  # type: ignore
+            ["test city", "test city", "test town", "test town"],
+            transform=lambda row: row["city"],
         )

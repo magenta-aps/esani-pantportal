@@ -310,7 +310,7 @@ class DebtorExport:
             "phone",  # includes prefix (e.g. +299)
             "address",
             "postal_code",
-            "city",
+            "city__name",
             "registration_number",
             "account_number",
             "invoice_mail",
@@ -358,7 +358,7 @@ class DebtorExport:
                 "phone": row["phone"],
                 "address": row["address"],
                 "postal_code": row["postal_code"],
-                "city": row["city"],
+                "city": row["city__name"],
                 "registration_number": row["registration_number"],
                 "account_number": row["account_number"],
                 "invoice_mail": row["invoice_mail"],
