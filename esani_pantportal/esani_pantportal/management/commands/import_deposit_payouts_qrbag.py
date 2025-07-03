@@ -23,6 +23,7 @@ from esani_pantportal.models import (
     DepositPayoutItem,
     Kiosk,
     Product,
+    ProductState,
     QRBag,
 )
 
@@ -306,7 +307,9 @@ class Command(BaseCommand):
     @cache
     def _get_product_from_barcode(self, barcode) -> Product | None:
         try:
-            product = Product.objects.get(barcode=barcode)
+            product = Product.objects.exclude(state=ProductState.DELETED).get(
+                barcode=barcode
+            )
         except Product.DoesNotExist:
             return None
         else:

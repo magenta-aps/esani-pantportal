@@ -17,6 +17,7 @@ from esani_pantportal.models import (
     DepositPayout,
     DepositPayoutItem,
     Product,
+    ProductState,
     ReverseVendingMachine,
 )
 
@@ -149,7 +150,9 @@ class Command(BaseCommand):
 
     def _get_product_from_barcode(self, barcode):
         try:
-            return Product.objects.get(barcode=str(barcode))
+            return Product.objects.exclude(state=ProductState.DELETED).get(
+                barcode=str(barcode)
+            )
         except Product.DoesNotExist:
             self.stderr.write(f"Encountered unknown barcode {barcode}")
 

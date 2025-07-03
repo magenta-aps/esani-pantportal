@@ -29,6 +29,7 @@ from esani_pantportal.models import (
     DepositPayoutItem,
     Kiosk,
     Product,
+    ProductState,
     QRBag,
 )
 from esani_pantportal.tests.conftest import LoginMixin
@@ -93,6 +94,12 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
         cls.product_2, _ = Product.objects.update_or_create(
             product_name="Bar",
             barcode=cls.product_barcode_2,
+            defaults=defaults,
+        )
+        cls.product_2_deleted, _ = Product.objects.update_or_create(
+            product_name="Bar",
+            barcode=cls.product_barcode_2,
+            state=ProductState.DELETED,
             defaults=defaults,
         )
 
@@ -325,6 +332,14 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
         cmd = Command()
         # Act and assert
         self.assertIsNone(cmd._get_product_from_barcode("unknown_barcode"))
+
+    def test_get_product_from_barcode_ignores_deleted_products(self):
+        # Arrange
+        cmd = Command()
+        # Act
+        product = cmd._get_product_from_barcode(self.product_2_deleted.barcode)
+        # Assert: we find the product that is *not* deleted
+        self.assertEqual(product.pk, self.product_2.pk)
 
     def test_get_consumer_identity_returns_none_on_absent_identity(self):
         # Arrange
