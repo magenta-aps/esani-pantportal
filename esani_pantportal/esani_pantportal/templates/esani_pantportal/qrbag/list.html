@@ -16,26 +16,28 @@ SPDX-License-Identifier: MPL-2.0
         </div>
     </div>
     <form method="get">
-        <div class="row">
-            <div class="col-1">{% translate "QR kode" %}</div>
-            <div class="col-3">{{ form.qr }}</div>
-        </div>
-        <div class="row">
-            <div class="col-1">{% translate "Status" %}</div>
-            <div class="col-3 mx-0">{{ form.status }}</div>
-        </div>
         {% if user.get_user_type_display == "Virksomhedsbruger" or user.is_esani_admin %}
         <div class="row">
-            <div class="col-1">{% translate "Butik" %}</div>
-            <div class="col-3">{{ form.company_branch__name }}</div>
-        </div>
-        <div class="row">
-            <div class="col-1">{% translate "By" %}</div>
-            <div class="col-3">{{ form.city }}</div>
+            <div class="col-2">{% translate "Søgeord (by, filial- eller butiksnavn)" %}</div>
+            <div class="col-4">{{ form.search }}</div>
         </div>
         {% endif %}
         <div class="row">
-            <div class="col-4 clearfix">
+            <div class="col-2">{% translate "QR-kode" %}</div>
+            <div class="col-4">{{ form.qr }}</div>
+        </div>
+        <div class="row">
+            <div class="col-2">{% translate "Status" %}</div>
+            <div class="col-4">{{ form.status }}</div>
+        </div>
+        {% if user.get_user_type_display == "Virksomhedsbruger" or user.is_esani_admin %}
+        <div class="row">
+            <div class="col-2">{% translate "By" %}</div>
+            <div class="col-4">{{ form.city }}</div>
+        </div>
+        {% endif %}
+        <div class="row">
+            <div class="col-6 clearfix">
                 <button type="submit" class="btn btn-primary float-end">Søg</button>
             </div>
         </div>

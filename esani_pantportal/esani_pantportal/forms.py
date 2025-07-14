@@ -880,7 +880,7 @@ class CityChoiceMixin:
 
 
 class ProductFilterForm(SortPaginateForm):
-    product_name = forms.CharField(required=False)
+    search = forms.CharField(required=False)
     barcode = forms.CharField(required=False)
     state = forms.ChoiceField(required=False, choices=[])
     approved = forms.NullBooleanField(required=False, widget=HiddenInput())
@@ -921,8 +921,7 @@ class ProductFilterForm(SortPaginateForm):
 
 
 class CompanyFilterForm(CityChoiceMixin, SortPaginateForm):
-    name = forms.CharField(required=False)
-    address = forms.CharField(required=False)
+    search = forms.CharField(required=False)
     postal_code = forms.CharField(required=False)
     city = forms.ChoiceField(required=False)
     object_class_name = forms.ChoiceField(
@@ -943,8 +942,7 @@ class QRBagFilterForm(CityChoiceMixin, SortPaginateForm):
         widget=forms.SelectMultiple(attrs={"class": "h-100"}),
         required=False,
     )
-    company_branch__name = forms.CharField(required=False)
-    kiosk__name = forms.CharField(required=False)
+    search = forms.CharField(required=False)
     city = forms.ChoiceField(required=False)
 
     def __init__(self, *args, **kwargs):
@@ -956,10 +954,6 @@ class QRBagFilterForm(CityChoiceMixin, SortPaginateForm):
         self.fields["status"].widget.attrs.update(
             {"size": QRStatus.objects.count() + 1}
         )
-
-    def clean_kiosk__name(self):
-        # We use the branch__name search-field for both kiosk and branch filtering.
-        return self.cleaned_data["company_branch__name"]
 
     def get_status_choices(self) -> list[tuple[str, str]]:
         # Map status codes to friendly names
@@ -977,17 +971,12 @@ class QRBagFilterForm(CityChoiceMixin, SortPaginateForm):
 
 class ReverseVendingMachineFilterForm(CityChoiceMixin, SortPaginateForm):
     serial_number = forms.CharField(required=False)
-    company_branch__name = forms.CharField(required=False)
-    kiosk__name = forms.CharField(required=False)
+    search = forms.CharField(required=False)
     city = forms.ChoiceField(required=False)
-
-    def clean_kiosk__name(self):
-        # We use the branch__name search-field for both kiosk and branch filtering.
-        return self.cleaned_data["company_branch__name"]
 
 
 class UserFilterForm(CityChoiceMixin, SortPaginateForm):
-    username = forms.CharField(required=False)
+    search = forms.CharField(required=False)
     user_type = forms.ChoiceField(
         choices=[(None, "-")] + list(USER_TYPE_CHOICES), required=False
     )
@@ -995,8 +984,6 @@ class UserFilterForm(CityChoiceMixin, SortPaginateForm):
         required=False,
         widget=forms.Select(choices=((None, "-"), (True, _("Ja")), (False, _("Nej")))),
     )
-    branch = forms.CharField(required=False)
-    company = forms.CharField(required=False)
     city = forms.ChoiceField(required=False)
 
 
@@ -1006,6 +993,7 @@ class HTML5DateWidget(forms.widgets.Input):
 
 
 class DepositPayoutItemFilterForm(SortPaginateForm, BootstrapForm):
+    search = forms.CharField(required=False)
     company_branch = forms.ModelChoiceField(
         CompanyBranch.objects.select_related("company").order_by(
             "name", "company__name"

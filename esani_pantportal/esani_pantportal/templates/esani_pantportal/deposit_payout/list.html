@@ -28,6 +28,10 @@ SPDX-License-Identifier: MPL-2.0
 
     <form method="get">
         <div class="row">
+            <div class="col-2">{% translate "Søgeord (kæde- eller butiksnavn)" %}</div>
+            <div class="col-4">{{ form.search }}</div>
+        </div>
+        <div class="row">
             <div class="col-2">{% translate "Kæde" %}</div>
             <div class="col-4">{{ form.company_branch }}</div>
         </div>

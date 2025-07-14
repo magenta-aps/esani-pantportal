@@ -18,6 +18,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
 from django.contrib.auth.views import LogoutView, PasswordChangeView
+from django.contrib.postgres.search import TrigramWordSimilarity
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.core.management import call_command
@@ -42,7 +43,7 @@ from django.db.models import (
     Value,
     When,
 )
-from django.db.models.functions import Coalesce, Concat
+from django.db.models.functions import Coalesce, Concat, Greatest
 from django.forms import model_to_dict
 from django.http import (
     HttpResponse,
@@ -444,7 +445,10 @@ class SearchView(LoginRequiredMixin, FormView):
     @cached_property
     def search_data(self):
         data = self.form.cleaned_data
-        search_data = {"offset": 0}
+        search_data = {
+            "search": data.get("search"),
+            "offset": 0,
+        }
 
         if data.get("json"):
             # limit = None means "all data" when BootstrapTable is in charge.
@@ -483,6 +487,10 @@ class SearchView(LoginRequiredMixin, FormView):
                 return string + "_annotation"
         return string
 
+    @cached_property
+    def min_similarity_score_threshold(self) -> float:
+        return 0.5
+
     def filter_qs(self, qs):
         data = self.search_data
 
@@ -497,21 +505,30 @@ class SearchView(LoginRequiredMixin, FormView):
             if data.get(field, None) not in (None, ""):  # False er en gyldig værdi
                 qs = qs.filter(**{f"{field_name}{lookup}": data[field]})
 
-        # Filter queryset according to `self.search_fields`.
-        # Currently, no views inheriting from `SearchView` use `search_fields` so this
-        # part of the code has been excluded from test coverage.
-        for field in self.search_fields:  # pragma: no cover
-            field_name = self.annotate_field(field)  # pragma: no cover
-            if data.get(field, None) not in (None, ""):  # pragma: no cover
-                # Each search phrase is broken into individual parts.
-                # Each part is added as a separate `icontains` query filter.
-                qs = qs.filter(  # pragma: no cover
-                    **{
-                        field_name + "__icontains": part
-                        for part in data[field].split()
-                        if part
-                    }
+        # Filter queryset according to `self.search_fields`
+        if data.get("search") not in (None, ""):
+            trigram_word_similarities = [
+                TrigramWordSimilarity(
+                    data["search"],
+                    self.annotate_field(search_field),
                 )
+                for search_field in self.search_fields
+            ]
+            if len(trigram_word_similarities) > 1:
+                similarity_score = Greatest(*trigram_word_similarities)
+            elif len(trigram_word_similarities) == 1:
+                similarity_score = trigram_word_similarities[0]
+            else:
+                return qs  # no actual search_fields defined
+
+            # Compute similarity score for all items in queryset; keep only the items
+            # whose similarity score is above the threshold, and sort the items by
+            # similarity score.
+            qs = (
+                qs.annotate(_similarity=similarity_score)
+                .filter(_similarity__gte=self.min_similarity_score_threshold)
+                .order_by("-_similarity")
+            )
 
         return qs
 
@@ -755,6 +772,7 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
     search_fields = [
         "name",
         "address",
+        "city",
     ]
     search_fields_exact = [
         "postal_code",
@@ -767,6 +785,10 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
         "name": _("Navn"),
         "object_class_name_verbose": _("Type"),
     }
+
+    @cached_property
+    def min_similarity_score_threshold(self) -> float:
+        return 0.4  # pragma: no cover
 
     def get_action_url(self, item, *args):
         if item.object_class_name == "Company":
@@ -826,7 +848,11 @@ class CompanySearchView(PermissionRequiredMixin, SearchView):
         qs1 = self.filter_qs(self.get_company_queryset())
         qs2 = self.filter_qs(self.get_company_branch_queryset())
         union = qs0.union(qs1, qs2, all=True)
-        return self.sort_qs(union.order_by("name"))
+        if self.search_data.get("search") not in ("", None):
+            order_by = "-_similarity"
+        else:
+            order_by = "name"
+        return self.sort_qs(union.order_by(order_by))
 
     def map_value(self, item, key, context):
         value = super().map_value(item, key, context)
@@ -914,38 +940,11 @@ class ProductSearchView(SearchView):
 
 
 class BranchSearchView(PermissionRequiredMixin, SearchView):
-    """
-    SearchView which merges the `company_branch` and `kiosk` fields on objects and
-    treats them as one.
-    """
-
     def get_queryset(self):
-        # Handle filtering on "normal" fields specified via `search_fields` and
-        # `search_fields_exact` attributes.
-        qs = super().get_queryset()
-
-        # Add data for `company_branch_or_kiosk` display column
-        qs = qs.select_related("company_branch", "kiosk")
-        qs = qs.annotate(
-            company_branch_or_kiosk=Coalesce(
-                F("company_branch__name"), F("kiosk__name")
-            ),
-        )
-
-        # Handle additional filtering on company branch and/or kiosk
-        data = self.search_data
-        fields = ["company_branch__name", "kiosk__name"]
-        q: Q = Q()  # empty initial query filter
-        for field in fields:
-            # "Or" each filter onto the previous filter, if value is present
-            if data.get(field, None) not in (None, ""):
-                q |= Q(**{f"{field}__icontains": data[field]})
-        if q:
-            qs = qs.filter(q)
-
-        # Handle filtering due to user type (not search input.)
         # Only allow branch/company/kiosk users to see Objects in their own company.
+        qs = super().get_queryset().select_related("company_branch", "kiosk")
         user = self.request.user
+
         if user.user_type == KIOSK_USER:
             qs = qs.filter(kiosk__pk=user.branch.pk)
         elif user.user_type == BRANCH_USER:
@@ -963,10 +962,11 @@ class ReverseVendingMachineSearchView(BranchSearchView):
     required_permissions = ["esani_pantportal.view_reversevendingmachine"]
 
     annotations = {
+        "name": Coalesce("company_branch__name", "kiosk__name"),
         "city": Coalesce("company_branch__city__name", "kiosk__city__name"),
     }
 
-    search_fields = []
+    search_fields = ["name", "city"]
     search_fields_exact = ["serial_number", "city"]
 
     actions = {_("Fjern"): "btn btn-sm btn-danger"}
@@ -978,7 +978,7 @@ class ReverseVendingMachineSearchView(BranchSearchView):
     def get_fixed_columns(self):
         fixed_columns = {
             "serial_number": _("Serienummer"),
-            "company_branch_or_kiosk": _("Butik"),
+            "name": _("Butik"),
             "city": _("By"),
         }
         if self.request.user.is_esani_admin:
@@ -1025,12 +1025,12 @@ class QRBagSearchView(BranchSearchView):
     form_class = QRBagFilterForm
     required_permissions = ["esani_pantportal.view_qrbag"]
 
-    search_fields = []
+    search_fields = ["name", "city"]
     search_fields_exact = ["qr", "status", "city"]
 
     fixed_columns = {
         "qr": _("QR kode"),
-        "company_branch_or_kiosk": _("Butik"),
+        "name": _("Butik"),
         "city": _("By"),
         # Latest date and username for each listed status
         "butik_oprettet": _("Oprettet af forhandler"),
@@ -1049,6 +1049,7 @@ class QRBagSearchView(BranchSearchView):
     }
 
     annotations = {
+        "name": Coalesce("company_branch__name", "kiosk__name"),
         "city": Coalesce("company_branch__city__name", "kiosk__city__name"),
         # Latest date and username for each listed status
         "butik_oprettet": _get_history_entry(status="butik_oprettet"),
@@ -1348,7 +1349,7 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
     required_permissions = ["esani_pantportal.view_depositpayout"]
     can_edit_multiple = True
 
-    search_fields = []
+    search_fields = ["name"]
     search_fields_exact = ["company_branch", "kiosk"]
 
     fixed_columns = {
@@ -1361,6 +1362,7 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
     }
 
     annotations = {
+        "name": Coalesce("company_branch__name", "kiosk__name"),
         "source": Coalesce("company_branch__company__name", "kiosk__name"),
         "already_exported": ExpressionWrapper(
             Q(file_id__isnull=False),

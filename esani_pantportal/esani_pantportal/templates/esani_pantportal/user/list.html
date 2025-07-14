@@ -17,8 +17,8 @@ SPDX-License-Identifier: MPL-2.0
     </div>
     <form method="get">
         <div class="row">
-            <div class="col-2">{% translate "Brugernavn" %}</div>
-            <div class="col-4">{{form.username}}</div>
+            <div class="col-2">{% translate "Søgeord (brugernavn, filial- eller butiksnavn)" %}</div>
+            <div class="col-4">{{form.search}}</div>
         </div>
         <div class="row">
             <div class="col-2">{% translate "Type" %}</div>
@@ -29,6 +29,7 @@ SPDX-License-Identifier: MPL-2.0
             <div class="col-4">{{form.approved}}</div>
         </div>
         {% if user.is_esani_admin %}
+        {% comment %}
         <div class="row">
             <div class="col-2">{% translate "Butik" %}</div>
             <div class="col-4">{{form.branch}}</div>
@@ -37,6 +38,7 @@ SPDX-License-Identifier: MPL-2.0
             <div class="col-2">{% translate "Virksomhed" %}</div>
             <div class="col-4">{{form.company}}</div>
         </div>
+        {% endcomment %}
         <div class="row">
             <div class="col-2">{% translate "By" %}</div>
             <div class="col-4">{{ form.city }}</div>

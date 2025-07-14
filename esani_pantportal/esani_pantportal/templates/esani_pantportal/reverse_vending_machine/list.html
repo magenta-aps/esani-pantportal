@@ -21,8 +21,8 @@ SPDX-License-Identifier: MPL-2.0
         </div>
         {% if user.get_user_type_display == "Virksomhedsbruger" or user.is_esani_admin %}
         <div class="row">
-            <div class="col-2">{% translate "Butik" %}</div>
-            <div class="col-4">{{form.company_branch__name}}</div>
+            <div class="col-2">{% translate "Søgeord (filial- eller butiksnavn)" %}</div>
+            <div class="col-4">{{form.search}}</div>
         </div>
         <div class="row">
             <div class="col-2">{% translate "By" %}</div>
