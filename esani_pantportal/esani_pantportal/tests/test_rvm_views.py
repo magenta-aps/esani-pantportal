@@ -159,7 +159,7 @@ class ReverseVendingMachineListTest(BaseReverseVendingMachineTest):
 
         # Test that we get an `icontains` match - searching for `uuk kio` should
         # retrieve `Nuuk kiosk`.
-        url = reverse("pant:rvm_list") + "?company_branch__name=uuk+kio"
+        url = reverse("pant:rvm_list") + "?search=uuk+kio"
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         ids = [i["id"] for i in response.context_data["items"]]
@@ -167,7 +167,7 @@ class ReverseVendingMachineListTest(BaseReverseVendingMachineTest):
 
         # Test that we get an `icontains` match - searching for `ugseni nuu` should
         # retrieve `brugseni Nuuk`.
-        url = reverse("pant:rvm_list") + "?company_branch__name=ugseni+nuu"
+        url = reverse("pant:rvm_list") + "?search=ugseni+nuu"
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         ids = [i["id"] for i in response.context_data["items"]]

@@ -251,7 +251,7 @@ class UserListTest(BaseUserTest):
 
     def test_esani_admin_filter_view(self):
         self.client.login(username="esani_admin", password="12345")
-        response = self.client.get(reverse("pant:user_list") + "?username=esani_admin")
+        response = self.client.get(reverse("pant:user_list") + "?search=esani")
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
         ids = [i["id"] for i in response.context_data["items"]]
@@ -295,19 +295,20 @@ class UserListTest(BaseUserTest):
         # Test that we get an `icontains` match on `branch_annotation` value
         self.client.login(username="esani_admin", password="12345")
         # Search on substring `book` in branch name `facebook_branch`
-        response = self.client.get(reverse("pant:user_list") + "?branch=book")
+        response = self.client.get(reverse("pant:user_list") + "?search=book")
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
         branch_names = [i["branch"] for i in response.context_data["items"]]
-        self.assertGreater(len(branch_names), 0)
-        for branch_name in branch_names:
-            self.assertIn("facebook_branch", branch_name)
+        self.assertListEqual(
+            branch_names,
+            ["facebook_branch", "facebook_branch", "-"],
+        )
 
     def test_company_filter(self):
         # Test that we get an `icontains` match on `company_annotation` value
         self.client.login(username="esani_admin", password="12345")
         # Search on substring `oogl` in company name `google`
-        response = self.client.get(reverse("pant:user_list") + "?company=oogl")
+        response = self.client.get(reverse("pant:user_list") + "?search=oogle")
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
         company_names = [i["company"] for i in response.context_data["items"]]

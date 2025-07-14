@@ -192,6 +192,17 @@ class CompanyListTest(BaseCompanyTest):
         response = self.client.get(reverse("pant:company_list"))
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
+    def test_search_sorts_by_similarity_score(self):
+        # Providing a `search` input changes the queryset ordering to use the similarity
+        # score rather than the name.
+
+        # Act: perform a search
+        self.login()
+        response = self.client.get(f"{reverse('pant:company_list')}?search=ook")
+        # Assert: the queryset is sorted by similarity score
+        order_by = response.context_data["view"].get_queryset().query.order_by
+        self.assertTupleEqual(order_by, ("-_similarity",))
+
     def test_external_customer_id(self):
         def prefix(external_customer_id):
             return external_customer_id.split("-")[0]

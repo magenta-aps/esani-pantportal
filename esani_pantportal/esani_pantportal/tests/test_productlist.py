@@ -6,7 +6,6 @@ import json
 from http import HTTPStatus
 
 from bs4 import BeautifulSoup
-from django import forms
 from django.http import HttpRequest
 from django.test import TestCase
 from django.urls import reverse
@@ -67,7 +66,7 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.prod1 = Product.objects.create(
-            product_name="prod1",
+            product_name="cider",
             barcode="0010",
             refund_value=3,
             material="A",
@@ -78,7 +77,7 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
             shape="F",
         )
         cls.prod2 = Product.objects.create(
-            product_name="prod2",
+            product_name="juice",
             barcode="0002",
             refund_value=3,
             material="A",
@@ -101,20 +100,18 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
         self.assertIn(self.prod2, qs)
 
     def test_get_queryset_filter_name(self):
-        # Test that we get an `icontains` match (case-insensitive.)
-        # `OD1` should retrieve `self.prod1` whose name is `prod1`.
+        # `DER` should retrieve `self.prod1` whose name is `cider`.
         view = ProductSearchView()
         view.form = ProductFilterForm()
-        view.form.cleaned_data = {"offset": 0, "limit": 10, "product_name": "OD1"}
+        view.form.cleaned_data = {"offset": 0, "limit": 10, "search": "DER"}
         qs = view.get_queryset()
         self.assertIn(self.prod1, qs)
         self.assertNotIn(self.prod2, qs)
 
-        # Test that we get an `icontains` match (case-insensitive.)
-        # `OD2` should retrieve `self.prod2` whose name is `prod2`.
+        # `ICE` should retrieve `self.prod2` whose name is `juice`.
         view = ProductSearchView()
         view.form = ProductFilterForm()
-        view.form.cleaned_data = {"offset": 0, "limit": 10, "product_name": "OD2"}
+        view.form.cleaned_data = {"offset": 0, "limit": 10, "search": "ICE"}
         qs = view.get_queryset()
         self.assertNotIn(self.prod1, qs)
         self.assertIn(self.prod2, qs)
@@ -219,7 +216,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             date=make_aware(datetime.datetime(2020, 1, 1)),
         )
         cls.prod1 = Product.objects.create(
-            product_name="prod1",
+            product_name="cider",
             barcode="0010",
             refund_value=3,
             material="A",
@@ -233,7 +230,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             import_job=cls.job,
         )
         cls.prod2 = Product.objects.create(
-            product_name="prod2",
+            product_name="juice",
             barcode="0002",
             refund_value=3,
             material="A",
@@ -247,21 +244,6 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         )
         cls.prod2.approve()
         cls.prod2.save()
-
-    def test_form_invalid(self):
-        class InvalidProductFilterForm(ProductFilterForm):
-            def clean_product_name(self):
-                raise forms.ValidationError("This name is not allowed")
-
-        view = ProductSearchView()
-        view.form_class = InvalidProductFilterForm
-        view.request = HttpRequest()
-        view.request.method = "GET"
-        view.request.user = self.login()
-        view.kwargs = {}
-        response = view.get(view.request)
-        self.assertEquals(response.status_code, 200)
-        self.assertFalse(response.context_data["form"].is_valid())
 
     def test_form_valid(self):
         user = self.login()
@@ -292,7 +274,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                     "height": 100,
                     "id": 1,
                     "material": "Aluminium",
-                    "product_name": "prod1",
+                    "product_name": "cider",
                     "shape": "Flaske",
                     "weight": 20,
                     "danish": "Ukendt",
@@ -314,7 +296,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                     "height": 100,
                     "id": 2,
                     "material": "Aluminium",
-                    "product_name": "prod2",
+                    "product_name": "juice",
                     "shape": "Flaske",
                     "weight": 20,
                     "danish": "Ukendt",
@@ -335,7 +317,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             "offset": 0,
             "limit": 10,
             "json": "1",
-            "product_name": "prod1",  # exact match
+            "search": "cidr",
         }
         view.request = HttpRequest()
         view.request.method = "GET"
@@ -359,7 +341,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                     "height": 100,
                     "id": 1,
                     "material": "Aluminium",
-                    "product_name": "prod1",
+                    "product_name": "cider",
                     "shape": "Flaske",
                     "weight": 20,
                     "danish": "Ukendt",
@@ -392,7 +374,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
             date=make_aware(datetime.datetime(2020, 1, 1)),
         )
         cls.prod1 = Product.objects.create(
-            product_name="prod1",
+            product_name="cider",
             barcode="0010",
             refund_value=3,
             material="A",
@@ -404,7 +386,7 @@ class ProductListGuiTest(LoginMixin, TestCase):
             import_job=cls.job,
         )
         cls.prod2 = Product.objects.create(
-            product_name="prod2",
+            product_name="juice",
             barcode="0002",
             refund_value=3,
             material="A",
@@ -523,11 +505,11 @@ class ProductListGuiTest(LoginMixin, TestCase):
 
     def test_filter_name(self):
         expected = [self.prod1_expected_response]
-        response = self.client.get(reverse("pant:product_list") + "?product_name=PROD1")
+        response = self.client.get(reverse("pant:product_list") + "?search=CIDER")
         data = self.get_html_items(response.content)
         self.assertEquals(data, expected)
         response = self.client.get(
-            reverse("pant:product_list") + "?json=1&product_name=PROD1"
+            reverse("pant:product_list") + "?json=1&search=CIDER"
         )
         data = self.get_json_items(response.content)
         self.assertEquals(data, expected)
@@ -557,12 +539,12 @@ class ProductListGuiTest(LoginMixin, TestCase):
     def test_filter_approved_name(self):
         expected = []
         response = self.client.get(
-            reverse("pant:product_list") + "?approved=true&product_name=1"
+            reverse("pant:product_list") + "?approved=true&search=DER"
         )
         data = self.get_html_items(response.content)
         self.assertEquals(data, expected)
         response = self.client.get(
-            reverse("pant:product_list") + "?json=1&approved=true&product_name=1"
+            reverse("pant:product_list") + "?json=1&approved=true&search=DER"
         )
         data = self.get_json_items(response.content)
         self.assertEquals(data, expected)
