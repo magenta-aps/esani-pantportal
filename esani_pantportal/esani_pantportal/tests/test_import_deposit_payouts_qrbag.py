@@ -412,6 +412,23 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
             # Act
             cmd._get_from_qr(EXAMPLE_QR_ID, Company)
 
+    def test_get_from_qr_handles_multiple_objects_returned(self):
+        # Looking up via 10-digit QR code can encounter multiple matching `QRBag`
+        # objects if their hashes differ.
+
+        # Arrange: create two QR bags with the same prefix and ID, but different hashes
+        for hash in ("deadbeef", "feedfeed"):
+            QRBag.objects.update_or_create(
+                qr=f"1{EXAMPLE_QR_ID}{hash}",
+                kiosk=self.kiosk,
+            )
+
+        # Act
+        cmd = Command()
+        result = cmd._get_from_qr(f"1{EXAMPLE_QR_ID}", Kiosk)
+        # Assert
+        self.assertIsNone(result)
+
     def test_get_direct_company_branch(self):
         # Arrange
         cmd = Command()

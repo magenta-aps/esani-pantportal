@@ -215,7 +215,9 @@ class Command(BaseCommand):
         try:
             qr_bag = qs.get(lookup)
         except QRBag.DoesNotExist:
-            self.stdout.write(f"No QRBag matches {bag_qr}")
+            self.stdout.write(f"No QRBag objects match '{lookup}'")
+        except QRBag.MultipleObjectsReturned:
+            self.stdout.write(f"Multiple QRBag objects match '{lookup}'")
         else:
             return qr_bag
         return None
