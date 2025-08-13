@@ -175,7 +175,7 @@ LANGUAGES = [
 LOCALE_PATHS = [os.path.join(BASE_DIR, "locale")]
 LOCALE_MAP = {"da": "da-DK", "kl": "kl-GL"}
 
-TIME_ZONE = os.environ.get("TIME_ZONE", "America/Godthab")
+TIME_ZONE = os.environ.get("TIME_ZONE", "America/Nuuk")
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
