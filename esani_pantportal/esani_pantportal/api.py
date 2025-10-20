@@ -52,8 +52,8 @@ class ApprovedProductsOut(ModelSchema):
 
 
 class ApprovedProductsFilterSchema(FilterSchema):
-    product_name: str | None
-    barcode: int | None
+    product_name: str | None = None
+    barcode: int | None = None
 
 
 @api_controller(
