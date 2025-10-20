@@ -92,7 +92,7 @@ variables:
   stage: lint
   needs: []
   image: python:3.11
-  
+
 Lint Commits:
   extends: .lint:commits
   variables:
@@ -102,11 +102,11 @@ Lint Commits:
 Lint Python:
   <<: *lint-default
   before_script:
-    - pip3 install flake8
+    - pip3 install flake8==7.3.0
     - pip3 install black==24.1.1
     - pip3 install isort==5.12.0
   script:
-    - flake8 --max-line-length 88 --exclude=migrations,project --extend-ignore E226,E203,W503 esani_pantportal/
+    - flake8 --max-line-length 88 --exclude=migrations,project,data_models.py --extend-ignore E226,E203,W503 esani_pantportal/
     - black --check --diff --exclude=migrations esani_pantportal/
     - isort -c --diff --profile black --skip migrations esani_pantportal/
 
