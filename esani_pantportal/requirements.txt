@@ -36,6 +36,7 @@ django-debug-toolbar-template-profiler==2.1.0
 mypy==1.18.2
 django-stubs[compatible-mypy]==5.2.7
 types-paramiko==4.0.0.20250822
+types-pytz==2025.2.0.20250809
 types-requests==2.32.4.20250913
 django-fsm-2==4.0.0
 prometheus-client==0.23.1
