@@ -9,6 +9,7 @@ from unittest.mock import Mock, patch
 from django.conf import settings
 from django.core.management import call_command
 from django.test import TestCase
+from django.utils import timezone
 from unittest_parametrize import ParametrizedTestCase, parametrize
 
 from esani_pantportal.clients.tomra.api import ConsumerSessionCollection, TomraAPI
@@ -46,9 +47,12 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
     product_count_1 = 10
     product_barcode_2 = "2233"
     product_count_2 = 20
-    location_customer_id = 1000
+    location_customer_id = "1000"
     rvm_serial_number = "2000"
     consumer_session_id = uuid.uuid4()
+    started_at = datetime(2020, 1, 1, 12, 0, tzinfo=timezone.get_current_timezone())
+    item1_type = "single"
+    item1_refund = 0
 
     _mock_api_path = (
         "esani_pantportal.management.commands.import_deposit_payouts_qrbag."
@@ -137,15 +141,19 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
                         location=Location(customer_id=self.location_customer_id),
                         rvm=Rvm(serial_number=self.rvm_serial_number),
                     ),
-                    started_at=datetime(2020, 1, 1, 12, 0),
+                    started_at=self.started_at,
                     items=[
                         Item1(
                             product_code=self.product_barcode_1,
                             count=self.product_count_1,
+                            type=self.item1_type,
+                            refund=self.item1_refund,
                         ),
                         Item1(
                             product_code=self.product_barcode_2,
                             count=self.product_count_2,
+                            type=self.item1_type,
+                            refund=self.item1_refund,
                         ),
                     ],
                 ),
@@ -160,11 +168,13 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
                         location=Location(customer_id=self.location_customer_id),
                         rvm=Rvm(serial_number=self.rvm_serial_number),
                     ),
-                    started_at=datetime(2020, 1, 1, 12, 0),
+                    started_at=self.started_at,
                     items=[
                         Item1(
                             product_code="product_code",
                             count=0,
+                            type=self.item1_type,
+                            refund=self.item1_refund,
                         ),
                     ],
                 ),
@@ -181,11 +191,13 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
                         location=Location(customer_id=self.location_customer_id),
                         rvm=Rvm(serial_number=self.rvm_serial_number),
                     ),
-                    started_at=datetime(2020, 1, 1, 12, 0),
+                    started_at=self.started_at,
                     items=[
                         Item1(
                             product_code=self.product_barcode_1,
                             count=self.product_count_1,
+                            type=self.item1_type,
+                            refund=self.item1_refund,
                         ),
                     ],
                 ),
@@ -200,11 +212,13 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
                         location=Location(customer_id=self.location_customer_id),
                         rvm=Rvm(serial_number=self.rvm_serial_number),
                     ),
-                    started_at=datetime(2020, 1, 1, 12, 0),
+                    started_at=self.started_at,
                     items=[
                         Item1(
                             product_code=None,
                             count=self.product_count_1,
+                            type=self.item1_type,
+                            refund=self.item1_refund,
                         ),
                     ],
                 ),
