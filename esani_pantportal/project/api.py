@@ -17,7 +17,7 @@ from ninja_jwt.schema import (
 from ninja_jwt.tokens import RefreshToken
 from ninja_jwt.utils import token_error
 from project.util import ORJSONRenderer
-from pydantic import root_validator
+from pydantic import model_validator
 
 from esani_pantportal.api import ApprovedProductsAPI, QRBagAPI, QRStatusAPI
 from esani_pantportal.apidoc_decorator import swagger_csp
@@ -47,21 +47,23 @@ class CustomTokenRefreshOutputSchema(TokenRefreshOutputSchema):
 
 
 class CustomTokenRefreshInputSchema(TokenRefreshInputSchema):
+    fasttrack_enabled: bool = False
+
     @classmethod
     def get_response_schema(cls) -> type[Schema]:
         return CustomTokenRefreshOutputSchema
 
-    @root_validator
+    @model_validator(mode="after")
     @token_error
-    def validate_schema(cls, values: dict) -> dict:
-        refresh = RefreshToken(values["refresh"])
+    def validate_schema(cls, values: "CustomTokenRefreshInputSchema"):
+        refresh = RefreshToken(values.refresh)
         try:
             user_pk = refresh["user_id"]
             user = User.objects.get(pk=user_pk)
         except (KeyError, User.DoesNotExist):
-            values["fasttrack_enabled"] = False
+            values.fasttrack_enabled = False
         else:
-            values["fasttrack_enabled"] = user.fasttrack_enabled
+            values.fasttrack_enabled = user.fasttrack_enabled
         return super().validate_schema(values)
 
 

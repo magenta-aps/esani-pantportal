@@ -20,7 +20,7 @@ from django.forms import formset_factory
 from django.forms.widgets import HiddenInput
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
-from phonenumber_field.widgets import PhonePrefixSelect
+from phonenumber_field.widgets import RegionalPhoneNumberWidget
 from phonenumbers import country_code_for_region
 from two_factor.forms import AuthenticationTokenForm
 
@@ -246,7 +246,7 @@ class ReverseVendingMachineRegisterForm(forms.ModelForm, BootstrapForm):
 class PhoneForm(forms.Form):
     prefix = forms.CharField(  # type: ignore
         label=_("Landekode"),
-        widget=PhonePrefixSelect(initial="GL"),
+        widget=RegionalPhoneNumberWidget(region="GL"),
     )
 
     def clean_phone(self):
