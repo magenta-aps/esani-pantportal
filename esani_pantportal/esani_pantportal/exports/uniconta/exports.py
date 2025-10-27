@@ -4,7 +4,6 @@
 import csv
 import logging
 import sys
-from itertools import groupby
 from uuid import uuid4
 
 from django.conf import settings
@@ -287,23 +286,6 @@ class CreditNoteExport:
                 row["count"],
                 unit_price=row["compensation"],
             )
-
-    def _get_bag_groups(self, row) -> list[tuple[str, int]]:
-        def _get_bag_type(qr):
-            for bag_type_prefix in self._bag_type_prefixes:
-                if qr.startswith(bag_type_prefix):
-                    return bag_type_prefix
-            logger.warning("Cannot find bag type prefix for unknown bag QR %r", qr)
-
-        if row["bag_qrs"]:
-            qrs = [qr for qr in row["bag_qrs"] if qr is not None]
-            return [
-                (k, len(set(v)))
-                for k, v in groupby(sorted(qrs), key=_get_bag_type)
-                if k is not None
-            ]
-        else:
-            return []
 
     def _get_customer(self, row):
         if row["source"] == "company_branch":
