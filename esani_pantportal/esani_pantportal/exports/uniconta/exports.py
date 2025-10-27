@@ -201,7 +201,7 @@ class CreditNoteExport:
     def _get_lines_for_row(self, row):
         customer = self._get_customer(row)
 
-        def line(category, specifier, quantity, unit_price=None):
+        def line(category, specifier, quantity, unit_price=None, additional_text=None):
             rate = self._get_rate(category, specifier)
             unit_price = int(unit_price if unit_price is not None else rate.rate)
 
@@ -216,7 +216,9 @@ class CreditNoteExport:
                 ),
                 "customer_location_id": customer.location_id,
                 "product_id": rate.item_number,
-                "product_name": rate.text,
+                "product_name": (
+                    f"{rate.text} ({additional_text})" if additional_text else rate.text
+                ),
                 "quantity": quantity,
                 "unit_price": unit_price,
                 "total": quantity * unit_price,
@@ -246,8 +248,17 @@ class CreditNoteExport:
                 row["count"],
                 unit_price=customer.qr_compensation,
             )
-            for prefix, count in self._get_bag_groups(row):
-                yield line(ERPProductMapping.CATEGORY_BAG, prefix, count)
+            if row["bag_qrs"]:
+                for bag_qr in sorted(row["bag_qrs"]):
+                    if bag_qr is not None:
+                        for bag_type_prefix in self._bag_type_prefixes:
+                            if bag_qr.startswith(bag_type_prefix):
+                                yield line(
+                                    ERPProductMapping.CATEGORY_BAG,
+                                    bag_type_prefix,
+                                    1,
+                                    additional_text=bag_qr,
+                                )
 
         # Produce "Pant (automat)" and "Håndteringsgodtgørelse (automat)" lines
         elif row["type"] == DepositPayout.SOURCE_TYPE_CSV:
