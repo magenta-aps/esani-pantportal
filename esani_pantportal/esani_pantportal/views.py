@@ -1101,11 +1101,19 @@ class QRBagSearchView(BranchSearchView):
         return form_kwargs
 
     def filter_qs(self, qs):
+        empty_values = (None, "", [""], [])
+
+        # Support variable filtering on `qr`
+        qr = self.search_data.pop("qr", None)
+        if qr not in empty_values:
+            qs = qs.filter(self._get_qr_filter_condition(qr))
+
         # Support multiple-choice filtering on `status`
         status = self.search_data.pop("status", None)
-        if status not in (None, "", [""], []):  # skip empty values
+        if status not in empty_values:
             qs = qs.filter(status__in=status)
-        # Process the other search criteria (except `status`)
+
+        # Process the other search criteria
         return super().filter_qs(qs)
 
     def sort_qs(self, qs):
@@ -1143,6 +1151,25 @@ class QRBagSearchView(BranchSearchView):
 
     def get_view_name(self) -> str:
         return gettext("Pantposer")  # pragma: no cover
+
+    def _get_qr_filter_condition(self, qr: str) -> Q:
+        # Strip leading zeroes
+        qr = qr.lstrip("0")
+
+        long = settings.QR_ID_LENGTH + settings.QR_HASH_LENGTH
+        length = len(qr)
+        if length > long:
+            # Search input is 18 digits or longer.
+            # Use `iexact` search.
+            return Q(qr__iexact=qr)
+        elif settings.QR_HASH_LENGTH <= length <= long:
+            # Search input is between 8 and 17 digits long.
+            # Use `iendswith` search.
+            return Q(qr__iendswith=qr)
+        else:
+            # Search input is 7 digits or shorter.
+            # Use `icontains` search.
+            return Q(qr__icontains=qr)
 
     @cached_property
     def _qr_status_names(self) -> dict[str, str]:

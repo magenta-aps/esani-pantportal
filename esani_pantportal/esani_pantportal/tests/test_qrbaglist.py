@@ -373,6 +373,31 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         result = view.map_value({"status": status, annotation: None}, annotation, None)
         self.assertEqual(result, expected_result)
 
+    @parametrize(
+        "qr,expected",
+        [
+            # Case 1: very long search input matches QR code (`iexact`)
+            ("1234567890ABCDabcd", ["1234567890abcdabcd"]),
+            # Case 2: medium-length search input matches QR code suffix (`iendswith`)
+            ("0ABCDabcd", ["1234567890abcdabcd"]),
+            # Case 3: very short search input `r1` matches QR code `qr1` (`icontains`)
+            ("r1", ["qr1"]),
+        ],
+    )
+    def test_search_on_qr_varies_with_search_input_length(self, qr, expected):
+        # Arrange: add QR bags with medium and long QR codes
+        QRBag.objects.get_or_create(qr="1234567890abcdabcd")  # 10+8 digits QR
+        # Arrange
+        view = self._get_view_instance(qr=qr)
+        # Act: get filtered queryset
+        qs = view.filter_qs(QRBag.objects.all())
+        # Assert: filtered queryset matches expected QR codes
+        self.assertQuerySetEqual(
+            qs,
+            expected,
+            transform=lambda obj: obj.qr,
+        )
+
     def _get_view_instance(self, **kwargs) -> QRBagSearchView:
         view = QRBagSearchView()
         view.request = RequestFactory().get("")
