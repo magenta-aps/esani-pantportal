@@ -474,7 +474,7 @@ class TestCreditNoteExport(_SharedBase):
                     # One bag QR starting with 0 (known prefix), Two bag QRs starting
                     # with 1 (known prefix), and one bag QR starting with 2 (unknown
                     # prefix.)
-                    "bag_qrs": ["001", "100", "101", "200"],
+                    "bag_qrs": ["001", "101", "100", "200"],
                     "already_exported": False,
                 },
                 [
@@ -496,22 +496,31 @@ class TestCreditNoteExport(_SharedBase):
                         "total": 1000 * 30,
                         **_line_vals(),
                     },
-                    # Third line is "Lille pose"
+                    # Third line is "Lille pose (001)"
                     {
                         "product_id": 901,
-                        "product_name": "Lille pose",
-                        "quantity": 1,  # Corresponds to the one bag QR starting with 0
+                        "product_name": "Lille pose (001)",
+                        "quantity": 1,
                         "unit_price": -275,
-                        "total": 1 * -275,
+                        "total": -275,
                         **_line_vals(),
                     },
-                    # Fourth line is "Stor pose"
+                    # Fourth line is "Stor pose (100)"
                     {
                         "product_id": 902,
-                        "product_name": "Stor pose",
-                        "quantity": 2,  # Corresponds to the two bag QRs starting with 1
+                        "product_name": "Stor pose (100)",
+                        "quantity": 1,
                         "unit_price": -525,
-                        "total": 2 * -525,
+                        "total": -525,
+                        **_line_vals(),
+                    },
+                    # Fifth line is "Stor pose (101)"
+                    {
+                        "product_id": 902,
+                        "product_name": "Stor pose (101)",
+                        "quantity": 1,
+                        "unit_price": -525,
+                        "total": -525,
                         **_line_vals(),
                     },
                 ],
