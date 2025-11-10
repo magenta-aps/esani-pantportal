@@ -4,6 +4,7 @@
 import csv
 import logging
 import sys
+from functools import cache
 from uuid import uuid4
 
 from django.conf import settings
@@ -23,12 +24,14 @@ from django.db.models import (
     When,
 )
 from django.db.models.functions import Cast, Coalesce, Concat, LPad
+from django.utils.formats import number_format
 from simple_history.utils import bulk_update_with_history
 
 from esani_pantportal.models import (
     Company,
     CompanyBranch,
     DepositPayout,
+    DepositPayoutItem,
     ERPProductMapping,
     Kiosk,
     QRBag,
@@ -194,9 +197,6 @@ class CreditNoteExport:
             )
         )
 
-    def _get_rate(self, category: str, specifier: str) -> ERPProductMapping:
-        return ERPProductMapping.objects.get(category=category, specifier=specifier)
-
     def _get_lines_for_row(self, row):
         customer = self._get_customer(row)
 
@@ -247,17 +247,21 @@ class CreditNoteExport:
                 row["count"],
                 unit_price=customer.qr_compensation,
             )
-            if row["bag_qrs"]:
-                for bag_qr in sorted(row["bag_qrs"]):
-                    if bag_qr is not None:
-                        for bag_type_prefix in self._bag_type_prefixes:
-                            if bag_qr.startswith(bag_type_prefix):
-                                yield line(
-                                    ERPProductMapping.CATEGORY_BAG,
-                                    bag_type_prefix,
-                                    1,
-                                    additional_text=bag_qr,
-                                )
+            for bag_type_prefix, bag_qr, bag_value in self._get_lines_for_bag(row):
+                bag_value_formatted = number_format(
+                    bag_value,
+                    decimal_pos=0,
+                    use_l10n=True,
+                    force_grouping=True,
+                )
+                yield line(
+                    ERPProductMapping.CATEGORY_BAG,
+                    bag_type_prefix,
+                    1,  # One bag per bag QR
+                    additional_text=(
+                        f"nr.: {bag_qr}, værdi: kr. {bag_value_formatted}"
+                    ),
+                )
 
         # Produce "Pant (automat)" and "Håndteringsgodtgørelse (automat)" lines
         elif row["type"] == DepositPayout.SOURCE_TYPE_CSV:
@@ -287,13 +291,58 @@ class CreditNoteExport:
                 unit_price=row["compensation"],
             )
 
+    def _get_lines_for_bag(self, row):
+        if row["source"] == "company_branch":
+            source_filter = Q(company_branch=row["source_id"])
+        elif row["source"] == "kiosk":
+            source_filter = Q(kiosk=row["source_id"])
+        else:
+            raise ValueError(  # pragma: no cover
+                f"Unknown source type: {row['source']}"
+            )
+
+        bag_lines = (
+            DepositPayoutItem.objects.filter(
+                source_filter, consumer_identity__in=row["bag_qrs"]
+            )
+            .values("consumer_identity")
+            .annotate(
+                bag_value=Sum(
+                    F("count") * F("product__refund_value") / Value(100),
+                    # Filter out items without Product FK or barcode - they are not
+                    # valid deposits and don't count towards the deposit value of the
+                    # bag.
+                    filter=Q(product__isnull=False, barcode__isnull=False),
+                ),
+            )
+            .order_by("consumer_identity")
+        )
+        for bag_line in bag_lines:
+            bag_qr = bag_line["consumer_identity"]
+            bag_value = bag_line["bag_value"]
+            for bag_type_prefix in self._bag_type_prefixes:
+                if bag_qr.startswith(bag_type_prefix):
+                    yield bag_type_prefix, bag_qr, bag_value
+
     def _get_customer(self, row):
         if row["source"] == "company_branch":
-            companies = CompanyBranch.objects.filter(id=row["source_id"])
-            return companies.first()
+            return self._get_company(row["source_id"])
         elif row["source"] == "kiosk":
-            kiosks = Kiosk.objects.filter(id=row["source_id"])
-            return kiosks.first()
+            return self._get_kiosk(row["source_id"])
+
+    @cache
+    def _get_rate(self, category: str, specifier: str) -> ERPProductMapping:
+        return ERPProductMapping.objects.get(category=category, specifier=specifier)
+
+    @cache
+    def _get_company(self, company_id: int) -> CompanyBranch | None:
+        companies = CompanyBranch.objects.filter(id=company_id)
+        return companies.first()
+
+    @cache
+    def _get_kiosk(self, kiosk_id: int) -> Kiosk | None:
+        kiosks = Kiosk.objects.filter(id=kiosk_id)
+        return kiosks.first()
 
 
 class DebtorExport:

@@ -470,11 +470,11 @@ class TestCreditNoteExport(_SharedBase):
                     "product_refund_value": 200,
                     "rvm_refund_value": 15,
                     "count": 1000,
-                    "compensation": None,
                     # One bag QR starting with 0 (known prefix), Two bag QRs starting
                     # with 1 (known prefix), and one bag QR starting with 2 (unknown
                     # prefix.)
                     "bag_qrs": ["001", "101", "100", "200"],
+                    "compensation": None,
                     "already_exported": False,
                 },
                 [
@@ -499,7 +499,7 @@ class TestCreditNoteExport(_SharedBase):
                     # Third line is "Lille pose (001)"
                     {
                         "product_id": 901,
-                        "product_name": "Lille pose (001)",
+                        "product_name": "Lille pose (nr.: 001, værdi: kr. 125)",
                         "quantity": 1,
                         "unit_price": -275,
                         "total": -275,
@@ -508,7 +508,7 @@ class TestCreditNoteExport(_SharedBase):
                     # Fourth line is "Stor pose (100)"
                     {
                         "product_id": 902,
-                        "product_name": "Stor pose (100)",
+                        "product_name": "Stor pose (nr.: 100, værdi: kr. 125)",
                         "quantity": 1,
                         "unit_price": -525,
                         "total": -525,
@@ -517,7 +517,7 @@ class TestCreditNoteExport(_SharedBase):
                     # Fifth line is "Stor pose (101)"
                     {
                         "product_id": 902,
-                        "product_name": "Stor pose (101)",
+                        "product_name": "Stor pose (nr.: 101, værdi: kr. 125)",
                         "quantity": 1,
                         "unit_price": -525,
                         "total": -525,
@@ -535,6 +535,22 @@ class TestCreditNoteExport(_SharedBase):
         customer = CompanyBranch.objects.get(name=row["_source_name"])
         row["source_id"] = customer.id
         del row["_source_name"]
+
+        # Arrange: seed database with any expected deposit payout items that will be
+        # queried by `_get_lines_for_bag`.
+        for bag_qr in row["bag_qrs"]:
+            if bag_qr is not None:
+                DepositPayoutItem.objects.get_or_create(
+                    consumer_identity=bag_qr,
+                    defaults={
+                        "company_branch": customer,
+                        "deposit_payout": self.deposit_payout_bag,
+                        "count": self.deposit_payout_item_bag_1.count,
+                        "date": self.deposit_payout_item_bag_1.date,
+                        "product": self.deposit_payout_item_bag_1.product,
+                        "barcode": self.deposit_payout_item_bag_1.barcode,
+                    },
+                )
 
         # Arrange: add `customer_id` to all `expected_lines`
         for line in expected_lines:
