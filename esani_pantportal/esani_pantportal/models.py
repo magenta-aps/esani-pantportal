@@ -1287,6 +1287,7 @@ class DepositPayoutItem(models.Model):
         max_length=32,
         null=True,
         blank=True,
+        db_index=True,
     )
 
     file_id = models.UUIDField(
