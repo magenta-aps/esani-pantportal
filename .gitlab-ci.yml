@@ -176,7 +176,7 @@ Pantportal test:
   <<: *test-pantportal
   script:
     - cd /app
-    - python manage.py collectstatic
+    - python manage.py collectstatic --no-input --clear
     - coverage run manage.py test --parallel 4
     - coverage combine
     - coverage report --show-missing --fail-under=100
