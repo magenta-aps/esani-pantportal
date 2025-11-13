@@ -1164,8 +1164,9 @@ class QRBagSearchView(BranchSearchView):
             return Q(qr__iexact=qr)
         elif settings.QR_HASH_LENGTH <= length <= long:
             # Search input is between 8 and 17 digits long.
-            # Use `iendswith` search.
-            return Q(qr__iendswith=qr)
+            # Look for prefix or suffix matches, assuming that search input is either
+            # a bag number without control code, or a control code by itself.
+            return Q(qr__istartswith=qr) | Q(qr__iendswith=qr)
         else:
             # Search input is 7 digits or shorter.
             # Use `icontains` search.

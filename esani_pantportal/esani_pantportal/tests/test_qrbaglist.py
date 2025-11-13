@@ -378,9 +378,11 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         [
             # Case 1: very long search input matches QR code (`iexact`)
             ("1234567890ABCDabcd", ["1234567890abcdabcd"]),
-            # Case 2: medium-length search input matches QR code suffix (`iendswith`)
+            # Case 2: medium-length search input matches QR code prefix (`istartswith`)
+            ("1234567890", ["1234567890abcdabcd"]),
+            # Case 3: medium-length search input matches QR code suffix (`iendswith`)
             ("0ABCDabcd", ["1234567890abcdabcd"]),
-            # Case 3: very short search input `r1` matches QR code `qr1` (`icontains`)
+            # Case 4: very short search input `r1` matches QR code `qr1` (`icontains`)
             ("r1", ["qr1"]),
         ],
     )
