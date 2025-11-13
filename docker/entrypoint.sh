@@ -55,7 +55,4 @@ fi
 echo 'Database is ready'
 echo true > /tmp/DATABASE_READY
 
-echo "collecting static files"
-python3 manage.py collectstatic --no-input --clear
-
 exec "$@"

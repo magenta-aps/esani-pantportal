@@ -8,6 +8,7 @@ ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.
     SUPERCRONIC_SHA1SUM=048b95b48b708983effb2e5c935a1ef8483d9e3e\
     PYTHONUNBUFFERED=1
 
+
 ENV PYTHONUNBUFFERED=1
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN mkdir /app && \
@@ -66,4 +67,10 @@ VOLUME /srv/media
 ENTRYPOINT ["/entrypoint.sh"]
 WORKDIR /app
 VOLUME  /var/cache/pant
+
+# Provide dummy values for required environment variables.
+# `collectstatic` does not actually need any of these, but they are read by Django when running `manage.py`.
+RUN DJANGO_SECRET_KEY=unused POSTGRES_DB=unused POSTGRES_HOST=unused POSTGRES_USER=unused POSTGRES_PASSWORD=unused \
+    python manage.py collectstatic --no-input --clear
+
 CMD ["gunicorn", "-b", "0.0.0.0:8000", "project.wsgi:application", "-w", "4", "--timeout", "120", "--error-logfile", "-", "--capture-output"]
