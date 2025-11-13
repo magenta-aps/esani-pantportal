@@ -94,7 +94,12 @@ SPDX-License-Identifier: MPL-2.0
         <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="{% url 'pant:user_view' user.id %}">{% translate "Brugerprofil" %}</a></li>
             <li><a class="dropdown-item" href="{% url 'pant:password_change' user.id %}">{% translate "Skift adgangskode" %}</a></li>
-            <li><a class="dropdown-item" href="{% url 'pant:logout' %}" id="logout-link">{% translate "Log ud" %}</a></li>
+            <li>
+                <form method="post" action="{% url 'pant:logout' %}">
+                    {% csrf_token %}
+                    <input type="submit" class="dropdown-item" id="logout-link" value="{% translate "Log ud" %}" />
+                </form>
+            </li>
         </ul>
         </div>
     </nav>
