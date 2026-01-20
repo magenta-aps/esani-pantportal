@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 #
 # SPDX-License-Identifier: MPL-2.0
+import json
 import uuid
 from csv import DictReader
 from datetime import date
@@ -128,6 +129,7 @@ class TestCreditNoteExport(_SharedBase):
             barcode="barcode",
             qr_bag=cls.qr_bag,
             product=cls.product,
+            consumer_identity="123",
             count=50,
         )
         cls.deposit_payout_item_with_file_id = cls._add_deposit_payout_item(
@@ -135,6 +137,8 @@ class TestCreditNoteExport(_SharedBase):
             company_branch=cls.company_branch,
             barcode="barcode",
             product=cls.product,
+            consumer_identity="123",
+            count=25,
             file_id=uuid.uuid4(),
         )
         # Bag item without product FK - must be exported with default refund amount
@@ -143,6 +147,7 @@ class TestCreditNoteExport(_SharedBase):
             company_branch=cls.company_branch,
             barcode="barcode",
             product=None,
+            consumer_identity="123",
             count=100,
         )
         # Bag item without source (company branch or kiosk) - must *never* be
@@ -153,6 +158,7 @@ class TestCreditNoteExport(_SharedBase):
             kiosk=None,
             barcode="barcode",
             product=cls.product,
+            consumer_identity="",
             count=9000,
         )
         # Manually created item - must be exported
@@ -229,13 +235,16 @@ class TestCreditNoteExport(_SharedBase):
                     # From `cls.deposit_payout_item_rvm_1`
                     ("101", "250", "20"),
                     ("201", "15", "20"),
-                    # From `cls.deposit_payout_item_bag_1` (count=50)
-                    # and `cls.deposit_payout_item_null_product` (count=100)
-                    ("102", "250", "150"),
+                    # From `cls.deposit_payout_item_bag_1` (count=50) and
+                    # `cls.deposit_payout_item_null_product` (count=100)
+                    # (summing to 150 units)
+                    ("102", "200", "150"),
                     ("202", "30", "150"),
-                    # From `cls.deposit_payout_item_file_id`
-                    ("102", "250", "20"),
-                    ("202", "30", "20"),
+                    ("902", "-525", "1"),
+                    # From `cls.deposit_payout_item_file_id` (count=25)
+                    ("102", "200", "25"),
+                    ("202", "30", "25"),
+                    ("902", "-525", "1"),
                     # From `cls.deposit_payout_item_rvm_2`
                     ("101", "250", "20"),
                     ("201", "15", "20"),
@@ -253,8 +262,10 @@ class TestCreditNoteExport(_SharedBase):
                     ("201", "15", "20"),
                     # From `cls.deposit_payout_item_bag_1` (count=50)
                     # and `cls.deposit_payout_item_null_product` (count=100)
-                    ("102", "250", "150"),
+                    # (summing to 150 units)
+                    ("102", "200", "150"),
                     ("202", "30", "150"),
+                    ("902", "-525", "1"),
                     # From `cls.deposit_payout_item_rvm_2`
                     ("101", "250", "20"),
                     ("201", "15", "20"),
@@ -302,7 +313,7 @@ class TestCreditNoteExport(_SharedBase):
                 [
                     {
                         "already_exported": False,
-                        "bag_qrs": [None],
+                        "bag_lines": None,
                         "count": 20,
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
@@ -315,7 +326,10 @@ class TestCreditNoteExport(_SharedBase):
                     # `self.deposit_payout_item_null_product` (count=100)
                     {
                         "already_exported": False,
-                        "bag_qrs": [None],
+                        "bag_lines": [
+                            {"consumer_identity": "123", "count": 50},
+                            {"consumer_identity": "123", "count": 100},
+                        ],
                         "count": 50 + 100,
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
@@ -325,8 +339,10 @@ class TestCreditNoteExport(_SharedBase):
                     },
                     {
                         "already_exported": True,
-                        "bag_qrs": [None],
-                        "count": 20,
+                        "bag_lines": [
+                            {"consumer_identity": "123", "count": 25},
+                        ],
+                        "count": 25,
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
                         "compensation": None,
@@ -335,7 +351,7 @@ class TestCreditNoteExport(_SharedBase):
                     },
                     {
                         "already_exported": False,
-                        "bag_qrs": [None],
+                        "bag_lines": None,
                         "count": 20,
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
@@ -346,7 +362,7 @@ class TestCreditNoteExport(_SharedBase):
                     # Data from `self.deposit_payout_item_manual`
                     {
                         "already_exported": False,
-                        "bag_qrs": [None],
+                        "bag_lines": None,
                         "count": 1000,
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
@@ -362,7 +378,7 @@ class TestCreditNoteExport(_SharedBase):
                 # Expected result
                 [
                     {
-                        "bag_qrs": [None],
+                        "bag_lines": None,
                         "count": 20,
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
@@ -374,7 +390,10 @@ class TestCreditNoteExport(_SharedBase):
                     # `self.deposit_payout_item_bag_1` (count=50) and
                     # `self.deposit_payout_item_null_product` (count=100)
                     {
-                        "bag_qrs": [None],
+                        "bag_lines": [
+                            {"consumer_identity": "123", "count": 50},
+                            {"consumer_identity": "123", "count": 100},
+                        ],
                         "count": 50 + 100,
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
@@ -383,7 +402,7 @@ class TestCreditNoteExport(_SharedBase):
                         "type": "api",
                     },
                     {
-                        "bag_qrs": [None],
+                        "bag_lines": None,
                         "count": 20,
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
@@ -393,7 +412,7 @@ class TestCreditNoteExport(_SharedBase):
                     },
                     # Data from `self.deposit_payout_item_manual`
                     {
-                        "bag_qrs": [None],
+                        "bag_lines": None,
                         "count": 1000,
                         "product_refund_value": 250,
                         "rvm_refund_value": None,
@@ -406,6 +425,11 @@ class TestCreditNoteExport(_SharedBase):
         ],
     )
     def test_get_base_queryset(self, dry, expected):
+        def decode(key, value):
+            if key == "bag_lines" and value is not None:
+                return json.loads(value)
+            return value
+
         # Arrange
         instance = self._get_instance(dry=dry)
         # Act
@@ -414,8 +438,13 @@ class TestCreditNoteExport(_SharedBase):
         self.assertQuerySetEqual(
             # Drop `source_id` from actual result items, as we cannot reliably test
             # against it (it is a database ID which may change.)
+            # Decode any JSON values using `decode`.
             [
-                {key: value for key, value in val.items() if key != "source_id"}
+                {
+                    key: decode(key, value)
+                    for key, value in val.items()
+                    if key != "source_id"
+                }
                 for val in actual
             ],
             expected,
@@ -434,7 +463,7 @@ class TestCreditNoteExport(_SharedBase):
                     "product_refund_value": 200,
                     "rvm_refund_value": 15,
                     "count": 1000,
-                    "bag_qrs": [],
+                    "bag_lines": [],
                     "compensation": None,
                     "already_exported": False,
                 },
@@ -462,7 +491,7 @@ class TestCreditNoteExport(_SharedBase):
             # Test 2
             (
                 # Input row: 1000 items from API (consumer sessions.)
-                # This input row also contains `bag_qrs`.
+                # This input row also contains `bag_lines`.
                 {
                     "_source_name": CUSTOMER_1_NAME,
                     "type": DepositPayout.SOURCE_TYPE_API,
@@ -473,21 +502,45 @@ class TestCreditNoteExport(_SharedBase):
                     # One bag QR starting with 0 (known prefix), Two bag QRs starting
                     # with 1 (known prefix), and one bag QR starting with 2 (unknown
                     # prefix.)
-                    "bag_qrs": ["001", "101", "100", "200"],
+                    "bag_lines": [
+                        {"consumer_identity": "001", "count": 50},
+                        {"consumer_identity": "100", "count": 50},
+                        {"consumer_identity": "101", "count": 25},
+                        {"consumer_identity": "101", "count": 25},
+                        {"consumer_identity": "200", "count": 1},
+                    ],
                     "compensation": None,
                     "already_exported": False,
                 },
                 [
-                    # First line is "Pant (pose)"
+                    # Line 1: "Pant (lille pose 001)"
                     {
                         "product_id": 102,
-                        "product_name": "Pant (pose)",
-                        "quantity": 1000,
+                        "product_name": "Pant (lille pose 001)",
+                        "quantity": 50,
                         "unit_price": 200,
-                        "total": 1000 * 200,
+                        "total": 50 * 200,
                         **_line_vals(),
                     },
-                    # Second line is "Håndteringsgodtgørelse (pose)"
+                    # Line 2: "Pant (stor pose 100)"
+                    {
+                        "product_id": 102,
+                        "product_name": "Pant (stor pose 100)",
+                        "quantity": 50,
+                        "unit_price": 200,
+                        "total": 50 * 200,
+                        **_line_vals(),
+                    },
+                    # Line 3: "Pant (stor pose 101)"
+                    {
+                        "product_id": 102,
+                        "product_name": "Pant (stor pose 101)",
+                        "quantity": 50,
+                        "unit_price": 200,
+                        "total": 50 * 200,
+                        **_line_vals(),
+                    },
+                    # Line 4: "Håndteringsgodtgørelse (pose)"
                     {
                         "product_id": 202,
                         "product_name": "Håndteringsgodtgørelse (pose)",
@@ -496,31 +549,22 @@ class TestCreditNoteExport(_SharedBase):
                         "total": 1000 * 30,
                         **_line_vals(),
                     },
-                    # Third line is "Lille pose (001)"
+                    # Line 5: "Pantpose (lille)", quantity 1 (bag QR "001")
                     {
                         "product_id": 901,
-                        "product_name": "Lille pose (nr.: 001, værdi: kr. 125)",
+                        "product_name": "Pantpose (lille)",
                         "quantity": 1,
                         "unit_price": -275,
                         "total": -275,
                         **_line_vals(),
                     },
-                    # Fourth line is "Stor pose (100)"
+                    # Line 6: "Pantpose (stor)", quantity 2 (bag QRs "100", "101")
                     {
                         "product_id": 902,
-                        "product_name": "Stor pose (nr.: 100, værdi: kr. 125)",
-                        "quantity": 1,
+                        "product_name": "Pantpose (stor)",
+                        "quantity": 2,
                         "unit_price": -525,
-                        "total": -525,
-                        **_line_vals(),
-                    },
-                    # Fifth line is "Stor pose (101)"
-                    {
-                        "product_id": 902,
-                        "product_name": "Stor pose (nr.: 101, værdi: kr. 125)",
-                        "quantity": 1,
-                        "unit_price": -525,
-                        "total": -525,
+                        "total": 2 * -525,
                         **_line_vals(),
                     },
                 ],
@@ -538,29 +582,31 @@ class TestCreditNoteExport(_SharedBase):
 
         # Arrange: seed database with any expected deposit payout items that will be
         # queried by `_get_lines_for_bag`.
-        for bag_qr in row["bag_qrs"]:
-            if bag_qr is not None:
-                DepositPayoutItem.objects.get_or_create(
-                    consumer_identity=bag_qr,
-                    defaults={
-                        "company_branch": customer,
-                        "deposit_payout": self.deposit_payout_bag,
-                        "count": self.deposit_payout_item_bag_1.count,
-                        "date": self.deposit_payout_item_bag_1.date,
-                        "product": self.deposit_payout_item_bag_1.product,
-                        "barcode": self.deposit_payout_item_bag_1.barcode,
-                    },
-                )
+        for bag_line in row["bag_lines"]:
+            DepositPayoutItem.objects.get_or_create(
+                consumer_identity=bag_line["consumer_identity"],
+                defaults={
+                    "company_branch": customer,
+                    "deposit_payout": self.deposit_payout_bag,
+                    "count": self.deposit_payout_item_bag_1.count,
+                    "date": self.deposit_payout_item_bag_1.date,
+                    "product": self.deposit_payout_item_bag_1.product,
+                    "barcode": self.deposit_payout_item_bag_1.barcode,
+                },
+            )
+
+        # Arrange: encode `bag_lines` as JSON
+        row["bag_lines"] = json.dumps(row["bag_lines"])
 
         # Arrange: add `customer_id` to all `expected_lines`
         for line in expected_lines:
             line["customer_id"] = customer.external_customer_id
 
         # Act
-        actual_lines = instance._get_lines_for_row(row)
+        actual_lines = list(instance._get_lines_for_row(row))
 
         # Assert
-        self.assertListEqual(list(actual_lines), expected_lines)
+        self.assertListEqual(actual_lines, expected_lines)
 
     def test_get_lines_for_row_wet(self):
         # Arrange: get "wet" instance
@@ -577,7 +623,7 @@ class TestCreditNoteExport(_SharedBase):
             "rvm_refund_value": 15,
             "count": 1000,
             "compensation": None,
-            "bag_qrs": [],
+            "bag_lines": None,
             "file_id": None,
         }
 

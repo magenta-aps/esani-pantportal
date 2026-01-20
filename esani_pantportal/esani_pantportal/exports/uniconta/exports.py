@@ -2,14 +2,16 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import csv
+import json
 import logging
 import sys
+from collections import Counter, defaultdict
 from functools import cache
 from uuid import uuid4
 
 from django.conf import settings
-from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import (
+    Aggregate,
     BooleanField,
     Case,
     CharField,
@@ -24,14 +26,13 @@ from django.db.models import (
     When,
 )
 from django.db.models.functions import Cast, Coalesce, Concat, LPad
-from django.utils.formats import number_format
+from django.utils.translation import gettext as _
 from simple_history.utils import bulk_update_with_history
 
 from esani_pantportal.models import (
     Company,
     CompanyBranch,
     DepositPayout,
-    DepositPayoutItem,
     ERPProductMapping,
     Kiosk,
     QRBag,
@@ -39,6 +40,24 @@ from esani_pantportal.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class BagLinesAgg(Aggregate):
+    """Aggregate all consumer identity and count values for the deposit payout items
+    belonging to a given row in the input queryset.
+    """
+
+    template = """
+        jsonb_agg(
+            jsonb_build_object(
+                'consumer_identity', consumer_identity,
+                'count', count
+            )
+            order by consumer_identity
+        )
+        filter (where consumer_identity is not null)
+        """
+    output_field = CharField()
 
 
 class CreditNoteExport:
@@ -185,7 +204,7 @@ class CreditNoteExport:
             .values(*group_by)
             .annotate(
                 count=Sum("count"),
-                bag_qrs=ArrayAgg("consumer_identity", distinct=True),
+                bag_lines=BagLinesAgg(),
             )
             .order_by(
                 "source",
@@ -235,32 +254,33 @@ class CreditNoteExport:
         # Produce "Pant (pose)", "Håndteringsgodtgørelse (pose)" and
         # "Lille pose"/"Stor pose" lines.
         if row["type"] == DepositPayout.SOURCE_TYPE_API:
-            yield line(
-                ERPProductMapping.CATEGORY_DEPOSIT,
-                ERPProductMapping.SPECIFIER_BAG,
-                row["count"],
-                unit_price=row["product_refund_value"],
-            )
+            grouped_by_prefix = self._get_lines_for_bag_grouped(row["bag_lines"])
+            # 1. One or more "Pant (lille/stor pose XXX)" lines (one for each bag)
+            for bag_type_prefix, bag_lines in grouped_by_prefix.items():
+                for bag_qr, bag_value in bag_lines.items():
+                    yield line(
+                        ERPProductMapping.CATEGORY_DEPOSIT,
+                        ERPProductMapping.SPECIFIER_BAG,
+                        bag_value,  # Number of bottles/cans in bag
+                        additional_text=(
+                            _("lille pose {qr}")
+                            if bag_type_prefix == "0"
+                            else _("stor pose {qr}")
+                        ).format(qr=bag_qr),
+                    )
+            # 2. Exactly one "Håndteringsgodtgørelse" line
             yield line(
                 ERPProductMapping.CATEGORY_HANDLING,
                 ERPProductMapping.SPECIFIER_BAG,
                 row["count"],
                 unit_price=customer.qr_compensation,
             )
-            for bag_type_prefix, bag_qr, bag_value in self._get_lines_for_bag(row):
-                bag_value_formatted = number_format(
-                    bag_value,
-                    decimal_pos=0,
-                    use_l10n=True,
-                    force_grouping=True,
-                )
+            # 3. One or more "Pantpose (lille/stor)" lines (one for each size of bag)
+            for bag_type_prefix, bag_lines in grouped_by_prefix.items():
                 yield line(
                     ERPProductMapping.CATEGORY_BAG,
                     bag_type_prefix,
-                    1,  # One bag per bag QR
-                    additional_text=(
-                        f"nr.: {bag_qr}, værdi: kr. {bag_value_formatted}"
-                    ),
+                    len(bag_lines),  # Number of bags in this size
                 )
 
         # Produce "Pant (automat)" and "Håndteringsgodtgørelse (automat)" lines
@@ -277,6 +297,8 @@ class CreditNoteExport:
                 row["count"],
                 unit_price=row["rvm_refund_value"],
             )
+
+        # Produce lines for manually registered deposits
         elif row["type"] == DepositPayout.SOURCE_TYPE_MANUAL:
             yield line(
                 ERPProductMapping.CATEGORY_DEPOSIT,
@@ -291,38 +313,18 @@ class CreditNoteExport:
                 unit_price=row["compensation"],
             )
 
-    def _get_lines_for_bag(self, row):
-        if row["source"] == "company_branch":
-            source_filter = Q(company_branch=row["source_id"])
-        elif row["source"] == "kiosk":
-            source_filter = Q(kiosk=row["source_id"])
-        else:
-            raise ValueError(  # pragma: no cover
-                f"Unknown source type: {row['source']}"
-            )
-
-        bag_lines = (
-            DepositPayoutItem.objects.filter(
-                source_filter, consumer_identity__in=row["bag_qrs"]
-            )
-            .values("consumer_identity")
-            .annotate(
-                bag_value=Sum(
-                    F("count") * F("product__refund_value") / Value(100),
-                    # Filter out items without Product FK or barcode - they are not
-                    # valid deposits and don't count towards the deposit value of the
-                    # bag.
-                    filter=Q(product__isnull=False, barcode__isnull=False),
-                ),
-            )
-            .order_by("consumer_identity")
-        )
+    def _get_lines_for_bag_grouped(self, bag_lines):
+        if bag_lines is None:
+            return []  # pragma: no cover
+        bag_lines = json.loads(bag_lines)
+        result = defaultdict(Counter)
         for bag_line in bag_lines:
-            bag_qr = bag_line["consumer_identity"]
-            bag_value = bag_line["bag_value"]
+            consumer_identity = bag_line["consumer_identity"]
+            count = bag_line["count"]
             for bag_type_prefix in self._bag_type_prefixes:
-                if bag_qr.startswith(bag_type_prefix):
-                    yield bag_type_prefix, bag_qr, bag_value
+                if consumer_identity.startswith(bag_type_prefix):
+                    result[bag_type_prefix][consumer_identity] += count
+        return result
 
     def _get_customer(self, row):
         if row["source"] == "company_branch":
