@@ -280,7 +280,22 @@ class Command(BaseCommand):
         return None
 
     def _get_consumer_identity(self, consumer_session: ConsumerSession) -> str | None:
-        return getattr(consumer_session.identity, "consumer_identity", None)
+        # This contains a 10- or 18-digit value, depending on which bulk machine that
+        # has scanned the bag.
+        consumer_identity = getattr(
+            consumer_session.identity, "consumer_identity", None
+        )
+
+        # This contains an 8-digit control code, or None, depending on which bulk
+        # machine that has scanned the bag.
+        bag_identity = getattr(consumer_session.identity, "bag_identity", None)
+
+        if consumer_identity is not None and bag_identity is not None:
+            # Concatenate `consumer_identity` and `bag_identity` if they both appear:
+            return f"{consumer_identity}{bag_identity}"
+        else:
+            # Return 10- or 18-digit value, or None
+            return consumer_identity
 
     def _get_source(
         self,

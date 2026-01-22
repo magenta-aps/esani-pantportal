@@ -223,6 +223,36 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
                     ],
                 ),
             ),
+            # Fifth datum contains our QR bag ID split across the fields
+            # `consumer_identity` and `bag_identity`.
+            Datum(
+                consumer_session=ConsumerSession(
+                    id=self.consumer_session_id,
+                    identity=Identity(
+                        consumer_identity=self.bag_qr[0:10],
+                        bag_identity=self.bag_qr[10:18],
+                    ),
+                    metadata=Metadata(
+                        location=Location(customer_id=self.location_customer_id),
+                        rvm=Rvm(serial_number=self.rvm_serial_number),
+                    ),
+                    started_at=self.started_at,
+                    items=[
+                        Item1(
+                            product_code=self.product_barcode_1,
+                            count=self.product_count_1,
+                            type=self.item1_type,
+                            refund=self.item1_refund,
+                        ),
+                        Item1(
+                            product_code=self.product_barcode_2,
+                            count=self.product_count_2,
+                            type=self.item1_type,
+                            refund=self.item1_refund,
+                        ),
+                    ],
+                ),
+            ),
         ]
 
         with patch(self._mock_api_path, return_value=self._get_mock_api(data)):
@@ -257,7 +287,7 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
     def _assert_objects_created(self):
         # Assert we create exactly one `DepositPayout` (even though we run the same
         # import twice.)
-        expected_item_count = 5  # 2 + 1 + 1 + 1 = 5 objects
+        expected_item_count = 7  # 2 + 1 + 1 + 1 + 2 = 7 objects
         self.assertQuerySetEqual(
             DepositPayout.objects.all(),
             [(DepositPayout.SOURCE_TYPE_API, "url", expected_item_count)],
@@ -322,6 +352,28 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
                     None,  # product
                     None,  # barcode
                     self.product_count_1,
+                    self.rvm_serial_number,
+                    date(2020, 1, 1),
+                    self.consumer_session_id,
+                    self.bag_qr,
+                ),
+                # Fifth datum produces two objects (identical to the objects produced by
+                # the first datum.)
+                (
+                    self.kiosk_cvr,
+                    self.product_1,
+                    self.product_barcode_1,
+                    self.product_count_1,
+                    self.rvm_serial_number,
+                    date(2020, 1, 1),
+                    self.consumer_session_id,
+                    self.bag_qr,
+                ),
+                (
+                    self.kiosk_cvr,
+                    self.product_2,
+                    self.product_barcode_2,
+                    self.product_count_2,
                     self.rvm_serial_number,
                     date(2020, 1, 1),
                     self.consumer_session_id,
