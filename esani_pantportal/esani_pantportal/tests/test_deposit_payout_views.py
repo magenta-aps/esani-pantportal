@@ -149,7 +149,8 @@ class TestDepositPayoutSearchView(_BaseTestCase):
         )
         # Assert that we receive the expected CSV response
         self.assertEqual(response["Content-Type"], "text/csv")
-        self._assert_csv_response(response, expected_length=4)
+        # We expect 3 lines for each of the 2 deposit payout items, 6 lines total
+        self._assert_csv_response(response, expected_length=6)
 
     def test_post_selection_all_dry(self):
         self._login()
@@ -160,7 +161,8 @@ class TestDepositPayoutSearchView(_BaseTestCase):
         )
         # Assert that we receive the expected CSV response
         self.assertEqual(response["Content-Type"], "text/csv")
-        self._assert_csv_response(response, expected_length=4)
+        # We expect 3 lines for each of the 2 deposit payout items, 6 lines total
+        self._assert_csv_response(response, expected_length=6)
 
     def test_post_selection_all_dry_with_filters(self):
         self._login()
@@ -172,7 +174,8 @@ class TestDepositPayoutSearchView(_BaseTestCase):
         )
         # Assert that we receive the expected CSV response
         self.assertEqual(response["Content-Type"], "text/csv")
-        self._assert_csv_response(response, expected_length=2)
+        # We expect 3 lines for deposit item 1
+        self._assert_csv_response(response, expected_length=3)
 
     def test_post_selection_all_wet_with_filters(self):
         self._login()
@@ -185,7 +188,8 @@ class TestDepositPayoutSearchView(_BaseTestCase):
 
         # Assert that we receive the expected CSV response
         self.assertEqual(response["Content-Type"], "text/csv")
-        self._assert_csv_response(response, expected_length=2)
+        # We expect 3 lines for deposit item 1
+        self._assert_csv_response(response, expected_length=3)
 
         # Assert that the underlying deposit payout item is marked as exported
         self.deposit_payout_item_1.refresh_from_db()
@@ -211,7 +215,8 @@ class TestDepositPayoutSearchView(_BaseTestCase):
         )
         # Assert that we receive the expected CSV response
         self.assertEqual(response["Content-Type"], "text/csv")
-        self._assert_csv_response(response, expected_length=4)
+        # We expect 3 lines for each of the 2 deposit payout items, 6 lines total
+        self._assert_csv_response(response, expected_length=6)
 
     def test_post_handles_empty_queryset(self):
         expected_message = _("Ingen linjer er valgt")
