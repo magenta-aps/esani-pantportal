@@ -77,7 +77,8 @@ class TestERPCreditNoteExportSearchView(ViewTestMixin, TestCase):
         response = self._get_response(file_id=self.file_id_1)
         # Assert
         self.assertEqual(response["Content-Type"], "text/csv")
-        self._assert_csv_response(response, expected_length=4)
+        # We expect 3 lines for each of the 2 deposit payout items, 6 lines total
+        self._assert_csv_response(response, expected_length=6)
 
     def test_get_file_without_items_displays_message(self):
         # Act

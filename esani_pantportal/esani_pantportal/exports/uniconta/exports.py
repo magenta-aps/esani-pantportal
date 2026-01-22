@@ -2,14 +2,16 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import csv
+import json
 import logging
 import sys
-from itertools import groupby
+from collections import Counter, defaultdict
+from functools import cache
 from uuid import uuid4
 
 from django.conf import settings
-from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import (
+    Aggregate,
     BooleanField,
     Case,
     CharField,
@@ -24,6 +26,7 @@ from django.db.models import (
     When,
 )
 from django.db.models.functions import Cast, Coalesce, Concat, LPad
+from django.utils.translation import gettext as _
 from simple_history.utils import bulk_update_with_history
 
 from esani_pantportal.models import (
@@ -37,6 +40,24 @@ from esani_pantportal.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class BagLinesAgg(Aggregate):
+    """Aggregate all consumer identity and count values for the deposit payout items
+    belonging to a given row in the input queryset.
+    """
+
+    template = """
+        jsonb_agg(
+            jsonb_build_object(
+                'consumer_identity', consumer_identity,
+                'count', count
+            )
+            order by consumer_identity
+        )
+        filter (where consumer_identity is not null)
+        """
+    output_field = CharField()
 
 
 class CreditNoteExport:
@@ -183,7 +204,7 @@ class CreditNoteExport:
             .values(*group_by)
             .annotate(
                 count=Sum("count"),
-                bag_qrs=ArrayAgg("consumer_identity", distinct=True),
+                bag_lines=BagLinesAgg(),
             )
             .order_by(
                 "source",
@@ -195,13 +216,10 @@ class CreditNoteExport:
             )
         )
 
-    def _get_rate(self, category: str, specifier: str) -> ERPProductMapping:
-        return ERPProductMapping.objects.get(category=category, specifier=specifier)
-
     def _get_lines_for_row(self, row):
         customer = self._get_customer(row)
 
-        def line(category, specifier, quantity, unit_price=None):
+        def line(category, specifier, quantity, unit_price=None, additional_text=None):
             rate = self._get_rate(category, specifier)
             unit_price = int(unit_price if unit_price is not None else rate.rate)
 
@@ -216,7 +234,9 @@ class CreditNoteExport:
                 ),
                 "customer_location_id": customer.location_id,
                 "product_id": rate.item_number,
-                "product_name": rate.text,
+                "product_name": (
+                    f"{rate.text} ({additional_text})" if additional_text else rate.text
+                ),
                 "quantity": quantity,
                 "unit_price": unit_price,
                 "total": quantity * unit_price,
@@ -234,20 +254,34 @@ class CreditNoteExport:
         # Produce "Pant (pose)", "Håndteringsgodtgørelse (pose)" and
         # "Lille pose"/"Stor pose" lines.
         if row["type"] == DepositPayout.SOURCE_TYPE_API:
-            yield line(
-                ERPProductMapping.CATEGORY_DEPOSIT,
-                ERPProductMapping.SPECIFIER_BAG,
-                row["count"],
-                unit_price=row["product_refund_value"],
-            )
+            grouped_by_prefix = self._get_lines_for_bag_grouped(row["bag_lines"])
+            # 1. One or more "Pant (lille/stor pose XXX)" lines (one for each bag)
+            for bag_type_prefix, bag_lines in grouped_by_prefix.items():
+                for bag_qr, bag_value in bag_lines.items():
+                    yield line(
+                        ERPProductMapping.CATEGORY_DEPOSIT,
+                        ERPProductMapping.SPECIFIER_BAG,
+                        bag_value,  # Number of bottles/cans in bag
+                        additional_text=(
+                            _("lille pose {qr}")
+                            if bag_type_prefix == "0"
+                            else _("stor pose {qr}")
+                        ).format(qr=bag_qr),
+                    )
+            # 2. Exactly one "Håndteringsgodtgørelse" line
             yield line(
                 ERPProductMapping.CATEGORY_HANDLING,
                 ERPProductMapping.SPECIFIER_BAG,
                 row["count"],
                 unit_price=customer.qr_compensation,
             )
-            for prefix, count in self._get_bag_groups(row):
-                yield line(ERPProductMapping.CATEGORY_BAG, prefix, count)
+            # 3. One or more "Pantpose (lille/stor)" lines (one for each size of bag)
+            for bag_type_prefix, bag_lines in grouped_by_prefix.items():
+                yield line(
+                    ERPProductMapping.CATEGORY_BAG,
+                    bag_type_prefix,
+                    len(bag_lines),  # Number of bags in this size
+                )
 
         # Produce "Pant (automat)" and "Håndteringsgodtgørelse (automat)" lines
         elif row["type"] == DepositPayout.SOURCE_TYPE_CSV:
@@ -263,6 +297,8 @@ class CreditNoteExport:
                 row["count"],
                 unit_price=row["rvm_refund_value"],
             )
+
+        # Produce lines for manually registered deposits
         elif row["type"] == DepositPayout.SOURCE_TYPE_MANUAL:
             yield line(
                 ERPProductMapping.CATEGORY_DEPOSIT,
@@ -277,30 +313,38 @@ class CreditNoteExport:
                 unit_price=row["compensation"],
             )
 
-    def _get_bag_groups(self, row) -> list[tuple[str, int]]:
-        def _get_bag_type(qr):
+    def _get_lines_for_bag_grouped(self, bag_lines):
+        if bag_lines is None:
+            return []  # pragma: no cover
+        bag_lines = json.loads(bag_lines)
+        result = defaultdict(Counter)
+        for bag_line in bag_lines:
+            consumer_identity = bag_line["consumer_identity"]
+            count = bag_line["count"]
             for bag_type_prefix in self._bag_type_prefixes:
-                if qr.startswith(bag_type_prefix):
-                    return bag_type_prefix
-            logger.warning("Cannot find bag type prefix for unknown bag QR %r", qr)
-
-        if row["bag_qrs"]:
-            qrs = [qr for qr in row["bag_qrs"] if qr is not None]
-            return [
-                (k, len(set(v)))
-                for k, v in groupby(sorted(qrs), key=_get_bag_type)
-                if k is not None
-            ]
-        else:
-            return []
+                if consumer_identity.startswith(bag_type_prefix):
+                    result[bag_type_prefix][consumer_identity] += count
+        return result
 
     def _get_customer(self, row):
         if row["source"] == "company_branch":
-            companies = CompanyBranch.objects.filter(id=row["source_id"])
-            return companies.first()
+            return self._get_company(row["source_id"])
         elif row["source"] == "kiosk":
-            kiosks = Kiosk.objects.filter(id=row["source_id"])
-            return kiosks.first()
+            return self._get_kiosk(row["source_id"])
+
+    @cache
+    def _get_rate(self, category: str, specifier: str) -> ERPProductMapping:
+        return ERPProductMapping.objects.get(category=category, specifier=specifier)
+
+    @cache
+    def _get_company(self, company_id: int) -> CompanyBranch | None:
+        companies = CompanyBranch.objects.filter(id=company_id)
+        return companies.first()
+
+    @cache
+    def _get_kiosk(self, kiosk_id: int) -> Kiosk | None:
+        kiosks = Kiosk.objects.filter(id=kiosk_id)
+        return kiosks.first()
 
 
 class DebtorExport:

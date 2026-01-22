@@ -105,6 +105,7 @@ class ViewTestMixin(LoginMixin):
             "rvm_serial": 123,
             "barcode": "barcode",
             "count": 42,
+            "consumer_identity": "123",
         }
 
         cls.deposit_payout_item_1 = DepositPayoutItem.objects.create(
