@@ -57,6 +57,7 @@ services:
       - ./esani_pantportal/:/app
       - ./dev-environment/logrotate.conf:/logrotate.conf:ro
       - ./data/product_lists:/srv/media/product_lists
+      - ./data/deposit_payouts:/srv/media/deposit_payouts
       - ./dev-environment/crontab:/crontab
       - ./data/log/cron.log:/var/log/pantportal.log:rw
       - ./data/log/:/var/log:rw

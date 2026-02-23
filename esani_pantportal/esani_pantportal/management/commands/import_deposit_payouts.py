@@ -36,7 +36,7 @@ class TomraCSVFile:
 
 @dataclass
 class TomraCSVFileLine:
-    location_id: int
+    location_id: int | None
     rvm_serial: int
     date: date
     barcode: str
@@ -45,7 +45,7 @@ class TomraCSVFileLine:
     @classmethod
     def from_csv_row(cls, row):
         return cls(
-            location_id=int(row[0]),
+            location_id=int(row[0]) if row[0] else None,
             rvm_serial=int(row[1]),
             date=parse_csv_date(row[2]),
             barcode=row[3],
