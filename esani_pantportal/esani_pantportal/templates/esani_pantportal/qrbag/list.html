@@ -47,4 +47,40 @@ SPDX-License-Identifier: MPL-2.0
     </div>
     {% include "../list_view_table.html" %}
 </div>
+<script nonce="{{ request.csp_nonce }}">
+// Handle links in table with `data-qrbag` attribute.
+// (See `edit_amount.html` for HTML markup used.)
+(function () {
+    $(document).ready(function () {
+        $('[data-qrbag]').click(function (evt) {
+            evt.preventDefault();
+
+            const amount = parseInt(prompt("{% translate 'Indtast antal pantenheder' %}"));
+
+            if (isNaN(amount)) {
+                alert("{% translate 'Indtast venligst et gyldigt, helt tal' %}");
+            } else {
+                const $elem = $(evt.target).parents("a");
+                const data = {
+                    csrfmiddlewaretoken: $("input[name=csrfmiddlewaretoken]").val(),
+                    id: $elem.data("qrbag"),
+                    amount: amount,
+                };
+                $.ajax({
+                    type: "POST",
+                    url: "",
+                    data: data,
+                    success: function (result) {
+                        if (result.status === 'ok') {
+                            $elem.prev("span").text(result.amount);
+                        } else {
+                            alert("{% translate 'Der skete en fejl, prøv venligst igen' %}");
+                        }
+                    }
+                });
+            }
+        });
+    });
+})();
+</script>
 {% endblock %}

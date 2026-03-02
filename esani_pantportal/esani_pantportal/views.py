@@ -52,6 +52,7 @@ from django.http import (
     JsonResponse,
 )
 from django.shortcuts import redirect
+from django.template.loader import get_template
 from django.templatetags.l10n import localize
 from django.urls import reverse
 from django.utils.timezone import now
@@ -1085,6 +1086,28 @@ class QRBagSearchView(BranchSearchView):
         ),
     }
 
+    def __init__(self):
+        super().__init__()
+        self._edit_amount_template = get_template(
+            "esani_pantportal/qrbag/edit_amount.html"
+        )
+
+    def post(self, request, *args, **kwargs):
+        # POST requests to this view come from the JS event handler in
+        # `../esani_pantportal/qrbag/list.html`, which handles edits made in
+        # the `num_valid_deposited` table column.
+        # POST requests contain an `id` identifying the QR bag, and an
+        # `amount` containing a numeric value input by the user.
+        try:
+            qr_bag = QRBag.objects.get(pk=int(request.POST.get("id")))
+            amount = int(request.POST.get("amount"))
+        except (TypeError, ValueError, KeyError, QRBag.DoesNotExist):
+            logger.exception("invalid request")
+            return JsonResponse({"status": "err"})
+        else:
+            self._create_or_update_deposit_payout_item(qr_bag, amount)
+            return JsonResponse({"status": "ok", "amount": amount})
+
     def get_action_url(self, item, *args):
         base_url = reverse("pant:qrbag_history", kwargs={"pk": item.id})
         back_url = self.request.get_full_path()
@@ -1144,6 +1167,11 @@ class QRBagSearchView(BranchSearchView):
         elif key == "status":
             return self._qr_status_names[value]
         elif key in ("num_valid_deposited", "num_invalid_deposited"):
+            if key == "num_valid_deposited" and self.can_edit_deposit_amount(item):
+                return self._edit_amount_template.render(
+                    context={"item": item, "value": value},
+                    request=self.request,
+                )
             if item["status"] in ("esani_optalt", "esani_udbetalt"):
                 return value or 0
 
@@ -1151,6 +1179,44 @@ class QRBagSearchView(BranchSearchView):
 
     def get_view_name(self) -> str:
         return gettext("Pantposer")  # pragma: no cover
+
+    def can_edit_deposit_amount(self, item) -> bool:
+        return True
+
+    @transaction.atomic
+    def _create_or_update_deposit_payout_item(
+        self, qr_bag: QRBag, amount: int
+    ) -> DepositPayoutItem:
+        qs = DepositPayoutItem.objects.filter(qr_bag=qr_bag)
+        if qs.exists():
+            raise ValueError(f"deposit payout items already exist for {qr_bag}")
+
+        # Create `DepositPayout` and `DepositPayoutItem` objects
+        today = datetime.date.today()
+        deposit_payout, _ = DepositPayout.objects.get_or_create(
+            source_type=DepositPayout.SOURCE_TYPE_API,
+            source_identifier=f"Manual entry for QR bag {qr_bag.qr}",
+            from_date=today,
+            to_date=today,
+            item_count=1,
+        )
+        deposit_payout_item, created = DepositPayoutItem.objects.update_or_create(
+            deposit_payout=deposit_payout,
+            rvm_serial=0,
+            product=Product.objects.get(barcode="manual"),
+            qr_bag=qr_bag,
+            consumer_identity=qr_bag.qr,
+            company_branch=qr_bag.company_branch,
+            kiosk=qr_bag.kiosk,
+            count=amount,
+            date=today,
+        )
+
+        # Update `QRBag` object
+        qr_bag.status = "esani_optalt"
+        qr_bag.save(update_fields=("status",))
+
+        return deposit_payout_item
 
     def _get_qr_filter_condition(self, qr: str) -> Q:
         # Strip leading zeroes
