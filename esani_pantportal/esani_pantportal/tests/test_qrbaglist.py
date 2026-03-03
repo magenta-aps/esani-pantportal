@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import date
 from http import HTTPStatus
+from json import loads as load_json
 
 from bs4 import BeautifulSoup
 from django.contrib.auth.models import Group
@@ -402,6 +403,62 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
             expected,
             transform=lambda obj: obj.qr,
         )
+
+    def test_post_invalid(self):
+        data = {"amount": "invalid"}
+        view = QRBagSearchView()
+        request = RequestFactory().post("", data=data)
+        response = view.post(request)
+        self.assertEqual(response.status_code, 400)
+
+    def test_post_valid_empty_bag(self):
+        # QR bag 1 has no existing deposit payout items, so it is ok to post an amount
+        qr_bag_1 = QRBag.objects.get(qr="qr1")
+        data = {"id": qr_bag_1.pk, "amount": 42}
+        view = QRBagSearchView()
+        request = RequestFactory().post("", data=data)
+        response = view.post(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(load_json(response.content), {"status": "ok", "amount": 42})
+        self.assertEqual(
+            (
+                DepositPayout.objects.filter(
+                    source_identifier="Manual entry for QR bag qr1"
+                ).count()
+            ),
+            1,
+        )
+        self.assertQuerySetEqual(
+            DepositPayoutItem.objects.filter(qr_bag=qr_bag_1).values(
+                "rvm_serial",
+                "product__barcode",
+                "consumer_identity",
+                "company_branch",
+                "kiosk",
+                "count",
+                "date",
+            ),
+            [
+                {
+                    "rvm_serial": "0",
+                    "product__barcode": "manual",
+                    "consumer_identity": qr_bag_1.qr,
+                    "company_branch": qr_bag_1.company_branch.pk,
+                    "kiosk": qr_bag_1.kiosk,
+                    "count": 42,
+                    "date": date.today(),
+                }
+            ],
+        )
+
+    def test_post_valid_used_bag(self):
+        # QR bag 4 has some existing deposit payout items, so it is not ok to post new
+        # amount.
+        data = {"id": QRBag.objects.get(qr="qr4").pk, "amount": 42}
+        view = QRBagSearchView()
+        request = RequestFactory().post("", data=data)
+        with self.assertRaises(ValueError):
+            view.post(request)
 
     def _get_view_instance(self, **kwargs) -> QRBagSearchView:
         view = QRBagSearchView()

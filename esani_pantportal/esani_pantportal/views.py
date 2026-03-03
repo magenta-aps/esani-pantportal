@@ -1103,7 +1103,7 @@ class QRBagSearchView(BranchSearchView):
             amount = int(request.POST.get("amount"))
         except (TypeError, ValueError, KeyError, QRBag.DoesNotExist):
             logger.exception("invalid request")
-            return JsonResponse({"status": "err"})
+            return JsonResponse({"status": "err"}, status=400)
         else:
             self._create_or_update_deposit_payout_item(qr_bag, amount)
             return JsonResponse({"status": "ok", "amount": amount})
