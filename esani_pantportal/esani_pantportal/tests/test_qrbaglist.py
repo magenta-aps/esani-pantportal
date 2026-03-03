@@ -430,23 +430,25 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         )
         self.assertQuerySetEqual(
             DepositPayoutItem.objects.filter(qr_bag=qr_bag_1).values(
-                "rvm_serial",
-                "product__barcode",
-                "consumer_identity",
                 "company_branch",
                 "kiosk",
                 "count",
                 "date",
+                "rvm_serial",
+                "product__barcode",
+                "barcode",
+                "consumer_identity",
             ),
             [
                 {
-                    "rvm_serial": "0",
-                    "product__barcode": "manual",
-                    "consumer_identity": qr_bag_1.qr,
                     "company_branch": qr_bag_1.company_branch.pk,
                     "kiosk": qr_bag_1.kiosk,
                     "count": 42,
                     "date": date.today(),
+                    "rvm_serial": "0",
+                    "product__barcode": "manual",
+                    "barcode": "manual",
+                    "consumer_identity": qr_bag_1.qr,
                 }
             ],
         )

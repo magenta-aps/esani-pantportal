@@ -1209,16 +1209,18 @@ class QRBagSearchView(BranchSearchView):
             to_date=today,
             item_count=1,
         )
+        manual_product = Product.objects.get(barcode="manual")
         deposit_payout_item, created = DepositPayoutItem.objects.update_or_create(
             deposit_payout=deposit_payout,
-            rvm_serial=0,
-            product=Product.objects.get(barcode="manual"),
             qr_bag=qr_bag,
-            consumer_identity=qr_bag.qr,
             company_branch=qr_bag.company_branch,
             kiosk=qr_bag.kiosk,
             count=amount,
             date=today,
+            rvm_serial=0,
+            product=manual_product,
+            barcode=manual_product.barcode,
+            consumer_identity=qr_bag.qr,
         )
 
         # Update `QRBag` object
