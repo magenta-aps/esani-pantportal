@@ -51,12 +51,16 @@ SPDX-License-Identifier: MPL-2.0
 // Handle links in table with `data-qrbag` attribute.
 // (See `edit_amount.html` for HTML markup used.)
 (function () {
-    $(document).ready(function () {
-        $('[data-qrbag]').click(function (evt) {
+    const handleColumnEdit = function () {
+        $("[data-qrbag]").click(function (evt) {
             evt.preventDefault();
 
-            const amount = parseInt(prompt("{% translate 'Indtast antal pantenheder' %}"));
+            const input = prompt("{% translate 'Indtast antal pantenheder' %}");
+            if (input === null) {
+                return;  // user cancelled the input prompt
+            }
 
+            const amount = parseInt(input, 10);
             if (isNaN(amount)) {
                 alert("{% translate 'Indtast venligst et gyldigt, helt tal' %}");
             } else {
@@ -79,6 +83,19 @@ SPDX-License-Identifier: MPL-2.0
                     }
                 });
             }
+        });
+    }
+
+
+    $(document).ready(function () {
+        // Attach event listener on initial page load
+        handleColumnEdit();
+
+        const table = $("table#table");
+        table.on("post-body.bs.table", function (evt, number, size) {
+            // Reattach event listener when `bootstrap-table` has rendered a
+            // new page in the table.
+            handleColumnEdit();
         });
     });
 })();
