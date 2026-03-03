@@ -1190,7 +1190,9 @@ class QRBagSearchView(BranchSearchView):
         return gettext("Pantposer")  # pragma: no cover
 
     def can_edit_deposit_amount(self, item) -> bool:
-        return item["num_valid_deposited"] is None
+        return (
+            item["num_valid_deposited"] is None and item["status"] != "esani_udbetalt"
+        )
 
     @transaction.atomic
     def _create_or_update_deposit_payout_item(
