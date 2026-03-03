@@ -1222,11 +1222,6 @@ class QRBagSearchView(BranchSearchView):
             barcode=manual_product.barcode,
             consumer_identity=qr_bag.qr,
         )
-
-        # Update `QRBag` object
-        qr_bag.status = "esani_optalt"
-        qr_bag.save(update_fields=("status",))
-
         return deposit_payout_item
 
     def _get_qr_filter_condition(self, qr: str) -> Q:
