@@ -28,6 +28,7 @@ from django.db.models import (
     Case,
     CharField,
     Count,
+    Exists,
     ExpressionWrapper,
     F,
     FloatField,
@@ -1027,7 +1028,7 @@ class QRBagSearchView(BranchSearchView):
     required_permissions = ["esani_pantportal.view_qrbag"]
 
     search_fields = []
-    search_fields_exact = ["qr", "status", "city"]
+    search_fields_exact = ["qr", "status", "city", "manual"]
 
     fixed_columns = {
         "qr": _("QR kode"),
@@ -1047,6 +1048,7 @@ class QRBagSearchView(BranchSearchView):
         "num_valid_deposited": _("Optalt, godkendt"),
         "num_invalid_deposited": _("Optalt, afvist"),
         "value_of_valid_deposited": _("Samlet pantværdi (kr.)"),
+        "manual": _("Manuelt indtastet pant"),
     }
 
     annotations = {
@@ -1083,6 +1085,12 @@ class QRBagSearchView(BranchSearchView):
                 / Value(100),
             ),
             True,
+        ),
+        "manual": Exists(
+            DepositPayoutItem.objects.filter(
+                qr_bag=OuterRef("pk"),
+                rvm_serial=0,
+            )
         ),
     }
 
@@ -1183,6 +1191,8 @@ class QRBagSearchView(BranchSearchView):
         elif key == "num_invalid_deposited":
             if item["status"] in ("esani_optalt", "esani_udbetalt"):
                 return value or 0
+        elif key == "manual":
+            return "&check;" if value else "-"
 
         return value or "-"
 
