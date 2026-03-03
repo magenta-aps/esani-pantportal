@@ -75,11 +75,10 @@ SPDX-License-Identifier: MPL-2.0
                     url: "",
                     data: data,
                     success: function (result) {
-                        if (result.status === 'ok') {
-                            $elem.prev("span").text(result.amount);
-                        } else {
-                            alert("{% translate 'Der skete en fejl, prøv venligst igen' %}");
-                        }
+                        $elem.prev("span").text(result.amount);
+                    },
+                    error: function (result) {
+                        alert("{% translate 'Der skete en fejl, prøv venligst igen' %}");
                     }
                 });
             }

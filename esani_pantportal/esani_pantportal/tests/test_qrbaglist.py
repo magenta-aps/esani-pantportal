@@ -459,8 +459,8 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         data = {"id": QRBag.objects.get(qr="qr4").pk, "amount": 42}
         view = QRBagSearchView()
         request = RequestFactory().post("", data=data)
-        with self.assertRaises(ValueError):
-            view.post(request)
+        response = view.post(request)
+        self.assertEqual(response.status_code, 400)
 
     def _get_view_instance(self, **kwargs) -> QRBagSearchView:
         view = QRBagSearchView()

@@ -1101,11 +1101,11 @@ class QRBagSearchView(BranchSearchView):
         try:
             qr_bag = QRBag.objects.get(pk=int(request.POST.get("id")))
             amount = int(request.POST.get("amount"))
+            self._create_or_update_deposit_payout_item(qr_bag, amount)
         except (TypeError, ValueError, KeyError, QRBag.DoesNotExist):
             logger.exception("invalid request")
             return JsonResponse({"status": "err"}, status=400)
         else:
-            self._create_or_update_deposit_payout_item(qr_bag, amount)
             return JsonResponse({"status": "ok", "amount": amount})
 
     def get_action_url(self, item, *args):
@@ -1167,19 +1167,19 @@ class QRBagSearchView(BranchSearchView):
         elif key == "status":
             return self._qr_status_names[value]
         elif key == "num_valid_deposited":
-            if self.can_edit_deposit_amount(item):
-                return self._edit_amount_template.render(
-                    context={
-                        "item": item,
-                        "value": value,
-                        "default": (
-                            0
-                            if item["status"] in ("esani_optalt", "esani_udbetalt")
-                            else "-"
-                        ),
-                    },
-                    request=self.request,
-                )
+            return self._edit_amount_template.render(
+                context={
+                    "item": item,
+                    "value": value,
+                    "default": (
+                        0
+                        if item["status"] in ("esani_optalt", "esani_udbetalt")
+                        else "-"
+                    ),
+                    "can_edit": self.can_edit_deposit_amount(item),
+                },
+                request=self.request,
+            )
         elif key == "num_invalid_deposited":
             if item["status"] in ("esani_optalt", "esani_udbetalt"):
                 return value or 0
