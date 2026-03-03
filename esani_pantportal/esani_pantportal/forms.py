@@ -946,6 +946,7 @@ class QRBagFilterForm(CityChoiceMixin, SortPaginateForm):
     company_branch__name = forms.CharField(required=False)
     kiosk__name = forms.CharField(required=False)
     city = forms.ChoiceField(required=False)
+    manual = forms.BooleanField(required=False)
 
     def __init__(self, *args, **kwargs):
         self._user: User = kwargs.pop("user")
