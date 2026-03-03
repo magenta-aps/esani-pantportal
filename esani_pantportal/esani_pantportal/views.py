@@ -1166,12 +1166,21 @@ class QRBagSearchView(BranchSearchView):
             value = value.strftime("%-d. %b %Y")
         elif key == "status":
             return self._qr_status_names[value]
-        elif key in ("num_valid_deposited", "num_invalid_deposited"):
-            if key == "num_valid_deposited" and self.can_edit_deposit_amount(item):
+        elif key == "num_valid_deposited":
+            if self.can_edit_deposit_amount(item):
                 return self._edit_amount_template.render(
-                    context={"item": item, "value": value},
+                    context={
+                        "item": item,
+                        "value": value,
+                        "default": (
+                            0
+                            if item["status"] in ("esani_optalt", "esani_udbetalt")
+                            else "-"
+                        ),
+                    },
                     request=self.request,
                 )
+        elif key == "num_invalid_deposited":
             if item["status"] in ("esani_optalt", "esani_udbetalt"):
                 return value or 0
 
@@ -1181,7 +1190,7 @@ class QRBagSearchView(BranchSearchView):
         return gettext("Pantposer")  # pragma: no cover
 
     def can_edit_deposit_amount(self, item) -> bool:
-        return True
+        return item["num_valid_deposited"] is None
 
     @transaction.atomic
     def _create_or_update_deposit_payout_item(

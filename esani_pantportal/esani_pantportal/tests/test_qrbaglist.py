@@ -10,6 +10,7 @@ from django.core.management import call_command
 from django.db.models import F, OrderBy, Sum
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
+from django.utils.html import strip_tags
 from unittest_parametrize import ParametrizedTestCase, parametrize
 
 from esani_pantportal.models import (
@@ -282,7 +283,7 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
             ],
             transform=lambda obj: (
                 obj["qr"],
-                obj["num_valid_deposited"],
+                self._clean_value(obj["num_valid_deposited"]),
                 obj["num_invalid_deposited"],
                 obj["value_of_valid_deposited"],
             ),
@@ -370,7 +371,9 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         self, annotation, status, expected_result
     ):
         view = self._get_view_instance()
-        result = view.map_value({"status": status, annotation: None}, annotation, None)
+        result = self._clean_value(
+            view.map_value({"status": status, annotation: None}, annotation, None)
+        )
         self.assertEqual(result, expected_result)
 
     @parametrize(
@@ -405,6 +408,10 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         view.request = RequestFactory().get("")
         view.search_data = kwargs
         return view
+
+    def _clean_value(self, val: str) -> int | str:
+        stripped = strip_tags(val).strip()
+        return int(stripped) if stripped != "-" else stripped
 
 
 class QRBagHistoryViewTest(BaseQRBagTest):

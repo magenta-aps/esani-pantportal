@@ -7,7 +7,7 @@ SPDX-FileCopyrightText: 2023 Magenta ApS <info@magenta.dk>
 SPDX-License-Identifier: MPL-2.0
 {% endcomment %}
 
-<span>{{ value|default_if_none:'0' }}</span>
+<span>{{ value|default_if_none:default }}</span>
 {% if user.is_admin %}
 <a class="icon-link d-inline-block" href="#" data-qrbag="{{ item.id|unlocalize }}">
     {% bs_icon "pencil-square" %}
