@@ -235,10 +235,12 @@ class Command(BaseCommand):
     def _log_consumer_sessions(self, consumer_sessions: list[ConsumerSession]):
         for consumer_session in consumer_sessions:
             self.stdout.write(f"- Consumer session: {consumer_session.id}")
-            for item in consumer_session.items:
-                self.stdout.write(
-                    f"  Barcode: {item.product_code} - count: {item.count}"
-                )
+            if consumer_session.items is not None:
+                for item in consumer_session.items:
+                    self.stdout.write(
+                        f"  Barcode: {getattr(item, 'product_code', None)} - "
+                        f"count: {item.count}"
+                    )
 
     def _get_previous_to_date(self, val: str | None) -> date:
         if val is not None:
