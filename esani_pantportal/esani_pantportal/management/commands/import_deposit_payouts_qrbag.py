@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import re
+from collections import defaultdict
 from datetime import date, datetime, timedelta
 from functools import cache
 from uuid import UUID
@@ -15,7 +16,7 @@ from django.db.models.functions import Substr
 from simple_history.utils import bulk_update_with_history
 
 from esani_pantportal.clients.tomra.api import ConsumerSessionCollection, TomraAPI
-from esani_pantportal.clients.tomra.data_models import ConsumerSession
+from esani_pantportal.clients.tomra.data_models import ConsumerSession, Identity
 from esani_pantportal.models import (
     AbstractCompany,
     CompanyBranch,
@@ -57,39 +58,82 @@ class Command(BaseCommand):
             f"({from_date=}, {to_date=})"
         )
 
-        consumer_sessions_filtered = self._filter_consumer_sessions(consumer_sessions)
-        self.stdout.write(
-            f"{len(consumer_sessions_filtered)} consumer sessions are valid "
-            f"'bag sessions' that have not yet been imported."
+        consumer_sessions_normal, consumer_sessions_manual = (
+            self._preprocess_consumer_sessions(consumer_sessions)
         )
-
-        if consumer_sessions_filtered:
-            self.stdout.write("Importing ...")
+        if consumer_sessions_normal:
+            self.stdout.write(
+                f"Importing {len(consumer_sessions_normal)} valid, normal consumer "
+                "sessions that have not yet been imported."
+            )
             self._import_data(
                 consumer_sessions.url,
                 from_date,
                 to_date,
-                consumer_sessions_filtered,
+                consumer_sessions_normal,
             )
+        if consumer_sessions_manual:
+            self.stdout.write(
+                f"Processing {len(consumer_sessions_manual)} consumer sessions that "
+                "we already have manual deposit payout items for."
+            )
+            self._process_sessions_with_manual_data(
+                consumer_sessions.url,
+                from_date,
+                to_date,
+                consumer_sessions_manual,
+            )
+
+        if consumer_sessions_normal or consumer_sessions_manual:
             self.stdout.write("Done.")
         else:
             self.stdout.write("Not importing anything.")
 
-    def _filter_consumer_sessions(
+    def _preprocess_consumer_sessions(
         self, consumer_sessions: ConsumerSessionCollection
-    ) -> list[ConsumerSession]:
-        return [
+    ) -> tuple[list[ConsumerSession], list[ConsumerSession]]:
+        # Step 1: filter out previously imported consumer sessions, based on their
+        # "consumer session ID."
+        result: list[ConsumerSession] = [
             datum.consumer_session
             for datum in consumer_sessions.data
             if isinstance(datum.consumer_session, ConsumerSession)
             and not self._session_is_already_imported(datum.consumer_session.id)
         ]
 
+        # Step 2: split the list into two lists: the first list contains the "normal"
+        # consumer sessions that we have not yet imported, and the second list contains
+        # the consumer sessions that already exist as manually created deposit payout
+        # items.
+        normal: list[ConsumerSession] = []
+        manual: list[ConsumerSession] = []
+        for consumer_session in result:
+            if isinstance(consumer_session.identity, Identity):
+                consumer_identity: str = (
+                    f"{consumer_session.identity.consumer_identity or ''}"
+                    f"{consumer_session.identity.bag_identity or ''}"
+                )
+                if self._session_is_known_manual(consumer_identity):
+                    manual.append(consumer_session)
+                    continue
+
+            normal.append(consumer_session)
+
+        return normal, manual
+
     @cache
     def _session_is_already_imported(self, consumer_session_id: UUID) -> bool:
         return DepositPayoutItem.objects.filter(
             deposit_payout__source_type=DepositPayout.SOURCE_TYPE_API,
             consumer_session_id=consumer_session_id,
+        ).exists()
+
+    @cache
+    def _session_is_known_manual(self, consumer_identity: str) -> bool:
+        return DepositPayoutItem.objects.filter(
+            deposit_payout__source_type=DepositPayout.SOURCE_TYPE_API,
+            consumer_identity=consumer_identity,
+            rvm_serial=0,  # marks manually created QR bag deposit payout items
         ).exists()
 
     @transaction.atomic
@@ -144,6 +188,57 @@ class Command(BaseCommand):
         for qr_bag in qr_bags:
             qr_bag.status = "esani_optalt"
         bulk_update_with_history(qr_bags, QRBag, ["status"], batch_size=500)
+
+    @transaction.atomic
+    def _process_sessions_with_manual_data(
+        self, url, from_date, to_date, consumer_sessions
+    ):
+        # Create dictionary mapping each `consumer_identity` to a list of consumer
+        # sessions.
+        keyed_by_identity = defaultdict(list)
+        for consumer_session in consumer_sessions:
+            key = (
+                f"{consumer_session.identity.consumer_identity or ''}"
+                f"{consumer_session.identity.bag_identity or ''}"
+            )
+            keyed_by_identity[key].append(consumer_session)
+
+        # Go through each unique consumer identity (== QR code) and verify if the data
+        # for that consumer identity has already been exported to accounting.
+        for consumer_identity, consumer_session_subset in keyed_by_identity.items():
+            self.stdout.write(f"Processing consumer identity '{consumer_identity}'")
+            existing_manual_data = DepositPayoutItem.objects.filter(
+                deposit_payout__source_type=DepositPayout.SOURCE_TYPE_API,
+                consumer_identity=consumer_identity,
+                rvm_serial=0,  # marks manually created QR bag deposit payout items
+            )
+            exported_to_accounting = existing_manual_data.filter(file_id__isnull=False)
+            if exported_to_accounting.exists():
+                # Log incoming data
+                self.stdout.write(
+                    "The manually created deposit payout items for QR bag "
+                    f"'{consumer_identity}' has already been exported to accounting - "
+                    "not importing the following API data:"
+                )
+                self._log_consumer_sessions(consumer_session_subset)
+            else:
+                # Remove manual data and replace with API data
+                deleted, _ = existing_manual_data.delete()
+                self.stdout.write(
+                    f"Replacing {deleted} manually created deposit payout item(s) for "
+                    f"QR bag '{consumer_identity}' with incoming API data:"
+                )
+                self._log_consumer_sessions(consumer_session_subset)
+                # Create deposit payout items from the new API data
+                self._import_data(url, from_date, to_date, consumer_session_subset)
+
+    def _log_consumer_sessions(self, consumer_sessions: list[ConsumerSession]):
+        for consumer_session in consumer_sessions:
+            self.stdout.write(f"- Consumer session: {consumer_session.id}")
+            for item in consumer_session.items:
+                self.stdout.write(
+                    f"  Barcode: {item.product_code} - count: {item.count}"
+                )
 
     def _get_previous_to_date(self, val: str | None) -> date:
         if val is not None:
