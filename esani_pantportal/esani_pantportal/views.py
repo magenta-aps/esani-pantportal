@@ -1086,6 +1086,7 @@ class QRBagSearchView(BranchSearchView):
             ),
             True,
         ),
+        # Indicates whether QR bag has manually entered deposit payout items
         "manual": Exists(
             DepositPayoutItem.objects.filter(
                 qr_bag=OuterRef("pk"),
@@ -1143,6 +1144,10 @@ class QRBagSearchView(BranchSearchView):
         status = self.search_data.pop("status", None)
         if status not in empty_values:
             qs = qs.filter(status__in=status)
+
+        # Don't filter on `manual` annotation unless it is set to True
+        if self.search_data.get("manual") is False:
+            self.search_data.pop("manual")
 
         # Process the other search criteria
         return super().filter_qs(qs)

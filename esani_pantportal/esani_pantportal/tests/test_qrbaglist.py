@@ -166,6 +166,11 @@ class BaseQRBagTest(LoginMixin, TestCase):
         qrbag4._history_user = cls.esani_admin
         qrbag4.save()
 
+        # This QR bag has manual deposit payout items
+        qrbag5 = QRBag(qr="qr5", status="butik_oprettet", company_branch=cls.branch2)
+        qrbag5._history_user = cls.esani_admin
+        qrbag5.save()
+
         # QR bag 3 has two deposit payout items (both valid)
         cls._add_deposit_payout_item(qrbag3, count=1, valid=True)
         cls._add_deposit_payout_item(qrbag3, count=2, valid=True)
@@ -173,6 +178,9 @@ class BaseQRBagTest(LoginMixin, TestCase):
         # QR bag 4 has two deposit payout items (one valid and one invalid)
         cls._add_deposit_payout_item(qrbag4, count=1, valid=True)
         cls._add_deposit_payout_item(qrbag4, count=2, valid=False)
+
+        # QR bag 5 has manual deposit payout items
+        cls._add_deposit_payout_item(qrbag5, count=4, manual=True)
 
     @staticmethod
     def extract_data_from_table(table):
@@ -184,7 +192,13 @@ class BaseQRBagTest(LoginMixin, TestCase):
         return output
 
     @classmethod
-    def _add_deposit_payout_item(cls, bag: QRBag, count: int = 1, valid: bool = True):
+    def _add_deposit_payout_item(
+        cls,
+        bag: QRBag,
+        count: int = 1,
+        valid: bool = True,
+        manual: bool = False,
+    ):
         deposit_payout, _ = DepositPayout.objects.get_or_create(
             source_identifier="QRBagTest",
             defaults={
@@ -194,7 +208,7 @@ class BaseQRBagTest(LoginMixin, TestCase):
                 "item_count": 1,
             },
         )
-        barcode = "barcode"
+        barcode = "manual" if manual else "barcode"
         product, _ = Product.objects.get_or_create(
             barcode=barcode,
             defaults={
@@ -215,6 +229,7 @@ class BaseQRBagTest(LoginMixin, TestCase):
             count=count,
             product=product if valid else None,
             barcode=barcode if valid else None,
+            rvm_serial=0 if manual else -1,
         )
 
 
@@ -235,8 +250,7 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
     def test_esani_admin_view(self):
         self.client.login(username="esani_admin", password="12345")
         bags = self.get_bags()
-        self.assertEqual(len(bags), 4)  # ESani admin can see all bags
-
+        self.assertEqual(len(bags), 5)  # Esani admin can see all bags
         self.assertEqual(bags["qr1"]["Butik"], "branch1")
         self.assertEqual(bags["qr2"]["Butik"], "branch1")
         self.assertEqual(bags["qr3"]["Butik"], "kiosk")
@@ -245,7 +259,7 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
     def test_company_admin_view(self):
         self.client.login(username="company_admin", password="12345")
         bags = self.get_bags()
-        self.assertEqual(len(bags), 3)  # Company admin cannot see the kiosk-bag
+        self.assertEqual(len(bags), 4)  # Company admin cannot see the kiosk-bag
 
     def test_branch_admin_view(self):
         self.client.login(username="branch_admin", password="12345")
@@ -256,14 +270,14 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         self.client.login(username="esani_admin", password="12345")
         response = self.client.get(reverse("pant:qrbag_list"))
         choices = dict(response.context["form"].fields["status"].choices)
-        self.assertEqual(choices["butik_oprettet"], "butik_oprettet (3)")
+        self.assertEqual(choices["butik_oprettet"], "butik_oprettet (4)")
         self.assertEqual(choices["under_transport"], "under_transport (1)")
 
     def test_counts_as_company_admin(self):
         self.client.login(username="company_admin", password="12345")
         response = self.client.get(reverse("pant:qrbag_list"))
         choices = dict(response.context["form"].fields["status"].choices)
-        self.assertEqual(choices["butik_oprettet"], "butik_oprettet (2)")
+        self.assertEqual(choices["butik_oprettet"], "butik_oprettet (3)")
         self.assertEqual(choices["under_transport"], "under_transport (1)")
 
     def test_annotation_columns(self):
@@ -273,20 +287,23 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
             response.context["items"],
             [
                 # QR bag 1 has no items
-                ("qr1", "-", "-", "-"),
+                ("qr1", "-", "-", "-", "-"),
                 # QR bag 2 has no items
-                ("qr2", "-", "-", "-"),
+                ("qr2", "-", "-", "-", "-"),
                 # QR bag 3 has 2 valid items with count=1 and count=2 (total of 3)
-                ("qr3", 3, "-", 6),
+                ("qr3", 3, "-", 6, "-"),
                 # QR bag 4 has 1 valid item (with count=1) and one invalid item (with
                 # count=2)
-                ("qr4", 1, 2, 2),
+                ("qr4", 1, 2, 2, "-"),
+                # QR bag 5 has 1 manual item (with count=4)
+                ("qr5", 4, "-", 8, "&check;"),
             ],
             transform=lambda obj: (
                 obj["qr"],
                 self._clean_value(obj["num_valid_deposited"]),
                 obj["num_invalid_deposited"],
                 obj["value_of_valid_deposited"],
+                obj["manual"],
             ),
             ordered=False,
         )
@@ -313,6 +330,7 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
                     ("qr2", "butik_oprettet"),
                     ("qr3", "butik_oprettet"),
                     ("qr4", "butik_oprettet"),
+                    ("qr5", "butik_oprettet"),
                 ],
             ),
         ],
