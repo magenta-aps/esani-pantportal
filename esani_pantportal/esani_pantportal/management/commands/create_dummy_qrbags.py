@@ -59,6 +59,12 @@ class Command(BaseCommand):
             large_qr_codes = qrgen_large_bags.generate_qr_codes(5)
 
             for qr_code in small_qr_codes + large_qr_codes:
+                # Remove `QR_URL_PREFIX` because that matches the actual data in
+                # production/testing environments. When we receive QR bag data via our
+                # REST API, and when we retrieve data from the Tomra "consumer sessions"
+                # API, the QR URL prefix is not included.
+                qr_code = qr_code.replace(settings.QR_URL_PREFIX, "")
+
                 kwargs["owner"] = (
                     kwargs.get("company_branch", kwargs.get("kiosk"))
                     .users.order_by("?")
