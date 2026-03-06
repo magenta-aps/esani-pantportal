@@ -130,7 +130,7 @@ class BaseQRBagTest(LoginMixin, TestCase):
         cls.company_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
 
         # Create `QRStatus` objects matching the status codes used in the tests
-        for code in ("butik_oprettet", "under_transport"):
+        for code in ("butik_oprettet", "under_transport", "esani_skjult"):
             QRStatus.objects.get_or_create(code=code, name_da=code, name_kl=code)
 
         # Two bags are created by a branch-admin
@@ -170,6 +170,11 @@ class BaseQRBagTest(LoginMixin, TestCase):
         qrbag5 = QRBag(qr="qr5", status="butik_oprettet", company_branch=cls.branch2)
         qrbag5._history_user = cls.esani_admin
         qrbag5.save()
+
+        # This QR bag has status "hidden"
+        qrbag6 = QRBag(qr="qr6", status="esani_skjult", company_branch=cls.branch2)
+        qrbag6._history_user = cls.esani_admin
+        qrbag6.save()
 
         # QR bag 3 has two deposit payout items (both valid)
         cls._add_deposit_payout_item(qrbag3, count=1, valid=True)
@@ -243,28 +248,33 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         response = self.client.get(reverse("pant:qrbag_list"))
         self.assertEqual(response.status_code, HTTPStatus.OK)
         html_items = self.get_html_items(response.content)
-
         bags = {item["QR kode"]: item for item in html_items}
         return bags
 
     def test_esani_admin_view(self):
         self.client.login(username="esani_admin", password="12345")
         bags = self.get_bags()
-        self.assertEqual(len(bags), 5)  # Esani admin can see all bags
+        self.assertEqual(len(bags), 6)  # Esani admin can see all bags
         self.assertEqual(bags["qr1"]["Butik"], "branch1")
         self.assertEqual(bags["qr2"]["Butik"], "branch1")
         self.assertEqual(bags["qr3"]["Butik"], "kiosk")
         self.assertEqual(bags["qr4"]["Butik"], "branch2")
+        self.assertEqual(bags["qr5"]["Butik"], "branch2")
+        self.assertEqual(bags["qr6"]["Butik"], "branch2")
 
     def test_company_admin_view(self):
         self.client.login(username="company_admin", password="12345")
         bags = self.get_bags()
-        self.assertEqual(len(bags), 4)  # Company admin cannot see the kiosk-bag
+        # Company admin cannot see the kiosk bag
+        # Company admin cannot see the hidden bag
+        self.assertEqual(len(bags), 4)
 
     def test_branch_admin_view(self):
         self.client.login(username="branch_admin", password="12345")
         bags = self.get_bags()
-        self.assertEqual(len(bags), 2)  # Branch admin can only see from his own branch
+        # Branch admin can only see from his own branch
+        # Branch admin cannot see the hidden bag
+        self.assertEqual(len(bags), 2)
 
     def test_counts_as_esani_admin(self):
         self.client.login(username="esani_admin", password="12345")
@@ -272,6 +282,7 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         choices = dict(response.context["form"].fields["status"].choices)
         self.assertEqual(choices["butik_oprettet"], "butik_oprettet (4)")
         self.assertEqual(choices["under_transport"], "under_transport (1)")
+        self.assertEqual(choices["esani_skjult"], "esani_skjult (1)")
 
     def test_counts_as_company_admin(self):
         self.client.login(username="company_admin", password="12345")
@@ -279,6 +290,7 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         choices = dict(response.context["form"].fields["status"].choices)
         self.assertEqual(choices["butik_oprettet"], "butik_oprettet (3)")
         self.assertEqual(choices["under_transport"], "under_transport (1)")
+        self.assertNotIn("esani_skjult", choices)
 
     def test_annotation_columns(self):
         self.client.login(username="esani_admin", password="12345")
@@ -297,6 +309,8 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
                 ("qr4", 1, 2, 2, "-"),
                 # QR bag 5 has 1 manual item (with count=4)
                 ("qr5", 4, "-", 8, "&check;"),
+                # QR bag 6 has no items
+                ("qr6", "-", "-", "-", "-"),
             ],
             transform=lambda obj: (
                 obj["qr"],
@@ -319,18 +333,23 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         [
             # Test 1: only one status is selected
             (
-                ["under_transport"],  # statuses
-                [("qr1", "under_transport")],  # expected_results
+                # statuses
+                ["under_transport"],
+                # expected_results
+                [("qr1", "under_transport")],
             ),
             # Test 2: multiple statuses are selected
             (
-                ["butik_oprettet", "under_transport"],  # statuses
-                [  # expected_results
+                # statuses
+                ["butik_oprettet", "under_transport", "esani_skjult"],
+                # expected_results
+                [
                     ("qr1", "under_transport"),
                     ("qr2", "butik_oprettet"),
                     ("qr3", "butik_oprettet"),
                     ("qr4", "butik_oprettet"),
                     ("qr5", "butik_oprettet"),
+                    ("qr6", "esani_skjult"),
                 ],
             ),
         ],
@@ -491,7 +510,7 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         return int(stripped) if stripped != "-" else stripped
 
 
-class QRBagHistoryViewTest(BaseQRBagTest):
+class QRBagHistoryViewTest(ParametrizedTestCase, BaseQRBagTest):
     def get_html_items(self, html):
         soup = BeautifulSoup(html, "html.parser")
         table = soup.find("table")
@@ -532,9 +551,157 @@ class QRBagHistoryViewTest(BaseQRBagTest):
         # Assert: check "total_value"
         self.assertEqual(context["total_value"], (1 * 2) + (2 * 0))
 
+    @parametrize(
+        "username,expected_response",
+        [
+            ("esani_admin", HTTPStatus.OK),
+            ("branch_admin", HTTPStatus.FORBIDDEN),
+            ("company_admin", HTTPStatus.FORBIDDEN),
+        ],
+    )
+    def test_non_esani_admins_cannot_see_hidden_qrbag(
+        self, username, expected_response
+    ):
+        hidden_qrbag = QRBag.objects.get(qr="qr6")
+        self.client.login(username=username, password="12345")
+        response = self.client.get(
+            reverse("pant:qrbag_history", kwargs={"pk": hidden_qrbag.pk})
+        )
+        self.assertEqual(response.status_code, expected_response)
+
     def _get_view_instance(self, qr: str) -> QRBagHistoryView:
         request = RequestFactory().get("")
         view = QRBagHistoryView()
         view.setup(request, pk=QRBag.objects.get(qr=qr).pk)
         view.get(request)
         return view
+
+
+class TestMultipleQRBagHideView(ParametrizedTestCase, BaseQRBagTest):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.visible_bag = QRBag.objects.get(qr="qr5")
+        cls.hidden_bag = QRBag.objects.get(qr="qr6")
+        cls.post_data = {
+            "ids[]": [cls.visible_bag.id, cls.hidden_bag.id],
+            "reason": "Min begrundelse",
+        }
+
+    def test_esani_admin_can_hide_multiple(self):
+        self.user = self.login("EsaniAdmins")
+        response = self.client.post(reverse("pant:qrbag_multiple_hide"), self.post_data)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(
+            response.json(),
+            {
+                "total": 2,
+                "updated": 1,
+                "status_choices": [
+                    {"value": "", "label": "-"},
+                    {"value": "butik_oprettet", "label": "butik_oprettet (3)"},
+                    {"value": "esani_skjult", "label": "esani_skjult (2)"},
+                    {"value": "under_transport", "label": "under_transport (1)"},
+                ],
+            },
+        )
+        # Assert: visible bag is hidden
+        self.visible_bag.refresh_from_db()
+        self.assertEqual(self.visible_bag.status, "esani_skjult")
+        self.assertEqual(self.visible_bag.hidden_reason, "Min begrundelse")
+        # Assert: hidden bag remains unchanged
+        self.hidden_bag.refresh_from_db()
+        self.assertEqual(self.hidden_bag.status, "esani_skjult")
+        self.assertIsNone(self.hidden_bag.hidden_reason)
+
+    def test_non_esani_admin_cannot_hide_multiple(self):
+        self.user = self.login("BranchAdmins")
+        response = self.client.post(reverse("pant:qrbag_multiple_hide"), self.post_data)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+        # Assert: visible bag remains unchanged
+        self.visible_bag.refresh_from_db()
+        self.assertEqual(self.visible_bag.status, "butik_oprettet")
+        self.assertIsNone(self.visible_bag.hidden_reason)
+        # Assert: hidden bag remains unchanged
+        self.hidden_bag.refresh_from_db()
+        self.assertEqual(self.hidden_bag.status, "esani_skjult")
+        self.assertIsNone(self.hidden_bag.hidden_reason)
+
+
+class TestMultipleQRBagUnhideView(ParametrizedTestCase, BaseQRBagTest):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.visible_bag = QRBag.objects.get(qr="qr5")
+        cls.hidden_bag = QRBag.objects.get(qr="qr6")
+
+        # Add history entries to hidden bag
+        for status in ("under_transport", "esani_skjult"):
+            cls.hidden_bag.status = status
+            cls.hidden_bag._history_user = cls.esani_admin
+            cls.hidden_bag.save()  # adds history entry
+
+        # Add hidden bag without previous history
+        cls.hidden_bag_no_history = QRBag(
+            qr="qr7", status="esani_skjult", company_branch=cls.branch2
+        )
+        cls.hidden_bag_no_history._history_user = cls.esani_admin
+        cls.hidden_bag_no_history.save()
+
+        cls.post_data = {
+            "ids[]": [
+                cls.visible_bag.id,
+                cls.hidden_bag.id,
+                cls.hidden_bag_no_history.id,
+            ]
+        }
+
+    def test_esani_admin_can_unhide_multiple(self):
+        self.user = self.login("EsaniAdmins")
+        response = self.client.post(
+            reverse("pant:qrbag_multiple_unhide"), self.post_data
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(
+            response.json(),
+            {
+                "total": 3,
+                "updated": 2,
+                "status_choices": [
+                    {"value": "", "label": "-"},
+                    {"value": "butik_oprettet", "label": "butik_oprettet (5)"},
+                    {"value": "under_transport", "label": "under_transport (2)"},
+                ],
+            },
+        )
+        # Assert: hidden bag is returned to its former status
+        self.hidden_bag.refresh_from_db()
+        self.assertEqual(self.hidden_bag.status, "under_transport")
+        self.assertIsNone(self.hidden_bag.hidden_reason)
+        # Assert: hidden bag without history is returned to the default status
+        self.hidden_bag_no_history.refresh_from_db()
+        self.assertEqual(self.hidden_bag_no_history.status, "butik_oprettet")
+        self.assertIsNone(self.hidden_bag_no_history.hidden_reason)
+        # Assert: visible bag remains unchanged
+        self.visible_bag.refresh_from_db()
+        self.assertEqual(self.visible_bag.status, "butik_oprettet")
+        self.assertIsNone(self.visible_bag.hidden_reason)
+
+    def test_non_esani_admin_cannot_unhide_multiple(self):
+        self.user = self.login("BranchAdmins")
+        response = self.client.post(
+            reverse("pant:qrbag_multiple_unhide"), self.post_data
+        )
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+        # Assert: visible bag remains unchanged
+        self.visible_bag.refresh_from_db()
+        self.assertEqual(self.visible_bag.status, "butik_oprettet")
+        self.assertIsNone(self.visible_bag.hidden_reason)
+        # Assert: hidden bag without history remains unchanged
+        self.hidden_bag_no_history.refresh_from_db()
+        self.assertEqual(self.hidden_bag_no_history.status, "esani_skjult")
+        self.assertIsNone(self.hidden_bag_no_history.hidden_reason)
+        # Assert: hidden bag remains unchanged
+        self.hidden_bag.refresh_from_db()
+        self.assertEqual(self.hidden_bag.status, "esani_skjult")
+        self.assertIsNone(self.hidden_bag.hidden_reason)

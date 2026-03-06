@@ -2485,7 +2485,7 @@ class MultipleQRBagUnhideView(_MultipleQRBagStatusUpdate):
     def _get_previous_status(self, bag: QRBag) -> str:
         try:
             prev = bag.history.order_by("-history_id")[1]
-        except HistoricalQRBag.DoesNotExist:
+        except (HistoricalQRBag.DoesNotExist, IndexError):
             return "butik_oprettet"
         else:
             return prev.status

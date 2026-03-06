@@ -66,6 +66,7 @@ class TestQRBagFilterForm(ParametrizedTestCase, BaseQRBagTest):
                 [
                     ("butik_oprettet", "butik_oprettet (4)"),
                     ("under_transport", "under_transport (1)"),
+                    ("esani_skjult", "esani_skjult (1)"),
                 ],
             ),
             (
