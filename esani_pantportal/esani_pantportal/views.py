@@ -1022,13 +1022,14 @@ def _get_history_entry(status=None, ordering="history_date", field="history_date
 
 class QRBagSearchView(BranchSearchView):
     template_name = "esani_pantportal/qrbag/list.html"
-    actions = {_("Historik"): "btn btn-sm btn-secondary"}
     model = QRBag
     form_class = QRBagFilterForm
-    required_permissions = ["esani_pantportal.view_qrbag"]
 
+    required_permissions = ["esani_pantportal.view_qrbag"]
+    can_edit_multiple = True
     search_fields = []
     search_fields_exact = ["qr", "status", "city", "manual"]
+    actions = {_("Historik"): "btn btn-sm btn-secondary"}
 
     fixed_columns = {
         "qr": _("QR kode"),
@@ -1125,6 +1126,9 @@ class QRBagSearchView(BranchSearchView):
     def get_queryset(self):
         qs = super().get_queryset()
         qs = qs.select_related("company_branch", "kiosk")
+        # Hide hidden QR bags from non-ESANI admins
+        if not self.request.user.is_esani_admin:
+            qs = qs.exclude(status="esani_skjult")
         return qs
 
     def get_form_kwargs(self):
@@ -2388,6 +2392,96 @@ class MultipleProductDeleteView(_MultipleProductStateUpdate):
 
     def get_change_reason(self) -> str:
         return "Slettet"
+
+
+class _MultipleQRBagStatusUpdate(View, PermissionRequiredMixin):
+    def post(self, request, *args, **kwargs):
+        if not self.request.user.is_esani_admin:
+            return self.access_denied
+
+        ids = [int(id) for id in self.request.POST.getlist("ids[]")]
+        bags = self.filter_qs(QRBag.objects.filter(id__in=ids))
+        num = 0
+
+        for bag in bags:
+            self.update(bag)
+            num += 1
+
+        bulk_update_with_history(
+            bags,
+            QRBag,
+            self.get_affected_fields(),
+            default_change_reason=self.get_change_reason(),
+        )
+
+        return JsonResponse(
+            {
+                "total": len(ids),
+                "updated": num,
+                "status_choices": self._get_status_choices(),
+            }
+        )
+
+    def filter_qs(self, qs: QuerySet[QRBag]) -> QuerySet[QRBag]:
+        return qs  # pragma: nocover
+
+    def update(self, bag: QRBag) -> None:
+        raise NotImplementedError("must be implemented by subclass")  # pragma: nocover
+
+    def get_change_reason(self) -> str:
+        raise NotImplementedError("must be implemented by subclass")  # pragma: nocover
+
+    def get_affected_fields(self) -> list[str]:
+        return ["status"]
+
+    def _get_status_choices(self) -> list[dict[str, Any]]:
+        form = QRBagFilterForm(user=self.request.user)
+        field = form.fields["status"]
+        choices = [
+            {"value": value, "label": label}
+            for value, label in field.choices  # type: ignore
+        ]
+        return choices
+
+
+class MultipleQRBagHideView(_MultipleQRBagStatusUpdate):
+    def filter_qs(self, qs: QuerySet[QRBag]) -> QuerySet[QRBag]:
+        # Don't attempt to hide objects that are already unhidden
+        return qs.exclude(status="esani_skjult")
+
+    def update(self, bag: QRBag):
+        bag.status = "esani_skjult"
+        bag.hidden_reason = self.request.POST.get("reason")
+
+    def get_change_reason(self) -> str:
+        return "Skjult"
+
+    def get_affected_fields(self) -> list[str]:
+        return super().get_affected_fields() + ["hidden_reason"]
+
+
+class MultipleQRBagUnhideView(_MultipleQRBagStatusUpdate):
+    def filter_qs(self, qs: QuerySet[QRBag]) -> QuerySet[QRBag]:
+        # Only unhide objects that are currently hidden
+        return qs.filter(status="esani_skjult")
+
+    def update(self, bag: QRBag):
+        bag.status = self._get_previous_status(bag)
+        bag.hidden_reason = None
+
+    def get_change_reason(self) -> str:
+        return "Skjult"
+
+    def get_affected_fields(self) -> list[str]:
+        return super().get_affected_fields() + ["hidden_reason"]
+
+    def _get_previous_status(self, bag: QRBag) -> str:
+        try:
+            prev = bag.history.order_by("-history_id")[1]
+        except HistoricalQRBag.DoesNotExist:
+            return "butik_oprettet"
+        else:
+            return prev.status
 
 
 class TwoFactorSetup(SetupView):

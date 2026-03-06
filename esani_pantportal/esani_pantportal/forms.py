@@ -967,9 +967,16 @@ class QRBagFilterForm(CityChoiceMixin, SortPaginateForm):
         names: dict[str, str] = {
             code: name for code, name in QRStatus.objects.values_list("code", "name_da")
         }
+        # Figure out what `QRBag` objects the given user has access to, which determines
+        # what statuses they can filter on.
         qs = QRBag.objects.all()
+        # Hide hidden status from non-ESANI admins
+        if not self._user.is_esani_admin:
+            qs = qs.exclude(status="esani_skjult")
         if self._user.user_type == COMPANY_USER:
             qs = qs.filter(company_branch__company=self._user.company)
+        # Build `choices` as pairs of (status, label), where label includes the count of
+        # objects in that status.
         choices = qs.values("status").annotate(num=Count("pk")).order_by("status")
         return [("", "-")] + [
             (c["status"], f"{names[c['status']]} ({c['num']})") for c in choices
