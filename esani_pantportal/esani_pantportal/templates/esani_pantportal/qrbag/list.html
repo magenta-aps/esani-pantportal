@@ -8,6 +8,14 @@ SPDX-License-Identifier: MPL-2.0
 {% load i18n %}
 {% load l10n %}
 {% load bootstrap_icons %}
+
+{% block extra_headers %}
+<script src="{% url 'javascript-catalog' %}" nonce="{{ request.csp_nonce }}"></script>
+{% if can_edit_multiple %}
+<script src="{% static 'jquery/qrbag_list_actions.js' %}" nonce="{{ request.csp_nonce }}"></script>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="mx-5">
     <div class="row">
@@ -42,7 +50,7 @@ SPDX-License-Identifier: MPL-2.0
         {% endif %}
         <div class="row">
             <div class="col-4 clearfix">
-                <button type="submit" class="btn btn-primary float-end">Søg</button>
+                <button type="submit" class="btn btn-primary float-end">{% translate 'Søg' %}</button>
             </div>
         </div>
     </form>
@@ -50,6 +58,14 @@ SPDX-License-Identifier: MPL-2.0
         <a class="btn btn-primary download-excel" href="#">
             {% translate "Download Excel-fil" %}
         </a>
+        {% if can_edit_multiple and user.is_esani_admin %}
+        <a id="hide_button" class="btn btn-primary disabled" href="#" data-post-url="{% url "pant:qrbag_multiple_hide" %}">
+            {% translate "Skjul markerede produkter" %}
+        </a>
+        <a id="unhide_button" class="btn btn-secondary disabled" href="#" data-post-url="{% url "pant:qrbag_multiple_unhide" %}">
+            {% translate "Fjern skjult-status fra markerede produkter" %}
+        </a>
+        {% endif %}
     </div>
     {% include "../list_view_table.html" %}
 </div>
