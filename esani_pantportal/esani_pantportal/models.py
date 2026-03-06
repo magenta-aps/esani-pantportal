@@ -1350,6 +1350,9 @@ class QRBag(models.Model):
         max_length=20,
         db_index=True,
     )
+    hidden_reason = models.TextField(
+        null=True,
+    )
 
 
 class QRStatus(models.Model):
