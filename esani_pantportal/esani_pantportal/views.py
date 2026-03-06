@@ -1810,6 +1810,13 @@ class QRBagHistoryView(LoginRequiredMixin, DetailView):
     template_name = "esani_pantportal/qrbag/history.html"
     context_object_name = "historical_qrbag"
 
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not request.user.is_esani_admin:
+            obj = self.get_object()
+            if obj.status == "esani_skjult":
+                return self.handle_no_permission()
+        return super().dispatch(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         deposit_payout_items = (
             self.object.deposit_items.select_related("product")
