@@ -1181,6 +1181,11 @@ class QRBagSearchView(BranchSearchView):
 
         if isinstance(value, (datetime.date, datetime.datetime)):
             value = value.strftime("%-d. %b %Y")
+        elif key == "qr":
+            if item["status"] == "esani_skjult":
+                return f'<i class="text-secondary">{value}</i>'
+            else:
+                return value
         elif key == "status":
             return self._qr_status_names[value]
         elif key == "num_valid_deposited":
