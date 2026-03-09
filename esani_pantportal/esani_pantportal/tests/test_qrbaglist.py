@@ -309,8 +309,8 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
                 ("qr4", 1, 2, 2, "-"),
                 # QR bag 5 has 1 manual item (with count=4)
                 ("qr5", 4, "-", 8, "&check;"),
-                # QR bag 6 has no items
-                ("qr6", "-", "-", "-", "-"),
+                # QR bag 6 is hidden, and has no items
+                ('<i class="text-secondary">qr6</i>', "-", "-", "-", "-"),
             ],
             transform=lambda obj: (
                 obj["qr"],
