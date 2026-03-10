@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 
 from django.conf import settings
 from django.core.management import call_command
+from django.db.models import Count
 from django.test import TestCase
 from django.utils import timezone
 from unittest_parametrize import ParametrizedTestCase, parametrize
@@ -43,13 +44,17 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
 
     kiosk_cvr = 1234
     bag_qr = "0123456789deadbeef"
+    bag_qr_manual = "1234567890deadbeef"
+    bag_qr_manual_exported = "1234567890ffffffff"
     product_barcode_1 = "1122"
     product_count_1 = 10
     product_barcode_2 = "2233"
     product_count_2 = 20
     location_customer_id = "1000"
     rvm_serial_number = "2000"
+    rvm_serial_number_manual = "0"
     consumer_session_id = uuid.uuid4()
+    consumer_session_id_unknown = uuid.uuid4()
     started_at = datetime(2020, 1, 1, 12, 0, tzinfo=timezone.get_current_timezone())
     item1_type = "single"
     item1_refund = 0
@@ -79,8 +84,21 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
             defaults={"city": cls._test_city},
         )
 
-        # Add `QRBag` object
+        # Add `QRBag` objects
         cls.qr_bag, _ = QRBag.objects.update_or_create(qr=cls.bag_qr, kiosk=cls.kiosk)
+        cls.qr_bag_with_manual_data, _ = QRBag.objects.update_or_create(
+            qr=cls.bag_qr_manual, kiosk=cls.kiosk
+        )
+        cls.qr_bag_with_manual_data_exported, _ = QRBag.objects.update_or_create(
+            qr=cls.bag_qr_manual_exported, kiosk=cls.kiosk
+        )
+
+        # Add `Deposit` and `DepositPayoutItem` objects representing manually entered
+        # deposit payout data (both exported to accounting, and not yet exported.)
+        cls._add_deposit_payout_item(cls.qr_bag_with_manual_data)
+        cls._add_deposit_payout_item(
+            cls.qr_bag_with_manual_data_exported, exported_to_accounting=True
+        )
 
         # Add `Product` objects
         defaults = {
@@ -108,6 +126,48 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
         )
 
         cls.consumer_identity_ext_id = f"80003{cls.kiosk.id:05}"
+
+    @classmethod
+    def _add_deposit_payout_item(
+        cls,
+        bag: QRBag,
+        count: int = 1,
+        exported_to_accounting: bool = False,
+    ):
+        deposit_payout, _ = DepositPayout.objects.get_or_create(
+            source_identifier="ImportTest",
+            defaults={
+                "source_type": DepositPayout.SOURCE_TYPE_API,
+                "from_date": "2024-01-01",
+                "to_date": "2024-02-01",
+                "item_count": 1,
+            },
+        )
+        barcode = "manual"
+        product, _ = Product.objects.get_or_create(
+            barcode=barcode,
+            defaults={
+                "product_name": "ImportTest",
+                "refund_value": 200,
+                "material": "P",
+                "height": 200,
+                "diameter": 100,
+                "weight": 50,
+                "capacity": 200,
+                "shape": "F",
+            },
+        )
+        DepositPayoutItem.objects.create(
+            deposit_payout=deposit_payout,
+            qr_bag=bag,
+            count=count,
+            date=date(2024, 1, 1),
+            rvm_serial=0,
+            product=product,
+            barcode=barcode,
+            consumer_identity=bag.qr,
+            file_id=uuid.uuid4() if exported_to_accounting else None,
+        )
 
     def test_handle_processes_to_and_from_args(self):
         # Arrange
@@ -253,6 +313,90 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
                     ],
                 ),
             ),
+            # Sixth datum uses a consumer identity matching the QR bag with manually
+            # entered deposit payout data.
+            Datum(
+                consumer_session=ConsumerSession(
+                    id=self.consumer_session_id_unknown,
+                    identity=Identity(consumer_identity=self.bag_qr_manual),
+                    metadata=Metadata(
+                        location=Location(customer_id=self.location_customer_id),
+                        rvm=Rvm(serial_number=self.rvm_serial_number),
+                    ),
+                    started_at=self.started_at,
+                    items=[
+                        Item1(
+                            product_code=self.product_barcode_1,
+                            count=self.product_count_1,
+                            type=self.item1_type,
+                            refund=self.item1_refund,
+                        ),
+                    ],
+                ),
+            ),
+            # Seventh datum uses a consumer identity matching the QR bag with manually
+            # entered deposit payout data which has already been exported.
+            Datum(
+                consumer_session=ConsumerSession(
+                    id=self.consumer_session_id_unknown,
+                    identity=Identity(consumer_identity=self.bag_qr_manual_exported),
+                    metadata=Metadata(
+                        location=Location(customer_id=self.location_customer_id),
+                        rvm=Rvm(serial_number=self.rvm_serial_number),
+                    ),
+                    started_at=self.started_at,
+                    items=[
+                        Item1(
+                            product_code=self.product_barcode_1,
+                            count=self.product_count_1,
+                            type=self.item1_type,
+                            refund=self.item1_refund,
+                        ),
+                    ],
+                ),
+            ),
+            # Eighth datum uses a consumer identity matching the QR bag with manually
+            # entered deposit payout data.
+            Datum(
+                consumer_session=ConsumerSession(
+                    id=self.consumer_session_id_unknown,
+                    identity=Identity(consumer_identity=self.bag_qr_manual),
+                    metadata=Metadata(
+                        location=Location(customer_id=self.location_customer_id),
+                        rvm=Rvm(serial_number=self.rvm_serial_number),
+                    ),
+                    started_at=self.started_at,
+                    items=[
+                        Item1(
+                            product_code=self.product_barcode_1,
+                            count=self.product_count_1,
+                            type=self.item1_type,
+                            refund=self.item1_refund,
+                        ),
+                    ],
+                ),
+            ),
+            # Ninth datum uses a consumer identity matching the QR bag with manually
+            # entered deposit payout data which has already been exported.
+            Datum(
+                consumer_session=ConsumerSession(
+                    id=self.consumer_session_id_unknown,
+                    identity=Identity(consumer_identity=self.bag_qr_manual_exported),
+                    metadata=Metadata(
+                        location=Location(customer_id=self.location_customer_id),
+                        rvm=Rvm(serial_number=self.rvm_serial_number),
+                    ),
+                    started_at=self.started_at,
+                    items=[
+                        Item1(
+                            product_code=self.product_barcode_1,
+                            count=self.product_count_1,
+                            type=self.item1_type,
+                            refund=self.item1_refund,
+                        ),
+                    ],
+                ),
+            ),
         ]
 
         with patch(self._mock_api_path, return_value=self._get_mock_api(data)):
@@ -260,15 +404,15 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
             buf = StringIO()
             call_command(Command(), stdout=buf, stderr=buf)
             call_command(Command(), stdout=buf, stderr=buf)
-
-            # Assert: check the output
-            self.assertIn("Importing ...", buf.getvalue())
+            # Assert: the "normal" import runs
+            self.assertIn("Importing ", buf.getvalue())
+            # Assert: the logic for manually entered data runs
+            self.assertIn("Processing ", buf.getvalue())
+            # Assert: verify that the second run results in nothing being imported
             self.assertIn("Not importing anything", buf.getvalue())
-
             # Assert: check the `DepositPayout`/`DepositPayoutItem` objects
             self._assert_objects_created()
-
-            # Assert: check the `QRBag` object was updated as expected
+            # Assert: check that the `QRBag` object was updated as expected
             self.qr_bag.refresh_from_db()
             self.assertEqual(self.qr_bag.status, "esani_optalt")
 
@@ -285,23 +429,35 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
         return mock_api
 
     def _assert_objects_created(self):
-        # Assert we create exactly one `DepositPayout` (even though we run the same
+        # Assert we create exactly the same `DepositPayout` (even though we run the same
         # import twice.)
-        expected_item_count = 7  # 2 + 1 + 1 + 1 + 2 = 7 objects
         self.assertQuerySetEqual(
-            DepositPayout.objects.all(),
-            [(DepositPayout.SOURCE_TYPE_API, "url", expected_item_count)],
+            (
+                DepositPayout.objects.exclude(source_identifier="ImportTest")
+                .values("source_type", "source_identifier", "item_count")
+                .annotate(count=Count("depositpayoutitem__pk"))
+            ),
+            [
+                # One deposit payout for the "normal" import, consisting of 7 items
+                # (2 + 1 + 1 + 1 + 2 = 7 items total.)
+                (DepositPayout.SOURCE_TYPE_API, "url", 7, 7),
+                # One deposit payout for the "manual" import, consisting of 2 items
+                (DepositPayout.SOURCE_TYPE_API, "url", 2, 2),
+            ],
             transform=lambda obj: (
-                obj.source_type,
-                obj.source_identifier,
-                obj.item_count,
+                obj["source_type"],
+                obj["source_identifier"],
+                obj["item_count"],
+                obj["count"],
             ),
             ordered=False,
         )
-        # Assert we create exactly three `DepositPayoutItems` (even though we run the
-        # same import twice.) Check that the fields are set as expected.
+        # Assert we create exactly the same `DepositPayoutItem` objects (even though we
+        # run the same import twice.) Check that the fields are set as expected.
         self.assertQuerySetEqual(
-            DepositPayoutItem.objects.all(),
+            DepositPayoutItem.objects.exclude(
+                deposit_payout__source_identifier="ImportTest",
+            ),
             [
                 # First datum produces two objects
                 (
@@ -379,6 +535,28 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
                     self.consumer_session_id,
                     self.bag_qr,
                 ),
+                # Sixth datum and eighth datum share the same consumer identity, and
+                # generate two objects total.
+                (
+                    self.kiosk_cvr,
+                    self.product_1,
+                    self.product_barcode_1,
+                    self.product_count_1,
+                    self.rvm_serial_number,
+                    date(2020, 1, 1),
+                    self.consumer_session_id_unknown,
+                    self.bag_qr_manual,
+                ),
+                (
+                    self.kiosk_cvr,
+                    self.product_1,
+                    self.product_barcode_1,
+                    self.product_count_1,
+                    self.rvm_serial_number,
+                    date(2020, 1, 1),
+                    self.consumer_session_id_unknown,
+                    self.bag_qr_manual,
+                ),
             ],
             transform=lambda obj: (
                 obj.kiosk.cvr if obj.kiosk else None,
@@ -391,6 +569,15 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
                 obj.consumer_identity,
             ),
             ordered=False,
+        )
+        # Assert we create zero `DepositPayoutItem` objects when processing API data
+        # that refers to the consumer identity whose deposit payout data has already
+        # been exported.
+        self.assertQuerySetEqual(
+            DepositPayoutItem.objects.exclude(
+                deposit_payout__source_identifier="ImportTest",
+            ).filter(consumer_identity=self.bag_qr_manual_exported),
+            [],
         )
 
     def test_get_product_from_barcode_returns_none_on_unknown_barcode(self):
@@ -534,6 +721,14 @@ class TestImportDepositPayoutsQRBag(LoginMixin, ParametrizedTestCase, TestCase):
         result = cmd._get_qr_bag(self.bag_qr, Kiosk)
         # Assert
         self.assertIsNone(result)
+
+
+class TestImportDepositPayoutsQRBagDateLogic(
+    LoginMixin, ParametrizedTestCase, TestCase
+):
+    # These tests live in their own class as the methods they test rely on DB state
+
+    maxDiff = None
 
     @parametrize(
         "val,db_value,expected_result",

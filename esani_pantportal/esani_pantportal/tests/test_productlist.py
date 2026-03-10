@@ -218,32 +218,32 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             file_name="dummy_products.csv",
             date=make_aware(datetime.datetime(2020, 1, 1)),
         )
-        cls.prod1 = Product.objects.create(
+        cls.prod1, _ = Product.objects.update_or_create(
             product_name="prod1",
             barcode="0010",
-            refund_value=3,
-            material="A",
-            height=100,
-            diameter=60,
-            weight=20,
-            capacity=500,
-            shape="F",
-            id=1,
-            # created_by=cls.user,
-            import_job=cls.job,
+            defaults=dict(
+                refund_value=3,
+                material="A",
+                height=100,
+                diameter=60,
+                weight=20,
+                capacity=500,
+                shape="F",
+                import_job=cls.job,
+            ),
         )
-        cls.prod2 = Product.objects.create(
+        cls.prod2, _ = Product.objects.update_or_create(
             product_name="prod2",
             barcode="0002",
-            refund_value=3,
-            material="A",
-            height=100,
-            diameter=60,
-            weight=20,
-            capacity=500,
-            shape="F",
-            id=2,
-            # created_by=cls.user,
+            defaults=dict(
+                refund_value=3,
+                material="A",
+                height=100,
+                diameter=60,
+                weight=20,
+                capacity=500,
+                shape="F",
+            ),
         )
         cls.prod2.approve()
         cls.prod2.save()
@@ -264,6 +264,16 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         self.assertFalse(response.context_data["form"].is_valid())
 
     def test_form_valid(self):
+        def get_expected_actions(pk: int) -> str:
+            return f"""<a href="/produkt/{pk}" class="btn btn-sm btn-primary">Vis</a>"""
+
+        def get_expected_select(pk: int) -> str:
+            return (
+                '<div class="p-1">'
+                f'<input type="checkbox" id="select_{pk}" value="{pk}" />'
+                "</div>"
+            )
+
         user = self.login()
         self.maxDiff = None
         view = ProductSearchView()
@@ -281,8 +291,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             doc["items"],
             [
                 {
-                    "actions": '<a href="/produkt/1" class="btn btn-sm btn-primary">'
-                    "Vis</a>",
+                    "actions": get_expected_actions(self.prod1.pk),
                     "status": ProductState.AWAITING_APPROVAL.label,
                     "approval_date": "-",
                     "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
@@ -290,21 +299,17 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                     "capacity": 500,
                     "diameter": 60,
                     "height": 100,
-                    "id": 1,
+                    "id": self.prod1.pk,
                     "material": "Aluminium",
                     "product_name": "prod1",
                     "shape": "Flaske",
                     "weight": 20,
                     "danish": "Ukendt",
                     "file_name": self.job.file_name,
-                    "select": (
-                        '<div class="p-1"><input type="checkbox" id="select_1" '
-                        'value="1" /></div>'
-                    ),
+                    "select": get_expected_select(self.prod1.pk),
                 },
                 {
-                    "actions": '<a href="/produkt/2" class="btn btn-sm btn-primary">'
-                    "Vis</a>",
+                    "actions": get_expected_actions(self.prod2.pk),
                     "status": ProductState.APPROVED.label,
                     "approval_date": datetime.date.today().strftime("%-d. %b %Y"),
                     "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
@@ -312,17 +317,14 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                     "capacity": 500,
                     "diameter": 60,
                     "height": 100,
-                    "id": 2,
+                    "id": self.prod2.pk,
                     "material": "Aluminium",
                     "product_name": "prod2",
                     "shape": "Flaske",
                     "weight": 20,
                     "danish": "Ukendt",
                     "file_name": "-",
-                    "select": (
-                        '<div class="p-1"><input type="checkbox" id="select_2" '
-                        'value="2" /></div>'
-                    ),
+                    "select": get_expected_select(self.prod2.pk),
                 },
             ],
         )
@@ -348,8 +350,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
             doc["items"],
             [
                 {
-                    "actions": '<a href="/produkt/1" class="btn btn-sm btn-primary">'
-                    "Vis</a>",
+                    "actions": get_expected_actions(self.prod1.pk),
                     "status": ProductState.AWAITING_APPROVAL.label,
                     "approval_date": "-",
                     "creation_date": datetime.date.today().strftime("%-d. %b %Y"),
@@ -357,17 +358,14 @@ class ProductListFormValidTest(LoginMixin, TestCase):
                     "capacity": 500,
                     "diameter": 60,
                     "height": 100,
-                    "id": 1,
+                    "id": self.prod1.pk,
                     "material": "Aluminium",
                     "product_name": "prod1",
                     "shape": "Flaske",
                     "weight": 20,
                     "danish": "Ukendt",
                     "file_name": self.job.file_name,
-                    "select": (
-                        '<div class="p-1"><input type="checkbox" id="select_1" '
-                        'value="1" /></div>'
-                    ),
+                    "select": get_expected_select(self.prod1.pk),
                 }
             ],
         )

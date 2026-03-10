@@ -34,6 +34,12 @@ SPDX-License-Identifier: MPL-2.0
             <div class="col-3">{{ form.city }}</div>
         </div>
         {% endif %}
+        {% if user.is_esani_admin %}
+        <div class="row">
+            <div class="col-1">{% translate "Vis kun manuelt indtastede pantposer" %}</div>
+            <div class="col-3">{{ form.manual }}</div>
+        </div>
+        {% endif %}
         <div class="row">
             <div class="col-4 clearfix">
                 <button type="submit" class="btn btn-primary float-end">Søg</button>
@@ -47,4 +53,56 @@ SPDX-License-Identifier: MPL-2.0
     </div>
     {% include "../list_view_table.html" %}
 </div>
+<script nonce="{{ request.csp_nonce }}">
+// Handle links in table with `data-qrbag` attribute.
+// (See `edit_amount.html` for HTML markup used.)
+(function () {
+    const handleColumnEdit = function () {
+        $("[data-qrbag]").click(function (evt) {
+            evt.preventDefault();
+
+            const input = prompt("{% translate 'Indtast antal pantenheder' %}");
+            if (input === null) {
+                return;  // user cancelled the input prompt
+            }
+
+            const amount = parseInt(input, 10);
+            if (isNaN(amount)) {
+                alert("{% translate 'Indtast venligst et gyldigt, helt tal' %}");
+            } else {
+                const $elem = $(evt.target).parents("a");
+                const data = {
+                    csrfmiddlewaretoken: $("input[name=csrfmiddlewaretoken]").val(),
+                    id: $elem.data("qrbag"),
+                    amount: amount,
+                };
+                $.ajax({
+                    type: "POST",
+                    url: "",
+                    data: data,
+                    success: function (result) {
+                        $elem.prev("span").text(result.amount);
+                    },
+                    error: function (result) {
+                        alert("{% translate 'Der skete en fejl, prøv venligst igen' %}");
+                    }
+                });
+            }
+        });
+    }
+
+
+    $(document).ready(function () {
+        // Attach event listener on initial page load
+        handleColumnEdit();
+
+        const table = $("table#table");
+        table.on("post-body.bs.table", function (evt, number, size) {
+            // Reattach event listener when `bootstrap-table` has rendered a
+            // new page in the table.
+            handleColumnEdit();
+        });
+    });
+})();
+</script>
 {% endblock %}
