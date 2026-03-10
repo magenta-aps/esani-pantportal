@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import date
 from http import HTTPStatus
+from json import loads as load_json
 
 from bs4 import BeautifulSoup
 from django.contrib.auth.models import Group
@@ -10,6 +11,7 @@ from django.core.management import call_command
 from django.db.models import F, OrderBy, Sum
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
+from django.utils.html import strip_tags
 from unittest_parametrize import ParametrizedTestCase, parametrize
 
 from esani_pantportal.models import (
@@ -164,6 +166,11 @@ class BaseQRBagTest(LoginMixin, TestCase):
         qrbag4._history_user = cls.esani_admin
         qrbag4.save()
 
+        # This QR bag has manual deposit payout items
+        qrbag5 = QRBag(qr="qr5", status="butik_oprettet", company_branch=cls.branch2)
+        qrbag5._history_user = cls.esani_admin
+        qrbag5.save()
+
         # QR bag 3 has two deposit payout items (both valid)
         cls._add_deposit_payout_item(qrbag3, count=1, valid=True)
         cls._add_deposit_payout_item(qrbag3, count=2, valid=True)
@@ -171,6 +178,9 @@ class BaseQRBagTest(LoginMixin, TestCase):
         # QR bag 4 has two deposit payout items (one valid and one invalid)
         cls._add_deposit_payout_item(qrbag4, count=1, valid=True)
         cls._add_deposit_payout_item(qrbag4, count=2, valid=False)
+
+        # QR bag 5 has manual deposit payout items
+        cls._add_deposit_payout_item(qrbag5, count=4, manual=True)
 
     @staticmethod
     def extract_data_from_table(table):
@@ -182,7 +192,13 @@ class BaseQRBagTest(LoginMixin, TestCase):
         return output
 
     @classmethod
-    def _add_deposit_payout_item(cls, bag: QRBag, count: int = 1, valid: bool = True):
+    def _add_deposit_payout_item(
+        cls,
+        bag: QRBag,
+        count: int = 1,
+        valid: bool = True,
+        manual: bool = False,
+    ):
         deposit_payout, _ = DepositPayout.objects.get_or_create(
             source_identifier="QRBagTest",
             defaults={
@@ -192,7 +208,7 @@ class BaseQRBagTest(LoginMixin, TestCase):
                 "item_count": 1,
             },
         )
-        barcode = "barcode"
+        barcode = "manual" if manual else "barcode"
         product, _ = Product.objects.get_or_create(
             barcode=barcode,
             defaults={
@@ -213,6 +229,7 @@ class BaseQRBagTest(LoginMixin, TestCase):
             count=count,
             product=product if valid else None,
             barcode=barcode if valid else None,
+            rvm_serial=0 if manual else -1,
         )
 
 
@@ -233,8 +250,7 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
     def test_esani_admin_view(self):
         self.client.login(username="esani_admin", password="12345")
         bags = self.get_bags()
-        self.assertEqual(len(bags), 4)  # ESani admin can see all bags
-
+        self.assertEqual(len(bags), 5)  # Esani admin can see all bags
         self.assertEqual(bags["qr1"]["Butik"], "branch1")
         self.assertEqual(bags["qr2"]["Butik"], "branch1")
         self.assertEqual(bags["qr3"]["Butik"], "kiosk")
@@ -243,7 +259,7 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
     def test_company_admin_view(self):
         self.client.login(username="company_admin", password="12345")
         bags = self.get_bags()
-        self.assertEqual(len(bags), 3)  # Company admin cannot see the kiosk-bag
+        self.assertEqual(len(bags), 4)  # Company admin cannot see the kiosk-bag
 
     def test_branch_admin_view(self):
         self.client.login(username="branch_admin", password="12345")
@@ -254,14 +270,14 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         self.client.login(username="esani_admin", password="12345")
         response = self.client.get(reverse("pant:qrbag_list"))
         choices = dict(response.context["form"].fields["status"].choices)
-        self.assertEqual(choices["butik_oprettet"], "butik_oprettet (3)")
+        self.assertEqual(choices["butik_oprettet"], "butik_oprettet (4)")
         self.assertEqual(choices["under_transport"], "under_transport (1)")
 
     def test_counts_as_company_admin(self):
         self.client.login(username="company_admin", password="12345")
         response = self.client.get(reverse("pant:qrbag_list"))
         choices = dict(response.context["form"].fields["status"].choices)
-        self.assertEqual(choices["butik_oprettet"], "butik_oprettet (2)")
+        self.assertEqual(choices["butik_oprettet"], "butik_oprettet (3)")
         self.assertEqual(choices["under_transport"], "under_transport (1)")
 
     def test_annotation_columns(self):
@@ -271,20 +287,23 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
             response.context["items"],
             [
                 # QR bag 1 has no items
-                ("qr1", "-", "-", "-"),
+                ("qr1", "-", "-", "-", "-"),
                 # QR bag 2 has no items
-                ("qr2", "-", "-", "-"),
+                ("qr2", "-", "-", "-", "-"),
                 # QR bag 3 has 2 valid items with count=1 and count=2 (total of 3)
-                ("qr3", 3, "-", 6),
+                ("qr3", 3, "-", 6, "-"),
                 # QR bag 4 has 1 valid item (with count=1) and one invalid item (with
                 # count=2)
-                ("qr4", 1, 2, 2),
+                ("qr4", 1, 2, 2, "-"),
+                # QR bag 5 has 1 manual item (with count=4)
+                ("qr5", 4, "-", 8, "&check;"),
             ],
             transform=lambda obj: (
                 obj["qr"],
-                obj["num_valid_deposited"],
+                self._clean_value(obj["num_valid_deposited"]),
                 obj["num_invalid_deposited"],
                 obj["value_of_valid_deposited"],
+                obj["manual"],
             ),
             ordered=False,
         )
@@ -311,6 +330,7 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
                     ("qr2", "butik_oprettet"),
                     ("qr3", "butik_oprettet"),
                     ("qr4", "butik_oprettet"),
+                    ("qr5", "butik_oprettet"),
                 ],
             ),
         ],
@@ -370,7 +390,9 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         self, annotation, status, expected_result
     ):
         view = self._get_view_instance()
-        result = view.map_value({"status": status, annotation: None}, annotation, None)
+        result = self._clean_value(
+            view.map_value({"status": status, annotation: None}, annotation, None)
+        )
         self.assertEqual(result, expected_result)
 
     @parametrize(
@@ -400,11 +422,73 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
             transform=lambda obj: obj.qr,
         )
 
+    def test_post_invalid(self):
+        data = {"amount": "invalid"}
+        view = QRBagSearchView()
+        request = RequestFactory().post("", data=data)
+        response = view.post(request)
+        self.assertEqual(response.status_code, 400)
+
+    def test_post_valid_empty_bag(self):
+        # QR bag 1 has no existing deposit payout items, so it is ok to post an amount
+        qr_bag_1 = QRBag.objects.get(qr="qr1")
+        data = {"id": qr_bag_1.pk, "amount": 42}
+        view = QRBagSearchView()
+        request = RequestFactory().post("", data=data)
+        response = view.post(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(load_json(response.content), {"status": "ok", "amount": 42})
+        self.assertEqual(
+            (
+                DepositPayout.objects.filter(
+                    source_identifier="Manual entry for QR bag qr1"
+                ).count()
+            ),
+            1,
+        )
+        self.assertQuerySetEqual(
+            DepositPayoutItem.objects.filter(qr_bag=qr_bag_1).values(
+                "company_branch",
+                "kiosk",
+                "count",
+                "date",
+                "rvm_serial",
+                "product__barcode",
+                "barcode",
+                "consumer_identity",
+            ),
+            [
+                {
+                    "company_branch": qr_bag_1.company_branch.pk,
+                    "kiosk": qr_bag_1.kiosk,
+                    "count": 42,
+                    "date": date.today(),
+                    "rvm_serial": "0",
+                    "product__barcode": "manual",
+                    "barcode": "manual",
+                    "consumer_identity": qr_bag_1.qr,
+                }
+            ],
+        )
+
+    def test_post_valid_used_bag(self):
+        # QR bag 4 has some existing deposit payout items, so it is not ok to post new
+        # amount.
+        data = {"id": QRBag.objects.get(qr="qr4").pk, "amount": 42}
+        view = QRBagSearchView()
+        request = RequestFactory().post("", data=data)
+        response = view.post(request)
+        self.assertEqual(response.status_code, 400)
+
     def _get_view_instance(self, **kwargs) -> QRBagSearchView:
         view = QRBagSearchView()
         view.request = RequestFactory().get("")
         view.search_data = kwargs
         return view
+
+    def _clean_value(self, val: str) -> int | str:
+        stripped = strip_tags(val).strip()
+        return int(stripped) if stripped != "-" else stripped
 
 
 class QRBagHistoryViewTest(BaseQRBagTest):
