@@ -454,6 +454,8 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         data = {"id": qr_bag_1.pk, "amount": 42}
         view = QRBagSearchView()
         request = RequestFactory().post("", data=data)
+        request.user = self.esani_admin
+        view.request = request
         response = view.post(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(load_json(response.content), {"status": "ok", "amount": 42})
@@ -488,6 +490,14 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
                     "consumer_identity": qr_bag_1.qr,
                 }
             ],
+        )
+        qr_bag_1.refresh_from_db()
+        self.assertEqual(qr_bag_1.status, "esani_optalt")
+        self.assertQuerySetEqual(
+            [qr_bag_1.history.latest("history_date")],
+            [("esani_optalt", self.esani_admin.pk)],
+            transform=lambda obj: (obj.status, obj.history_user.pk),
+            ordered=False,
         )
 
     def test_post_valid_used_bag(self):
