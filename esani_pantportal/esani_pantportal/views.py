@@ -1215,16 +1215,29 @@ class QRBagSearchView(BranchSearchView):
 
     def can_edit_deposit_amount(self, item) -> bool:
         return (
-            item["num_valid_deposited"] is None and item["status"] != "esani_udbetalt"
-        )
+            # No deposit payout items at all
+            item["num_valid_deposited"] is None
+            or
+            # Only manual deposit payout items
+            item["manual"] is True
+        ) and item["status"] != "esani_udbetalt"
 
     @transaction.atomic
     def _create_or_update_deposit_payout_item(
         self, qr_bag: QRBag, amount: int
     ) -> DepositPayoutItem:
+        # Check any existing deposit payout items on this bag
         qs = DepositPayoutItem.objects.filter(qr_bag=qr_bag)
-        if qs.exists():
-            raise ValueError(f"deposit payout items already exist for {qr_bag}")
+        if qs.exclude(rvm_serial=0).exists():
+            raise ValueError(
+                f"Automatic deposit payout items already exist for {qr_bag}"
+            )
+        elif qs.filter(rvm_serial=0).count() == qs.count():
+            logger.info(
+                "Deleting previously manually created deposit payout items for %r",
+                qr_bag,
+            )
+            qs.delete()
 
         # Create `DepositPayout` and `DepositPayoutItem` objects
         today = datetime.date.today()
