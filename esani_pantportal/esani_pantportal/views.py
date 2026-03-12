@@ -1226,6 +1226,13 @@ class QRBagSearchView(BranchSearchView):
     def _create_or_update_deposit_payout_item(
         self, qr_bag: QRBag, amount: int
     ) -> DepositPayoutItem:
+        # Check permissions
+        if not self.request.user.is_esani_admin:  # type: ignore[union-attr]
+            raise ValueError(
+                "Only ESANI admins can create/update manual deposit payout items for "
+                "QR bags"
+            )
+
         # Check any existing deposit payout items on this bag
         qs = DepositPayoutItem.objects.filter(qr_bag=qr_bag)
         if qs.exclude(rvm_serial=0).exists():

@@ -6,6 +6,7 @@ from http import HTTPStatus
 from json import loads as load_json
 
 from bs4 import BeautifulSoup
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.db.models import F, OrderBy, Sum
@@ -517,6 +518,19 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         data = {"id": QRBag.objects.get(qr="qr4").pk, "amount": 42}
         view = QRBagSearchView()
         request = RequestFactory().post("", data=data)
+        request.user = self.esani_admin
+        view.request = request
+        response = view.post(request)
+        self.assertEqual(response.status_code, 400)
+
+    @parametrize("username", ["branch_admin", "company_admin"])
+    def test_post_rejected_for_non_esani_admins(self, username):
+        User = get_user_model()
+        data = {"id": QRBag.objects.get(qr="qr1").pk, "amount": 42}
+        view = QRBagSearchView()
+        request = RequestFactory().post("", data=data)
+        request.user = User.objects.get(username=username)
+        view.request = request
         response = view.post(request)
         self.assertEqual(response.status_code, 400)
 

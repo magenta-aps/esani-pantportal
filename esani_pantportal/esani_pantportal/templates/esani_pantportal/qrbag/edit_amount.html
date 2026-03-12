@@ -8,7 +8,7 @@ SPDX-License-Identifier: MPL-2.0
 {% endcomment %}
 
 <span>{{ value|default_if_none:default }}</span>
-{% if user.is_admin and can_edit %}
+{% if user.is_esani_admin and can_edit %}
 <a class="icon-link d-inline-block" href="#" data-qrbag="{{ item.id|unlocalize }}">
     {% bs_icon "pencil-square" %}
 </a>
