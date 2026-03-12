@@ -448,27 +448,38 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         response = view.post(request)
         self.assertEqual(response.status_code, 400)
 
-    def test_post_valid_empty_bag(self):
-        # QR bag 1 has no existing deposit payout items, so it is ok to post an amount
-        qr_bag_1 = QRBag.objects.get(qr="qr1")
-        data = {"id": qr_bag_1.pk, "amount": 42}
+    @parametrize(
+        "qr",
+        [
+            # QR bag 1 has no existing deposit payout items, so it is ok to create some
+            "qr1",
+            # QR bag 5 has only manual deposit payout items, so it is ok to delete the
+            # existing items and create some new items
+            "qr5",
+        ],
+    )
+    def test_post_valid_bag(self, qr):
+        # Arrange
+        qr_bag = QRBag.objects.get(qr=qr)
+        data = {"id": qr_bag.pk, "amount": 42}
         view = QRBagSearchView()
         request = RequestFactory().post("", data=data)
         request.user = self.esani_admin
         view.request = request
         response = view.post(request)
+        # Assert
         self.assertEqual(response.status_code, 200)
         self.assertEqual(load_json(response.content), {"status": "ok", "amount": 42})
         self.assertEqual(
             (
                 DepositPayout.objects.filter(
-                    source_identifier="Manual entry for QR bag qr1"
+                    source_identifier=f"Manual entry for QR bag {qr}"
                 ).count()
             ),
             1,
         )
         self.assertQuerySetEqual(
-            DepositPayoutItem.objects.filter(qr_bag=qr_bag_1).values(
+            DepositPayoutItem.objects.filter(qr_bag=qr_bag).values(
                 "company_branch",
                 "kiosk",
                 "count",
@@ -480,21 +491,21 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
             ),
             [
                 {
-                    "company_branch": qr_bag_1.company_branch.pk,
-                    "kiosk": qr_bag_1.kiosk,
+                    "company_branch": qr_bag.company_branch.pk,
+                    "kiosk": qr_bag.kiosk,
                     "count": 42,
                     "date": date.today(),
                     "rvm_serial": "0",
                     "product__barcode": "manual",
                     "barcode": "manual",
-                    "consumer_identity": qr_bag_1.qr,
+                    "consumer_identity": qr_bag.qr,
                 }
             ],
         )
-        qr_bag_1.refresh_from_db()
-        self.assertEqual(qr_bag_1.status, "esani_optalt")
+        qr_bag.refresh_from_db()
+        self.assertEqual(qr_bag.status, "esani_optalt")
         self.assertQuerySetEqual(
-            [qr_bag_1.history.latest("history_date")],
+            [qr_bag.history.latest("history_date")],
             [("esani_optalt", self.esani_admin.pk)],
             transform=lambda obj: (obj.status, obj.history_user.pk),
             ordered=False,
