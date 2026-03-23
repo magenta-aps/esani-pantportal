@@ -30,6 +30,7 @@ from esani_pantportal.views import (
     MultipleProductRegisterView,
     MultipleProductRejectView,
     MultipleQRBagHideView,
+    MultipleQRBagRemoveManualDepositsView,
     MultipleQRBagUnhideView,
     NewsEmailView,
     PantportalLoginView,
@@ -142,6 +143,11 @@ urlpatterns = [
         "qrpose/flere/vis",
         MultipleQRBagUnhideView.as_view(),
         name="qrbag_multiple_unhide",
+    ),
+    path(
+        "qrpose/flere/fjern-manuel",
+        MultipleQRBagRemoveManualDepositsView.as_view(),
+        name="qrbag_multiple_remove_manual_deposits",
     ),
     path(
         "pantmaskine/",

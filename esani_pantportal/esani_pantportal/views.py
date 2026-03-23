@@ -2481,10 +2481,18 @@ class _MultipleQRBagStatusUpdate(View, PermissionRequiredMixin):
         ]
         return choices
 
+    def _get_previous_status(self, bag: QRBag) -> str:
+        try:
+            prev = bag.history.order_by("-history_id")[1]
+        except (HistoricalQRBag.DoesNotExist, IndexError):
+            return "butik_oprettet"
+        else:
+            return prev.status
+
 
 class MultipleQRBagHideView(_MultipleQRBagStatusUpdate):
     def filter_qs(self, qs: QuerySet[QRBag]) -> QuerySet[QRBag]:
-        # Don't attempt to hide objects that are already unhidden
+        # Don't attempt to hide objects that are already hidden
         return qs.exclude(status="esani_skjult")
 
     def update(self, bag: QRBag):
@@ -2513,13 +2521,27 @@ class MultipleQRBagUnhideView(_MultipleQRBagStatusUpdate):
     def get_affected_fields(self) -> list[str]:
         return super().get_affected_fields() + ["hidden_reason"]
 
-    def _get_previous_status(self, bag: QRBag) -> str:
-        try:
-            prev = bag.history.order_by("-history_id")[1]
-        except (HistoricalQRBag.DoesNotExist, IndexError):
-            return "butik_oprettet"
-        else:
-            return prev.status
+
+class MultipleQRBagRemoveManualDepositsView(_MultipleQRBagStatusUpdate):
+    def filter_qs(self, qs: QuerySet[QRBag]) -> QuerySet[QRBag]:
+        # Only process objects that have manual deposits
+        qs = qs.annotate(
+            manual=Exists(
+                DepositPayoutItem.objects.filter(
+                    qr_bag=OuterRef("pk"),
+                    rvm_serial=0,
+                )
+            ),
+        )
+        return qs.filter(status="esani_optalt", manual=True)
+
+    def update(self, bag: QRBag):
+        bag.status = self._get_previous_status(bag)
+        manual_deposits = DepositPayoutItem.objects.filter(qr_bag=bag, rvm_serial=0)
+        manual_deposits.delete()
+
+    def get_change_reason(self) -> str:
+        return "Fjernet manuelt indtastet pant"
 
 
 class TwoFactorSetup(SetupView):

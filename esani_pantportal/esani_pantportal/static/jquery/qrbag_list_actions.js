@@ -7,6 +7,7 @@
     $(document).ready(function () {
         const hideButton = $("#hide_button");
         const unhideButton = $("#unhide_button");
+        const removeManualButton = $("#remove_manual_button");
 
         const getSelectedRowIds = function () {
             const rowIds = [];
@@ -88,9 +89,11 @@
             if (rowIds.length > 0) {
                 hideButton.removeClass("disabled");
                 unhideButton.removeClass("disabled");
+                removeManualButton.removeClass("disabled");
             } else {
                 hideButton.addClass("disabled");
                 unhideButton.addClass("disabled");
+                removeManualButton.addClass("disabled");
             }
         }
 
@@ -131,6 +134,22 @@
                 ngettext(
                     "Er du sikker på at du vil fjerne skjult-status fra %(num)s pantpose?",
                     "Er du sikker på at du vil fjerne skjult-status fra %(num)s pantposer?",
+                    rowIds.length,
+                )
+            );
+        });
+
+        removeManualButton.on("click", function (evt) {
+            evt.preventDefault();
+
+            const rowIds = getSelectedRowIds();
+
+            confirmAndUpdateSelected(
+                $(this).data("post-url"),
+                rowIds,
+                ngettext(
+                    "Er du sikker på at du vil fjerne manuelt indtastet pant fra %(num)s pantpose?",
+                    "Er du sikker på at du vil fjerne manuelt indtastet pant fra %(num)s pantposer?",
                     rowIds.length,
                 )
             );

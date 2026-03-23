@@ -131,7 +131,12 @@ class BaseQRBagTest(LoginMixin, TestCase):
         cls.company_admin.groups.add(Group.objects.get(name="CompanyAdmins"))
 
         # Create `QRStatus` objects matching the status codes used in the tests
-        for code in ("butik_oprettet", "under_transport", "esani_skjult"):
+        for code in (
+            "butik_oprettet",
+            "under_transport",
+            "esani_skjult",
+            "esani_optalt",
+        ):
             QRStatus.objects.get_or_create(code=code, name_da=code, name_kl=code)
 
         # Two bags are created by a branch-admin
@@ -740,3 +745,90 @@ class TestMultipleQRBagUnhideView(ParametrizedTestCase, BaseQRBagTest):
         self.hidden_bag.refresh_from_db()
         self.assertEqual(self.hidden_bag.status, "esani_skjult")
         self.assertIsNone(self.hidden_bag.hidden_reason)
+
+
+class TestMultipleQRBagRemoveManualDepositsView(ParametrizedTestCase, BaseQRBagTest):
+    maxDiff = None
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.bag_with_normal_deposits = QRBag.objects.get(qr="qr4")
+        cls.bag_with_manual_deposits = QRBag.objects.get(qr="qr5")
+
+        # Add history entry to both bags
+        for bag in (cls.bag_with_normal_deposits, cls.bag_with_manual_deposits):
+            bag.status = "esani_optalt"
+            bag._history_user = cls.esani_admin
+            bag.save()  # adds history entry
+
+        cls.post_data = {
+            "ids[]": [
+                cls.bag_with_normal_deposits.id,
+                cls.bag_with_manual_deposits.id,
+            ]
+        }
+
+    def test_esani_admin_can_remove_manual_deposits_multiple(self):
+        self.user = self.login("EsaniAdmins")
+        response = self.client.post(
+            reverse("pant:qrbag_multiple_remove_manual_deposits"), self.post_data
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(
+            response.json(),
+            {
+                "total": 2,
+                "updated": 1,
+                "status_choices": [
+                    {"value": "", "label": "-"},
+                    {"value": "butik_oprettet", "label": "butik_oprettet (3)"},
+                    {"value": "esani_optalt", "label": "esani_optalt (1)"},
+                    {"value": "esani_skjult", "label": "esani_skjult (1)"},
+                    {"value": "under_transport", "label": "under_transport (1)"},
+                ],
+            },
+        )
+        # Assert: manual bag is returned to its former status
+        self.bag_with_manual_deposits.refresh_from_db()
+        self.assertEqual(self.bag_with_manual_deposits.status, "butik_oprettet")
+        self.assertQuerySetEqual(
+            DepositPayoutItem.objects.filter(
+                qr_bag=self.bag_with_manual_deposits, rvm_serial=0
+            ),
+            [],
+        )
+        # Assert: normal bag is untouched
+        self.bag_with_normal_deposits.refresh_from_db()
+        self.assertEqual(self.bag_with_normal_deposits.status, "esani_optalt")
+        self.assertGreater(
+            DepositPayoutItem.objects.filter(
+                qr_bag=self.bag_with_normal_deposits
+            ).count(),
+            0,
+        )
+
+    def test_non_esani_admin_cannot_unhide_multiple(self):
+        self.user = self.login("BranchAdmins")
+        response = self.client.post(
+            reverse("pant:qrbag_multiple_remove_manual_deposits"), self.post_data
+        )
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+        # Assert: manual bag remains unchanged
+        self.bag_with_manual_deposits.refresh_from_db()
+        self.assertEqual(self.bag_with_manual_deposits.status, "esani_optalt")
+        self.assertGreater(
+            DepositPayoutItem.objects.filter(
+                qr_bag=self.bag_with_manual_deposits
+            ).count(),
+            0,
+        )
+        # Assert: normal bag remains unchanged
+        self.bag_with_normal_deposits.refresh_from_db()
+        self.assertEqual(self.bag_with_normal_deposits.status, "esani_optalt")
+        self.assertGreater(
+            DepositPayoutItem.objects.filter(
+                qr_bag=self.bag_with_normal_deposits
+            ).count(),
+            0,
+        )
