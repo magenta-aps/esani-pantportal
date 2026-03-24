@@ -60,10 +60,13 @@ SPDX-License-Identifier: MPL-2.0
         </a>
         {% if can_edit_multiple and user.is_esani_admin %}
         <a id="hide_button" class="btn btn-primary disabled" href="#" data-post-url="{% url "pant:qrbag_multiple_hide" %}">
-            {% translate "Skjul markerede produkter" %}
+            {% translate "Skjul markerede pantposer" %}
         </a>
         <a id="unhide_button" class="btn btn-secondary disabled" href="#" data-post-url="{% url "pant:qrbag_multiple_unhide" %}">
-            {% translate "Fjern skjult-status fra markerede produkter" %}
+            {% translate "Fjern skjult-status fra markerede pantposer" %}
+        </a>
+        <a id="remove_manual_button" class="btn btn-secondary disabled" href="#" data-post-url="{% url "pant:qrbag_multiple_remove_manual_deposits" %}">
+            {% translate "Fjern manuelt indtastet pant fra markerede pantposer" %}
         </a>
         {% endif %}
     </div>
