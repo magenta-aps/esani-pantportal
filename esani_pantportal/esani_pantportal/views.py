@@ -420,6 +420,7 @@ class SearchView(LoginRequiredMixin, FormView):
     search_fields_exact: list[str] = []
     search_fields: list[str] = []
     fixed_columns: dict[str, StrPromise] = {}
+    excel_columns: dict[str, StrPromise] = {}  # Columns which only show in excel files
     preferences_class: PREFERENCES_CLASS | None = None
     can_edit_multiple = False
     actions: dict[StrPromise, BOOTSTRAP_BUTTON] = {}
@@ -589,6 +590,9 @@ class SearchView(LoginRequiredMixin, FormView):
     def get_fixed_columns(self):
         return self.fixed_columns
 
+    def get_excel_columns(self):
+        return [[key, value, True] for key, value in self.excel_columns.items()]
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -665,7 +669,8 @@ class SearchView(LoginRequiredMixin, FormView):
         worksheet.add_write_handler(UUID, write_uuid)
 
         # Write header (column names)
-        for col, (field, name, enabled) in enumerate(self.columns):
+        additional_columns = self.get_excel_columns()
+        for col, (field, name, enabled) in enumerate(self.columns + additional_columns):
             worksheet.write(0, col, str(name))
 
         # Write data (one row for each row in queryset)
@@ -1511,6 +1516,10 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
         "date": _("Dato"),
         "already_exported": _("Allerede eksporteret"),
     }
+    excel_columns = {
+        "barcode": _("Stregkode/Ean"),
+        "city": _("By"),
+    }
 
     annotations = {
         "source": Coalesce("company_branch__company__name", "kiosk__name"),
@@ -1519,6 +1528,31 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
             output_field=BooleanField(),
         ),
     }
+
+    def model_to_dict(self, item_obj):
+        result = super().model_to_dict(item_obj)
+        company_branch = item_obj.company_branch
+        kiosk = item_obj.kiosk
+        product = item_obj.product
+
+        result["barcode"] = item_obj.barcode
+        if company_branch:
+            result["city"] = company_branch.city.name
+        elif kiosk:
+            result["city"] = kiosk.city.name
+        else:
+            result["city"] = "-"
+
+        if product:
+            result["product"] = product.product_name
+            result["product__refund_value"] = product.refund_value
+        else:
+            result["product__refund_value"] = "-"
+
+        return result
+
+    def get_view_name(self) -> str:
+        return gettext("Udbetalinger")  # pragma: no cover
 
     def post(self, request, *args, **kwargs):
         # Instantiate form and trigger validation.
@@ -1624,17 +1658,12 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
         else:
             json_dict["source"] = self.span(item_obj.rvm_serial, source_error)
 
-        if product:
-            json_dict["product"] = product.product_name
-            json_dict["product__refund_value"] = product.refund_value
-        else:
+        if not product:
             barcode = item_obj.barcode
             if item_obj.deposit_payout.source_type == "manual":
                 json_dict["product"] = self.span("x" * 12, manual_payout_error)
             elif barcode:
                 json_dict["product"] = self.span(barcode, barcode_not_found_error)
-
-            json_dict["product__refund_value"] = "-"
 
         json_dict["date"] = item_obj.date.strftime("%-d. %b %Y")
         json_dict["already_exported"] = (
