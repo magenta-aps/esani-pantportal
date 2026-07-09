@@ -420,7 +420,6 @@ class SearchView(LoginRequiredMixin, FormView):
     search_fields_exact: list[str] = []
     search_fields: list[str] = []
     fixed_columns: dict[str, StrPromise] = {}
-    excel_columns: dict[str, StrPromise] = {}  # Columns which only show in excel files
     preferences_class: PREFERENCES_CLASS | None = None
     can_edit_multiple = False
     actions: dict[StrPromise, BOOTSTRAP_BUTTON] = {}
@@ -590,9 +589,6 @@ class SearchView(LoginRequiredMixin, FormView):
     def get_fixed_columns(self):
         return self.fixed_columns
 
-    def get_excel_columns(self):
-        return [[key, value, True] for key, value in self.excel_columns.items()]
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -669,8 +665,7 @@ class SearchView(LoginRequiredMixin, FormView):
         worksheet.add_write_handler(UUID, write_uuid)
 
         # Write header (column names)
-        additional_columns = self.get_excel_columns()
-        for col, (field, name, enabled) in enumerate(self.columns + additional_columns):
+        for col, (field, name, enabled) in enumerate(self.columns):
             worksheet.write(0, col, str(name))
 
         # Write data (one row for each row in queryset)
@@ -1515,10 +1510,6 @@ class DepositPayoutSearchView(PermissionRequiredMixin, SearchView):
         "count": _("Antal"),
         "date": _("Dato"),
         "already_exported": _("Allerede eksporteret"),
-    }
-    excel_columns = {
-        "barcode": _("Stregkode/Ean"),
-        "city": _("By"),
     }
 
     annotations = {
