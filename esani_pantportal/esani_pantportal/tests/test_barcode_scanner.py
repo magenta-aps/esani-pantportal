@@ -41,8 +41,8 @@ class BarcodeScannerTestCase(TestCase):
         barcodes = response.context["barcodes"]
         self.assertIn("100", barcodes)
         self.assertIn("200", barcodes)
-        self.assertEquals(barcodes["100"]["product_name"], "test_item1")
-        self.assertEquals(barcodes["200"]["product_name"], "test_item2")
+        self.assertEqual(barcodes["100"]["product_name"], "test_item1")
+        self.assertEqual(barcodes["200"]["product_name"], "test_item2")
 
-        self.assertEquals(barcodes["100"]["refund_value"], 200)
-        self.assertEquals(barcodes["200"]["refund_value"], 200)
+        self.assertEqual(barcodes["100"]["refund_value"], 200)
+        self.assertEqual(barcodes["200"]["refund_value"], 200)

@@ -33,6 +33,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='qrbag',
-            constraint=models.CheckConstraint(check=models.Q(('companybranch__isnull', True), ('kiosk__isnull', True), _connector='OR'), name='has_only_companybranch_or_kiosk'),
+            constraint=models.CheckConstraint(condition=models.Q(('companybranch__isnull', True), ('kiosk__isnull', True), _connector='OR'), name='has_only_companybranch_or_kiosk'),
         ),
     ]

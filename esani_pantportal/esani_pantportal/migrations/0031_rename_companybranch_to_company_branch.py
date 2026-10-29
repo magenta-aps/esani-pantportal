@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="qrbag",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     ("company_branch__isnull", True), ("kiosk__isnull", True), _connector="OR"
                 ),
                 name="has_only_company_branch_or_kiosk",

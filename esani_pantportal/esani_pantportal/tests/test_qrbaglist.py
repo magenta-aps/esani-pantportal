@@ -332,7 +332,7 @@ class QRBagListViewTest(ParametrizedTestCase, BaseQRBagTest):
         for valid in (True, False):
             with self.subTest(valid=valid):
                 annotation = _get_qr_bag_filtered_annotation(Sum("foo"), valid=valid)
-                self.assertEqual(annotation.filter.negated, not valid)
+                self.assertEqual(annotation.filter.condition.negated, not valid)
 
     @parametrize(
         "statuses,expected_result",

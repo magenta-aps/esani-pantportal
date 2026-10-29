@@ -102,14 +102,14 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
         file = self.make_excel_file_dict(df)
 
         form = MultipleProductRegisterForm(self.defaults, file)
-        self.assertEquals(form.is_valid(), True)
+        self.assertEqual(form.is_valid(), True)
 
     def test_import_csv_file(self):
         df = default_dataframe()
         file = self.make_csv_file_dict(df)
 
         form = MultipleProductRegisterForm(self.defaults, file)
-        self.assertEquals(form.is_valid(), True)
+        self.assertEqual(form.is_valid(), True)
 
     def test_import_csv_file_wrong_separator(self):
         df = default_dataframe()
@@ -117,8 +117,8 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
 
         form = MultipleProductRegisterForm(self.defaults, file)
 
-        self.assertEquals(form.is_valid(), False)
-        self.assertEquals(len(form.errors), 1)
+        self.assertEqual(form.is_valid(), False)
+        self.assertEqual(len(form.errors), 1)
         self.assertIn("sep", form.errors)
 
     def test_import_excel_file_wrong_sheet(self):
@@ -129,8 +129,8 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
         inputs["sheet_name"] = "wrong_sheet"
         form = MultipleProductRegisterForm(inputs, file)
 
-        self.assertEquals(form.is_valid(), False)
-        self.assertEquals(len(form.errors), 1)
+        self.assertEqual(form.is_valid(), False)
+        self.assertEqual(len(form.errors), 1)
         self.assertIn("file", form.errors)
 
     def test_import_csv_file_wrong_extension(self):
@@ -139,8 +139,8 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
 
         form = MultipleProductRegisterForm(self.defaults, file)
 
-        self.assertEquals(form.is_valid(), False)
-        self.assertEquals(len(form.errors), 1)
+        self.assertEqual(form.is_valid(), False)
+        self.assertEqual(len(form.errors), 1)
         self.assertIn("file", form.errors)
 
     def test_import_csv_wrong_column_mapping(self):
@@ -151,8 +151,8 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
         inputs["barcode_col"] = "wrong_column"
         form = MultipleProductRegisterForm(inputs, file)
 
-        self.assertEquals(form.is_valid(), False)
-        self.assertEquals(len(form.errors), 1)
+        self.assertEqual(form.is_valid(), False)
+        self.assertEqual(len(form.errors), 1)
         self.assertIn("barcode_col", form.errors)
 
     def test_import_csv_wrong_column_contents(self):
@@ -162,8 +162,8 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
 
         form = MultipleProductRegisterForm(self.defaults, file)
 
-        self.assertEquals(form.is_valid(), False)
-        self.assertEquals(len(form.errors), 1)
+        self.assertEqual(form.is_valid(), False)
+        self.assertEqual(len(form.errors), 1)
         self.assertIn("shape_col", form.errors)
 
     def test_import_csv_invalid_barcode(self):
@@ -173,8 +173,8 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
 
         form = MultipleProductRegisterForm(self.defaults, file)
 
-        self.assertEquals(form.is_valid(), False)
-        self.assertEquals(len(form.errors), 1)
+        self.assertEqual(form.is_valid(), False)
+        self.assertEqual(len(form.errors), 1)
         self.assertIn("barcode_col", form.errors)
 
     def test_import_csv_invalid_barcode_length(self):
@@ -184,8 +184,8 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
 
         form = MultipleProductRegisterForm(self.defaults, file)
 
-        self.assertEquals(form.is_valid(), False)
-        self.assertEquals(len(form.errors), 1)
+        self.assertEqual(form.is_valid(), False)
+        self.assertEqual(len(form.errors), 1)
         self.assertIn("barcode_col", form.errors)
 
     def test_import_csv_duplice_barcodes(self):
@@ -196,8 +196,8 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
 
         form = MultipleProductRegisterForm(self.defaults, file)
 
-        self.assertEquals(form.is_valid(), False)
-        self.assertEquals(len(form.errors), 1)
+        self.assertEqual(form.is_valid(), False)
+        self.assertEqual(len(form.errors), 1)
         self.assertIn("barcode_col", form.errors)
 
     def test_import_csv_multiple_duplice_barcodes(self):
@@ -210,8 +210,8 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
 
         form = MultipleProductRegisterForm(self.defaults, file)
 
-        self.assertEquals(form.is_valid(), False)
-        self.assertEquals(len(form.errors), 1)
+        self.assertEqual(form.is_valid(), False)
+        self.assertEqual(len(form.errors), 1)
         self.assertIn("barcode_col", form.errors)
 
     def test_import_csv_negative_value_in_integer_fields(self):
@@ -221,8 +221,8 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
 
         form = MultipleProductRegisterForm(self.defaults, file)
 
-        self.assertEquals(form.is_valid(), False)
-        self.assertEquals(len(form.errors), 1)
+        self.assertEqual(form.is_valid(), False)
+        self.assertEqual(len(form.errors), 1)
         self.assertIn("capacity_col", form.errors)
 
     def test_import_csv_strings_in_integer_fields(self):
@@ -232,8 +232,8 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
 
         form = MultipleProductRegisterForm(self.defaults, file)
 
-        self.assertEquals(form.is_valid(), False)
-        self.assertEquals(len(form.errors), 1)
+        self.assertEqual(form.is_valid(), False)
+        self.assertEqual(len(form.errors), 1)
         self.assertIn("capacity_col", form.errors)
 
     def test_import_csv_decimals_in_integer_fields(self):
@@ -243,8 +243,8 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
 
         form = MultipleProductRegisterForm(self.defaults, file)
 
-        self.assertEquals(form.is_valid(), False)
-        self.assertEquals(len(form.errors), 1)
+        self.assertEqual(form.is_valid(), False)
+        self.assertEqual(len(form.errors), 1)
         self.assertIn("capacity_col", form.errors)
 
     def test_import_csv_invalid_diameter(self):
@@ -256,8 +256,8 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
 
             form = MultipleProductRegisterForm(self.defaults, file)
 
-            self.assertEquals(form.is_valid(), False)
-            self.assertEquals(len(form.errors), 1)
+            self.assertEqual(form.is_valid(), False)
+            self.assertEqual(len(form.errors), 1)
             self.assertIn("diameter_col", form.errors)
 
     def test_import_csv_invalid_capacity(self):
@@ -269,8 +269,8 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
 
             form = MultipleProductRegisterForm(self.defaults, file)
 
-            self.assertEquals(form.is_valid(), False)
-            self.assertEquals(len(form.errors), 1)
+            self.assertEqual(form.is_valid(), False)
+            self.assertEqual(len(form.errors), 1)
             self.assertIn("capacity_col", form.errors)
 
     def test_import_csv_invalid_height(self):
@@ -282,8 +282,8 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
 
             form = MultipleProductRegisterForm(self.defaults, file)
 
-            self.assertEquals(form.is_valid(), False)
-            self.assertEquals(len(form.errors), 1)
+            self.assertEqual(form.is_valid(), False)
+            self.assertEqual(len(form.errors), 1)
             self.assertIn("height_col", form.errors)
 
     def test_import_csv_empty_integer_field(self):
@@ -293,8 +293,8 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
 
         form = MultipleProductRegisterForm(self.defaults, file)
 
-        self.assertEquals(form.is_valid(), False)
-        self.assertEquals(len(form.errors), 1)
+        self.assertEqual(form.is_valid(), False)
+        self.assertEqual(len(form.errors), 1)
         self.assertIn("capacity_col", form.errors)
 
     def test_import_csv_exceeds_max_size(self):
@@ -305,8 +305,8 @@ class MultipleProductRegisterFormTests(SimpleTestCase):
 
         form = MultipleProductRegisterForm(self.defaults, file)
 
-        self.assertEquals(form.is_valid(), False)
-        self.assertEquals(len(form.errors), 1)
+        self.assertEqual(form.is_valid(), False)
+        self.assertEqual(len(form.errors), 1)
         self.assertIn("file", form.errors)
 
 
@@ -605,8 +605,8 @@ class SingleProductRegisterFormTests(LoginMixin, TestCase):
 
             form = ProductRegisterForm(parameters)
 
-            self.assertEquals(form.is_valid(), False)
-            self.assertEquals(len(form.errors), 1)
+            self.assertEqual(form.is_valid(), False)
+            self.assertEqual(len(form.errors), 1)
             self.assertIn("diameter", form.errors)
 
     def test_invalid_height(self):
@@ -617,8 +617,8 @@ class SingleProductRegisterFormTests(LoginMixin, TestCase):
 
             form = ProductRegisterForm(parameters)
 
-            self.assertEquals(form.is_valid(), False)
-            self.assertEquals(len(form.errors), 1)
+            self.assertEqual(form.is_valid(), False)
+            self.assertEqual(len(form.errors), 1)
             self.assertIn("height", form.errors)
 
     def test_invalid_capacity(self):
@@ -629,8 +629,8 @@ class SingleProductRegisterFormTests(LoginMixin, TestCase):
 
             form = ProductRegisterForm(parameters)
 
-            self.assertEquals(form.is_valid(), False)
-            self.assertEquals(len(form.errors), 1)
+            self.assertEqual(form.is_valid(), False)
+            self.assertEqual(len(form.errors), 1)
             self.assertIn("capacity", form.errors)
 
     def test_view_get(self):

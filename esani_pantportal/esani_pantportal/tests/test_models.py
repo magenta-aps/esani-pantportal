@@ -484,7 +484,7 @@ class ProductTest(TestCase):
 
         product1.save()
 
-        with self.assertRaisesRegexp(IntegrityError, ".*duplicate key value.*"):
+        with self.assertRaisesRegex(IntegrityError, ".*duplicate key value.*"):
             product2.save()
 
     def test_create_product_invalid_dimensions(self):
@@ -500,7 +500,7 @@ class ProductTest(TestCase):
             shape="F",
         )
 
-        with self.assertRaisesRegexp(IntegrityError, "height_constraints"):
+        with self.assertRaisesRegex(IntegrityError, "height_constraints"):
             product.save()
 
 

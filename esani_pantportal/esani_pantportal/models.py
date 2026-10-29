@@ -545,7 +545,7 @@ class Product(models.Model):
 
         constraints = [
             models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     shape="F",
                     height__gte=height_constraints["F"][0],
                     height__lte=height_constraints["F"][1],
@@ -563,7 +563,7 @@ class Product(models.Model):
                 name="height_constraints",
             ),
             models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     shape="F",
                     diameter__gte=diameter_constraints["F"][0],
                     diameter__lte=diameter_constraints["F"][1],
@@ -581,7 +581,7 @@ class Product(models.Model):
                 name="diameter_constraints",
             ),
             models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     shape="F",
                     capacity__gte=capacity_constraints["F"][0],
                     capacity__lte=capacity_constraints["F"][1],
@@ -1313,7 +1313,7 @@ class QRBag(models.Model):
     class Meta:
         constraints = [
             CheckConstraint(
-                check=Q(company_branch__isnull=True) | Q(kiosk__isnull=True),
+                condition=Q(company_branch__isnull=True) | Q(kiosk__isnull=True),
                 name="has_only_company_branch_or_kiosk",
             )
         ]

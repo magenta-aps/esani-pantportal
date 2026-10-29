@@ -113,12 +113,12 @@ Lint Python:
 
 Lint Dockerfiles:
   <<: *lint-default
-  image: hadolint/hadolint:v2.12.0-debian
+  image: hadolint/hadolint:v2.15.1-debian
   before_script:
     - apt-get -y update
     - apt-get -y install --no-install-recommends git
   script:
-    - git ls-files --exclude='Dockerfile*' --ignored | xargs --max-lines=1 hadolint
+    - git ls-files --exclude='Dockerfile*' --ignored --cached | xargs --max-lines=1 hadolint
 
 Lint REUSE compliance:
   extends: .lint-default
@@ -289,9 +289,6 @@ Deploy to Test:
       when: manual
     # Matches all of SemVer 2.0.0
     - if: $CI_COMMIT_TAG =~ /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/
-  environment:
-    name: test
-    url: "https://test.pant.gl"
 
 Deploy to Prod:
   stage: deploy
@@ -303,6 +300,3 @@ Deploy to Prod:
     SALTBERT_ORCHESTRATION: groenland.esani_pantportal.service-prod
     SALTBERT_URL: https://saltmaster.groenland.magentahosted.dk
   when: manual
-  environment:
-    name: production
-    url: "https://pant.gl"

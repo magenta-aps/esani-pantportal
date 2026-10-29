@@ -35,10 +35,10 @@ class ProductListSearchDataTest(TestCase):
         view.form = ProductFilterForm()
         view.form.cleaned_data = {"offset": 40, "limit": 10, "foobar": 42}
         data = view.search_data
-        self.assertEquals(data["offset"], 40)
-        self.assertEquals(data["limit"], 10)
-        self.assertEquals(data["foobar"], 42)
-        self.assertEquals(data["page_number"], 5)
+        self.assertEqual(data["offset"], 40)
+        self.assertEqual(data["limit"], 10)
+        self.assertEqual(data["foobar"], 42)
+        self.assertEqual(data["page_number"], 5)
 
     def test_search_data_pagination_str(self):
         view = ProductSearchView()
@@ -46,10 +46,10 @@ class ProductListSearchDataTest(TestCase):
         view.form = ProductFilterForm()
         view.form.cleaned_data = {"offset": "40", "limit": "10", "foobar": "42"}
         data = view.search_data
-        self.assertEquals(data["offset"], 40)
-        self.assertEquals(data["limit"], 10)
-        self.assertEquals(data["foobar"], "42")
-        self.assertEquals(data["page_number"], 5)
+        self.assertEqual(data["offset"], 40)
+        self.assertEqual(data["limit"], 10)
+        self.assertEqual(data["foobar"], "42")
+        self.assertEqual(data["page_number"], 5)
 
     def test_search_data_pagination_negative(self):
         view = ProductSearchView()
@@ -57,10 +57,10 @@ class ProductListSearchDataTest(TestCase):
         view.form = ProductFilterForm()
         view.form.cleaned_data = {"offset": "-2", "limit": "-2", "foobar": 42}
         data = view.search_data
-        self.assertEquals(data["offset"], 0)
-        self.assertEquals(data["limit"], 1)
-        self.assertEquals(data["foobar"], 42)
-        self.assertEquals(data["page_number"], 1)
+        self.assertEqual(data["offset"], 0)
+        self.assertEqual(data["limit"], 1)
+        self.assertEqual(data["foobar"], 42)
+        self.assertEqual(data["page_number"], 1)
 
 
 class ProductListGetQuerysetTest(LoginMixin, TestCase):
@@ -162,8 +162,8 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
             "order": "asc",
         }
         qs = view.get_queryset()
-        self.assertEquals(self.prod1, qs[0])
-        self.assertEquals(self.prod2, qs[1])
+        self.assertEqual(self.prod1, qs[0])
+        self.assertEqual(self.prod2, qs[1])
 
         view = ProductSearchView()
         view.form = ProductFilterForm()
@@ -174,8 +174,8 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
             "order": "desc",
         }
         qs = view.get_queryset()
-        self.assertEquals(self.prod1, qs[1])
-        self.assertEquals(self.prod2, qs[0])
+        self.assertEqual(self.prod1, qs[1])
+        self.assertEqual(self.prod2, qs[0])
 
     def test_get_queryset_sort_barcode(self):
         view = ProductSearchView()
@@ -187,8 +187,8 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
             "order": "asc",
         }
         qs = view.get_queryset()
-        self.assertEquals(self.prod1, qs[1])
-        self.assertEquals(self.prod2, qs[0])
+        self.assertEqual(self.prod1, qs[1])
+        self.assertEqual(self.prod2, qs[0])
 
         view = ProductSearchView()
         view.form = ProductFilterForm()
@@ -199,8 +199,8 @@ class ProductListGetQuerysetTest(LoginMixin, TestCase):
             "order": "desc",
         }
         qs = view.get_queryset()
-        self.assertEquals(self.prod1, qs[0])
-        self.assertEquals(self.prod2, qs[1])
+        self.assertEqual(self.prod1, qs[0])
+        self.assertEqual(self.prod2, qs[1])
 
 
 class ProductListFormValidTest(LoginMixin, TestCase):
@@ -260,7 +260,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         view.request.user = self.login()
         view.kwargs = {}
         response = view.get(view.request)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertFalse(response.context_data["form"].is_valid())
 
     def test_form_valid(self):
@@ -286,7 +286,7 @@ class ProductListFormValidTest(LoginMixin, TestCase):
         view.kwargs = {}
         response = view.form_valid(view.form)
         doc = json.loads(response.content)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertListEqual(
             doc["items"],
             [
@@ -503,54 +503,54 @@ class ProductListGuiTest(LoginMixin, TestCase):
         expected = [self.prod1_expected_response, self.prod2_expected_response]
         response = self.client.get(reverse("pant:product_list"))
         data = self.get_html_items(response.content)
-        self.assertEquals(data, expected)
+        self.assertEqual(data, expected)
         response = self.client.get(reverse("pant:product_list") + "?json=1")
         data = self.get_json_items(response.content)
-        self.assertEquals(data, expected)
+        self.assertEqual(data, expected)
 
     def test_render_paginated(self):
         expected = [self.prod2_expected_response]
 
         response = self.client.get(reverse("pant:product_list") + "?offset=1")
         data = self.get_html_items(response.content)
-        self.assertEquals(data, expected)
+        self.assertEqual(data, expected)
 
         response = self.client.get(reverse("pant:product_list") + "?json=1&offset=1")
         data = self.get_json_items(response.content)
-        self.assertEquals(data, expected)
+        self.assertEqual(data, expected)
 
     def test_filter_name(self):
         expected = [self.prod1_expected_response]
         response = self.client.get(reverse("pant:product_list") + "?product_name=PROD1")
         data = self.get_html_items(response.content)
-        self.assertEquals(data, expected)
+        self.assertEqual(data, expected)
         response = self.client.get(
             reverse("pant:product_list") + "?json=1&product_name=PROD1"
         )
         data = self.get_json_items(response.content)
-        self.assertEquals(data, expected)
+        self.assertEqual(data, expected)
 
     def test_filter_barcode(self):
         expected = [self.prod2_expected_response]
         response = self.client.get(reverse("pant:product_list") + "?barcode=0002")
         data = self.get_html_items(response.content)
-        self.assertEquals(data, expected)
+        self.assertEqual(data, expected)
         response = self.client.get(
             reverse("pant:product_list") + "?json=1&barcode=0002"
         )
         data = self.get_json_items(response.content)
-        self.assertEquals(data, expected)
+        self.assertEqual(data, expected)
 
     def test_filter_approved(self):
         expected = [self.prod2_expected_response]
         response = self.client.get(reverse("pant:product_list") + "?approved=true")
         data = self.get_html_items(response.content)
-        self.assertEquals(data, expected)
+        self.assertEqual(data, expected)
         response = self.client.get(
             reverse("pant:product_list") + "?json=1&approved=true"
         )
         data = self.get_json_items(response.content)
-        self.assertEquals(data, expected)
+        self.assertEqual(data, expected)
 
     def test_filter_approved_name(self):
         expected = []
@@ -558,12 +558,12 @@ class ProductListGuiTest(LoginMixin, TestCase):
             reverse("pant:product_list") + "?approved=true&product_name=1"
         )
         data = self.get_html_items(response.content)
-        self.assertEquals(data, expected)
+        self.assertEqual(data, expected)
         response = self.client.get(
             reverse("pant:product_list") + "?json=1&approved=true&product_name=1"
         )
         data = self.get_json_items(response.content)
-        self.assertEquals(data, expected)
+        self.assertEqual(data, expected)
 
     def test_column_preferences(self):
         # Load the page with default settings

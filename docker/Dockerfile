@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-FROM python:3.11-bookworm
+FROM python:3.14-bookworm@sha256:7742c7daca5b166a5a81795531dee9701c032bc0ea00027740e5e9eabfed17c6
 ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.1.12/supercronic-linux-amd64 \
     SUPERCRONIC=supercronic-linux-amd64 \
     SUPERCRONIC_SHA1SUM=048b95b48b708983effb2e5c935a1ef8483d9e3e\
@@ -19,9 +19,9 @@ RUN mkdir /app && \
     groupadd -g 75140 -r pant && \
     groupadd -g 75100 -r certificate_exporter && \
     useradd -u 75140 --no-log-init -r -g pant -G certificate_exporter pant && \
-    chown pant:pant /var/cache/pant && chmod a+w /var/cache/pant && \
-    chown pant:pant /srv/media && chown pant:pant /static && chmod a+w /static && \
-    chown pant:pant /srv/media/deposit_payouts
+    chown 75140:75140 /var/cache/pant && chmod a+w /var/cache/pant && \
+    chown 75140:75140 /srv/media && chown 75140:75140 /static && chmod a+w /static && \
+    chown 75140:75140 /srv/media/deposit_payouts
 COPY esani_pantportal/requirements.txt /app/requirements.txt
 COPY esani_pantportal/mypy.ini /app/mypy.ini
 # hadolint ignore=DL3008
@@ -58,10 +58,10 @@ ENV LC_ALL kl_GL.UTF-8
 ARG COMMIT_TAG
 ENV COMMIT_TAG=${COMMIT_TAG:-HEAD}
 
-USER pant
+USER 75140
 COPY ./docker/entrypoint.sh /entrypoint.sh
-COPY --chown=pant:pant ./esani_pantportal /app
-COPY --chown=pant:pant ./data/deposit_payouts/*.csv /srv/media/deposit_payouts/
+COPY --chown=75140:75140 ./esani_pantportal /app
+COPY --chown=75140:75140 ./data/deposit_payouts/*.csv /srv/media/deposit_payouts/
 EXPOSE 8000
 VOLUME /srv/media
 ENTRYPOINT ["/entrypoint.sh"]
