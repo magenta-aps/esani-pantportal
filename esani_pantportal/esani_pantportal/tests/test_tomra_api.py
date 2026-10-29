@@ -131,7 +131,7 @@ class TestTomraAPI(SimpleTestCase):
             side_effect=[_APIResponse(url="url", doc={"next": None})],
         ):
             with patch(
-                "esani_pantportal.clients.tomra.api.parse_obj_as",
+                "esani_pantportal.clients.tomra.api.TypeAdapter.validate_python",
                 return_value=mock_parsed_data,
             ):
                 # Act
