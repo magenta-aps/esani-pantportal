@@ -43,6 +43,7 @@ from django.db.models import (
     Value,
     When,
 )
+from django.db.models.aggregates import AggregateFilter  # type: ignore[attr-defined]
 from django.db.models.functions import Coalesce, Concat
 from django.forms import model_to_dict
 from django.http import (
@@ -1009,7 +1010,7 @@ def _get_qr_bag_filtered_annotation(aggregate: Aggregate, valid: bool) -> Aggreg
         deposit_items__product__isnull=False,
         deposit_items__barcode__isnull=False,
     )
-    aggregate.filter = condition if valid else ~condition
+    aggregate.filter = AggregateFilter(condition if valid else ~condition)
     return aggregate
 
 

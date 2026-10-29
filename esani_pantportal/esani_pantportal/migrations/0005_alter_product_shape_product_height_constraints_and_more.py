@@ -18,14 +18,14 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='product',
-            constraint=models.CheckConstraint(check=models.Q(models.Q(('height__gte', 85), ('height__lte', 380), ('shape', 'F')), models.Q(('height__gte', 80), ('height__lte', 200), ('shape', 'D')), models.Q(('height__gte', 80), ('height__lte', 380), ('shape', 'A')), _connector='OR'), name='height_constraints'),
+            constraint=models.CheckConstraint(condition=models.Q(models.Q(('height__gte', 85), ('height__lte', 380), ('shape', 'F')), models.Q(('height__gte', 80), ('height__lte', 200), ('shape', 'D')), models.Q(('height__gte', 80), ('height__lte', 380), ('shape', 'A')), _connector='OR'), name='height_constraints'),
         ),
         migrations.AddConstraint(
             model_name='product',
-            constraint=models.CheckConstraint(check=models.Q(models.Q(('diameter__gte', 50), ('diameter__lte', 130), ('shape', 'F')), models.Q(('diameter__gte', 50), ('diameter__lte', 100), ('shape', 'D')), models.Q(('diameter__gte', 50), ('diameter__lte', 130), ('shape', 'A')), _connector='OR'), name='diameter_constraints'),
+            constraint=models.CheckConstraint(condition=models.Q(models.Q(('diameter__gte', 50), ('diameter__lte', 130), ('shape', 'F')), models.Q(('diameter__gte', 50), ('diameter__lte', 100), ('shape', 'D')), models.Q(('diameter__gte', 50), ('diameter__lte', 130), ('shape', 'A')), _connector='OR'), name='diameter_constraints'),
         ),
         migrations.AddConstraint(
             model_name='product',
-            constraint=models.CheckConstraint(check=models.Q(models.Q(('capacity__gte', 150), ('capacity__lte', 3000), ('shape', 'F')), models.Q(('capacity__gte', 150), ('capacity__lte', 1000), ('shape', 'D')), models.Q(('capacity__gte', 150), ('capacity__lte', 3000), ('shape', 'A')), _connector='OR'), name='capacity_constraints'),
+            constraint=models.CheckConstraint(condition=models.Q(models.Q(('capacity__gte', 150), ('capacity__lte', 3000), ('shape', 'F')), models.Q(('capacity__gte', 150), ('capacity__lte', 1000), ('shape', 'D')), models.Q(('capacity__gte', 150), ('capacity__lte', 3000), ('shape', 'A')), _connector='OR'), name='capacity_constraints'),
         ),
     ]

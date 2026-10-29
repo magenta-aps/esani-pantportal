@@ -242,7 +242,7 @@ class TestDepositPayoutSearchView(_BaseTestCase):
             to_date=datetime.date(2019, 1, 1).strftime("%Y-%m-%d"),
         )
         self.assertNotIn("items", response.context)
-        self.assertEquals(
+        self.assertEqual(
             ["Angiv venligst en fra-dato, der ligger før til-datoen."],
             response.context["form"].errors["__all__"],
         )

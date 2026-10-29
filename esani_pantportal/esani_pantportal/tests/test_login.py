@@ -48,7 +48,7 @@ class LoginTest(TestCase):
 
         response = self.client.post(reverse("pant:login"), data, follow=True)
 
-        self.assertEquals(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertTemplateUsed(response, "esani_pantportal/product/list.html")
         self.assertEqual(response.context_data["form"].is_valid(), True)
 
@@ -82,7 +82,7 @@ class LoginTest(TestCase):
         }
 
         response = self.client.post(reverse("pant:login"), data, follow=True)
-        self.assertEquals(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_token_step(self):
         device = self.esani_user.totpdevice_set.create(name="default", key=random_hex())

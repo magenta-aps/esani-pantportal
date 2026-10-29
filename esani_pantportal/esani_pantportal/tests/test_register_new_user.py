@@ -195,22 +195,22 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
     def test_create_admin_user(self):
         user_data = self.make_user_data()
         form = RegisterCompanyBranchUserMultiForm(user_data)
-        self.assertEquals(form.is_valid(), True)
+        self.assertEqual(form.is_valid(), True)
 
         user = form.save()
-        self.assertEquals(user.branch.name, user_data["branch-name"])
-        self.assertEquals(user.branch.company.name, user_data["company-name"])
+        self.assertEqual(user.branch.name, user_data["branch-name"])
+        self.assertEqual(user.branch.company.name, user_data["company-name"])
         self.assertTrue(user.groups.filter(name="BranchAdmins").exists())
 
     def test_create_non_admin_user(self):
         user_data = self.make_user_data()
         user_data["user-admin"] = False
         form = RegisterCompanyBranchUserMultiForm(user_data)
-        self.assertEquals(form.is_valid(), True)
+        self.assertEqual(form.is_valid(), True)
 
         user = form.save()
-        self.assertEquals(user.branch.name, user_data["branch-name"])
-        self.assertEquals(user.branch.company.name, user_data["company-name"])
+        self.assertEqual(user.branch.name, user_data["branch-name"])
+        self.assertEqual(user.branch.company.name, user_data["company-name"])
         self.assertFalse(user.groups.filter(name="BranchAdmins").exists())
         self.assertTrue(user.groups.filter(name="BranchUsers").exists())
 
@@ -219,11 +219,11 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         user_data["branch-company"] = self.existing_company.pk
 
         form = RegisterCompanyBranchUserMultiForm(user_data)
-        self.assertEquals(form.is_valid(), True)
+        self.assertEqual(form.is_valid(), True)
 
         user = form.save()
-        self.assertEquals(user.branch.name, user_data["branch-name"])
-        self.assertEquals(user.branch.company, self.existing_company)
+        self.assertEqual(user.branch.name, user_data["branch-name"])
+        self.assertEqual(user.branch.company, self.existing_company)
 
     def test_company_and_branch_exist(self):
         user_data = self.make_user_data(
@@ -234,11 +234,11 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         user_data["user-branch"] = self.existing_branch.pk
 
         form = RegisterCompanyBranchUserMultiForm(user_data)
-        self.assertEquals(form.is_valid(), True)
+        self.assertEqual(form.is_valid(), True)
 
         user = form.save()
-        self.assertEquals(user.branch.company, self.existing_company)
-        self.assertEquals(user.branch, self.existing_branch)
+        self.assertEqual(user.branch.company, self.existing_company)
+        self.assertEqual(user.branch, self.existing_branch)
 
     def test_branch_already_has_admin_user(self):
         user_data = self.make_user_data(
@@ -249,18 +249,18 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         user_data["user-branch"] = self.existing_branch2.pk
 
         form = RegisterCompanyBranchUserMultiForm(user_data)
-        self.assertEquals(form.is_valid(), False)
+        self.assertEqual(form.is_valid(), False)
         self.assertIn(
             "Denne butik har allerede en admin bruger", str(form.crossform_errors)
         )
 
         form = RegisterCompanyBranchUserMultiForm(user_data, allow_multiple_admins=True)
-        self.assertEquals(form.is_valid(), True)
+        self.assertEqual(form.is_valid(), True)
 
     def test_no_company_selected(self):
         user_data = self.make_user_data(include_company_data=False)
         form = RegisterCompanyBranchUserMultiForm(user_data)
-        self.assertEquals(form.is_valid(), False)
+        self.assertEqual(form.is_valid(), False)
         self.assertEqual(form.errors["branch-company"], ["Dette felt må ikke være tom"])
 
     def test_company_speficied(self):
@@ -282,7 +282,7 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
             include_company_data=False, include_branch_data=False
         )
         form = RegisterCompanyBranchUserMultiForm(user_data)
-        self.assertEquals(form.is_valid(), False)
+        self.assertEqual(form.is_valid(), False)
         self.assertEqual(form.errors["branch-company"], ["Dette felt må ikke være tom"])
         self.assertEqual(form.errors["user-branch"], ["Dette felt må ikke være tom"])
 
@@ -293,7 +293,7 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         user_data["branch-customer_id"] = None
 
         form = RegisterCompanyBranchUserMultiForm(user_data)
-        self.assertEquals(form.is_valid(), True)
+        self.assertEqual(form.is_valid(), True)
 
     def test_empty_fields_failure(self):
         user_data = self.make_user_data()
@@ -303,7 +303,7 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         user_data["branch-phone"] = None
 
         form = RegisterCompanyBranchUserMultiForm(user_data)
-        self.assertEquals(form.is_valid(), False)
+        self.assertEqual(form.is_valid(), False)
 
         self.assertEqual(form.errors["company-cvr"], ["Dette felt må ikke være tom"])
         self.assertEqual(form.errors["branch-phone"], ["Dette felt må ikke være tom"])
@@ -315,7 +315,7 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         user_data["user-password2"] = "wrong_password"
 
         form = RegisterCompanyBranchUserMultiForm(user_data)
-        self.assertEquals(form.is_valid(), False)
+        self.assertEqual(form.is_valid(), False)
         self.assertEqual(form.errors["user-password2"], ["Adgangskoder er ikke ens"])
 
     def test_passwords_too_short(self):
@@ -326,7 +326,7 @@ class RegisterNewBranchUserFormTest(RegisterNewUserFormTest):
         user_data["user-password"] = "badpw"
 
         form = RegisterCompanyBranchUserMultiForm(user_data)
-        self.assertEquals(form.is_valid(), False)
+        self.assertEqual(form.is_valid(), False)
 
         self.assertEqual(
             form.errors["user-password"],
@@ -505,20 +505,20 @@ class RegisterNewCompanyUserFormTest(RegisterNewUserFormTest):
     def test_create_admin_user(self):
         user_data = self.make_user_data()
         form = RegisterCompanyUserMultiForm(user_data)
-        self.assertEquals(form.is_valid(), True)
+        self.assertEqual(form.is_valid(), True)
 
         user = form.save()
-        self.assertEquals(user.company.name, user_data["company-name"])
+        self.assertEqual(user.company.name, user_data["company-name"])
         self.assertTrue(user.groups.filter(name="CompanyAdmins").exists())
 
     def test_create_non_admin_user(self):
         user_data = self.make_user_data()
         user_data["user-admin"] = False
         form = RegisterCompanyUserMultiForm(user_data)
-        self.assertEquals(form.is_valid(), True)
+        self.assertEqual(form.is_valid(), True)
 
         user = form.save()
-        self.assertEquals(user.company.name, user_data["company-name"])
+        self.assertEqual(user.company.name, user_data["company-name"])
         self.assertFalse(user.groups.filter(name="CompanyAdmins").exists())
 
     def test_get_company_admin_view(self):
@@ -586,20 +586,20 @@ class RegisterNewKioskUserFormTest(RegisterNewUserFormTest):
     def test_create_admin_user(self):
         user_data = self.make_user_data()
         form = RegisterKioskUserMultiForm(user_data)
-        self.assertEquals(form.is_valid(), True)
+        self.assertEqual(form.is_valid(), True)
 
         user = form.save()
-        self.assertEquals(user.branch.name, user_data["branch-name"])
+        self.assertEqual(user.branch.name, user_data["branch-name"])
         self.assertTrue(user.groups.filter(name="KioskAdmins").exists())
 
     def test_create_non_admin_user(self):
         user_data = self.make_user_data()
         user_data["user-admin"] = False
         form = RegisterKioskUserMultiForm(user_data)
-        self.assertEquals(form.is_valid(), True)
+        self.assertEqual(form.is_valid(), True)
 
         user = form.save()
-        self.assertEquals(user.branch.name, user_data["branch-name"])
+        self.assertEqual(user.branch.name, user_data["branch-name"])
         self.assertFalse(user.groups.filter(name="KioskAdmins").exists())
         self.assertTrue(user.groups.filter(name="KioskUsers").exists())
 

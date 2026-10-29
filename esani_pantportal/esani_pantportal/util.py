@@ -111,7 +111,7 @@ def float_to_string(value: float) -> str:
     else:
         locale_name = to_locale(get_language())
         locale.setlocale(locale.LC_ALL, locale_name + ".UTF-8")
-        return locale.format("%.1f", value)
+        return locale.format_string("%.1f", value)
 
 
 def clean_url(url: str) -> str:

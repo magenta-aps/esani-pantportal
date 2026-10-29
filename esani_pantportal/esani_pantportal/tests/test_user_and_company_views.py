@@ -334,7 +334,7 @@ class NonAdminUserUpdateViewTest(BaseUserTest):
         form_data = self.make_form_data(response.context_data["form"])
         form_data["first_name"] = "Mark"
         response = self.client.post(self.facebook_branch_user_url, form_data)
-        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
 
 class EsaniAdminUserUpdateViewTest(BaseUserTest):
@@ -361,7 +361,7 @@ class EsaniAdminUserUpdateViewTest(BaseUserTest):
 
         response = self.client.post(self.facebook_admin_url, form_data)
 
-        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.facebook_admin.refresh_from_db()
         self.assertTrue(self.facebook_admin.approved)
 
@@ -372,7 +372,7 @@ class EsaniAdminUserUpdateViewTest(BaseUserTest):
         form_data["approved"] = True
 
         response = self.client.post(self.facebook_admin_url, form_data)
-        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
     def test_disable_2fa(self):
         self.client.login(username="esani_admin", password="12345")
@@ -441,7 +441,7 @@ class CompanyAdminUserUpdateViewTest(BaseUserTest):
         form_data["first_name"] = "Mark"
         response = self.client.post(self.facebook_admin_url, form_data)
 
-        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.facebook_admin.refresh_from_db()
         self.assertEqual(self.facebook_admin.first_name, "Mark")
 
@@ -457,14 +457,14 @@ class CompanyAdminUserUpdateViewTest(BaseUserTest):
         form_data["first_name"] = "Jim"
         response = self.client.post(self.facebook_branch_user_url, form_data)
 
-        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.facebook_branch_user.refresh_from_db()
         self.assertEqual(self.facebook_branch_user.first_name, "Jim")
 
         self.client.logout()
         self.client.login(username="google_admin", password="12345")
         response = self.client.post(self.facebook_branch_user_url, form_data)
-        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
     def test_facebook_admin_view_google_employee_404(self):
         self.client.login(username="facebook_admin", password="12345")
@@ -506,7 +506,7 @@ class ResetPasswordTest(BaseUserTest):
         form_data["password2"] = "new_pass"
         response = self.client.post(self.facebook_employee_password_url, form_data)
 
-        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
         ok = self.client.login(username="facebook_branch_user", password="new_pass")
         self.assertTrue(ok)
@@ -528,7 +528,7 @@ class ResetPasswordTest(BaseUserTest):
         form_data["password2"] = "new_pass"
         response = self.client.post(self.google_employee_password_url, form_data)
 
-        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
         ok = self.client.login(username="google_admin", password="new_pass")
         self.assertTrue(ok)
@@ -550,7 +550,7 @@ class ChangePasswordTest(BaseUserTest):
         form_data["new_password2"] = "new_pass"
 
         response = self.client.post(url, form_data, follow=True)
-        self.assertEquals(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertTemplateUsed(response, "esani_pantportal/user/view.html")
 
         ok = self.client.login(username="facebook_admin", password="new_pass")

@@ -177,7 +177,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
         )
         data = self.get_html_data(response.content, exclude=["Produkthistorik"])
-        self.assertEquals(
+        self.assertEqual(
             data,
             [
                 {
@@ -206,7 +206,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk})
         )
         data = self.get_html_data(response.content, exclude=["Produkthistorik"])
-        self.assertEquals(
+        self.assertEqual(
             data,
             [
                 {
@@ -261,7 +261,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             prod1_url,
             form_data,
         )
-        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.prod1 = Product.objects.get(id=self.prod1.id)
         self.assertTrue(self.prod1.approved)
         self.assertRedirects(response, prod1_url)
@@ -382,7 +382,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
             form_data,
         )
-        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
     def test_edit(self):
         self.login()
@@ -394,7 +394,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             form_data,
         )
 
-        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.prod1 = Product.objects.get(id=self.prod1.id)
         self.assertEqual(self.prod1.weight, 1223)
         self.assertRedirects(
@@ -430,7 +430,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
             form_data,
         )
-        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
     def test_edit_forbidden_branch_admin(self):
         # A branch user should not be able to edit products created by esani admins
@@ -444,7 +444,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
             form_data,
         )
-        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
         # Unless he created the product that he is trying to edit.
         form_data = self.get_form_data(self.prod2.pk)
@@ -456,7 +456,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             reverse("pant:product_view", kwargs={"pk": self.prod2.pk}),
             form_data,
         )
-        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
         # But he should not be allowed to approve his own product
         form_data = self.get_form_data(self.prod2.pk)
@@ -467,7 +467,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             reverse("pant:product_view", kwargs={"pk": self.prod2.pk}),
             form_data,
         )
-        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
         # Or if the product was created by a colleague
         form_data = self.get_form_data(self.prod4.pk)
@@ -479,7 +479,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             reverse("pant:product_view", kwargs={"pk": self.prod4.pk}),
             form_data,
         )
-        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
         # But not if it was created by a colleague from another company
         form_data = self.get_form_data(self.prod5.pk)
@@ -491,7 +491,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             reverse("pant:product_view", kwargs={"pk": self.prod5.pk}),
             form_data,
         )
-        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
         # If the product that he is trying to edit is already approved, he should not
         # be allowed to edit it.
@@ -503,7 +503,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             reverse("pant:product_view", kwargs={"pk": self.prod3.pk}),
             form_data,
         )
-        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
     def test_edit_approved_product(self):
         # ESANI admins can edit approved products.
@@ -524,7 +524,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
                 reverse("pant:product_view", kwargs={"pk": self.prod3.pk}),
                 form_data,
             )
-            self.assertEquals(response.status_code, expected_status)
+            self.assertEqual(response.status_code, expected_status)
 
     def test_edit_forbidden_company_admin(self):
         # A company user should not be able to edit products created by esani admins
@@ -538,7 +538,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             reverse("pant:product_view", kwargs={"pk": self.prod1.pk}),
             form_data,
         )
-        self.assertEquals(response.status_code, HTTPStatus.FORBIDDEN)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
         # But he can edit products created by his colleague
         form_data = self.get_form_data(self.prod2.pk)
@@ -550,7 +550,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             reverse("pant:product_view", kwargs={"pk": self.prod2.pk}),
             form_data,
         )
-        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def test_edit_form_invalid(self):
         self.login()
@@ -562,7 +562,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
             form_data,
         )
 
-        self.assertEquals(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         context_data = response.context_data
         fields_to_show = context_data["form_fields_to_show"]
         self.assertIn("weight", fields_to_show)
@@ -623,7 +623,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
         response = self.client.get(
             reverse("pant:product_history", kwargs={"pk": self.prod1.pk})
         )
-        self.assertEquals(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertNotIn(
             "Godkendt",
             response.content.decode(),
@@ -642,7 +642,7 @@ class ProductViewGuiTest(ParametrizedTestCase, LoginMixin, TestCase):
         response = self.client.get(
             reverse("pant:product_history", kwargs={"pk": self.prod1.pk})
         )
-        self.assertEquals(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIn(
             "Godkendt",
             response.content.decode(),
