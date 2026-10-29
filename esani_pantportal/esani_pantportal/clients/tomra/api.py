@@ -35,7 +35,7 @@ from datetime import datetime
 import requests
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 from .data_models import ConsumerSessionQueryResponse, Datum
 
@@ -149,7 +149,9 @@ class TomraAPI:
                 },
             )
             continuation_token = response.doc.get("next")
-            parsed = parse_obj_as(ConsumerSessionQueryResponse, response.doc)
+            parsed = TypeAdapter[ConsumerSessionQueryResponse](
+                ConsumerSessionQueryResponse
+            ).validate_python(response.doc)
             if parsed.data:
                 data.extend(parsed.data)
             if next is None:
